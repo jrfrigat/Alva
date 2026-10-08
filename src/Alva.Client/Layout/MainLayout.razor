@@ -1,0 +1,25 @@
+@inherits LayoutComponentBase
+<a class="skip-link" href="#main-content">К содержимому</a>
+<FlareLayout>
+    <FlareLayoutAppBar DrawerToggle="true">
+        <FlareStack Row Align="FlareAlignItems.Center" Gap="FlareSpacing.Medium" Style="flex:1;min-width:0">
+            <FlareLink Href="/" Underline="LinkUnderline.None" Class="alva-brand">alva<span class="brand-dot">.</span></FlareLink>
+            <FlareSpacer />
+            <FlareButton Href="/workspaces" Variant="ButtonVariant.Text">Команды</FlareButton>
+            <FlareButton Href="/login" Variant="ButtonVariant.Tonal">Войти</FlareButton>
+        </FlareStack>
+    </FlareLayoutAppBar>
+    <FlareLayoutDrawer @bind-Open="_open" Variant="DrawerVariant.Responsive" Width="15rem" AriaLabel="Навигация">
+        <FlareNavMenu>
+            @foreach (var item in NavigationItems.All)
+            {
+                <FlareNavLink Href="@item.Path" Match="NavMatchMode.Exact">
+                    <IconContent><FlareIconView Value="@item.Icon" Size="1.25rem" /></IconContent>
+                    <ChildContent>@item.Label</ChildContent>
+                </FlareNavLink>
+            }
+        </FlareNavMenu>
+    </FlareLayoutDrawer>
+    <FlareLayoutContent><main id="main-content"><FlareContainer MaxWidth="ContainerMaxWidth.Xl"><FlareStack Gap="FlareSpacing.XLarge">@Body</FlareStack></FlareContainer></main></FlareLayoutContent>
+</FlareLayout>
+@code { private bool _open = true; }
