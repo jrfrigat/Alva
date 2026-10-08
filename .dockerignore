@@ -1,0 +1,17 @@
+**/bin
+**/obj
+.git
+.aiko
+.agents
+.codex
+.cline
+.clinerules
+.claude
+.env
+.env.*
+TestResults
+artifacts
+.data
+**/*.user
+**/appsettings.Local.json
+**/secrets.json

@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Alva.Api/Alva.Api.csproj" />
+    <Project Path="src/Alva.Client/Alva.Client.csproj" />
+    <Project Path="src/Alva.Contracts/Alva.Contracts.csproj" />
+    <Project Path="src/Alva.Domain/Alva.Domain.csproj" />
+    <Project Path="src/Alva.Infrastructure/Alva.Infrastructure.csproj" />
+  </Folder>
+</Solution>

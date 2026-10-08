@@ -1,0 +1,33 @@
+name: Build and test
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+      - run: dotnet restore Alva.slnx
+      - run: dotnet build Alva.slnx -c Release --no-restore
+      - run: dotnet test Alva.slnx -c Release --no-build --logger trx --results-directory TestResults
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: test-results
+          path: TestResults/**/*.trx
+          if-no-files-found: ignore
+      - name: Validate Compose
+        run: POSTGRES_PASSWORD=ci-validation-only docker compose config --quiet
+      - name: Build container
+        run: docker build -t alva:ci .
