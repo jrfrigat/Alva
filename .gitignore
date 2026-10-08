@@ -1,0 +1,29 @@
+/.aiko/
+/.mcp.json
+/.cursor/mcp.json
+/.zcode/config.json
+/.cline/
+/.clinerules/
+/.codex/
+/.agents/
+
+# Local configuration and credentials
+.env
+.env.*
+!.env.example
+**/appsettings.Local.json
+**/secrets.json
+
+# .NET and IDE output
+**/bin/
+**/obj/
+.vs/
+.idea/
+*.user
+*.suo
+TestResults/
+artifacts/
+*.log
+
+# Local application data
+.data/
