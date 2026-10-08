@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup><TargetFramework>net10.0</TargetFramework><ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable></PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Alva.Infrastructure/Alva.Infrastructure.csproj" />
+    <ProjectReference Include="../Alva.Contracts/Alva.Contracts.csproj" />
+    <ProjectReference Include="../Alva.Client/Alva.Client.csproj" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="10.0.12" />
+  </ItemGroup>
+</Project>
