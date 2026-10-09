@@ -1,0 +1,173 @@
+@* Календарь сотрудника по макету p15.1: неделя с доступными и занятыми часами по дням, задачи
+   сотрудника, вычеты и предстоящие отсутствия. *@
+@inject AlvaSession Session
+<section class="alva-person-head">
+    <FlareBreadcrumb Items="@(new BreadcrumbItem[] { new("Ёмкость", "/capacity"), new("Графики людей", "/capacity/people"), new(Person?.Name ?? "Сотрудник") })" Separator="›" AriaLabel="Путь к календарю сотрудника" />
+    <div class="alva-person-head__row">
+        <div class="alva-person-head__who">
+            <span class="alva-slot__mark alva-person-head__avatar" aria-hidden="true">@AlvaFormat.Initials(Person?.Name ?? "?")</span>
+            <div>
+                <h1 class="alva-person-head__name">@(Person?.Name ?? "Сотрудник")</h1>
+                <div class="alva-person-head__meta">
+                    @foreach (var tag in Tags) { <AlvaStatusChip Tone="AlvaTone.Role">@tag</AlvaStatusChip> }
+                    @if (_calendar is not null) { <span class="alva-num"><FlareIconView Value="@MaterialDesign3Icons.Regular.Schedule" Size="15px" /> График @Pattern (@AlvaFormat.Hours(WeekNominal) ч/нед · @_calendar.TimeZone)</span> }
+                    @if (!string.IsNullOrWhiteSpace(Person?.Email)) { <span><FlareIconView Value="@MaterialDesign3Icons.Regular.Mail" Size="15px" /> @Person!.Email</span> }
+                </div>
+            </div>
+        </div>
+        <div class="alva-person-head__nav">
+            <FlareIconButton Icon="@MaterialDesign3Icons.Regular.ChevronLeft" Size="ButtonSize.Sm" AriaLabel="Предыдущая неделя" OnClick="() => Shift(-7)" />
+            <span class="alva-person-head__week alva-num"><b>@_monday.ToString("d") – @_monday.AddDays(6).ToString("d MMMM yyyy")</b>@if (SprintOfWeek is { } s) { <small>@s.Name</small> }</span>
+            <FlareIconButton Icon="@MaterialDesign3Icons.Regular.ChevronRight" Size="ButtonSize.Sm" AriaLabel="Следующая неделя" OnClick="() => Shift(7)" />
+            <FlareButton Variant="ButtonVariant.Text" Size="ButtonSize.Sm" OnClick="ThisWeek">Сегодня</FlareButton>
+            <FlareButton Href="@($"/capacity/{ActorId}/schedule")" Size="ButtonSize.Sm"><LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.EditCalendar" Size="18px" /></LeadingIcon><ChildContent>Редактор графика</ChildContent></FlareButton>
+        </div>
+    </div>
+</section>
+<PageFeedback Error="@_error" Loading="_busy" />
+
+<div class="alva-kpis alva-kpis--five">
+    <section class="alva-kpi"><span class="alva-kpi__label">Номинал недели</span><span class="alva-num"><span class="alva-kpi__value">@AlvaFormat.Hours(WeekNominal)</span> <span class="alva-kpi__unit">часов</span></span><p class="alva-kpi__note">По графику: @Pattern</p></section>
+    <section class="alva-kpi"><span class="alva-kpi__label">Встречи и вычеты</span><span class="alva-num"><span class="alva-kpi__value">−@AlvaFormat.Hours(WeekBlocks)</span> <span class="alva-kpi__unit">часов</span></span><p class="alva-kpi__note">@(_calendar?.RecurringBlocks.Length > 0 ? string.Join(" · ", _calendar.RecurringBlocks.Select(b => b.Name).Distinct()) : "Регулярных вычетов нет")</p></section>
+    <section class="alva-kpi"><span class="alva-kpi__label alva-kpi__label--primary">Чистая ёмкость</span><span class="alva-num"><span class="alva-kpi__value">@AlvaFormat.Hours(WeekAvailable)</span> <span class="alva-kpi__unit">часов фокуса</span></span><p class="alva-kpi__note">Доступно для задач с учётом отпусков</p></section>
+    <section class="alva-kpi @(WeekAllocated > WeekAvailable ? "alva-kpi--critical" : "")"><span class="alva-kpi__label">Задачи в плане</span><span class="alva-num"><span class="alva-kpi__value">@AlvaFormat.Hours(WeekAllocated)</span> <span class="alva-kpi__unit">ч @(WeekAllocated > WeekAvailable ? $"(+{AlvaFormat.Hours(WeekAllocated - WeekAvailable)} ч)" : "")</span></span>
+        <AlvaStatusChip Tone="@(WeekAllocated > WeekAvailable ? AlvaTone.Critical : AlvaTone.Ok)">@(WeekAvailable > 0 ? $"{Pct(WeekAllocated, WeekAvailable)}%" : "—") @(WeekAllocated > WeekAvailable ? "перегруз" : "в балансе")</AlvaStatusChip></section>
+    <section class="alva-kpi"><span class="alva-kpi__label">Отпуск в периоде</span><span class="alva-num"><span class="alva-kpi__value">@AlvaFormat.Hours(WeekAbsence)</span> <span class="alva-kpi__unit">часов</span></span><p class="alva-kpi__note">@(NextAbsence is { } a ? $"Ближайшее: {a.From:d MMM}–{a.To:d MMM}, {a.Reason}" : "Отсутствий не запланировано")</p></section>
+</div>
+
+<div class="alva-person-layout">
+    <section class="alva-panel alva-weekdays" aria-label="Дни недели">
+        @for (var i = 0; i < 7; i++)
+        {
+            var date = _monday.AddDays(i);
+            var row = _rows.FirstOrDefault(r => r.Date == date);
+            var avail = row?.AvailableHours ?? 0;
+            var alloc = row?.AllocatedHours ?? 0;
+            var absence = _calendar?.Exceptions.FirstOrDefault(e => date >= e.From && date <= e.To);
+            var weekend = Nominal(date) == 0 && absence is null;
+            var tasks = TasksOn(date);
+            var state = weekend ? "off" : absence is not null ? "absence" : alloc > avail ? "over" : "ok";
+            <div class="alva-weekday alva-weekday--@state @(date == Today ? "alva-weekday--today" : "")" @key="date">
+                <div class="alva-weekday__head"><b>@date.ToString("ddd, d MMM")</b><span class="alva-num">@AlvaFormat.Hours(alloc) / @AlvaFormat.Hours(avail) ч</span></div>
+                <div class="alva-weekday__status">
+                    @switch (state)
+                    {
+                        case "off": <span>Выходной</span>; break;
+                        case "absence": <span><FlareIconView Value="@MaterialDesign3Icons.Regular.BeachAccess" Size="14px" /> @absence!.Reason</span>; break;
+                        case "over": <span><FlareIconView Value="@MaterialDesign3Icons.Regular.Warning" Size="14px" /> +@AlvaFormat.Hours(alloc - avail) ч овертайм</span>; break;
+                        default: <span>@(alloc == 0 ? "Свободен" : alloc >= avail ? "Полный день" : "Баланс нормы")</span>; break;
+                    }
+                </div>
+                @if (avail > 0) { <span class="alva-loadbar__track"><span class="alva-loadbar__fill alva-loadbar__fill--@(alloc > avail ? "critical" : "info")" style="width:@Math.Min(100, Pct(alloc, avail))%"></span></span> }
+                @foreach (var block in Blocks(date)) { <span class="alva-weekday__item alva-weekday__item--meeting"><FlareIconView Value="@MaterialDesign3Icons.Regular.Groups" Size="14px" /> @block.Name · @AlvaFormat.Hours(block.Hours) ч</span> }
+                @foreach (var task in tasks) { <a class="alva-weekday__item" href="@($"/tasks/{task.Id}")"><span class="alva-plan-card__code">@AlvaFormat.Code(task.Id)</span> @task.Title</a> }
+            </div>
+        }
+    </section>
+    <aside class="alva-person-side">
+        <section class="alva-panel">
+            <header class="alva-panel__header"><FlareIconView Value="@MaterialDesign3Icons.Regular.Assignment" Size="20px" Class="alva-panel__icon" /><h2 class="alva-panel__title">Задачи на неделе (@WeekTasks.Length)</h2></header>
+            @foreach (var task in WeekTasks)
+            {
+                <a class="alva-person-task" href="@($"/tasks/{task.Id}")" @key="task.Id">
+                    <span class="alva-person-task__top"><span class="alva-plan-card__code">@AlvaFormat.Code(task.Id)</span><AlvaStatusChip Tone="AlvaTones.Status(task.Status)">@Labels.Status(task.Status)</AlvaStatusChip></span>
+                    <span class="alva-person-task__title">@task.Title</span>
+                    <span class="alva-person-task__meta alva-num">Оценка: @(task.EstimateHours.HasValue ? $"{AlvaFormat.Hours(task.EstimateHours.Value)} ч" : "—")@(task.Deadline.HasValue ? $" · до {task.Deadline:d MMM}" : "")</span>
+                </a>
+            }
+            @if (WeekTasks.Length == 0) { <p class="alva-kpi__note">На этой неделе задач нет.</p> }
+        </section>
+        <section class="alva-panel">
+            <header class="alva-panel__header"><FlareIconView Value="@MaterialDesign3Icons.Regular.EventBusy" Size="20px" Class="alva-panel__icon" /><h2 class="alva-panel__title">Предстоящие отсутствия</h2></header>
+            @foreach (var ex in Upcoming) { <div class="alva-exception alva-exception--off"><span class="alva-exception__kind">@ex.Reason</span><b class="alva-num">@ex.From.ToString("d MMM") — @ex.To.ToString("d MMM yyyy")</b><span>@AlvaFormat.Hours(ex.AvailableHours) ч/день</span></div> }
+            @if (!Upcoming.Any()) { <p class="alva-kpi__note">Отпусков не запланировано.</p> }
+            <FlareButton Href="@($"/capacity/{ActorId}/schedule")" Variant="ButtonVariant.Tonal" Size="ButtonSize.Sm"><LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.Add" Size="18px" /></LeadingIcon><ChildContent>Отгул / отпуск</ChildContent></FlareButton>
+        </section>
+    </aside>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public Guid ActorId { get; set; }
+
+    private CalendarDto? _calendar;
+    private ActorModel[] _actors = [];
+    private TaskModel[] _tasks = [];
+    private SprintModel[] _sprints = [];
+    private CapacityDto[] _rows = [];
+    private DateOnly _monday = Monday(DateOnly.FromDateTime(DateTime.Today));
+    private string? _error;
+    private bool _busy;
+    private Guid _loadedFor;
+
+    private static DateOnly Today => DateOnly.FromDateTime(DateTime.Today);
+    private static DateOnly Monday(DateOnly d) => d.AddDays(-(((int)d.DayOfWeek + 6) % 7));
+    private ActorModel? Person => _actors.FirstOrDefault(a => a.Id == ActorId);
+    private IEnumerable<string> Tags => Person is null ? [] : _actors.Where(a => Person.RoleIds.Contains(a.Id) || Person.DepartmentIds.Contains(a.Id)).Select(a => a.Name);
+    private SprintModel? SprintOfWeek => _sprints.Where(s => s.StartDate <= _monday.AddDays(6) && s.EndDate >= _monday).OrderBy(s => s.StartDate).FirstOrDefault();
+    private static int Pct(decimal part, decimal whole) => whole <= 0 ? 0 : (int)Math.Round(part / whole * 100);
+
+    private decimal Nominal(DateOnly d) => _calendar is null ? 0 : d.DayOfWeek switch
+    {
+        DayOfWeek.Monday => _calendar.Monday, DayOfWeek.Tuesday => _calendar.Tuesday, DayOfWeek.Wednesday => _calendar.Wednesday,
+        DayOfWeek.Thursday => _calendar.Thursday, DayOfWeek.Friday => _calendar.Friday, DayOfWeek.Saturday => _calendar.Saturday, _ => _calendar.Sunday
+    };
+    private IEnumerable<RecurringBlockDto> Blocks(DateOnly d) => _calendar?.RecurringBlocks.Where(b => b.DayOfWeek == (int)d.DayOfWeek) ?? [];
+    private IEnumerable<DateOnly> Week => Enumerable.Range(0, 7).Select(i => _monday.AddDays(i));
+    private decimal WeekNominal => Week.Sum(Nominal);
+    private decimal WeekBlocks => Week.Sum(d => Math.Min(Nominal(d), Blocks(d).Sum(b => b.Hours)));
+    private decimal WeekAvailable => _rows.Sum(r => r.AvailableHours);
+    private decimal WeekAllocated => _rows.Sum(r => r.AllocatedHours);
+    private decimal WeekAbsence => Week.Where(d => _calendar?.Exceptions.Any(e => d >= e.From && d <= e.To) == true).Sum(d => Math.Max(0, Nominal(d) - _calendar!.Exceptions.First(e => d >= e.From && d <= e.To).AvailableHours));
+    private CalendarExceptionDto? NextAbsence => Upcoming.FirstOrDefault();
+    private IEnumerable<CalendarExceptionDto> Upcoming => _calendar is null ? [] : _calendar.Exceptions.Where(e => e.To >= Today).OrderBy(e => e.From);
+    private string Pattern
+    {
+        get
+        {
+            if (_calendar is null) return "—";
+            var work = new[] { _calendar.Monday, _calendar.Tuesday, _calendar.Wednesday, _calendar.Thursday, _calendar.Friday, _calendar.Saturday, _calendar.Sunday }.Count(h => h > 0);
+            return $"{work}/{7 - work}";
+        }
+    }
+
+    private TaskModel[] Mine => _tasks.Where(t => (t.ResolvedPersonId ?? t.AssignmentTargetId) == ActorId && t.Status is not ("Cancelled")).ToArray();
+
+    /// <summary>Окно задачи: даты задачи, иначе её спринт, иначе дедлайн.</summary>
+    private (DateOnly From, DateOnly To)? Window(TaskModel t)
+    {
+        var sprint = _sprints.FirstOrDefault(s => s.Id == t.SprintId);
+        var from = t.StartDate ?? sprint?.StartDate ?? t.Deadline;
+        var to = t.EndDate ?? sprint?.EndDate ?? t.Deadline ?? from;
+        return from is null || to is null ? null : (from.Value, to.Value < from.Value ? from.Value : to.Value);
+    }
+    private TaskModel[] TasksOn(DateOnly d) => Nominal(d) == 0 ? [] : Mine.Where(t => t.Status != "Done" && Window(t) is { } w && d >= w.From && d <= w.To).ToArray();
+    private TaskModel[] WeekTasks => Mine.Where(t => Window(t) is { } w && w.From <= _monday.AddDays(6) && w.To >= _monday).OrderBy(t => t.Status == "Done").ThenBy(t => t.Deadline ?? DateOnly.MaxValue).ToArray();
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (_loadedFor == ActorId) return;
+        await Run(async () =>
+        {
+            _actors = await Session.Get<ActorModel[]>(Session.TeamPath("actors"));
+            _tasks = await Session.Get<TaskModel[]>(Session.TeamPath("tasks"));
+            _sprints = await Session.Get<SprintModel[]>(Session.TeamPath("sprints"));
+            _calendar = await Session.Get<CalendarDto>(Session.TeamPath($"actors/{ActorId}/calendar"));
+            await LoadWeek();
+            _loadedFor = ActorId;
+        });
+    }
+
+    private async Task LoadWeek() =>
+        _rows = (await Session.Get<CapacityDto[]>(Session.TeamPath($"capacity?from={_monday:yyyy-MM-dd}&to={_monday.AddDays(6):yyyy-MM-dd}"))).Where(r => r.ActorId == ActorId).ToArray();
+
+    private Task Shift(int days) { _monday = _monday.AddDays(days); return Run(LoadWeek); }
+    private Task ThisWeek() { _monday = Monday(Today); return Run(LoadWeek); }
+
+    private async Task Run(Func<Task> action)
+    {
+        _busy = true; _error = null;
+        try { await action(); }
+        catch (Exception e) when (e is HttpRequestException or InvalidOperationException or NotSupportedException) { _error = e.Message; }
+        finally { _busy = false; }
+    }
+}

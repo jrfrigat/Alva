@@ -1,61 +1,33 @@
 @page "/capacity"
+@page "/capacity/people"
 @page "/capacity/{ActorId:guid}"
+@page "/capacity/{ActorId:guid}/schedule"
 @inject AlvaSession Session
-<PageTitle>Ёмкость · Alva</PageTitle>
-@if(ActorId is null && Session.TeamId is not null){<CapacityOverview />}
-else
-{
-<AlvaPageHeader Category="Ресурсы · Ёмкость" Title="Ёмкость команды" Description="Доступные часы и назначенная работа за выбранный период." />
-<PageFeedback Loading="_busy" Error="@_error" />
-@if(Session.TeamId is null){<TeamRequired />}
-else
-{
-<FlareStack Row Wrap Align="FlareAlignItems.End"><FlareDatePicker Label="С" @bind-Value="_from" /><FlareDatePicker Label="По" @bind-Value="_to" Min="_from" /><FlareButton Size="ButtonSize.Sm" OnClick="Load" Disabled="_busy">Показать</FlareButton></FlareStack>
-@if(_days.Length>0){<FlareChart Type="ChartType.Bar" Data="Chart" Height="260" aria-label="Доступные и назначенные часы по людям" />}
-<FlareDataGrid TItem="CapacitySummary" Items="Summary" Height="auto" Hoverable Dense="true"><Columns>
-    <FlareColumn TItem="CapacitySummary" Title="Человек" Field="a=>a!.Name"><Template Context="person"><FlareButton Href="@($"/capacity/{person!.Id}")" Variant="ButtonVariant.Text" Size="ButtonSize.Sm">@person.Name</FlareButton></Template></FlareColumn>
-    <FlareColumn TItem="CapacitySummary" Title="Доступно, ч" Field="a=>a!.Available" Sortable />
-    <FlareColumn TItem="CapacitySummary" Title="Назначено, ч" Field="a=>a!.Allocated" Sortable />
-    <FlareColumn TItem="CapacitySummary" Title="Перегрузка, ч" Field="a=>Math.Max(0,a!.Allocated-a.Available)" />
-    <FlareColumn TItem="CapacitySummary" Title="Статус"><Template Context="person"><AlvaStatusChip Tone="AlvaTones.Capacity(person!.Allocated,person.Available)">@(person.Allocated>person.Available?"Перегруз":"Норма")</AlvaStatusChip></Template></FlareColumn>
-</Columns><EmptyStateContent><FlareEmptyState Compact Title="Нет данных о доступности" Description="Добавьте людей команды и настройте рабочие графики." /></EmptyStateContent></FlareDataGrid>
-<FlareCalendar Events="Events" InitialDate="_from" MondayFirst />
-@if(_calendar is not null)
-{
-<FlareCard Variant="CardVariant.Outlined"><FlareCardContent><FlareStack Gap="FlareSpacing.Large">
-    <FlareText Element="h2" Typo="TypographyScale.TitleLarge">Рабочий график · @_actors.FirstOrDefault(a=>a.Id==ActorId)?.Name</FlareText>
-    <FlareTextField Label="Часовой пояс IANA" @bind-Value="_timeZone" HelperText="Например, Europe/Moscow" />
-    <FlareGrid MinColumnWidth="min(100%,10rem)">@for(var i=0;i<7;i++){var day=i;<FlareNumericField TValue="decimal" Label="@DayNames[day]" Value="_hours[day]" ValueChanged="(decimal value)=>_hours[day]=value" Min="0" Max="24" Suffix="ч" />}</FlareGrid>
-    <FlareButton OnClick="SaveCalendar" Loading="_busy">Сохранить график</FlareButton>
-    <FlareText Element="h3" Typo="TypographyScale.TitleMedium">Отпуска и исключения</FlareText>
-    @foreach(var exception in _calendar.Exceptions){<FlareStack Row StretchFirst><FlareText>@exception.From.ToString("dd.MM") — @exception.To.ToString("dd.MM") · @exception.Reason · @exception.AvailableHours ч/день</FlareText><FlareButton Variant="ButtonVariant.Text" Size="ButtonSize.Sm" OnClick="()=>DeleteException(exception.Id)">Удалить</FlareButton></FlareStack>}
-    <FlareGrid MinColumnWidth="min(100%,12rem)"><FlareDatePicker Label="Начало отсутствия" @bind-Value="_exceptionFrom" /><FlareDatePicker Label="Окончание отсутствия" @bind-Value="_exceptionTo" Min="_exceptionFrom" /><FlareNumericField TValue="decimal" Label="Доступно часов в день" @bind-Value="_exceptionHours" Min="0" Max="24" /><FlareTextField Label="Причина" @bind-Value="_reason" /></FlareGrid>
-    <FlareButton Variant="ButtonVariant.Tonal" OnClick="AddException" Disabled="@(!_exceptionFrom.HasValue || !_exceptionTo.HasValue || string.IsNullOrWhiteSpace(_reason) || _busy)">Добавить исключение</FlareButton>
-    <FlareText Element="h3" Typo="TypographyScale.TitleMedium">Повторяющиеся блоки</FlareText>
-    @foreach(var block in _calendar.RecurringBlocks){<FlareStack Row StretchFirst><FlareText>@block.Name · @BlockDay(block.DayOfWeek) · @block.Hours ч</FlareText><FlareButton Variant="ButtonVariant.Text" Size="ButtonSize.Sm" OnClick="()=>DeleteBlock(block.Id)">Удалить</FlareButton></FlareStack>}
-    <FlareGrid MinColumnWidth="min(100%,12rem)"><FlareTextField Label="Название блока" @bind-Value="_blockName" /><FlareSelect TValue="int" Label="День недели" Items="Enumerable.Range(0,7)" ItemLabel="BlockDay" @bind-Value="_blockDay" /><FlareNumericField TValue="decimal" Label="Часы" @bind-Value="_blockHours" Min="0" Max="24" /></FlareGrid>
-    <FlareButton Variant="ButtonVariant.Tonal" OnClick="AddBlock" Disabled="@(string.IsNullOrWhiteSpace(_blockName) || _busy)">Добавить блок</FlareButton>
-</FlareStack></FlareCardContent></FlareCard>
-}
-}
-}
+@inject NavigationManager Navigation
+@* Раздел «Ёмкость»: обзор (p14), командный календарь (p15), календарь сотрудника (p15.1) и
+   редактор рабочего графика (p16). *@
+<PageTitle>@Title · Alva</PageTitle>
+@if (!_ready || _error is not null) { <PageFeedback Loading="!_ready" Error="@_error" /> }
+else if (Session.TeamId is null) { <TeamRequired /> }
+else if (ActorId is { } id && Schedule) { <ScheduleEditor ActorId="id" /> }
+else if (ActorId is { } person) { <PersonCalendar ActorId="person" /> }
+else if (People) { <TeamCalendar /> }
+else { <CapacityOverview /> }
 @code {
-    [Parameter]public Guid? ActorId{get;set;}
-    private CapacityDto[] _days=[];private ActorModel[] _actors=[];private CalendarDto? _calendar;private bool _busy;private string? _error,_reason,_blockName;private string _timeZone="Europe/Moscow";private decimal[] _hours=new decimal[7];private decimal _exceptionHours,_blockHours;private int _blockDay=1;private DateOnly? _from=DateOnly.FromDateTime(DateTime.Today),_to=DateOnly.FromDateTime(DateTime.Today.AddDays(13)),_exceptionFrom,_exceptionTo;
-    private static readonly string[] DayNames=["Понедельник","Вторник","Среда","Четверг","Пятница","Суббота","Воскресенье"];
-    private string CalendarPath=>Session.TeamPath($"actors/{ActorId}/calendar");
-    private string BlockDay(int day)=>DayNames[(day+6)%7];
-    private IEnumerable<CapacitySummary> Summary=>_days.GroupBy(d=>new{d.ActorId,d.ActorName}).Select(g=>new CapacitySummary(g.Key.ActorId,g.Key.ActorName,g.Sum(d=>d.AvailableHours),g.Sum(d=>d.AllocatedHours)));
-    private ChartData Chart=>new([new ChartSeries("Доступно",Summary.Select(x=>(double)x.Available).ToArray()),new ChartSeries("Назначено",Summary.Select(x=>(double)x.Allocated).ToArray())],Summary.Select(x=>x.Name).ToArray());
-    private IReadOnlyList<CalendarEvent> Events=>_days.Where(d=>!ActorId.HasValue||d.ActorId==ActorId).GroupBy(d=>d.Date).Select(g=>new CalendarEvent($"{g.Sum(x=>x.AllocatedHours):0.#} / {g.Sum(x=>x.AvailableHours):0.#} ч",g.Key,g.Sum(x=>x.AllocatedHours)>g.Sum(x=>x.AvailableHours)?FlareColor.Error:FlareColor.Primary)).ToArray();
-    protected override async Task OnParametersSetAsync()=>await Load();
-    private async Task Run(Func<Task> action){_busy=true;_error=null;try{await action();}catch(Exception e) when(e is HttpRequestException or InvalidOperationException){_error=e.Message;}finally{_busy=false;}}
-    private Task Load()=>Run(async()=>{await Session.Initialize();if(Session.TeamId is null)return;_actors=await Session.Get<ActorModel[]>(Session.TeamPath("actors"));if(_from.HasValue&&_to.HasValue)_days=await Session.Get<CapacityDto[]>(Session.TeamPath($"capacity?from={_from:yyyy-MM-dd}&to={_to:yyyy-MM-dd}"));_calendar=null;if(ActorId.HasValue)await LoadCalendar();});
-    private async Task LoadCalendar(){_calendar=await Session.Get<CalendarDto>(CalendarPath);_timeZone=_calendar.TimeZone;_hours=[_calendar.Monday,_calendar.Tuesday,_calendar.Wednesday,_calendar.Thursday,_calendar.Friday,_calendar.Saturday,_calendar.Sunday];}
-    private Task SaveCalendar()=>Run(async()=>{await Session.Send(HttpMethod.Put,CalendarPath,new CalendarRequest(_timeZone,_hours[0],_hours[1],_hours[2],_hours[3],_hours[4],_hours[5],_hours[6]));await LoadCalendar();});
-    private Task AddException()=>Run(async()=>{await Session.Send(HttpMethod.Post,CalendarPath+"/exceptions",new CalendarExceptionRequest(_exceptionFrom!.Value,_exceptionTo!.Value,_exceptionHours,_reason!));await LoadCalendar();});
-    private Task DeleteException(Guid id)=>Run(async()=>{await Session.Send(HttpMethod.Delete,CalendarPath+$"/exceptions/{id}",new{});await LoadCalendar();});
-    private Task AddBlock()=>Run(async()=>{await Session.Send(HttpMethod.Post,CalendarPath+"/blocks",new RecurringBlockRequest(_blockDay,_blockHours,_blockName!));await LoadCalendar();});
-    private Task DeleteBlock(Guid id)=>Run(async()=>{await Session.Send(HttpMethod.Delete,CalendarPath+$"/blocks/{id}",new{});await LoadCalendar();});
-    private record CapacitySummary(Guid Id,string Name,decimal Available,decimal Allocated);
+    [Parameter] public Guid? ActorId { get; set; }
+
+    private string Path => new Uri(Navigation.Uri).AbsolutePath;
+    private bool Schedule => Path.EndsWith("/schedule", StringComparison.Ordinal);
+    private bool People => Path.EndsWith("/people", StringComparison.Ordinal);
+    private string Title => ActorId is null ? People ? "Графики людей" : "Ёмкость" : Schedule ? "Редактор графика" : "Календарь сотрудника";
+
+    private bool _ready;
+    private string? _error;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try { await Session.Initialize(); }
+        catch (Exception e) when (e is HttpRequestException or InvalidOperationException) { _error = e.Message; }
+        finally { _ready = true; }
+    }
 }

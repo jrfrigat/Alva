@@ -1,0 +1,225 @@
+@* Редактор рабочего графика по макету p16: часы по дням недели, повторяющиеся вычеты, отпуска и
+   праздники, расчёт ёмкости и применение графика к другим сотрудникам. *@
+@inject AlvaSession Session
+<section class="alva-page-header">
+    <div class="alva-page-header__text">
+        <FlareBreadcrumb Items="@(new BreadcrumbItem[] { new("Ёмкость", "/capacity"), new("Графики людей", "/capacity/people"), new(Person?.Name ?? "Сотрудник", $"/capacity/{ActorId}"), new("Редактор графика") })" Separator="›" AriaLabel="Путь к редактору" />
+        <h1 class="alva-page-header__title">Редактор рабочего графика</h1>
+        <p class="alva-page-header__desc">Рабочие часы, выходные, отпуска и повторяющиеся нерабочие интервалы @(Person is null ? "" : $"для {Person.Name}") — с проекцией на ёмкость спринтов.</p>
+    </div>
+    <div class="alva-page-header__actions">
+        <FlareButton Variant="ButtonVariant.Tonal" Size="ButtonSize.Sm" OnClick="Reset" Disabled="@(!Dirty)"><LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.Undo" Size="18px" /></LeadingIcon><ChildContent>Сбросить изменения</ChildContent></FlareButton>
+        <FlareButton Variant="ButtonVariant.Tonal" Size="ButtonSize.Sm" OnClick="() => _applyOpen = !_applyOpen"><LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.GroupAdd" Size="18px" /></LeadingIcon><ChildContent>Применить к выбранным сотрудникам</ChildContent></FlareButton>
+        <FlareButton Size="ButtonSize.Sm" Loading="_busy" OnClick="Save" Disabled="@(!Dirty)"><LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.Save" Size="18px" /></LeadingIcon><ChildContent>Сохранить график</ChildContent></FlareButton>
+    </div>
+</section>
+<PageFeedback Error="@_error" />
+@if (_saved) { <FlareAlert Severity="AlertSeverity.Success" Title="График сохранён">Ёмкость пересчитана по новому графику.</FlareAlert> }
+
+@if (_applyOpen)
+{
+    <section class="alva-panel">
+        <header class="alva-panel__header"><FlareIconView Value="@MaterialDesign3Icons.Regular.GroupAdd" Size="20px" Class="alva-panel__icon" /><div><h2 class="alva-panel__title">Применить недельные часы к сотрудникам</h2><p class="alva-panel__subtitle">Часовой пояс и часы по дням копируются; отпуска и вычеты у каждого остаются свои.</p></div></header>
+        <div class="alva-apply-list">
+            @foreach (var person in _people.Where(p => p.Id != ActorId))
+            {
+                <FlareCheckbox TValue="bool" Value="_applyTo.Contains(person.Id)" ValueChanged="(bool on) => Toggle(person.Id, on)">@person.Name</FlareCheckbox>
+            }
+        </div>
+        <FlareStack Row><FlareButton Size="ButtonSize.Sm" Loading="_busy" Disabled="@(_applyTo.Count == 0)" OnClick="Apply">Применить к @_applyTo.Count @AlvaFormat.Plural(_applyTo.Count, "сотруднику", "сотрудникам", "сотрудникам")</FlareButton></FlareStack>
+    </section>
+}
+
+@if (_calendar is not null)
+{
+<div class="alva-schedule">
+    <div class="alva-schedule__main">
+        <section class="alva-panel">
+            <header class="alva-panel__header"><FlareIconView Value="@MaterialDesign3Icons.Regular.EditCalendar" Size="20px" Class="alva-panel__icon" /><div><h2 class="alva-panel__title">Рабочая неделя @(Person?.Name)</h2><p class="alva-panel__subtitle">Базовый цикл рабочей недели и часовой пояс</p></div></header>
+            <div class="alva-schedule__meta">
+                <span class="alva-chip alva-chip--info alva-num">Недельный фонд: @AlvaFormat.Hours(_hours.Sum()) ч</span>
+                <FlareTextField Label="Часовой пояс IANA" @bind-Value="_timeZone" HelperText="Например, Europe/Moscow" />
+            </div>
+            <div class="alva-week" role="table" aria-label="Рабочие часы по дням недели">
+                <div class="alva-week__row alva-week__row--head" role="row"><span role="columnheader">День недели</span><span role="columnheader">Рабочий</span><span role="columnheader">Часов в день</span><span role="columnheader">Вычеты</span><span role="columnheader">Чистые часы</span></div>
+                @for (var i = 0; i < 7; i++)
+                {
+                    var day = i;
+                    var blocks = BlocksOn(day);
+                    <div class="alva-week__row @(_hours[day] == 0 ? "alva-week__row--off" : "")" role="row" @key="day">
+                        <span role="cell" class="alva-week__day"><span class="alva-week__abbr">@Abbr[day]</span>@DayNames[day]</span>
+                        <span role="cell"><FlareSwitch Value="@(_hours[day] > 0)" ValueChanged="(bool on) => _hours[day] = on ? (_lastHours[day] > 0 ? _lastHours[day] : 8) : Remember(day)" Label="@($"{DayNames[day]}: рабочий день")" /></span>
+                        <span role="cell">@if (_hours[day] > 0) { <FlareNumericField TValue="decimal" Value="_hours[day]" ValueChanged="(decimal v) => _hours[day] = v" Min="0" Max="24" Step="0.5" Suffix="ч" InputAttributes="@(new Dictionary<string, object> { ["aria-label"] = $"Часы: {DayNames[day]}" })" Size="FieldSize.Sm" /> } else { <span class="alva-week__muted">Выходной день</span> }</span>
+                        <span role="cell" class="alva-num alva-week__muted">@(blocks > 0 ? $"−{AlvaFormat.Hours(blocks)} ч" : "—")</span>
+                        <span role="cell" class="alva-num alva-week__net">@AlvaFormat.Hours(Math.Max(0, _hours[day] - blocks)) ч</span>
+                    </div>
+                }
+            </div>
+        </section>
+
+        <section class="alva-panel">
+            <header class="alva-panel__header alva-panel__header--split">
+                <div class="alva-panel__header"><FlareIconView Value="@MaterialDesign3Icons.Regular.EventRepeat" Size="20px" Class="alva-panel__icon" /><div><h2 class="alva-panel__title">Повторяющиеся вычеты</h2><p class="alva-panel__subtitle">Регулярные встречи и церемонии, которые исключаются из фокусного времени</p></div></div>
+                <span class="alva-chip alva-chip--info alva-num">Вычет: −@AlvaFormat.Hours(_calendar.RecurringBlocks.Sum(b => b.Hours)) ч / нед</span>
+            </header>
+            @foreach (var block in _calendar.RecurringBlocks.OrderBy(b => (b.DayOfWeek + 6) % 7))
+            {
+                <div class="alva-deduct" @key="block.Id">
+                    <span class="alva-deduct__icon"><FlareIconView Value="@MaterialDesign3Icons.Regular.Groups" Size="18px" /></span>
+                    <span class="alva-deduct__text"><b>@block.Name</b><small>@DayNames[(block.DayOfWeek + 6) % 7] · еженедельно</small></span>
+                    <span class="alva-chip alva-chip--info alva-num">@AlvaFormat.Hours(block.Hours) ч/нед</span>
+                    <FlareIconButton Icon="@MaterialDesign3Icons.Regular.Delete" Size="ButtonSize.Sm" Tooltip="Удалить вычет" AriaLabel="@($"Удалить вычет «{block.Name}»")" OnClick="() => DeleteBlock(block.Id)" />
+                </div>
+            }
+            <div class="alva-inline-form">
+                <FlareTextField Label="Встреча или интервал" @bind-Value="_blockName" Immediate Size="FieldSize.Sm" />
+                <FlareSelect TValue="int" Label="День" Items="Enumerable.Range(0, 7)" ItemLabel="i => DayNames[i]" @bind-Value="_blockDay" Size="FieldSize.Sm" />
+                <FlareNumericField TValue="decimal" Label="Часы" @bind-Value="_blockHours" Min="0" Max="24" Step="0.5" Size="FieldSize.Sm" />
+                <FlareButton Variant="ButtonVariant.Text" Size="ButtonSize.Sm" OnClick="AddBlock" Disabled="@(string.IsNullOrWhiteSpace(_blockName) || _blockHours <= 0 || _busy)"><LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.Add" Size="18px" /></LeadingIcon><ChildContent>Добавить нерабочий интервал</ChildContent></FlareButton>
+            </div>
+        </section>
+
+        <section class="alva-panel">
+            <header class="alva-panel__header"><FlareIconView Value="@MaterialDesign3Icons.Regular.BeachAccess" Size="20px" Class="alva-panel__icon" /><div><h2 class="alva-panel__title">Отпуска, отсутствия и праздники</h2><p class="alva-panel__subtitle">Периоды со своей доступностью — заменяют обычные часы дня</p></div></header>
+            <div class="alva-exceptions">
+                @foreach (var ex in _calendar.Exceptions.OrderBy(e => e.From))
+                {
+                    <div class="alva-exception @(ex.AvailableHours == 0 ? "alva-exception--off" : "")" @key="ex.Id">
+                        <span class="alva-exception__kind">@(ex.AvailableHours == 0 ? "Нерабочий период" : "Сокращённый период")</span>
+                        <b class="alva-num">@(ex.From == ex.To ? ex.From.ToString("d MMMM") : $"{ex.From:d MMM} — {ex.To:d MMM}")</b>
+                        <span>@ex.Reason (@AlvaFormat.Hours(ex.AvailableHours) ч/день)</span>
+                        <FlareIconButton Icon="@MaterialDesign3Icons.Regular.Delete" Size="ButtonSize.Sm" Tooltip="Удалить период" AriaLabel="@($"Удалить «{ex.Reason}»")" OnClick="() => DeleteException(ex.Id)" />
+                    </div>
+                }
+                @if (_calendar.Exceptions.Length == 0) { <p class="alva-kpi__note">Отпусков и праздников не задано.</p> }
+            </div>
+            <div class="alva-inline-form">
+                <FlareDatePicker Label="С" @bind-Value="_exFrom" Size="FieldSize.Sm" />
+                <FlareDatePicker Label="По" @bind-Value="_exTo" Min="_exFrom" Size="FieldSize.Sm" />
+                <FlareNumericField TValue="decimal" Label="Часов в день" @bind-Value="_exHours" Min="0" Max="24" Step="0.5" Size="FieldSize.Sm" />
+                <FlareTextField Label="Причина" @bind-Value="_exReason" Immediate Size="FieldSize.Sm" />
+                <FlareButton Variant="ButtonVariant.Text" Size="ButtonSize.Sm" OnClick="AddException" Disabled="@(!_exFrom.HasValue || !_exTo.HasValue || string.IsNullOrWhiteSpace(_exReason) || _busy)"><LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.Add" Size="18px" /></LeadingIcon><ChildContent>Добавить период</ChildContent></FlareButton>
+            </div>
+        </section>
+    </div>
+
+    <aside class="alva-schedule__side">
+        <section class="alva-panel">
+            <header class="alva-panel__header"><FlareIconView Value="@MaterialDesign3Icons.Regular.Calculate" Size="20px" Class="alva-panel__icon" /><h2 class="alva-panel__title">Расчёт ёмкости на 2 недели</h2></header>
+            <div class="alva-ring" style="--alva-ring:@Pct(Net, Nominal)">
+                <span class="alva-ring__value alva-num">@AlvaFormat.Hours(Net)</span><span class="alva-ring__label">чистых часов</span><span class="alva-ring__pct alva-num">@Pct(Net, Nominal)% от номинала</span>
+            </div>
+            <div class="alva-calc">
+                <div><span>Номинал по графику (@AlvaFormat.WorkDays(Today, Today.AddDays(13)) раб. дн.)</span><b class="alva-num">@AlvaFormat.Hours(Nominal) ч</b></div>
+                <div class="alva-calc--minus"><span>Отпуска и праздники</span><b class="alva-num">−@AlvaFormat.Hours(ExceptionLoss) ч</b></div>
+                <div class="alva-calc--info"><span>Регулярные вычеты</span><b class="alva-num">−@AlvaFormat.Hours(BlockLoss) ч</b></div>
+                <div class="alva-calc--total"><span>Фонд на 2 недели</span><b class="alva-num">~@AlvaFormat.Hours(Net) ч</b></div>
+            </div>
+            @if (Dirty) { <p class="alva-kpi__note">Расчёт по сохранённому графику; новые часы учтутся после сохранения.</p> }
+        </section>
+        <section class="alva-panel">
+            <header class="alva-panel__header"><FlareIconView Value="@MaterialDesign3Icons.Regular.Person" Size="20px" Class="alva-panel__icon" /><h2 class="alva-panel__title">Сотрудники команды</h2></header>
+            @foreach (var person in _people)
+            {
+                <a class="alva-person-link @(person.Id == ActorId ? "alva-person-link--active" : "")" href="@($"/capacity/{person.Id}/schedule")" @key="person.Id"><span class="alva-slot__mark" aria-hidden="true">@AlvaFormat.Initials(person.Name)</span><span>@person.Name</span></a>
+            }
+        </section>
+    </aside>
+</div>
+}
+
+@code {
+    [Parameter, EditorRequired] public Guid ActorId { get; set; }
+
+    private static readonly string[] DayNames = ["Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота", "Воскресенье"];
+    private static readonly string[] Abbr = ["ПН", "ВТ", "СР", "ЧТ", "ПТ", "СБ", "ВС"];
+    private CalendarDto? _calendar;
+    private ActorModel[] _people = [];
+    private CapacityDto[] _window = [];
+    private decimal[] _hours = new decimal[7], _lastHours = new decimal[7];
+    private string _timeZone = "Europe/Moscow";
+    private readonly HashSet<Guid> _applyTo = [];
+    private bool _busy, _applyOpen, _saved;
+    private string? _error, _blockName, _exReason;
+    private int _blockDay;
+    private decimal _blockHours = 1, _exHours;
+    private DateOnly? _exFrom, _exTo;
+    private Guid _loadedFor;
+
+    private static DateOnly Today => DateOnly.FromDateTime(DateTime.Today);
+    private ActorModel? Person => _people.FirstOrDefault(p => p.Id == ActorId);
+    private decimal[] Saved => _calendar is null ? new decimal[7] : [_calendar.Monday, _calendar.Tuesday, _calendar.Wednesday, _calendar.Thursday, _calendar.Friday, _calendar.Saturday, _calendar.Sunday];
+    private bool Dirty => _calendar is not null && (!_hours.SequenceEqual(Saved) || _timeZone != _calendar.TimeZone);
+
+    /// <summary>Вычеты блоков в день недели (0 — понедельник в порядке экрана).</summary>
+    private decimal BlocksOn(int screenDay) => _calendar?.RecurringBlocks.Where(b => (b.DayOfWeek + 6) % 7 == screenDay).Sum(b => b.Hours) ?? 0;
+    private decimal Remember(int day) { _lastHours[day] = _hours[day]; return 0; }
+
+    private decimal Nominal => Enumerable.Range(0, 14).Select(i => Today.AddDays(i)).Sum(d => Saved[((int)d.DayOfWeek + 6) % 7]);
+    private decimal Net => _window.Sum(r => r.AvailableHours);
+    private decimal BlockLoss => Enumerable.Range(0, 14).Select(i => Today.AddDays(i))
+        .Where(d => _calendar is not null && !_calendar.Exceptions.Any(e => d >= e.From && d <= e.To))
+        .Sum(d => Math.Min(Saved[((int)d.DayOfWeek + 6) % 7], BlocksOn(((int)d.DayOfWeek + 6) % 7)));
+    private decimal ExceptionLoss => Math.Max(0, Nominal - BlockLoss - Net);
+    private static int Pct(decimal part, decimal whole) => whole <= 0 ? 0 : (int)Math.Round(part / whole * 100);
+    private string CalendarPath => Session.TeamPath($"actors/{ActorId}/calendar");
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (_loadedFor == ActorId) return;
+        _applyTo.Clear(); _saved = false;
+        await Run(async () =>
+        {
+            _people = (await Session.Get<ActorModel[]>(Session.TeamPath("actors"))).Where(a => a.Kind == "Person").OrderBy(a => a.Name).ToArray();
+            await LoadCalendar();
+            _loadedFor = ActorId;
+        });
+    }
+
+    private async Task LoadCalendar()
+    {
+        _calendar = await Session.Get<CalendarDto>(CalendarPath);
+        _timeZone = _calendar.TimeZone;
+        _hours = Saved.ToArray();
+        _lastHours = Saved.ToArray();
+        _window = (await Session.Get<CapacityDto[]>(Session.TeamPath($"capacity?from={Today:yyyy-MM-dd}&to={Today.AddDays(13):yyyy-MM-dd}"))).Where(r => r.ActorId == ActorId).ToArray();
+    }
+
+    private void Reset() { _hours = Saved.ToArray(); _timeZone = _calendar!.TimeZone; }
+    private void Toggle(Guid id, bool on) { if (on) _applyTo.Add(id); else _applyTo.Remove(id); }
+    private CalendarRequest Request => new(_timeZone, _hours[0], _hours[1], _hours[2], _hours[3], _hours[4], _hours[5], _hours[6]);
+
+    private Task Save() => Run(async () => { await Session.Send(HttpMethod.Put, CalendarPath, Request); await LoadCalendar(); _saved = true; });
+
+    private Task Apply() => Run(async () =>
+    {
+        foreach (var id in _applyTo) await Session.Send(HttpMethod.Put, Session.TeamPath($"actors/{id}/calendar"), Request);
+        _applyTo.Clear(); _applyOpen = false; _saved = true;
+    });
+
+    private Task AddBlock() => Run(async () =>
+    {
+        await Session.Send(HttpMethod.Post, CalendarPath + "/blocks", new RecurringBlockRequest((_blockDay + 1) % 7, _blockHours, _blockName!.Trim()));
+        _blockName = null;
+        await LoadCalendar();
+    });
+
+    private Task DeleteBlock(Guid id) => Run(async () => { await Session.Send(HttpMethod.Delete, CalendarPath + $"/blocks/{id}", new { }); await LoadCalendar(); });
+
+    private Task AddException() => Run(async () =>
+    {
+        await Session.Send(HttpMethod.Post, CalendarPath + "/exceptions", new CalendarExceptionRequest(_exFrom!.Value, _exTo!.Value, _exHours, _exReason!.Trim()));
+        _exFrom = _exTo = null; _exReason = null;
+        await LoadCalendar();
+    });
+
+    private Task DeleteException(Guid id) => Run(async () => { await Session.Send(HttpMethod.Delete, CalendarPath + $"/exceptions/{id}", new { }); await LoadCalendar(); });
+
+    private async Task Run(Func<Task> action)
+    {
+        _busy = true; _error = null;
+        try { await action(); }
+        catch (Exception e) when (e is HttpRequestException or InvalidOperationException or NotSupportedException) { _error = e.Message; }
+        finally { _busy = false; }
+    }
+}

@@ -32,7 +32,8 @@ public static class NavigationItems
         ]),
         new("Ёмкость",
         [
-            new("/capacity", "Обзор ёмкости", Flare.Icons.MaterialDesign3Icons.Regular.Speed, true)
+            new("/capacity", "Обзор ёмкости", Flare.Icons.MaterialDesign3Icons.Regular.Speed, true),
+            new("/capacity/people", "Графики людей", Flare.Icons.MaterialDesign3Icons.Regular.QueryStats, false)
         ]),
         new("Команда",
         [

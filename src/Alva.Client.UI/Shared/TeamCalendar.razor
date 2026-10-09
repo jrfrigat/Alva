@@ -1,0 +1,166 @@
+@* Командный календарь по макету p15: месяц сеткой с доступными часами команды или выбранного
+   сотрудника, отпусками, встречами и днями перегрузки. *@
+@inject AlvaSession Session
+<section class="alva-page-header">
+    <div class="alva-page-header__text">
+        <div class="alva-micro-label"><span>Ёмкость · Графики людей</span></div>
+        <h1 class="alva-page-header__title">Графики людей и доступность команды</h1>
+        <p class="alva-page-header__desc">Рабочие часы, отпуска и регулярные встречи каждого человека — и сколько чистого времени остаётся у команды по дням.</p>
+    </div>
+    <div class="alva-page-header__actions">
+        <FlareIconButton Icon="@MaterialDesign3Icons.Regular.ChevronLeft" Size="ButtonSize.Sm" AriaLabel="Предыдущий месяц" OnClick="() => Shift(-1)" />
+        <span class="alva-month alva-num"><FlareIconView Value="@MaterialDesign3Icons.Regular.CalendarMonth" Size="18px" /> @_month.ToString("MMMM yyyy")</span>
+        <FlareIconButton Icon="@MaterialDesign3Icons.Regular.ChevronRight" Size="ButtonSize.Sm" AriaLabel="Следующий месяц" OnClick="() => Shift(1)" />
+        <FlareButton Variant="ButtonVariant.Text" Size="ButtonSize.Sm" OnClick="ThisMonth">Сегодня</FlareButton>
+        @if (Focus is { } f) { <FlareButton Href="@($"/capacity/{f.Id}/schedule")" Size="ButtonSize.Sm"><LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.EventBusy" Size="18px" /></LeadingIcon><ChildContent>+ Отсутствие / отпуск</ChildContent></FlareButton> }
+    </div>
+</section>
+<PageFeedback Error="@_error" Loading="_busy" />
+
+<div class="alva-kpis">
+    <section class="alva-kpi"><div class="alva-kpi__head"><div><span class="alva-kpi__label">Активный состав команды</span><span class="alva-num"><span class="alva-kpi__value">@People.Length</span> <span class="alva-kpi__unit">@AlvaFormat.Plural(People.Length, "человек", "человека", "человек")</span></span></div><span class="alva-kpi__icon"><FlareIconView Value="@MaterialDesign3Icons.Regular.Badge" Size="18px" /></span></div><p class="alva-kpi__note">С рабочим графиком в этом месяце</p></section>
+    <section class="alva-kpi"><div class="alva-kpi__head"><div><span class="alva-kpi__label">Запланированные отсутствия</span><span class="alva-num"><span class="alva-kpi__value">@MonthAbsences.Count()</span> <span class="alva-kpi__unit">(−@AlvaFormat.Hours(AbsenceHours) ч)</span></span></div><span class="alva-kpi__icon"><FlareIconView Value="@MaterialDesign3Icons.Regular.BeachAccess" Size="18px" /></span></div><p class="alva-kpi__note">@(MonthAbsences.Any() && MonthAbsences.First() is var a ? $"{a.Name}: {a.Ex.From:d}–{a.Ex.To:d MMM}" : "Отпусков в месяце нет")</p></section>
+    <section class="alva-kpi"><div class="alva-kpi__head"><div><span class="alva-kpi__label">Повторяющиеся встречи</span><span class="alva-num"><span class="alva-kpi__value">@AlvaFormat.Hours(MeetingsPerPerson)</span> <span class="alva-kpi__unit">ч / нед / чел.</span></span></div><span class="alva-kpi__icon"><FlareIconView Value="@MaterialDesign3Icons.Regular.Groups" Size="18px" /></span></div><p class="alva-kpi__note">Вычеты из фокусного времени</p></section>
+    <section class="alva-kpi"><div class="alva-kpi__head"><div><span class="alva-kpi__label alva-kpi__label--primary">Эффективный фонд команды</span><span class="alva-num"><span class="alva-kpi__value">@AlvaFormat.Hours(Effective)</span> <span class="alva-kpi__unit">чистых часов</span></span></div><span class="alva-kpi__icon"><FlareIconView Value="@MaterialDesign3Icons.Regular.Speed" Size="18px" /></span></div><p class="alva-kpi__note alva-num">из @AlvaFormat.Hours(NominalMonth) ч номинала (@Pct(Effective, NominalMonth)%)</p></section>
+</div>
+
+<div class="alva-capacity-bar">
+    <span class="alva-capacity-bar__label"><FlareIconView Value="@MaterialDesign3Icons.Regular.FilterList" Size="16px" /> Фильтр инженера:</span>
+    <div class="alva-quickfilter" role="group" aria-label="Фильтр инженера">
+        <button type="button" class="alva-quickfilter__item @(_focus is null ? "alva-quickfilter__item--active" : "")" aria-pressed="@(_focus is null)" @onclick="() => _focus = null">Все (@People.Length)</button>
+        @foreach (var person in People)
+        {
+            <button type="button" class="alva-quickfilter__item alva-quickfilter__item--person @(_focus == person.Id ? "alva-quickfilter__item--active" : "")" aria-pressed="@(_focus == person.Id)" @onclick="() => _focus = person.Id"><span class="alva-slot__mark" aria-hidden="true">@AlvaFormat.Initials(person.Name)</span>@person.Name</button>
+        }
+    </div>
+    <div class="alva-heat-legend alva-heat-legend--inline">
+        <span><i class="alva-heat--balance"></i>Рабочий день</span><span><i class="alva-heat--absence"></i>Отпуск / отсутствие</span><span><i class="alva-heat--critical"></i>Перегрузка</span><span><i class="alva-heat--empty"></i>Выходной</span>
+    </div>
+</div>
+
+<div class="alva-calendar-layout">
+    <section class="alva-panel alva-month-grid" aria-label="Календарь месяца">
+        <div class="alva-month-grid__head">@foreach (var d in WeekDays) { <span>@d</span> }</div>
+        <div class="alva-month-grid__body">
+            @foreach (var date in Cells)
+            {
+                var inMonth = date.Month == _month.Month;
+                var rows = RowsOn(date);
+                var avail = rows.Sum(r => r.AvailableHours);
+                var alloc = rows.Sum(r => r.AllocatedHours);
+                var overloaded = rows.Where(r => r.AllocatedHours > r.AvailableHours).ToArray();
+                var absent = AbsentOn(date).ToArray();
+                var weekend = !rows.Any(r => r.AvailableHours > 0) && !absent.Any();
+                var sprintStart = _sprints.FirstOrDefault(s => s.StartDate == date);
+                var sprintEnd = _sprints.FirstOrDefault(s => s.EndDate == date);
+                var state = !inMonth ? "out" : weekend ? "off" : overloaded.Length > 0 ? "over" : absent.Length > 0 ? "absence" : "work";
+                <div class="alva-day alva-day--@state @(date == Today ? "alva-day--today" : "")" @key="date">
+                    <div class="alva-day__top"><b class="alva-num">@date.Day</b>@if (sprintStart is not null) { <span class="alva-day__flag"><FlareIconView Value="@MaterialDesign3Icons.Regular.Flag" Size="12px" /> Старт</span> } else if (sprintEnd is not null) { <span class="alva-day__flag">Финиш</span> }</div>
+                    @if (state == "off") { <span class="alva-day__note">Выходной</span> }
+                    else if (inMonth)
+                    {
+                        @if (sprintStart is not null) { <span class="alva-day__event">@sprintStart.Name</span> }
+                        @foreach (var away in absent.Take(2)) { <span class="alva-day__event alva-day__event--absence"><FlareIconView Value="@MaterialDesign3Icons.Regular.BeachAccess" Size="12px" /> @Short(away.Name)</span> }
+                        @foreach (var o in overloaded.Take(1)) { <span class="alva-day__event alva-day__event--over"><FlareIconView Value="@MaterialDesign3Icons.Regular.Warning" Size="12px" /> @Short(o.ActorName) @Pct(o.AllocatedHours, o.AvailableHours)%</span> }
+                        <span class="alva-day__hours alva-num"><b>@AlvaFormat.Hours(avail) ч</b> @(overloaded.Length > 0 ? $"Дефицит −{AlvaFormat.Hours(overloaded.Sum(o => o.AllocatedHours - o.AvailableHours))} ч" : alloc > 0 ? $"занято {AlvaFormat.Hours(alloc)}" : "доступно")</span>
+                    }
+                </div>
+            }
+        </div>
+    </section>
+
+    <aside class="alva-calendar-side">
+        @if (Focus is { } focused)
+        {
+            var mine = _rows.Where(r => r.ActorId == focused.Id && r.Date.Month == _month.Month).ToArray();
+            <section class="alva-panel">
+                <div class="alva-person-card"><span class="alva-slot__mark alva-person-head__avatar" aria-hidden="true">@AlvaFormat.Initials(focused.Name)</span><div><b>@focused.Name</b><small>@string.Join(" / ", _actors.Where(a => focused.RoleIds.Contains(a.Id)).Select(a => a.Name).DefaultIfEmpty("Участник команды"))</small></div></div>
+                <div class="alva-calc">
+                    <div><span>Фонд месяца по графику</span><b class="alva-num">@AlvaFormat.Hours(NominalOf(focused.Id)) ч</b></div>
+                    <div class="alva-calc--info"><span>Встречи и вычеты</span><b class="alva-num">−@AlvaFormat.Hours(Math.Max(0, NominalOf(focused.Id) - mine.Sum(r => r.AvailableHours) - AbsenceOf(focused.Id))) ч</b></div>
+                    <div class="alva-calc--minus"><span>Отпуска</span><b class="alva-num">−@AlvaFormat.Hours(AbsenceOf(focused.Id)) ч</b></div>
+                    <div class="alva-calc--total"><span>Чистая ёмкость</span><b class="alva-num">@AlvaFormat.Hours(mine.Sum(r => r.AvailableHours)) ч</b></div>
+                    <div><span>Запланировано задач</span><b class="alva-num @(mine.Sum(r => r.AllocatedHours) > mine.Sum(r => r.AvailableHours) ? "alva-kpi__alert" : "")">@AlvaFormat.Hours(mine.Sum(r => r.AllocatedHours)) ч</b></div>
+                </div>
+                <FlareStack Row Wrap>
+                    <FlareButton Href="@($"/capacity/{focused.Id}")" Size="ButtonSize.Sm">Персональный календарь</FlareButton>
+                    <FlareButton Href="@($"/capacity/{focused.Id}/schedule")" Variant="ButtonVariant.Tonal" Size="ButtonSize.Sm">Редактор графика</FlareButton>
+                </FlareStack>
+            </section>
+        }
+        <section class="alva-panel">
+            <header class="alva-panel__header"><FlareIconView Value="@MaterialDesign3Icons.Regular.Person" Size="20px" Class="alva-panel__icon" /><h2 class="alva-panel__title">Люди и загрузка месяца</h2></header>
+            @foreach (var p in People)
+            {
+                var rows = _rows.Where(r => r.ActorId == p.Id && r.Date.Month == _month.Month).ToArray();
+                var pct = Pct(rows.Sum(r => r.AllocatedHours), rows.Sum(r => r.AvailableHours));
+                <a class="alva-person-link" href="@($"/capacity/{p.Id}")" @key="p.Id">
+                    <span class="alva-slot__mark" aria-hidden="true">@AlvaFormat.Initials(p.Name)</span>
+                    <span class="alva-person-link__text"><span>@p.Name</span><span class="alva-loadbar__track"><span class="alva-loadbar__fill alva-loadbar__fill--@(pct > 100 ? "critical" : pct > 80 ? "info" : "ok")" style="width:@Math.Min(100, pct)%"></span></span></span>
+                    <span class="alva-num alva-person-link__pct">@pct%</span>
+                </a>
+            }
+        </section>
+    </aside>
+</div>
+
+@code {
+    private static readonly string[] WeekDays = ["Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота", "Воскресенье"];
+    private DateOnly _month = new(DateTime.Today.Year, DateTime.Today.Month, 1);
+    private ActorModel[] _actors = [];
+    private SprintModel[] _sprints = [];
+    private CapacityDto[] _rows = [];
+    private Dictionary<Guid, CalendarDto> _calendars = [];
+    private Guid? _focus;
+    private string? _error;
+    private bool _busy;
+
+    private static DateOnly Today => DateOnly.FromDateTime(DateTime.Today);
+    private DateOnly GridStart => _month.AddDays(-(((int)_month.DayOfWeek + 6) % 7));
+    private IEnumerable<DateOnly> Cells => Enumerable.Range(0, (int)Math.Ceiling((_month.DayNumber - GridStart.DayNumber + DateTime.DaysInMonth(_month.Year, _month.Month)) / 7.0) * 7).Select(i => GridStart.AddDays(i));
+    private ActorModel[] People => _actors.Where(a => a.Kind == "Person" && _calendars.ContainsKey(a.Id)).OrderBy(a => a.Name).ToArray();
+    private ActorModel? Focus => People.FirstOrDefault(p => p.Id == _focus);
+    private IEnumerable<CapacityDto> RowsOn(DateOnly d) => _rows.Where(r => r.Date == d && (_focus is null || r.ActorId == _focus));
+    private IEnumerable<(string Name, CalendarExceptionDto Ex)> AbsentOn(DateOnly d) => People.Where(p => _focus is null || p.Id == _focus)
+        .SelectMany(p => _calendars[p.Id].Exceptions.Where(e => d >= e.From && d <= e.To && e.AvailableHours < NominalOn(p.Id, d)).Select(e => (p.Name, e)));
+    private IEnumerable<(string Name, CalendarExceptionDto Ex)> MonthAbsences => People.Where(p => _focus is null || p.Id == _focus)
+        .SelectMany(p => _calendars[p.Id].Exceptions.Where(e => e.From <= _month.AddMonths(1).AddDays(-1) && e.To >= _month).Select(e => (p.Name, e)));
+
+    private decimal NominalOn(Guid id, DateOnly d)
+    {
+        var c = _calendars[id];
+        return d.DayOfWeek switch { DayOfWeek.Monday => c.Monday, DayOfWeek.Tuesday => c.Tuesday, DayOfWeek.Wednesday => c.Wednesday, DayOfWeek.Thursday => c.Thursday, DayOfWeek.Friday => c.Friday, DayOfWeek.Saturday => c.Saturday, _ => c.Sunday };
+    }
+    private IEnumerable<DateOnly> MonthDays => Enumerable.Range(0, DateTime.DaysInMonth(_month.Year, _month.Month)).Select(i => _month.AddDays(i));
+    private decimal NominalOf(Guid id) => MonthDays.Sum(d => NominalOn(id, d));
+    private decimal AbsenceOf(Guid id) => MonthDays.Sum(d => _calendars[id].Exceptions.FirstOrDefault(e => d >= e.From && d <= e.To) is { } e ? Math.Max(0, NominalOn(id, d) - e.AvailableHours) : 0);
+    private decimal NominalMonth => People.Where(p => _focus is null || p.Id == _focus).Sum(p => NominalOf(p.Id));
+    private decimal AbsenceHours => People.Where(p => _focus is null || p.Id == _focus).Sum(p => AbsenceOf(p.Id));
+    private decimal Effective => _rows.Where(r => r.Date.Month == _month.Month && (_focus is null || r.ActorId == _focus)).Sum(r => r.AvailableHours);
+    private decimal MeetingsPerPerson => People.Length == 0 ? 0 : People.Average(p => _calendars[p.Id].RecurringBlocks.Sum(b => b.Hours));
+    private static int Pct(decimal part, decimal whole) => whole <= 0 ? 0 : (int)Math.Round(part / whole * 100);
+    private static string Short(string name) => name.Split(' ') is [var first, var last, ..] ? $"{first[0]}. {last}" : name;
+
+    protected override Task OnInitializedAsync() => Run(async () =>
+    {
+        _actors = await Session.Get<ActorModel[]>(Session.TeamPath("actors"));
+        _sprints = await Session.Get<SprintModel[]>(Session.TeamPath("sprints"));
+        foreach (var person in _actors.Where(a => a.Kind == "Person"))
+            _calendars[person.Id] = await Session.Get<CalendarDto>(Session.TeamPath($"actors/{person.Id}/calendar"));
+        await LoadMonth();
+    });
+
+    private async Task LoadMonth() =>
+        _rows = await Session.Get<CapacityDto[]>(Session.TeamPath($"capacity?from={GridStart:yyyy-MM-dd}&to={GridStart.AddDays(41):yyyy-MM-dd}"));
+
+    private Task Shift(int months) { _month = _month.AddMonths(months); return Run(LoadMonth); }
+    private Task ThisMonth() { _month = new(DateTime.Today.Year, DateTime.Today.Month, 1); return Run(LoadMonth); }
+
+    private async Task Run(Func<Task> action)
+    {
+        _busy = true; _error = null;
+        try { await action(); }
+        catch (Exception e) when (e is HttpRequestException or InvalidOperationException or NotSupportedException) { _error = e.Message; }
+        finally { _busy = false; }
+    }
+}
