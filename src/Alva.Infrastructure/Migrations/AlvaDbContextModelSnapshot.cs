@@ -63,6 +63,21 @@ namespace Alva.Infrastructure.Migrations
                     b.ToTable("Actors");
                 });
 
+            modelBuilder.Entity("Alva.Domain.ActorDepartment", b =>
+                {
+                    b.Property<Guid>("ActorId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("DepartmentId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("ActorId", "DepartmentId");
+
+                    b.HasIndex("DepartmentId");
+
+                    b.ToTable("ActorDepartments");
+                });
+
             modelBuilder.Entity("Alva.Domain.ActorRole", b =>
                 {
                     b.Property<Guid>("ActorId")
@@ -596,6 +611,21 @@ namespace Alva.Infrastructure.Migrations
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("Alva.Domain.ActorDepartment", b =>
+                {
+                    b.HasOne("Alva.Domain.Actor", null)
+                        .WithMany()
+                        .HasForeignKey("ActorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Alva.Domain.Actor", null)
+                        .WithMany()
+                        .HasForeignKey("DepartmentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Alva.Domain.ActorRole", b =>

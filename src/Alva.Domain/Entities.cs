@@ -70,6 +70,11 @@ public sealed class ActorRole
     public Guid ActorId { get; set; }
     public Guid RoleId { get; set; }
 }
+public sealed class ActorDepartment
+{
+    public Guid ActorId { get; set; }
+    public Guid DepartmentId { get; set; }
+}
 public sealed class Assignment : Entity
 {
     public Guid TaskId { get; set; }

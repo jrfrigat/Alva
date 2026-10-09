@@ -56,6 +56,8 @@ app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapAuth();
+app.MapActors();
+app.MapData();
 app.MapGet("/health/live", () => Results.Ok(new { status = "live" }));
 app.MapGet("/health/ready", async (AlvaDbContext db, CancellationToken ct) => await db.Database.CanConnectAsync(ct) ? Results.Ok(new { status = "ready" }) : Results.StatusCode(503));
 if (builder.Configuration.GetValue("Database:MigrateOnStartup", true))
@@ -65,6 +67,7 @@ if (builder.Configuration.GetValue("Database:MigrateOnStartup", true))
 }
 app.UseBlazorFrameworkFiles();
 app.UseStaticFiles();
+app.MapFallback("/api/{**path}", () => Results.Problem(statusCode: 404, title: "API маршрут не найден."));
 app.MapFallbackToFile("index.html");
 app.Run();
 

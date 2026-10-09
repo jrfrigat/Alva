@@ -14,6 +14,7 @@ public class AlvaDbContext(DbContextOptions<AlvaDbContext> options) : DbContext(
     public DbSet<TaskCard> Tasks => Set<TaskCard>();
     public DbSet<Actor> Actors => Set<Actor>();
     public DbSet<ActorRole> ActorRoles => Set<ActorRole>();
+    public DbSet<ActorDepartment> ActorDepartments => Set<ActorDepartment>();
     public DbSet<Assignment> Assignments => Set<Assignment>();
     public DbSet<TaskDependency> Dependencies => Set<TaskDependency>();
     public DbSet<WorkCalendar> Calendars => Set<WorkCalendar>();
@@ -40,6 +41,9 @@ public class AlvaDbContext(DbContextOptions<AlvaDbContext> options) : DbContext(
         b.Entity<Actor>().HasOne<UserAccount>().WithMany().HasForeignKey(x => x.UserId);
         b.Entity<ProjectTeam>().HasKey(x => new { x.ProjectId, x.TeamId });
         b.Entity<ActorRole>().HasKey(x => new { x.ActorId, x.RoleId });
+        b.Entity<ActorDepartment>().HasKey(x => new { x.ActorId, x.DepartmentId });
+        b.Entity<ActorDepartment>().HasOne<Actor>().WithMany().HasForeignKey(x => x.ActorId);
+        b.Entity<ActorDepartment>().HasOne<Actor>().WithMany().HasForeignKey(x => x.DepartmentId);
         b.Entity<Team>().HasOne<Workspace>().WithMany().HasForeignKey(x => x.WorkspaceId);
         b.Entity<Project>().HasOne<Workspace>().WithMany().HasForeignKey(x => x.WorkspaceId);
         b.Entity<Team>().HasOne<Project>().WithMany().HasForeignKey(x => x.DefaultProjectId);
