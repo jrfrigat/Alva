@@ -149,7 +149,7 @@
                     <ChildContent>Перейти в спринт</ChildContent>
                     <TrailingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.ArrowForward" Size="16px" /></TrailingIcon>
                 </FlareButton>
-                <FlareButton Href="@($"/sprints/{sprint.Id}")" Variant="ButtonVariant.Outlined" Size="ButtonSize.Sm">
+                <FlareButton Href="@($"/sprints/{sprint.Id}/plan")" Variant="ButtonVariant.Outlined" Size="ButtonSize.Sm">
                     <LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.Balance" Size="16px" /></LeadingIcon>
                     <ChildContent>Сбалансировать</ChildContent>
                 </FlareButton>
@@ -181,7 +181,7 @@
                 </div>
                 <div class="alva-sprint-card__footer">
                     <span class="alva-num">Старт через @Math.Max(0, sprint.StartDate.DayNumber - Today.DayNumber) дн.</span>
-                    <FlareButton Href="@($"/sprints/{sprint.Id}")" Size="ButtonSize.Sm">
+                    <FlareButton Href="@($"/sprints/{sprint.Id}/plan")" Size="ButtonSize.Sm">
                         <ChildContent>Открыть планирование</ChildContent>
                         <TrailingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.ArrowForward" Size="16px" /></TrailingIcon>
                     </FlareButton>

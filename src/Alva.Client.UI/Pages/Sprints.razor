@@ -1,8 +1,11 @@
 @page "/sprints"
+@page "/sprints/plan"
 @page "/sprints/{SprintId:guid}"
+@page "/sprints/{SprintId:guid}/plan"
 @inject AlvaSession Session
-<PageTitle>@(Current?.Name ?? "Спринты") · Alva</PageTitle>
-@if(SprintId is null)
+@inject NavigationManager Navigation
+<PageTitle>@(Planning ? "Планирование" : Current?.Name ?? "Спринты") · Alva</PageTitle>
+@if(SprintId is null && !Planning)
 {
 <AlvaPageHeader Category="Планирование · Спринты" Title="Спринты команды" Description="Цели, сроки и состав спринтов команды.">
     <Actions><FlareButton Size="ButtonSize.Sm" OnClick="New" Disabled="@(Session.TeamId is null)">Новый спринт</FlareButton></Actions>
@@ -12,43 +15,38 @@
 @if(Session.TeamId is null){<TeamRequired />}
 else
 {
-@if(SprintId is null){<SprintRegistry Sprints="_sprints" Tasks="_tasks" />}
-else if(Current is not null){<SprintDetails Sprint="Current" Tasks="_tasks" OnEdit="()=>Edit(Current)" Changed="Load" />}
 @if(_editing is not null)
 {
 <FlareCard Variant="CardVariant.Outlined"><FlareCardContent><FlareStack Gap="FlareSpacing.Large">
-    <FlareStack Row StretchFirst><FlareText Element="h2" Typo="TypographyScale.TitleLarge">Планирование спринта</FlareText><FlareButton OnClick="Close" Variant="ButtonVariant.Text" Size="ButtonSize.Sm">Закрыть</FlareButton></FlareStack>
+    <FlareStack Row StretchFirst><FlareText Element="h2" Typo="TypographyScale.TitleLarge">@(_editing.Id==Guid.Empty?"Новый спринт":"Параметры спринта")</FlareText><FlareButton OnClick="Close" Variant="ButtonVariant.Text" Size="ButtonSize.Sm">Закрыть</FlareButton></FlareStack>
     <FlareGrid MinColumnWidth="min(100%,15rem)">
         <FlareTextField Label="Название" @bind-Value="_editing.Name" Required /><FlareTextField Label="Цель" @bind-Value="_editing.Goal" />
         <FlareDatePicker Label="Начало" @bind-Value="_start" /><FlareDatePicker Label="Окончание" @bind-Value="_end" Min="_start" />
         <FlareSelect TValue="string" Label="Статус" Items="_statuses" ItemLabel="Labels.Status" @bind-Value="_editing.Status" />
     </FlareGrid>
-    <FlareButton OnClick="Save" Loading="_busy" Disabled="@(string.IsNullOrWhiteSpace(_editing.Name) || !_start.HasValue || !_end.HasValue)">Сохранить спринт</FlareButton>
-    @if(_editing.Id!=Guid.Empty)
-    {
-    <FlareGrid MinColumnWidth="min(100%,24rem)">
-    <FlareStack><FlareText Element="h3" Typo="TypographyScale.TitleMedium">Пул задач</FlareText>
-        @foreach(var task in _tasks.Where(t=>t.SprintId is null && t.Status!="Done" && t.Status!="Cancelled")) { <FlareStack Row StretchFirst Align="FlareAlignItems.Center"><FlareLink Href="@($"/tasks/{task.Id}")">@task.Title</FlareLink><FlareButton Size="ButtonSize.Sm" Variant="ButtonVariant.Tonal" OnClick="()=>SetSprint(task,_editing.Id)" Disabled="_busy">В спринт</FlareButton></FlareStack> }
-    </FlareStack>
-    <FlareStack><FlareText Element="h3" Typo="TypographyScale.TitleMedium">В спринте</FlareText>
-        @foreach(var task in _tasks.Where(t=>t.SprintId==_editing.Id)) { <FlareStack Row StretchFirst Align="FlareAlignItems.Center"><FlareLink Href="@($"/tasks/{task.Id}")">@task.Title · @(task.EstimateHours??0) ч</FlareLink><FlareButton Size="ButtonSize.Sm" Variant="ButtonVariant.Text" OnClick="()=>SetSprint(task,null)" Disabled="_busy">В пул</FlareButton></FlareStack> }
-    </FlareStack>
-    </FlareGrid>
-    <FlareText>Объём: @_tasks.Where(t=>t.SprintId==_editing.Id).Sum(t=>t.EstimateHours??0) ч. <FlareLink Href="/capacity">Сверить с ёмкостью команды</FlareLink></FlareText>
-    }
+    <FlareStack Row><FlareButton OnClick="Save" Loading="_busy" Disabled="@(string.IsNullOrWhiteSpace(_editing.Name) || !_start.HasValue || !_end.HasValue)">Сохранить спринт</FlareButton></FlareStack>
 </FlareStack></FlareCardContent></FlareCard>
 }
+@if(Planning)
+{
+    if(PlanSprint is not null){<SprintPlanning Sprint="PlanSprint" Sprints="_sprints" Tasks="_tasks" Changed="Load" OnParams="()=>Edit(PlanSprint)" />}
+    else if(!_busy){<FlareEmptyState Title="Нечего планировать" Description="Создайте спринт, чтобы собрать в него задачи из пула."><FlareButton Size="ButtonSize.Sm" OnClick="New">Новый спринт</FlareButton></FlareEmptyState>}
+}
+else if(SprintId is null){<SprintRegistry Sprints="_sprints" Tasks="_tasks" />}
+else if(Current is not null){<SprintDetails Sprint="Current" Tasks="_tasks" OnEdit="@(()=>Navigation.NavigateTo($"/sprints/{Current.Id}/plan"))" Changed="Load" />}
 }
 @code {
     [Parameter]public Guid? SprintId{get;set;}
     private SprintModel[] _sprints=[];private TaskModel[] _tasks=[];private SprintModel? _editing;private DateOnly? _start,_end;private bool _busy;private string? _error;private readonly string[] _statuses=["Planned","Active","Completed"];
+    private bool Planning => new Uri(Navigation.Uri).AbsolutePath.EndsWith("/plan", StringComparison.Ordinal);
     private SprintModel? Current => SprintId.HasValue ? _sprints.FirstOrDefault(s=>s.Id==SprintId) : null;
+    /// <summary>Спринт доски: указанный, иначе активный, иначе ближайший запланированный.</summary>
+    private SprintModel? PlanSprint => Current ?? _sprints.FirstOrDefault(s=>s.Status=="Active") ?? _sprints.Where(s=>s.Status=="Planned").OrderBy(s=>s.StartDate).FirstOrDefault();
     protected override async Task OnParametersSetAsync(){_editing=null;await Load();}
     private async Task Run(Func<Task> action){_busy=true;_error=null;try{await action();}catch(Exception e) when(e is HttpRequestException or InvalidOperationException){_error=e.Message;}finally{_busy=false;}}
     private Task Load()=>Run(async()=>{await Session.Initialize();if(Session.TeamId is null)return;_sprints=await Session.Get<SprintModel[]>(Session.TeamPath("sprints"));_tasks=await Session.Get<TaskModel[]>(Session.TeamPath("tasks"));});
     private void New(){_editing=new SprintModel();_start=_editing.StartDate;_end=_editing.EndDate;}
     private void Edit(SprintModel sprint){_editing=new SprintModel{Id=sprint.Id,Name=sprint.Name,Goal=sprint.Goal,StartDate=sprint.StartDate,EndDate=sprint.EndDate,Status=sprint.Status};_start=sprint.StartDate;_end=sprint.EndDate;}
     private void Close()=>_editing=null;
-    private Task Save()=>Run(async()=>{var s=_editing!;var saved=await Session.Save<SprintModel>(s.Id==Guid.Empty?HttpMethod.Post:HttpMethod.Put,Session.TeamPath("sprints"+(s.Id==Guid.Empty?"":$"/{s.Id}")),new SprintRequest(s.Name,s.Goal,_start!.Value,_end!.Value,s.Status));_sprints=await Session.Get<SprintModel[]>(Session.TeamPath("sprints"));Edit(saved);});
-    private Task SetSprint(TaskModel t,Guid? sprint)=>Run(async()=>{await Session.Send(HttpMethod.Put,Session.TeamPath($"tasks/{t.Id}"),new TaskRequest(t.Title,t.Description,t.Status,t.ProjectId,sprint,t.ParentId,t.EstimateHours,t.Deadline,t.StartDate,t.EndDate,t.Order,t.Version));_tasks=await Session.Get<TaskModel[]>(Session.TeamPath("tasks"));});
+    private Task Save()=>Run(async()=>{var s=_editing!;var saved=await Session.Save<SprintModel>(s.Id==Guid.Empty?HttpMethod.Post:HttpMethod.Put,Session.TeamPath("sprints"+(s.Id==Guid.Empty?"":$"/{s.Id}")),new SprintRequest(s.Name,s.Goal,_start!.Value,_end!.Value,s.Status));_sprints=await Session.Get<SprintModel[]>(Session.TeamPath("sprints"));_editing=null;Navigation.NavigateTo($"/sprints/{saved.Id}/plan");});
 }

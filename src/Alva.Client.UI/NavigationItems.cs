@@ -17,7 +17,8 @@ public static class NavigationItems
     [
         new("Спринты",
         [
-            new("/sprints", "Список", Flare.Icons.MaterialDesign3Icons.Regular.ViewTimeline, false)
+            new("/sprints", "Список", Flare.Icons.MaterialDesign3Icons.Regular.ViewTimeline, false),
+            new("/sprints/plan", "Планирование", Flare.Icons.MaterialDesign3Icons.Regular.EventAvailable, false)
         ]),
         new("Задачи",
         [

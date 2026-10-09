@@ -1,0 +1,225 @@
+@* Доска планирования спринта по макету p6: KPI ёмкости, пул задач с фильтрами и перетаскиванием,
+   баланс специальностей и состав спринта. *@
+@inject AlvaSession Session
+@inject NavigationManager Navigation
+<section class="alva-plan-head">
+    <div class="alva-plan-head__row">
+        <div class="alva-plan-head__picker">
+            <FlareIconView Value="@MaterialDesign3Icons.Regular.CalendarMonth" Size="22px" Class="alva-panel__icon" />
+            <FlareSelect TValue="Guid" Label="Спринт" Items="Choices.Select(s => s.Id)" ItemLabel="SprintLabel" Value="Sprint.Id" ValueChanged="Pick" />
+            <span class="alva-plan-head__horizon alva-num">Плановый горизонт: @AlvaFormat.WorkDays(Sprint.StartDate, Sprint.EndDate) рабочих смен · @AlvaFormat.Period(Sprint.StartDate, Sprint.EndDate)</span>
+        </div>
+        <AlvaStatusChip Tone="@(Sprint.Status == "Planned" ? AlvaTone.Info : AlvaTones.Status(Sprint.Status))">@(Sprint.Status == "Planned" ? "Черновик планирования" : Labels.Status(Sprint.Status))</AlvaStatusChip>
+    </div>
+    <div class="alva-plan-head__actions">
+        <FlareButton Variant="ButtonVariant.Tonal" Size="ButtonSize.Sm" OnClick="() => OnParams.InvokeAsync()">
+            <LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.Tune" Size="18px" /></LeadingIcon>
+            <ChildContent>Параметры спринта</ChildContent>
+        </FlareButton>
+        <FlareButton Href="@($"/sprints/{Sprint.Id}")" Variant="ButtonVariant.Outlined" Size="ButtonSize.Sm">Страница спринта</FlareButton>
+        @if (Sprint.Status == "Planned")
+        {
+            <FlareButton Size="ButtonSize.Sm" Loading="_busy" OnClick="Commit">
+                <LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.Lock" Size="18px" /></LeadingIcon>
+                <ChildContent>Зафиксировать спринт</ChildContent>
+            </FlareButton>
+        }
+    </div>
+    <div class="alva-plan-kpis">
+        <div class="alva-plan-kpi"><span class="alva-kpi__label">Ёмкость команды</span><span class="alva-num"><b>@AlvaFormat.Hours(Capacity)</b> ч</span><FlareIconView Value="@MaterialDesign3Icons.Regular.Groups" Size="20px" /></div>
+        <div class="alva-plan-kpi"><span class="alva-kpi__label">Запланировано в спринт</span><span class="alva-num"><b class="alva-plan-kpi__primary">@AlvaFormat.Hours(Planned)</b> ч <AlvaStatusChip Tone="@(Planned > Capacity ? AlvaTone.Critical : AlvaTone.Info)">@Pct(Planned, Capacity)%</AlvaStatusChip></span><FlareIconView Value="@MaterialDesign3Icons.Regular.FactCheck" Size="20px" /></div>
+        <div class="alva-plan-kpi"><span class="alva-kpi__label">@(Capacity >= Planned ? "Резерв ёмкости" : "Нехватка ёмкости")</span><span class="alva-num"><b>@AlvaFormat.Hours(Math.Abs(Capacity - Planned))</b> ч @(Capacity >= Planned ? "резерв" : "сверх ёмкости")</span><FlareIconView Value="@MaterialDesign3Icons.Regular.HourglassEmpty" Size="20px" /></div>
+        <div class="alva-plan-kpi @(Overtime > 0 ? "alva-plan-kpi--critical" : "")"><span class="alva-kpi__label">Превышение / овертайм</span><span class="alva-num"><b>@AlvaFormat.Hours(Overtime)</b> ч @if (OvertimePeople > 0) { <AlvaStatusChip Tone="AlvaTone.Critical">@OvertimePeople чел.</AlvaStatusChip> }</span><FlareIconView Value="@MaterialDesign3Icons.Regular.Warning" Size="20px" /></div>
+    </div>
+</section>
+<PageFeedback Error="@_error" />
+
+<div class="alva-plan-board">
+    <section class="alva-panel alva-plan-pool">
+        <header class="alva-panel__header">
+            <FlareIconView Value="@MaterialDesign3Icons.Regular.Inventory2" Size="20px" Class="alva-panel__icon" />
+            <h2 class="alva-panel__title">Пул задач (бэклог)</h2>
+            <span class="alva-plan-count alva-num">@Pool.Count()</span>
+        </header>
+        <div class="alva-quickfilter" role="group" aria-label="Фильтр пула">
+            @foreach (var (key, label) in PoolFilters)
+            {
+                <button type="button" class="alva-quickfilter__item @(_poolFilter == key ? "alva-quickfilter__item--active" : "")" aria-pressed="@(_poolFilter == key)" @onclick="() => _poolFilter = key">@label (@Pool.Count(t => Matches(t, key)))</button>
+            }
+        </div>
+        <FlareTextField @bind-Value="_search" Immediate Clearable Placeholder="Поиск по коду или заголовку…" AriaLabel="Поиск в пуле">
+            <AdornmentStart><FlareIconView Value="@MaterialDesign3Icons.Regular.Search" Size="18px" /></AdornmentStart>
+        </FlareTextField>
+        <div class="alva-plan-cards">
+            @foreach (var task in Pool.Where(t => Matches(t, _poolFilter) && Found(t)))
+            {
+                <article class="alva-plan-card @(_dragged == task.Id ? "alva-plan-card--dragging" : "")" draggable="true" @ondragstart="() => _dragged = task.Id" @ondragend="() => _dragged = null" @key="task.Id">
+                    <div class="alva-plan-card__top">
+                        <a class="alva-plan-card__code" href="@($"/tasks/{task.Id}")">@AlvaFormat.Code(task.Id)</a>
+                        <span class="alva-project-chip">@ProjectName(task.ProjectId)</span>
+                        <span class="alva-plan-card__est alva-num"><FlareIconView Value="@MaterialDesign3Icons.Regular.Schedule" Size="15px" /> @(task.EstimateHours.HasValue ? $"{AlvaFormat.Hours(task.EstimateHours.Value)} ч" : "—")</span>
+                    </div>
+                    <div class="alva-plan-card__title">@task.Title</div>
+                    <div class="alva-plan-card__bottom">
+                        <AlvaAssignee Task="task" Actors="_actors" />
+                        <span class="alva-plan-card__deadline alva-num">@(task.Deadline.HasValue ? task.Deadline.Value.ToString("d MMM") : "Без дедлайна")</span>
+                        <FlareButton Size="ButtonSize.Sm" Variant="ButtonVariant.Tonal" Disabled="_busy" OnClick="() => Move(task, Sprint.Id)">В спринт</FlareButton>
+                    </div>
+                </article>
+            }
+            @if (!Pool.Any(t => Matches(t, _poolFilter) && Found(t))) { <FlareEmptyState Compact Title="В пуле пусто" Description="Нет задач по этому фильтру." /> }
+        </div>
+        <div class="alva-plan-hint" @ondragover:preventDefault @ondrop="DropToPool"><FlareIconView Value="@MaterialDesign3Icons.Regular.DragIndicator" Size="16px" /> Перетащите задачу в правый блок, чтобы включить её в спринт</div>
+    </section>
+
+    <div class="alva-plan-side">
+        <section class="alva-panel">
+            <header class="alva-panel__header">
+                <FlareIconView Value="@MaterialDesign3Icons.Regular.Balance" Size="20px" Class="alva-panel__icon" />
+                <div><h2 class="alva-panel__title">Баланс специальностей: план vs доступность</h2><p class="alva-panel__subtitle">По ролям людей и задачам, назначенным на роль</p></div>
+            </header>
+            <div class="alva-skills">
+                @foreach (var (role, plan, avail) in Skills)
+                {
+                    var pct = Pct(plan, avail);
+                    var tone = avail <= 0 && plan > 0 ? AlvaTone.Critical : pct > 100 ? AlvaTone.Critical : pct > 85 ? AlvaTone.Info : AlvaTone.Ok;
+                    <div class="alva-skill alva-skill--@tone.ToString().ToLowerInvariant()">
+                        <div class="alva-skill__head"><b>@role.Name</b><AlvaStatusChip Tone="tone">@(avail > 0 ? $"{pct}%" : "нет людей") @(tone == AlvaTone.Critical ? "Перегруз" : tone == AlvaTone.Info ? "Оптимально" : "Запас")</AlvaStatusChip></div>
+                        <div class="alva-loadbar__track"><span class="alva-loadbar__fill alva-loadbar__fill--@tone.ToString().ToLowerInvariant()" style="width:@Math.Min(100, pct)%"></span></div>
+                        <div class="alva-skill__foot alva-num"><span>План: @AlvaFormat.Hours(plan) ч</span><span class="@(plan > avail ? "alva-kpi__alert" : "alva-kpi__aside--primary")">@(plan > avail ? $"Дефицит −{AlvaFormat.Hours(plan - avail)} ч" : $"Запас +{AlvaFormat.Hours(avail - plan)} ч") (дост. @AlvaFormat.Hours(avail) ч)</span></div>
+                    </div>
+                }
+                @if (!Skills.Any()) { <p class="alva-kpi__note">Добавьте роли людям, чтобы видеть баланс специальностей.</p> }
+            </div>
+        </section>
+
+        <section class="alva-panel alva-plan-sprint @(_dragged is not null ? "alva-plan-sprint--target" : "")" @ondragover:preventDefault @ondrop="DropToSprint">
+            <header class="alva-panel__header">
+                <FlareIconView Value="@MaterialDesign3Icons.Regular.Checklist" Size="20px" Class="alva-panel__icon" />
+                <h2 class="alva-panel__title">Состав спринта (включено в план)</h2>
+                <AlvaStatusChip Tone="AlvaTone.Info">@InSprint.Length @AlvaFormat.Plural(InSprint.Length, "задача", "задачи", "задач") · @AlvaFormat.Hours(Planned) ч</AlvaStatusChip>
+            </header>
+            <p class="alva-panel__subtitle">Крестик возвращает задачу в бэклог.</p>
+            @foreach (var task in InSprint)
+            {
+                var person = task.ResolvedPersonId ?? (_actors.FirstOrDefault(a => a.Id == task.AssignmentTargetId)?.Kind == "Person" ? task.AssignmentTargetId : null);
+                var over = person is { } p && _load.TryGetValue(p, out var l) && l.Allocated > l.Available;
+                <div class="alva-plan-row @(over ? "alva-plan-row--risk" : "")" draggable="true" @ondragstart="() => _dragged = task.Id" @ondragend="() => _dragged = null" @key="task.Id">
+                    <FlareIconView Value="@MaterialDesign3Icons.Regular.DragIndicator" Size="18px" Class="alva-plan-row__grip" />
+                    <div class="alva-plan-row__main">
+                        <div class="alva-plan-row__title"><a class="alva-plan-card__code" href="@($"/tasks/{task.Id}")">@AlvaFormat.Code(task.Id)</a> <a href="@($"/tasks/{task.Id}")" class="alva-sprint-table__title">@task.Title</a></div>
+                        <div class="alva-plan-row__meta"><AlvaAssignee Task="task" Actors="_actors" Load="@(person is { } q && _load.ContainsKey(q) ? Pct(_load[q].Allocated, _load[q].Available) : null)" /><span class="alva-num">Трудозатраты: <b>@(task.EstimateHours.HasValue ? $"{AlvaFormat.Hours(task.EstimateHours.Value)} ч" : "—")</b></span></div>
+                    </div>
+                    <span class="alva-project-chip">@ProjectName(task.ProjectId)</span>
+                    @if (over) { <AlvaStatusChip Tone="AlvaTone.Critical">Риск овертайма</AlvaStatusChip> } else { <AlvaStatusChip Tone="AlvaTones.Status(task.Status)">@Labels.Status(task.Status)</AlvaStatusChip> }
+                    <FlareIconButton Icon="@MaterialDesign3Icons.Regular.Close" Size="ButtonSize.Sm" Tooltip="Вернуть в бэклог" AriaLabel="@($"Вернуть «{task.Title}» в бэклог")" Disabled="_busy" OnClick="() => Move(task, null)" />
+                </div>
+            }
+            @if (InSprint.Length == 0) { <div class="alva-plan-drop">Перетащите сюда задачи из пула или нажмите «В спринт».</div> }
+        </section>
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public SprintModel Sprint { get; set; } = default!;
+    [Parameter] public SprintModel[] Sprints { get; set; } = [];
+    [Parameter] public TaskModel[] Tasks { get; set; } = [];
+    [Parameter] public EventCallback Changed { get; set; }
+    [Parameter] public EventCallback OnParams { get; set; }
+
+    private ActorModel[] _actors = [];
+    private ProjectModel[] _projects = [];
+    private Dictionary<Guid, (decimal Available, decimal Allocated)> _load = [];
+    private Guid _loadedFor;
+    private Guid? _dragged;
+    private string _poolFilter = "all";
+    private string? _search, _error;
+    private bool _busy;
+
+    private IEnumerable<SprintModel> Choices => Sprints.Where(s => s.Status != "Completed" || s.Id == Sprint.Id).OrderBy(s => s.StartDate);
+    private string SprintLabel(Guid id) => Sprints.FirstOrDefault(s => s.Id == id) is { } s ? $"{s.Name} ({s.StartDate:d MMM}–{s.EndDate:d MMM})" : "";
+    private IEnumerable<TaskModel> Pool => Tasks.Where(t => t.SprintId is null && t.Status is not ("Done" or "Cancelled")).OrderBy(t => t.Deadline ?? DateOnly.MaxValue);
+    private TaskModel[] InSprint => Tasks.Where(t => t.SprintId == Sprint.Id && t.Status != "Cancelled").OrderBy(t => t.Order).ToArray();
+    private decimal Planned => InSprint.Sum(t => t.EstimateHours ?? 0);
+    private decimal Capacity => _load.Values.Sum(l => l.Available);
+    private decimal Overtime => _load.Values.Sum(l => Math.Max(0, l.Allocated - l.Available));
+    private int OvertimePeople => _load.Values.Count(l => l.Allocated > l.Available);
+    private static int Pct(decimal part, decimal whole) => whole <= 0 ? 0 : (int)Math.Round(part / whole * 100);
+    private string ProjectName(Guid? id) => _projects.FirstOrDefault(p => p.Id == id)?.Name ?? "Текучка";
+
+    private IEnumerable<(string Key, string Label)> PoolFilters =>
+        new[] { ("all", "Все") }
+        .Concat(_projects.Where(p => Pool.Any(t => t.ProjectId == p.Id)).Select(p => (p.Id.ToString(), p.Name)))
+        .Concat(new[] { ("routine", "Текучка"), ("unassigned", "Неназначенные"), ("role", "С ролью") });
+
+    private bool Matches(TaskModel t, string key) => key switch
+    {
+        "all" => true,
+        "routine" => t.ProjectId is null,
+        "unassigned" => t.AssignmentTargetId is null,
+        "role" => t.ResolvedPersonId is null && _actors.FirstOrDefault(a => a.Id == t.AssignmentTargetId)?.Kind is "Role" or "Department",
+        _ => t.ProjectId?.ToString() == key
+    };
+
+    private bool Found(TaskModel t) => string.IsNullOrWhiteSpace(_search)
+        || t.Title.Contains(_search, StringComparison.OrdinalIgnoreCase)
+        || AlvaFormat.Code(t.Id).Contains(_search.Trim().TrimStart('#'), StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>Роли: план — задачи спринта на роль или на людей с ролью; доступно — ёмкость людей роли.</summary>
+    private IEnumerable<(ActorModel Role, decimal Plan, decimal Available)> Skills => _actors.Where(a => a.Kind == "Role")
+        .Select(role =>
+        {
+            var people = _actors.Where(a => a.Kind == "Person" && a.RoleIds.Contains(role.Id)).Select(a => a.Id).ToHashSet();
+            var plan = InSprint.Where(t => t.AssignmentTargetId == role.Id || (t.ResolvedPersonId ?? t.AssignmentTargetId) is { } p && people.Contains(p)).Sum(t => t.EstimateHours ?? 0);
+            var avail = people.Sum(p => _load.TryGetValue(p, out var l) ? l.Available : 0);
+            return (role, plan, avail);
+        })
+        .Where(x => x.plan > 0 || x.avail > 0);
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (_loadedFor == Sprint.Id) return;
+        try
+        {
+            _actors = await Session.Get<ActorModel[]>(Session.TeamPath("actors"));
+            _projects = await Session.Get<ProjectModel[]>(Session.TeamPath("projects"));
+            await LoadCapacity();
+            _loadedFor = Sprint.Id;
+        }
+        catch (Exception e) when (e is HttpRequestException or InvalidOperationException or NotSupportedException) { _error = e.Message; }
+    }
+
+    private async Task LoadCapacity()
+    {
+        var rows = await Session.Get<CapacityDto[]>(Session.TeamPath($"capacity?from={Sprint.StartDate:yyyy-MM-dd}&to={Sprint.EndDate:yyyy-MM-dd}"));
+        _load = rows.GroupBy(r => r.ActorId).ToDictionary(g => g.Key, g => (g.Sum(r => r.AvailableHours), g.Sum(r => r.AllocatedHours)));
+    }
+
+    private void Pick(Guid id) => Navigation.NavigateTo($"/sprints/{id}/plan");
+
+    private Task DropToSprint() => _dragged is { } id && Tasks.FirstOrDefault(t => t.Id == id) is { } task && task.SprintId != Sprint.Id ? Move(task, Sprint.Id) : Task.CompletedTask;
+    private Task DropToPool() => _dragged is { } id && Tasks.FirstOrDefault(t => t.Id == id) is { } task && task.SprintId == Sprint.Id ? Move(task, null) : Task.CompletedTask;
+
+    /// <summary>Переносит задачу в спринт или в пул: то же изменение задачи, что и в её карточке.</summary>
+    private Task Move(TaskModel t, Guid? sprint) => Run(async () =>
+    {
+        _dragged = null;
+        await Session.Send(HttpMethod.Put, Session.TeamPath($"tasks/{t.Id}"), new TaskRequest(t.Title, t.Description, t.Status, t.ProjectId, sprint, t.ParentId, t.EstimateHours, t.Deadline, t.StartDate, t.EndDate, t.Order, t.Version));
+        await Changed.InvokeAsync();
+        await LoadCapacity();
+    });
+
+    private Task Commit() => Run(async () =>
+    {
+        await Session.Save<SprintModel>(HttpMethod.Put, Session.TeamPath($"sprints/{Sprint.Id}"), new SprintRequest(Sprint.Name, Sprint.Goal, Sprint.StartDate, Sprint.EndDate, "Active"));
+        await Changed.InvokeAsync();
+    });
+
+    private async Task Run(Func<Task> action)
+    {
+        _busy = true; _error = null;
+        try { await action(); }
+        catch (Exception e) when (e is HttpRequestException or InvalidOperationException or NotSupportedException) { _error = e.Message; }
+        finally { _busy = false; }
+    }
+}
