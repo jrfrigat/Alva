@@ -56,7 +56,7 @@
             }
         </FlareNavMenu>
     </FlareLayoutDrawer>
-    <FlareLayoutContent><main id="main-content"><FlareContainer MaxWidth="ContainerMaxWidth.Xl"><FlareStack Gap="FlareSpacing.XLarge">@Body</FlareStack></FlareContainer></main></FlareLayoutContent>
+    <FlareLayoutContent><main id="main-content"><FlareContainer MaxWidth="ContainerMaxWidth.Xl"><FlareStack @key="PagePath" Gap="FlareSpacing.XLarge">@Body</FlareStack></FlareContainer></main></FlareLayoutContent>
 </FlareLayout>
 @if (_mobile)
 {
@@ -74,6 +74,9 @@
     private bool _open;
     private bool _mobile;
     private IAsyncDisposable? _viewportSubscription;
+    // Страницы с несколькими маршрутами (/team и /team/roles, /capacity и /capacity/people) получают одинаковые
+    // параметры, и Blazor не перерисовывает их при переходе из меню; ключ по пути создаёт страницу заново.
+    private string PagePath => new Uri(Navigation.Uri).AbsolutePath;
     protected override void OnInitialized() => Session.Changed += Refresh;
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
