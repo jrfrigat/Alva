@@ -1,0 +1,274 @@
+@* Обзор ёмкости по макету p14: KPI фонда, матрица «человек × период» с тепловой шкалой,
+   вакантные роли с дефицитом и прогноз баланса по периодам. *@
+@inject AlvaSession Session
+<section class="alva-page-header">
+    <div class="alva-page-header__text">
+        <div class="alva-micro-label"><span>Ресурсы · Ёмкость</span></div>
+        <h1 class="alva-page-header__title">Обзор ёмкости команды</h1>
+        <p class="alva-page-header__desc">Сводный баланс рабочего фонда, утилизация по подкомандам и ресурсные дефициты на горизонте @Horizon.</p>
+    </div>
+    <div class="alva-page-header__actions">
+        @if (_actors.FirstOrDefault(a => a.Kind == "Person") is { } first)
+        {
+            <FlareButton Href="@($"/capacity/{first.Id}")" Variant="ButtonVariant.Tonal" Size="ButtonSize.Sm">
+                <LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.EditCalendar" Size="18px" /></LeadingIcon>
+                <ChildContent>Редактор графиков</ChildContent>
+            </FlareButton>
+        }
+        @if (_sprints.FirstOrDefault(s => s.Status == "Active") is { } active)
+        {
+            <FlareButton Href="@($"/sprints/{active.Id}")" Size="ButtonSize.Sm">
+                <LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.Balance" Size="18px" /></LeadingIcon>
+                <ChildContent>Балансировать спринт</ChildContent>
+            </FlareButton>
+        }
+    </div>
+</section>
+
+<div class="alva-capacity-bar">
+    <div class="alva-segmented" role="group" aria-label="Разбивка периода">
+        @foreach (var (mode, label) in Modes)
+        {
+            <button type="button" class="alva-segmented__item @(_mode == mode ? "alva-segmented__item--active" : "")" aria-pressed="@(_mode == mode)" @onclick="() => SetMode(mode)">@label</button>
+        }
+    </div>
+    <span class="alva-capacity-bar__sep" aria-hidden="true"></span>
+    <span class="alva-capacity-bar__label">Подразделения:</span>
+    <div class="alva-quickfilter" role="group" aria-label="Подкоманды">
+        <button type="button" class="alva-quickfilter__item @(_department is null ? "alva-quickfilter__item--active" : "")" aria-pressed="@(_department is null)" @onclick="() => _department = null">Все подкоманды (@_departments.Length)</button>
+        @foreach (var dept in _departments)
+        {
+            <button type="button" class="alva-quickfilter__item @(_department == dept.Id ? "alva-quickfilter__item--active" : "")" aria-pressed="@(_department == dept.Id)" @onclick="() => _department = dept.Id">@dept.Name: @People.Count(p => GroupOf(p) == dept.Id)</button>
+        }
+    </div>
+    <FlareCheckbox TValue="bool" @bind-Value="_highlight" Label="Показывать перегрузы (>100%)" Class="alva-capacity-bar__check" />
+</div>
+<PageFeedback Error="@_error" Loading="_busy" />
+
+<div class="alva-kpis">
+    <section class="alva-kpi">
+        <div class="alva-kpi__head"><div><span class="alva-kpi__label">Доступный фонд (номинал)</span><span class="alva-num"><span class="alva-kpi__value">@AlvaFormat.Hours(Fund)</span> <span class="alva-kpi__unit">чел/час</span></span></div><span class="alva-kpi__icon"><FlareIconView Value="@MaterialDesign3Icons.Regular.CalendarMonth" Size="18px" /></span></div>
+        <div class="alva-kpi__foot"><span>@_periods.Length @PeriodWord(_periods.Length)</span><span class="alva-kpi__aside--primary">@VisiblePeople.Length @AlvaFormat.Plural(VisiblePeople.Length, "человек", "человека", "человек")</span></div>
+    </section>
+    <section class="alva-kpi">
+        <div class="alva-kpi__head"><div><span class="alva-kpi__label">Запланированная нагрузка</span><span class="alva-num"><span class="alva-kpi__value">@AlvaFormat.Hours(Planned)</span> <span class="alva-kpi__unit">ч (@Pct(Planned, Fund)%)</span></span></div><AlvaStatusChip Tone="LoadTone">@LoadLabel</AlvaStatusChip></div>
+        <FlareProgressLinear Value="@Math.Min(100, Pct(Planned, Fund))" aria-label="Запланировано от фонда" />
+        <div class="alva-kpi__foot"><span>Целевой коридор: 85–95%</span><span>@Horizon</span></div>
+    </section>
+    <section class="alva-kpi">
+        <div class="alva-kpi__head"><div><span class="alva-kpi__label alva-kpi__label--critical">Дефицитные слоты</span><span class="alva-num"><span class="alva-kpi__value alva-kpi__value--critical">@(Deficit > 0 ? "−" : "")@AlvaFormat.Hours(Deficit)</span> <span class="alva-kpi__unit">ч дефицита</span></span></div><span class="alva-kpi__icon alva-kpi__icon--critical"><FlareIconView Value="@MaterialDesign3Icons.Regular.Warning" Size="18px" /></span></div>
+        <div class="alva-kpi__foot"><span>@(WorstName ?? "Дефицита нет")</span><span class="alva-kpi__alert">@OverloadedCount в перегрузе</span></div>
+    </section>
+    <section class="alva-kpi">
+        <div class="alva-kpi__head"><div><span class="alva-kpi__label alva-kpi__label--primary">Свободный резерв</span><span class="alva-num"><span class="alva-kpi__value">+@AlvaFormat.Hours(Reserve)</span> <span class="alva-kpi__unit">ч доступно</span></span></div><span class="alva-kpi__icon"><FlareIconView Value="@MaterialDesign3Icons.Regular.Inventory2" Size="18px" /></span></div>
+        <div class="alva-kpi__foot"><span>@(FreestName ?? "Резерва нет")</span><span class="alva-kpi__aside--primary">Конец горизонта</span></div>
+    </section>
+</div>
+
+<section class="alva-panel alva-matrix-panel">
+    <header class="alva-matrix-panel__head">
+        <h2 class="alva-panel__title">Матрица распределения ёмкости</h2>
+        <span class="alva-matrix-panel__meta">Развёртка: @string.Join(", ", _periods.Select(p => p.Title))</span>
+    </header>
+    <div class="alva-heat-legend">
+        <span class="alva-heat-legend__title">Тепловая шкала:</span>
+        <span><i class="alva-heat--under"></i>&lt;70% Недогруз</span>
+        <span><i class="alva-heat--balance"></i>70–100% Баланс</span>
+        <span><i class="alva-heat--tension"></i>101–115% Напряжение</span>
+        <span><i class="alva-heat--critical"></i>&gt;115% Критичный перегруз</span>
+    </div>
+    <div class="alva-matrix" role="table" aria-label="Распределение ёмкости" style="--alva-matrix-periods:@Math.Max(1, _periods.Length)">
+        <div class="alva-matrix__head" role="row">
+            <span role="columnheader">Ресурс / подкоманда</span><span role="columnheader">Роль / статус</span><span role="columnheader">Доступно (фонд)</span>
+            @foreach (var period in _periods) { <span role="columnheader" class="alva-matrix__period"><b>@period.Title</b><small class="alva-num">@period.Subtitle</small></span> }
+            <span role="columnheader">Итог фонда</span>
+        </div>
+        @foreach (var group in Groups)
+        {
+            var people = VisiblePeople.Where(p => GroupOf(p) == group.Id).ToArray();
+            var roles = Vacancies.Where(v => GroupOfRole(v) == group.Id).ToArray();
+            if (people.Length == 0 && roles.Length == 0) { continue; }
+            var groupFund = people.Sum(p => Available(p.Id));
+            var groupBalance = groupFund - people.Sum(p => Allocated(p.Id)) - roles.Sum(r => Demand(r));
+            <div class="alva-matrix__group" role="row">
+                <span role="cell" class="alva-matrix__group-name"><FlareIconView Value="@MaterialDesign3Icons.Regular.KeyboardArrowDown" Size="18px" /> @group.Name <small>(@people.Length @AlvaFormat.Plural(people.Length, "человек", "человека", "человек")@(roles.Length > 0 ? $", вакансий: {roles.Length}" : ""))</small></span>
+                <span role="cell" class="alva-matrix__group-total @(groupBalance < 0 ? "alva-matrix__group-total--critical" : "")">@(groupBalance < 0 ? $"Дефицит периода: −{AlvaFormat.Hours(-groupBalance)} ч" : $"Резерв периода: +{AlvaFormat.Hours(groupBalance)} ч") · Фонд: @AlvaFormat.Hours(groupFund) ч</span>
+            </div>
+            @foreach (var person in people)
+            {
+                <div class="alva-matrix__row" role="row" @key="person.Id">
+                    <span role="cell" class="alva-matrix__who"><span class="alva-slot__mark" aria-hidden="true">@AlvaFormat.Initials(person.Name)</span><span><a href="@($"/capacity/{person.Id}")" class="alva-matrix__name">@person.Name</a><small>@RolesOf(person)</small></span></span>
+                    <span role="cell"><AlvaStatusChip Tone="AlvaTone.Info">Штат</AlvaStatusChip></span>
+                    <span role="cell" class="alva-num alva-matrix__fund">@AlvaFormat.Hours(Available(person.Id)) ч</span>
+                    @foreach (var period in _periods)
+                    {
+                        var (avail, alloc) = Cell(person.Id, period);
+                        var pct = Pct(alloc, avail);
+                        <span role="cell" class="alva-heat alva-heat--@Heat(pct, avail, alloc) @(_highlight && alloc > avail ? "alva-heat--flag" : "")">
+                            <span class="alva-heat__top alva-num"><span>@AlvaFormat.Hours(alloc) ч / @AlvaFormat.Hours(avail) ч</span><b>@(avail > 0 ? $"{pct}%" : "—")</b></span>
+                            <span class="alva-heat__bar"><span style="width:@Math.Min(100, pct)%"></span></span>
+                            <span class="alva-heat__note">@CellNote(avail, alloc)</span>
+                        </span>
+                    }
+                    <span role="cell" class="alva-num alva-matrix__total @(Allocated(person.Id) > Available(person.Id) ? "alva-matrix__total--critical" : "")">@AlvaFormat.Hours(Allocated(person.Id)) ч / @AlvaFormat.Hours(Available(person.Id)) ч</span>
+                </div>
+            }
+            @foreach (var role in roles)
+            {
+                <div class="alva-matrix__row alva-matrix__row--vacancy" role="row" @key="role.Id">
+                    <span role="cell" class="alva-matrix__who"><span class="alva-slot__mark alva-slot__mark--vacancy" aria-hidden="true"><FlareIconView Value="@MaterialDesign3Icons.Regular.PersonAdd" Size="14px" /></span><span><span class="alva-matrix__name alva-matrix__name--critical">@Labels.Kind(role.Kind): @role.Name</span><small>Требуется человек / вакантный слот</small></span></span>
+                    <span role="cell"><AlvaStatusChip Tone="AlvaTone.Critical">Вакансия</AlvaStatusChip></span>
+                    <span role="cell" class="alva-num alva-matrix__fund alva-matrix__total--critical">0 ч</span>
+                    @foreach (var period in _periods)
+                    {
+                        var demand = Demand(role, period);
+                        <span role="cell" class="alva-heat @(demand > 0 ? "alva-heat--critical" : "alva-heat--empty")">
+                            <span class="alva-heat__top alva-num"><span>@AlvaFormat.Hours(demand) ч / 0 ч</span>@if (demand > 0) { <b>НЕТ СЛОТА</b> }</span>
+                            <span class="alva-heat__note">@(demand > 0 ? $"Дефицит: −{AlvaFormat.Hours(demand)} ч" : "Нет назначений")</span>
+                        </span>
+                    }
+                    <span role="cell" class="alva-num alva-matrix__total alva-matrix__total--critical">−@AlvaFormat.Hours(Demand(role)) ч<br /><small>Дефицит</small></span>
+                </div>
+            }
+        }
+        @if (!VisiblePeople.Any() && !Vacancies.Any()) { <div class="alva-sprint-table__empty">Нет людей с рабочими графиками за горизонт.</div> }
+    </div>
+    <footer class="alva-sprint-tasks__foot"><span>Показано: @VisiblePeople.Length @AlvaFormat.Plural(VisiblePeople.Length, "человек", "человека", "человек") в @Groups.Count(g => VisiblePeople.Any(p => GroupOf(p) == g.Id)) @AlvaFormat.Plural(Groups.Count(g => VisiblePeople.Any(p => GroupOf(p) == g.Id)), "подкоманде", "подкомандах", "подкомандах")</span><span>Фонд — по рабочим графикам людей с учётом отпусков и блоков</span></footer>
+</section>
+
+@if (_periods.Length > 0)
+{
+    <section class="alva-panel">
+        <header class="alva-panel__header"><div><h2 class="alva-panel__title">Прогноз баланса ёмкости по периодам</h2><p class="alva-panel__subtitle">Сравнение номинала фонда, запланированной работы и ресурсного дефицита</p></div></header>
+        <FlareChart Type="ChartType.Bar" Data="Forecast" Height="260" aria-label="Фонд, план и дефицит по периодам" />
+    </section>
+}
+
+@code {
+    private sealed record Period(string Title, string Subtitle, DateOnly From, DateOnly To);
+    private static readonly (string Mode, string Label)[] Modes = [("sprints", "По спринтам"), ("weeks", "По неделям"), ("days", "По дням")];
+
+    private CapacityDto[] _rows = [];
+    private ActorModel[] _actors = [];
+    private ActorModel[] _departments = [];
+    private SprintModel[] _sprints = [];
+    private TaskModel[] _tasks = [];
+    private Period[] _periods = [];
+    private string _mode = "sprints";
+    private Guid? _department;
+    private bool _highlight = true, _busy;
+    private string? _error;
+
+    private static DateOnly Today => DateOnly.FromDateTime(DateTime.Today);
+    private string Horizon => _periods.Length == 0 ? "—" : $"{_periods[0].From:d MMM} — {_periods[^1].To:d MMM yyyy}";
+    private ActorModel[] People => _actors.Where(a => a.Kind == "Person" && _rows.Any(r => r.ActorId == a.Id)).ToArray();
+    private ActorModel[] VisiblePeople => People.Where(p => _department is null || GroupOf(p) == _department).ToArray();
+
+    /// <summary>Роли и подкоманды, на которые назначена работа без конкретного человека.</summary>
+    private ActorModel[] Vacancies => _actors
+        .Where(a => a.Kind != "Person" && (_department is null || GroupOfRole(a) == _department) && Demand(a) > 0).ToArray();
+
+    private IEnumerable<(Guid? Id, string Name)> Groups =>
+        _departments.Select(d => ((Guid?)d.Id, d.Name)).Append((null, "Без подкоманды"));
+
+    private Guid? GroupOf(ActorModel person) => person.DepartmentIds.FirstOrDefault(id => _departments.Any(d => d.Id == id)) is var id && id != Guid.Empty ? id : (Guid?)null;
+    private Guid? GroupOfRole(ActorModel actor) => actor.Kind == "Department" ? actor.Id : actor.ParentId is { } parent && _departments.Any(d => d.Id == parent) ? parent : null;
+    private string RolesOf(ActorModel person) => string.Join(" / ", _actors.Where(a => person.RoleIds.Contains(a.Id)).Select(a => a.Name).DefaultIfEmpty("Участник команды"));
+
+    private (decimal Available, decimal Allocated) Cell(Guid actorId, Period period)
+    {
+        var rows = _rows.Where(r => r.ActorId == actorId && r.Date >= period.From && r.Date <= period.To);
+        return (rows.Sum(r => r.AvailableHours), rows.Sum(r => r.AllocatedHours));
+    }
+
+    private decimal Available(Guid id) => _periods.Sum(p => Cell(id, p).Available);
+    private decimal Allocated(Guid id) => _periods.Sum(p => Cell(id, p).Allocated);
+
+    /// <summary>Часы задач на роль без человека, попавшие в период пропорционально пересечению окон.</summary>
+    private decimal Demand(ActorModel role, Period period) => _tasks
+        .Where(t => t.AssignmentTargetId == role.Id && t.ResolvedPersonId is null && t.Status is not ("Done" or "Cancelled") && t.EstimateHours > 0)
+        .Sum(t =>
+        {
+            var sprint = _sprints.FirstOrDefault(s => s.Id == t.SprintId);
+            var from = t.StartDate ?? sprint?.StartDate ?? t.Deadline ?? Today;
+            var to = t.EndDate ?? sprint?.EndDate ?? t.Deadline ?? from;
+            if (to < from) to = from;
+            var overlap = Math.Min(to.DayNumber, period.To.DayNumber) - Math.Max(from.DayNumber, period.From.DayNumber) + 1;
+            return overlap <= 0 ? 0 : t.EstimateHours!.Value * overlap / (to.DayNumber - from.DayNumber + 1);
+        });
+
+    private decimal Demand(ActorModel role) => _periods.Sum(p => Demand(role, p));
+
+    private decimal Fund => VisiblePeople.Sum(p => Available(p.Id));
+    private decimal Planned => VisiblePeople.Sum(p => Allocated(p.Id));
+    private decimal Deficit => VisiblePeople.Sum(p => Math.Max(0, Allocated(p.Id) - Available(p.Id))) + Vacancies.Sum(Demand);
+    private decimal Reserve => VisiblePeople.Sum(p => Math.Max(0, Available(p.Id) - Allocated(p.Id)));
+    private int OverloadedCount => VisiblePeople.Count(p => Allocated(p.Id) > Available(p.Id));
+    private string? WorstName => VisiblePeople.Select(p => (p.Name, Gap: Allocated(p.Id) - Available(p.Id))).Concat(Vacancies.Select(v => (v.Name, Gap: Demand(v)))).Where(x => x.Gap > 0).OrderByDescending(x => x.Gap).Select(x => x.Name).FirstOrDefault();
+    private string? FreestName => VisiblePeople.Select(p => (p.Name, Free: Available(p.Id) - Allocated(p.Id))).Where(x => x.Free > 0).OrderByDescending(x => x.Free).Select(x => $"{x.Name} (+{AlvaFormat.Hours(x.Free)} ч)").FirstOrDefault();
+    private AlvaTone LoadTone => Pct(Planned, Fund) switch { > 100 => AlvaTone.Critical, >= 85 and <= 95 => AlvaTone.Ok, > 95 => AlvaTone.Warning, _ => AlvaTone.Info };
+    private string LoadLabel => Pct(Planned, Fund) switch { > 100 => "Перегруз", >= 85 and <= 95 => "Оптимально", > 95 => "На пределе", _ => "Недогруз" };
+
+    private static int Pct(decimal part, decimal whole) => whole <= 0 ? (part > 0 ? 999 : 0) : (int)Math.Round(part / whole * 100);
+    private static string Heat(int pct, decimal avail, decimal alloc) => avail <= 0 && alloc <= 0 ? "empty" : pct > 115 ? "critical" : pct > 100 ? "tension" : pct >= 70 ? "balance" : "under";
+    private static string CellNote(decimal avail, decimal alloc) =>
+        avail <= 0 && alloc <= 0 ? "Нет графика" : alloc > avail ? $"Перегрузка: −{AlvaFormat.Hours(alloc - avail)} ч" : alloc == avail ? "Полный баланс" : $"Резерв: +{AlvaFormat.Hours(avail - alloc)} ч";
+    private string PeriodWord(int n) => _mode switch
+    {
+        "sprints" => AlvaFormat.Plural(n, "спринт", "спринта", "спринтов"),
+        "weeks" => AlvaFormat.Plural(n, "неделя", "недели", "недель"),
+        _ => AlvaFormat.Plural(n, "день", "дня", "дней")
+    };
+
+    private ChartData Forecast => new(
+    [
+        new ChartSeries("Номинал фонда", _periods.Select(p => (double)VisiblePeople.Sum(x => Cell(x.Id, p).Available)).ToArray(), "#B7C4FF"),
+        new ChartSeries("Запланировано", _periods.Select(p => (double)VisiblePeople.Sum(x => Cell(x.Id, p).Allocated)).ToArray(), "#1D4ED8"),
+        new ChartSeries("Дефицит", _periods.Select(p => (double)(VisiblePeople.Sum(x => Math.Max(0, Cell(x.Id, p).Allocated - Cell(x.Id, p).Available)) + Vacancies.Sum(v => Demand(v, p)))).ToArray(), "#DC2626"),
+    ], _periods.Select(p => p.Title).ToArray());
+
+    protected override async Task OnInitializedAsync()
+    {
+        _busy = true;
+        try
+        {
+            _actors = await Session.Get<ActorModel[]>(Session.TeamPath("actors"));
+            _departments = _actors.Where(a => a.Kind == "Department").OrderBy(a => a.Name).ToArray();
+            _sprints = await Session.Get<SprintModel[]>(Session.TeamPath("sprints"));
+            _tasks = await Session.Get<TaskModel[]>(Session.TeamPath("tasks"));
+            await LoadPeriods();
+        }
+        catch (Exception e) when (e is HttpRequestException or InvalidOperationException or NotSupportedException) { _error = e.Message; }
+        finally { _busy = false; }
+    }
+
+    private async Task SetMode(string mode)
+    {
+        _mode = mode;
+        _busy = true;
+        try { await LoadPeriods(); }
+        catch (Exception e) when (e is HttpRequestException or InvalidOperationException or NotSupportedException) { _error = e.Message; }
+        finally { _busy = false; }
+    }
+
+    private async Task LoadPeriods()
+    {
+        var sprints = _sprints.Where(s => s.Status != "Completed").OrderBy(s => s.StartDate).Take(3).ToArray();
+        if (_mode == "sprints" && sprints.Length > 0)
+            _periods = sprints.Select(s => new Period(s.Name, $"{s.StartDate:d MMM} — {s.EndDate:d MMM}", s.StartDate, s.EndDate)).ToArray();
+        else if (_mode == "days")
+        {
+            var days = new List<DateOnly>();
+            for (var d = Today; days.Count < 10; d = d.AddDays(1)) if (d.DayOfWeek is not (DayOfWeek.Saturday or DayOfWeek.Sunday)) days.Add(d);
+            _periods = days.Select(d => new Period(d.ToString("ddd d"), d.ToString("MMM"), d, d)).ToArray();
+        }
+        else
+        {
+            if (_mode == "sprints") _mode = "weeks";
+            var monday = Today.AddDays(-(((int)Today.DayOfWeek + 6) % 7));
+            _periods = Enumerable.Range(0, 4).Select(i => monday.AddDays(7 * i))
+                .Select(w => new Period($"Неделя {System.Globalization.ISOWeek.GetWeekOfYear(w.ToDateTime(TimeOnly.MinValue))}", $"{w:d MMM} — {w.AddDays(6):d MMM}", w, w.AddDays(6))).ToArray();
+        }
+        _rows = await Session.Get<CapacityDto[]>(Session.TeamPath($"capacity?from={_periods[0].From:yyyy-MM-dd}&to={_periods[^1].To:yyyy-MM-dd}"));
+    }
+}

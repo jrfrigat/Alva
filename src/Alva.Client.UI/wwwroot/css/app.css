@@ -256,3 +256,62 @@ html,body{margin:0;min-height:100%;font-family:var(--alva-font);background:var(-
 .alva-sprint-table__empty{padding:1rem;text-align:center;font-size:13px;color:var(--flare-color-on-surface-variant,var(--alva-on-surface-variant))}
 .alva-sprint-tasks__foot{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:.75rem;padding:.625rem 1rem;border-top:1px solid #e2e8f0;background:var(--flare-color-surface-container-low,#eff4ff);font-size:12px}
 @media(max-width:1023px){.alva-sprint-table__head{display:none}.alva-sprint-table__row{grid-template-columns:2rem minmax(0,1fr);row-gap:.375rem}.alva-sprint-table__row>span:nth-child(n+3){grid-column:2}}
+
+/* Обзор ёмкости (p14): панель режимов, матрица «человек × период» с тепловой шкалой. */
+.alva-capacity-bar{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem .75rem;padding:.5rem .75rem;border:1px solid #e2e8f0;border-radius:6px;background:var(--flare-color-surface-container-lowest,#fff)}
+.alva-capacity-bar__sep{width:1px;height:20px;background:#e2e8f0}
+.alva-capacity-bar__label{font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--flare-color-on-surface-variant,var(--alva-on-surface-variant))}
+.alva-capacity-bar__check{margin-left:auto}
+.alva-segmented{display:inline-flex;padding:2px;border-radius:6px;background:var(--flare-color-surface-container-low,#eff4ff)}
+.alva-segmented__item{padding:4px 10px;border:0;border-radius:4px;background:transparent;font:inherit;font-size:11px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;color:var(--flare-color-on-surface-variant,var(--alva-on-surface-variant));cursor:pointer}
+.alva-segmented__item--active{background:var(--flare-color-primary-container,#1d4ed8);color:#fff}
+.alva-segmented__item:focus-visible{outline:2px solid var(--flare-color-primary,var(--alva-primary));outline-offset:1px}
+.alva-kpi__label--primary{color:var(--flare-color-primary,var(--alva-primary))}
+.alva-matrix-panel{padding:0;gap:0;overflow:hidden}
+.alva-matrix-panel__head{display:flex;flex-wrap:wrap;align-items:baseline;gap:.75rem;padding:.75rem 1rem 0}
+.alva-matrix-panel__meta{font-size:12px;color:var(--flare-color-on-surface-variant,var(--alva-on-surface-variant))}
+.alva-heat-legend{display:flex;flex-wrap:wrap;align-items:center;gap:.75rem;padding:.5rem 1rem .75rem;font-size:11px;font-weight:600}
+.alva-heat-legend__title{text-transform:uppercase;letter-spacing:.04em;color:var(--flare-color-on-surface-variant,var(--alva-on-surface-variant))}
+.alva-heat-legend span{display:inline-flex;align-items:center;gap:6px}
+.alva-heat-legend i{display:inline-block;width:12px;height:12px;border-radius:3px}
+.alva-matrix{display:flex;flex-direction:column;overflow-x:auto}
+.alva-matrix__head,.alva-matrix__row{display:grid;grid-template-columns:minmax(14rem,1.6fr) 7rem 6rem repeat(var(--alva-matrix-periods),minmax(9rem,1fr)) 7.5rem;align-items:center;gap:.75rem;padding:8px 16px;min-width:fit-content}
+.alva-matrix__head{background:var(--flare-color-surface-container-low,#eff4ff);border-top:1px solid #e2e8f0;border-bottom:1px solid #e2e8f0;font-size:11px;font-weight:600;letter-spacing:.03em;text-transform:uppercase;color:var(--flare-color-on-surface-variant,var(--alva-on-surface-variant))}
+.alva-matrix__period{display:flex;flex-direction:column;align-items:center;text-align:center}
+.alva-matrix__period b{color:var(--flare-color-on-surface,var(--alva-on-surface))}
+.alva-matrix__period small{font-weight:600;text-transform:none;letter-spacing:0}
+.alva-matrix__group{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:.5rem;padding:8px 16px;background:#f8fafc;border-bottom:1px solid #e2e8f0}
+.alva-matrix__group-name{display:inline-flex;align-items:center;gap:6px;font-size:15px;font-weight:700}
+.alva-matrix__group-name small{font-size:11px;font-weight:500;color:var(--flare-color-on-surface-variant,var(--alva-on-surface-variant))}
+.alva-matrix__group-total{font-size:11px;font-weight:600;color:var(--flare-color-primary,var(--alva-primary))}
+.alva-matrix__group-total--critical{color:var(--alva-critical-text)}
+.alva-matrix__row{min-height:76px;border-bottom:1px solid #e2e8f0}
+.alva-matrix__row--vacancy{background:#fff5f5}
+.alva-matrix__who{display:flex;align-items:center;gap:.625rem;min-width:0}
+.alva-matrix__who>span:last-child{display:flex;flex-direction:column;min-width:0}
+.alva-matrix__who small{font-size:12px;color:var(--flare-color-on-surface-variant,var(--alva-on-surface-variant))}
+.alva-matrix__name{font-size:14px;font-weight:700;color:var(--flare-color-on-surface,var(--alva-on-surface));text-decoration:none}
+a.alva-matrix__name:hover{text-decoration:underline}
+.alva-matrix__name--critical{color:var(--alva-critical-text)}
+.alva-slot__mark--vacancy{background:#fee2e2;color:var(--alva-critical-text)}
+.alva-matrix__fund{font-size:14px;font-weight:600;text-align:center}
+.alva-matrix__total{font-size:14px;font-weight:700;text-align:right}
+.alva-matrix__total small{font-size:12px}
+.alva-matrix__total--critical{color:var(--alva-critical-text)}
+.alva-heat{display:flex;flex-direction:column;gap:4px;padding:6px 8px;border:1px solid transparent;border-radius:4px;font-size:11px}
+.alva-heat__top{display:flex;justify-content:space-between;gap:.25rem;font-weight:600}
+.alva-heat__top b{padding:0 4px;border-radius:3px}
+.alva-heat__bar{height:3px;overflow:hidden;border-radius:9999px;background:rgba(15,23,42,.08)}
+.alva-heat__bar span{display:block;height:100%;background:var(--flare-color-primary,var(--alva-primary))}
+.alva-heat__note{font-size:11px;color:var(--flare-color-on-surface-variant,var(--alva-on-surface-variant))}
+.alva-heat--under,.alva-heat-legend .alva-heat--under{background:#f0f4ff}
+.alva-heat--balance,.alva-heat-legend .alva-heat--balance{background:#dce9ff}
+.alva-heat--tension,.alva-heat-legend .alva-heat--tension{background:#b7c4ff}
+.alva-heat--critical,.alva-heat-legend .alva-heat--critical{background:#fee2e2}
+.alva-heat--critical{border-color:#fca5a5}
+.alva-heat--critical .alva-heat__top b{background:var(--alva-critical-text);color:#fff}
+.alva-heat--critical .alva-heat__bar span{background:var(--alva-critical-text)}
+.alva-heat--critical .alva-heat__note{color:var(--alva-critical-text);font-weight:600}
+.alva-heat--tension .alva-heat__top b{background:var(--flare-color-primary-container,#1d4ed8);color:#fff}
+.alva-heat--empty{background:#f8fafc;color:var(--flare-color-on-surface-variant,var(--alva-on-surface-variant))}
+.alva-heat--flag{box-shadow:inset 0 0 0 2px var(--alva-critical-text)}

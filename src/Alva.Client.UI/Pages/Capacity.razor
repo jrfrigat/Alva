@@ -2,6 +2,9 @@
 @page "/capacity/{ActorId:guid}"
 @inject AlvaSession Session
 <PageTitle>Ёмкость · Alva</PageTitle>
+@if(ActorId is null && Session.TeamId is not null){<CapacityOverview />}
+else
+{
 <AlvaPageHeader Category="Ресурсы · Ёмкость" Title="Ёмкость команды" Description="Доступные часы и назначенная работа за выбранный период." />
 <PageFeedback Loading="_busy" Error="@_error" />
 @if(Session.TeamId is null){<TeamRequired />}
@@ -33,6 +36,7 @@ else
     <FlareGrid MinColumnWidth="min(100%,12rem)"><FlareTextField Label="Название блока" @bind-Value="_blockName" /><FlareSelect TValue="int" Label="День недели" Items="Enumerable.Range(0,7)" ItemLabel="BlockDay" @bind-Value="_blockDay" /><FlareNumericField TValue="decimal" Label="Часы" @bind-Value="_blockHours" Min="0" Max="24" /></FlareGrid>
     <FlareButton Variant="ButtonVariant.Tonal" OnClick="AddBlock" Disabled="@(string.IsNullOrWhiteSpace(_blockName) || _busy)">Добавить блок</FlareButton>
 </FlareStack></FlareCardContent></FlareCard>
+}
 }
 }
 @code {
