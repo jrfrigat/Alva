@@ -1,20 +1,178 @@
 @page "/analytics"
 @inject AlvaSession Session
+@* Риски и причины сдвига сроков: сводка, быстрые фильтры по видам причин и список задач под риском.
+   Макета для страницы нет — разметка по DESIGN.md и образцам реестра спринтов и обзора ёмкости. *@
 <PageTitle>Аналитика · Alva</PageTitle>
-<AlvaPageHeader Category="Аналитика · Риски" Title="Риски и причины" Description="Сроки, загрузка, зависимости и назначение задач команды." />
+<section class="alva-page-header">
+    <div class="alva-page-header__text">
+        <div class="alva-micro-label"><span>Аналитика · Риски</span></div>
+        <h1 class="alva-page-header__title">Риски и причины сдвига сроков</h1>
+        <p class="alva-page-header__desc">Какие задачи могут не успеть и почему: перегрузка и отпуска исполнителей, работа без человека, просроченные сроки и незакрытые зависимости.</p>
+    </div>
+</section>
 <PageFeedback Loading="_busy" Error="@_error" />
-@if(Session.TeamId is null){<TeamRequired />}
+@if (Session.TeamId is null) { <TeamRequired /> }
+else if (!_busy)
+{
+<div class="alva-kpis">
+    <section class="alva-kpi">
+        <div class="alva-kpi__head"><div><span class="alva-kpi__label">Задач под риском</span><span class="alva-num"><span class="alva-kpi__value">@_risks.Length</span> <span class="alva-kpi__unit">из @OpenTasks открытых</span></span></div><span class="alva-kpi__icon"><FlareIconView Value="@MaterialDesign3Icons.Regular.Warning" Size="18px" /></span></div>
+        <p class="alva-kpi__note">@(_risks.Length == 0 ? "Все сроки держатся" : $"{Pct(_risks.Length, OpenTasks)}% открытых задач")</p>
+    </section>
+    <section class="alva-kpi @(High > 0 ? "alva-kpi--critical" : "")">
+        <div class="alva-kpi__head"><div><span class="alva-kpi__label">Высокий уровень</span><span class="alva-num"><span class="alva-kpi__value">@High</span> <span class="alva-kpi__unit">@AlvaFormat.Plural(High, "задача", "задачи", "задач")</span></span></div><span class="alva-kpi__icon"><FlareIconView Value="@MaterialDesign3Icons.Regular.Error" Size="18px" /></span></div>
+        <p class="alva-kpi__note">Срок прошёл или прогноз позже срока больше чем на 3 дня</p>
+    </section>
+    <section class="alva-kpi">
+        <div class="alva-kpi__head"><div><span class="alva-kpi__label">Ближайший срыв</span><span class="alva-kpi__title">@(Nearest?.Risk.Title ?? "Не ожидается")</span></div><span class="alva-kpi__icon"><FlareIconView Value="@MaterialDesign3Icons.Regular.EventBusy" Size="18px" /></span></div>
+        <p class="alva-kpi__note alva-num">@(Nearest is { } n ? $"Срок {n.Due:d MMM}, прогноз {n.Risk.ForecastDate:d MMM} (+{Slip(n.Risk)} дн.)" : "Прогнозы укладываются в сроки")</p>
+    </section>
+    <section class="alva-kpi">
+        <div class="alva-kpi__head"><div><span class="alva-kpi__label">Без человека</span><span class="alva-num"><span class="alva-kpi__value">@Count(RiskKind.Unassigned)</span> <span class="alva-kpi__unit">@AlvaFormat.Plural(Count(RiskKind.Unassigned), "задача", "задачи", "задач")</span></span></div><span class="alva-kpi__icon"><FlareIconView Value="@MaterialDesign3Icons.Regular.PersonSearch" Size="18px" /></span></div>
+        <p class="alva-kpi__note"><a href="/unassigned">Пул неназначенных задач</a></p>
+    </section>
+</div>
+
+<div class="alva-capacity-bar">
+    <span class="alva-capacity-bar__label"><FlareIconView Value="@MaterialDesign3Icons.Regular.FilterList" Size="16px" /> Причины:</span>
+    <div class="alva-quickfilter" role="group" aria-label="Фильтр по причине">
+        <button type="button" class="alva-quickfilter__item @(_kind is null ? "alva-quickfilter__item--active" : "")" aria-pressed="@(_kind is null)" @onclick="() => _kind = null">Все (@_risks.Length)</button>
+        @foreach (var kind in Kinds.Where(k => Count(k) > 0))
+        {
+            <button type="button" class="alva-quickfilter__item @(_kind == kind ? "alva-quickfilter__item--active" : "")" aria-pressed="@(_kind == kind)" @onclick="() => _kind = kind">@Label(kind) (@Count(kind))</button>
+        }
+    </div>
+</div>
+
+<div class="alva-filterbar">
+    <FlareTabs @bind-ActiveIndex="_level" Class="alva-filterbar__tabs">
+        <FlareTab Label="Все уровни" Badge="@_risks.Length.ToString()" BadgeColor="FlareColor.Secondary" />
+        <FlareTab Label="Высокий" Badge="@High.ToString()" BadgeColor="FlareColor.Error" />
+        <FlareTab Label="Средний" Badge="@((_risks.Length - High).ToString())" BadgeColor="FlareColor.Secondary" />
+    </FlareTabs>
+    <FlareSelect TValue="Guid?" Items="@(People.Select(p => (Guid?)p.Id))" ItemLabel="PersonName" NullOption="Все исполнители" @bind-Value="_person" Size="FieldSize.Sm" InputAttributes="@(new Dictionary<string, object> { ["aria-label"] = "Исполнитель" })" Class="alva-filterbar__person" />
+    <FlareTextField @bind-Value="_search" Immediate Clearable Placeholder="Поиск по задаче или причине" AriaLabel="Поиск риска" Class="alva-filterbar__search">
+        <AdornmentStart><FlareIconView Value="@MaterialDesign3Icons.Regular.Search" Size="18px" /></AdornmentStart>
+    </FlareTextField>
+</div>
+
+@if (_risks.Length == 0)
+{
+    <FlareEmptyState Title="Открытых рисков нет" Description="Проверены сроки, прогнозы по графикам исполнителей, отпуска, перегрузка, назначения и зависимости." />
+}
 else
 {
-<FlareDataGrid TItem="RiskDto" Items="_risks" Height="auto" Hoverable Dense="true"><Columns>
-    <FlareColumn TItem="RiskDto" Title="Задача" Field="r=>r!.Title" Sortable Filterable><Template Context="risk"><FlareLink Href="@($"/tasks/{risk!.TaskId}")">@risk.Title</FlareLink></Template></FlareColumn>
-    <FlareColumn TItem="RiskDto" Title="Уровень" Field="r=>r!.Severity" Sortable><Template Context="risk"><AlvaStatusChip Tone="AlvaTones.Severity(risk!.Severity)">@risk.Severity</AlvaStatusChip></Template></FlareColumn>
-    <FlareColumn TItem="RiskDto" Title="Причины"><Template Context="risk">@string.Join(" · ",risk!.Reasons)</Template></FlareColumn>
-    <FlareColumn TItem="RiskDto" Title="Прогноз" Field="r=>r!.ForecastDate" />
-</Columns><EmptyStateContent><FlareEmptyState Compact Title="Открытых рисков нет" Description="Проверены сроки, загрузка, зависимости и назначение задач." /></EmptyStateContent></FlareDataGrid>
-<FlareButton Href="/capacity" Variant="ButtonVariant.Tonal">Загрузка и доступность команды</FlareButton>
+<section class="alva-panel alva-risk-panel">
+    <div class="alva-risk-table" role="table" aria-label="Задачи под риском">
+        <div class="alva-risk-table__row alva-risk-table__row--head" role="row"><span role="columnheader">Задача</span><span role="columnheader">Уровень</span><span role="columnheader">Причины</span><span role="columnheader">Исполнитель</span><span role="columnheader">Срок / прогноз</span></div>
+        @foreach (var risk in Visible)
+        {
+            var task = TaskOf(risk.TaskId);
+            var slip = Slip(risk);
+            <div class="alva-risk-table__row" role="row" @key="risk.TaskId">
+                <span role="cell" class="alva-risk-table__task"><a href="@($"/tasks/{risk.TaskId}")">@risk.Title</a><span class="alva-num">@AlvaFormat.Code(risk.TaskId)</span></span>
+                <span role="cell"><AlvaStatusChip Tone="AlvaTones.Severity(risk.Severity)">@(risk.Severity == "High" ? "Высокий" : "Средний")</AlvaStatusChip></span>
+                <span role="cell" class="alva-risk-table__reasons">@foreach (var reason in risk.Reasons) { <span class="alva-chip alva-chip--@Tone(KindOf(reason))">@reason</span> }</span>
+                <span role="cell" class="alva-risk-table__person">
+                    @if (task?.ResolvedPersonId is { } personId && Actor(personId) is { } person)
+                    {
+                        <a href="@($"/capacity/{person.Id}")" class="alva-person-link"><span class="alva-slot__mark" aria-hidden="true">@AlvaFormat.Initials(person.Name)</span><span>@person.Name</span></a>
+                    }
+                    else { <span class="alva-week__muted">@(task?.AssignmentTargetId is { } target ? Actor(target)?.Name ?? "—" : "Не назначена")</span> }
+                </span>
+                <span role="cell" class="alva-risk-table__dates alva-num">
+                    <span>@(task?.Deadline is { } due ? due.ToString("d MMM") : "без срока")</span>
+                    <span class="@(slip > 0 ? "alva-risk-table__slip" : "")">@(risk.ForecastDate is { } forecast ? $"→ {forecast:d MMM}" : "→ не рассчитан")@(slip > 0 ? $" (+{slip} дн.)" : "")</span>
+                </span>
+            </div>
+        }
+        @if (!Visible.Any()) { <div class="alva-sprint-table__empty">По этим условиям рисков нет. Смените фильтр или поиск.</div> }
+    </div>
+</section>
 }
+}
+
 @code {
-    private RiskDto[] _risks=[];private bool _busy;private string? _error;
-    protected override async Task OnInitializedAsync(){_busy=true;try{await Session.Initialize();if(Session.TeamId.HasValue)_risks=await Session.Get<RiskDto[]>(Session.TeamPath("risks"));}catch(Exception e) when(e is HttpRequestException or InvalidOperationException){_error=e.Message;}finally{_busy=false;}}
+    private enum RiskKind { Overdue, Forecast, Overload, Absence, Unassigned, Dependency, Other }
+    private static readonly RiskKind[] Kinds = [RiskKind.Overdue, RiskKind.Forecast, RiskKind.Overload, RiskKind.Absence, RiskKind.Unassigned, RiskKind.Dependency, RiskKind.Other];
+
+    private RiskDto[] _risks = [];
+    private TaskModel[] _tasks = [];
+    private ActorModel[] _actors = [];
+    private bool _busy = true;
+    private string? _error, _search;
+    private int _level;
+    private RiskKind? _kind;
+    private Guid? _person;
+
+    private int OpenTasks => _tasks.Count(t => t.Status is not ("Done" or "Cancelled"));
+    private int High => _risks.Count(r => r.Severity == "High");
+    private TaskModel? TaskOf(Guid id) => _tasks.FirstOrDefault(t => t.Id == id);
+    private ActorModel? Actor(Guid id) => _actors.FirstOrDefault(a => a.Id == id);
+    private string PersonName(Guid? id) => id is { } value ? Actor(value)?.Name ?? "—" : "Все исполнители";
+    private IEnumerable<ActorModel> People => _risks.Select(r => TaskOf(r.TaskId)?.ResolvedPersonId).OfType<Guid>().Distinct().Select(Actor).OfType<ActorModel>().OrderBy(a => a.Name);
+
+    /// <summary>Вид причины по её тексту: префиксы задаёт расчёт рисков (RiskMath).</summary>
+    private static RiskKind KindOf(string reason) => reason switch
+    {
+        "Срок прошёл" => RiskKind.Overdue,
+        "Прогноз позже срока" => RiskKind.Forecast,
+        "Нет исполнителя" => RiskKind.Unassigned,
+        "Зависимость не завершена" => RiskKind.Dependency,
+        _ when reason.StartsWith("Перегрузка исполнителя", StringComparison.Ordinal) => RiskKind.Overload,
+        _ when reason.StartsWith("Исполнитель недоступен", StringComparison.Ordinal) => RiskKind.Absence,
+        _ when reason.StartsWith("Требуется человек", StringComparison.Ordinal) => RiskKind.Unassigned,
+        _ => RiskKind.Other
+    };
+
+    private static string Label(RiskKind kind) => kind switch
+    {
+        RiskKind.Overdue => "Срок прошёл",
+        RiskKind.Forecast => "Не успевает к сроку",
+        RiskKind.Overload => "Перегрузка",
+        RiskKind.Absence => "Отпуск исполнителя",
+        RiskKind.Unassigned => "Нет человека",
+        RiskKind.Dependency => "Зависимости",
+        _ => "Прочее"
+    };
+
+    private static string Tone(RiskKind kind) => kind switch
+    {
+        RiskKind.Overdue or RiskKind.Overload => "critical",
+        RiskKind.Forecast or RiskKind.Dependency => "warning",
+        RiskKind.Absence => "role",
+        RiskKind.Unassigned => "info",
+        _ => "neutral"
+    };
+
+    private int Count(RiskKind kind) => _risks.Count(r => r.Reasons.Any(x => KindOf(x) == kind));
+
+    private IEnumerable<RiskDto> Visible => _risks
+        .Where(r => _level == 0 || (_level == 1) == (r.Severity == "High"))
+        .Where(r => _kind is null || r.Reasons.Any(x => KindOf(x) == _kind))
+        .Where(r => _person is null || TaskOf(r.TaskId)?.ResolvedPersonId == _person)
+        .Where(r => string.IsNullOrWhiteSpace(_search) || r.Title.Contains(_search, StringComparison.OrdinalIgnoreCase) || r.Reasons.Any(x => x.Contains(_search, StringComparison.OrdinalIgnoreCase)));
+
+    /// <summary>На сколько дней прогноз позже срока задачи.</summary>
+    private int Slip(RiskDto risk) => TaskOf(risk.TaskId)?.Deadline is { } due && risk.ForecastDate is { } forecast ? Math.Max(0, forecast.DayNumber - due.DayNumber) : 0;
+
+    private (RiskDto Risk, DateOnly Due)? Nearest => _risks
+        .Where(r => Slip(r) > 0).Select(r => (Risk: r, Due: TaskOf(r.TaskId)!.Deadline!.Value))
+        .OrderBy(x => x.Due).Cast<(RiskDto, DateOnly)?>().FirstOrDefault();
+
+    private static int Pct(int part, int whole) => whole <= 0 ? 0 : (int)Math.Round(part * 100.0 / whole);
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            await Session.Initialize();
+            if (Session.TeamId is null) return;
+            _risks = await Session.Get<RiskDto[]>(Session.TeamPath("risks"));
+            _tasks = await Session.Get<TaskModel[]>(Session.TeamPath("tasks"));
+            _actors = await Session.Get<ActorModel[]>(Session.TeamPath("actors"));
+        }
+        catch (Exception e) when (e is HttpRequestException or InvalidOperationException) { _error = e.Message; }
+        finally { _busy = false; }
+    }
 }
