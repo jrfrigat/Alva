@@ -49,3 +49,22 @@
   border-bottom: 1px solid #E2E8F0;
 }
 
+/* ------------------------------------------------------ Семантика риска и ёмкости -------------
+   DESIGN.md, Colors: «Critical / Overcapacity / Deadline Breach: coral-crimson (#EF4444, dark tier
+   #DC2626) ... Warning / Unassigned / Dependency Hazard: amber-tangerine (#F59E0B, dark tier
+   #D97706)», и «Overcapacity Pill: Background #FEE2E2, border #FCA5A5, text #DC2626».
+   Стоковый Flare рисует warning через tertiary-container (фиолетовый) и error через
+   error-container — то есть мимо семантики дизайна; здесь обе пары приведены к ней.
+   Права те же свойства, что ставит Flare (.flare-alert--warning/--error), плюс класс темы,
+   поэтому специфичность выше и правило побеждает. */
+.flare-theme-alva .flare-alert--warning {
+  background: #FEF3C7;
+  color: #D97706;
+}
+
+.flare-theme-alva .flare-alert--error {
+  background: #FEE2E2;
+  color: #DC2626;
+}
+
+
