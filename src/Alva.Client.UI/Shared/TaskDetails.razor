@@ -248,7 +248,7 @@
                     var reserve = _load.TryGetValue(actor.Id, out var l) ? l.Available - l.Allocated : 0;
                     var tone = percent is null ? AlvaTone.Role : percent > 100 ? AlvaTone.Critical : percent > 80 ? AlvaTone.Info : AlvaTone.Ok;
                     @* Вся карточка — подпись радиокнопки: клик по ней выбирает кандидата. *@
-                    <div class="alva-candidate @(actor.Id == _assignTarget ? "alva-candidate--selected" : "") @(actor.Id == recommended ? "alva-candidate--recommended" : "")" @key="actor.Id">
+                    <div class="alva-candidate @(kind != "Person" ? "alva-candidate--group" : "") @(actor.Id == _assignTarget ? "alva-candidate--selected" : "") @(actor.Id == recommended ? "alva-candidate--recommended" : "")" @key="actor.Id">
                         <FlareRadio TValue="Guid?" Value="actor.Id">
                             <span class="alva-candidate__content">
                                 <span class="alva-slot__mark alva-candidate__avatar" aria-hidden="true">@Initials(actor.Name)</span>
