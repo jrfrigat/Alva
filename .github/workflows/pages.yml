@@ -28,7 +28,7 @@ jobs:
         with:
           global-json-file: global.json
       - name: Publish demo client
-        run: dotnet publish src/Alva.Client/Alva.Client.csproj -c Release -p:AlvaDemo=true -o dist
+        run: dotnet publish src/Alva.Client.Demo/Alva.Client.Demo.csproj -c Release -o dist
       - name: Prepare Pages site
         run: |
           site="dist/wwwroot"

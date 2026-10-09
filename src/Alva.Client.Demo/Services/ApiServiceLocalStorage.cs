@@ -1,4 +1,3 @@
-#if ALVA_DEMO
 using System.Net;
 using System.Text.Json;
 using Alva.Client.Models;
@@ -9,7 +8,7 @@ namespace Alva.Client.Services;
 
 /// <summary>
 /// Demo-реализация: данные живут в localStorage браузера, сеть не используется.
-/// Собирается только с флагом <c>ALVA_DEMO</c> (см. Alva.Client.csproj) — продовая сборка её не содержит.
+/// Живёт в проекте <c>Alva.Client.Demo</c> — продовая сборка этот код не содержит.
 /// </summary>
 public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
 {
@@ -584,4 +583,3 @@ internal static class DemoSeed
         return store;
     }
 }
-#endif

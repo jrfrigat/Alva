@@ -81,12 +81,28 @@ dotnet run --project src/Alva.Api --urls http://localhost:8080
 
 ## Демо-версия без сервера
 
-Демонстрационная сборка работает целиком в браузере: данные живут в `localStorage`,
-к сети приложение не обращается. Реализация выбирается при сборке свойством
-`AlvaDemo`, поэтому продовая сборка остаётся на HTTP-пути к API.
+Демо работает целиком в браузере: данные живут в `localStorage`, к сети приложение
+не обращается — ни API, ни БД, ни Docker не нужны. Это отдельный проект, а не режим
+сборки: UI у прод- и demo-версии общий, а различается только реализация
+`IApiService`, которую каждая оболочка регистрирует в DI.
+
+### Запуск из Visual Studio (F5)
+
+Сделайте стартовым проектом **`Alva.Client.Demo`** и нажмите F5 — откроется браузер
+с работающим демо (профиль «Alva demo (браузер, без сервера)»,
+http://localhost:5200). Прод-версию раздаёт `Alva.Api` вместе с API и БД —
+см. разделы о запуске выше.
+
+### Запуск из терминала
 
 ```powershell
-dotnet publish src/Alva.Client/Alva.Client.csproj -c Release -p:AlvaDemo=true -o dist
+dotnet run --project src/Alva.Client.Demo
+```
+
+Публикация статики для любого хостинга:
+
+```powershell
+dotnet publish src/Alva.Client.Demo/Alva.Client.Demo.csproj -c Release -o dist
 # готовый сайт — в dist/wwwroot
 ```
 
@@ -127,8 +143,12 @@ API доверяет только адресу Caddy `CADDY_IP` в выделе�
 
 ## Сборка и Git
 
-`Alva.slnx` объединяет проекты `src/` и тесты `tests/`. `Directory.Build.props`
-включает nullable reference types и считает неизвестные Razor-компоненты ошибкой.
+`Alva.slnx` объединяет проекты `src/` и тесты `tests/`. Клиент разделён на три
+проекта: `Alva.Client.UI` — общая библиотека со страницами, макетом, моделями и
+`IApiService`; `Alva.Client` — прод-оболочка с HTTP-реализацией (её раздаёт
+`Alva.Api`); `Alva.Client.Demo` — demo-оболочка с реализацией на `localStorage`.
+`Directory.Build.props` включает nullable reference types и считает неизвестные
+Razor-компоненты ошибкой.
 Dockerfile собирает API вместе с WASM и запускает runtime от непривилегированного
 пользователя. Node/npm для сборки не требуются.
 
