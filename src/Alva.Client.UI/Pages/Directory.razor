@@ -35,7 +35,7 @@ else
     <FlareStack Row Wrap>@foreach(var role in _actor.RoleIds) { <FlareButton Variant="ButtonVariant.Tonal" Size="ButtonSize.Sm" OnClick="()=>RemoveRole(role)">@ActorName(role) ×</FlareButton> }</FlareStack>
     }
     <FlareStack Row Wrap><FlareButton Loading="_busy" OnClick="SaveActor" Disabled="@(string.IsNullOrWhiteSpace(_actor.Name))">Сохранить</FlareButton><FlareButton Variant="ButtonVariant.Text" OnClick="Close">Закрыть</FlareButton>
-    @if(_actor.Id!=Guid.Empty) { <FlareButton Href="@($"/capacity/{_actor.Id}")" Variant="ButtonVariant.Text">Рабочий график</FlareButton><FlareButton Variant="ButtonVariant.Text" Color="FlareColor.Error" OnClick="ArchiveActor">Архивировать</FlareButton> }</FlareStack>
+    @if(_actor.Id!=Guid.Empty) { @if(_actor.Kind!="Role") { <FlareButton Href="@(_actor.Kind=="Department"?$"/capacity/{_actor.Id}/schedule":$"/capacity/{_actor.Id}")" Variant="ButtonVariant.Text">Рабочий график</FlareButton> }<FlareButton Variant="ButtonVariant.Text" Color="FlareColor.Error" OnClick="ArchiveActor">Архивировать</FlareButton> }</FlareStack>
 </FlareStack></FlareCardContent></FlareCard>
 }
 </FlareGrid>

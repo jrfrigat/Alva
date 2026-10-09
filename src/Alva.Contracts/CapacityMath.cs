@@ -23,12 +23,38 @@ public static class CapacityMath
         _ => calendar.Sunday
     };
 
-    /// <summary>Часы дня по графику или по исключению, минус повторяющиеся вычеты этого дня.</summary>
+    /// <summary>
+    /// Часы дня по графику или по исключению, минус повторяющиеся вычеты этого дня.
+    /// Если на день приходится несколько исключений, действует то, где часов меньше.
+    /// </summary>
     public static decimal Available(CalendarDto calendar, DateOnly day)
     {
-        var hours = calendar.Exceptions.FirstOrDefault(x => x.From <= day && day <= x.To) is { } exception ? exception.AvailableHours : Nominal(calendar, day.DayOfWeek);
+        var hours = calendar.Exceptions.Where(x => x.From <= day && day <= x.To).Select(x => (decimal?)x.AvailableHours).Min() ?? Nominal(calendar, day.DayOfWeek);
         hours -= calendar.RecurringBlocks.Where(x => x.DayOfWeek == (int)day.DayOfWeek).Sum(x => x.Hours);
         return Math.Max(0m, hours);
+    }
+
+    /// <summary>
+    /// Календарь человека вместе с календарями его подразделений: часы недели — личные,
+    /// исключения и повторяющиеся вычеты подразделений добавляются к личным.
+    /// </summary>
+    public static CalendarDto Combine(CalendarDto person, IEnumerable<CalendarDto> departments)
+    {
+        var shared = departments.ToArray();
+        return shared.Length == 0 ? person : person with
+        {
+            Exceptions = [.. person.Exceptions, .. shared.SelectMany(x => x.Exceptions)],
+            RecurringBlocks = [.. person.RecurringBlocks, .. shared.SelectMany(x => x.RecurringBlocks)]
+        };
+    }
+
+    /// <summary>Подразделения, чьи графики действуют на человека: его собственные и все их родительские.</summary>
+    public static IReadOnlyCollection<Guid> DepartmentsWithParents(IEnumerable<Guid> departments, Func<Guid, Guid?> parentOf)
+    {
+        var result = new HashSet<Guid>();
+        foreach (var department in departments)
+            for (Guid? current = department; current is { } id && result.Add(id); current = parentOf(id)) { }
+        return result;
     }
 
     /// <summary>Окно задачи: начало и конец с запасными датами; конец не раньше начала.</summary>

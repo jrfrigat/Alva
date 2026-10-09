@@ -231,6 +231,16 @@ networks:
     } -ExpectedStatus @(400))
     [void](Invoke-Api $stranger GET "api/teams/$teamId/actors" -ExpectedStatus @(403, 404))
     Write-Host 'PASS: actor roles, department membership and hierarchy cycle validation.'
+
+    $monday = [DateTime]::Today.AddDays(7 - ([int][DateTime]::Today.DayOfWeek + 6) % 7).ToString('yyyy-MM-dd')
+    [void](Invoke-Api $owner POST "api/teams/$teamId/actors/$($department.id)/calendar/exceptions" @{
+        from = $monday; to = $monday; availableHours = 0; reason = 'Department holiday'
+    } -ExpectedStatus @(200, 201, 204))
+    [void](Invoke-Api $owner GET "api/teams/$teamId/actors/$($role.id)/calendar" -ExpectedStatus @(404))
+    $capacity = Invoke-Api $owner GET "api/teams/$teamId/capacity?from=$monday&to=$monday"
+    $personDay = @($capacity | Where-Object actorId -eq $person.id)[0]
+    Assert-True ($null -ne $personDay -and [decimal]$personDay.availableHours -eq 0) 'A department holiday did not reach its member capacity.'
+    Write-Host 'PASS: department calendar applies to its members.'
     if ($ActorsOnly) {
         Write-Host 'Alva actor smoke passed (task checks not requested).'
         return

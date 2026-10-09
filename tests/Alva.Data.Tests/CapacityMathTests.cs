@@ -106,6 +106,41 @@ public sealed class CapacityMathTests
     }
 
     [Fact]
+    public void Department_holiday_and_meeting_apply_to_the_member()
+    {
+        var department = new CalendarDto(Guid.NewGuid(), "Europe/Moscow", 0m, 0m, 0m, 0m, 0m, 0m, 0m,
+            [new(Guid.NewGuid(), Monday, Monday, 0m, "Праздник отдела")], [new(Guid.NewGuid(), (int)DayOfWeek.Friday, 1m, "Демо отдела")]);
+        var calendar = CapacityMath.Combine(Week(blocks: [new(Guid.NewGuid(), (int)DayOfWeek.Friday, 0.5m, "Дейлик")]), [department]);
+
+        Assert.Equal(0m, CapacityMath.Available(calendar, Monday));
+        Assert.Equal(4.5m, CapacityMath.Available(calendar, Friday));
+        Assert.Equal(8m, CapacityMath.Available(calendar, Monday.AddDays(1)));
+
+        var alone = Week();
+        Assert.Same(alone, CapacityMath.Combine(alone, []));
+    }
+
+    [Fact]
+    public void Overlapping_exceptions_keep_the_smaller_hours()
+    {
+        var calendar = Week([new(Guid.NewGuid(), Monday, Monday, 4m, "Сокращённый день"), new(Guid.NewGuid(), Friday, Monday, 0m, "Отпуск")]);
+
+        Assert.Equal(0m, CapacityMath.Available(calendar, Monday));
+    }
+
+    [Fact]
+    public void Departments_include_their_parents_once()
+    {
+        Guid team = Guid.NewGuid(), group = Guid.NewGuid(), other = Guid.NewGuid();
+        var parents = new Dictionary<Guid, Guid?> { [group] = team, [team] = null, [other] = group };
+
+        var result = CapacityMath.DepartmentsWithParents([group, other], id => parents[id]);
+
+        Assert.Equal(new HashSet<Guid> { team, group, other }, result.ToHashSet());
+        Assert.Empty(CapacityMath.DepartmentsWithParents([], id => parents[id]));
+    }
+
+    [Fact]
     public void Build_ignores_work_of_unknown_people_and_tasks_without_dates()
     {
         var work = new[] { new CapacityWork(Guid.NewGuid(), 8m, Monday, Monday, null), new CapacityWork(Person, 8m, null, null, null) };

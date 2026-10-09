@@ -133,7 +133,7 @@
     }
     private IEnumerable<DateOnly> MonthDays => Enumerable.Range(0, DateTime.DaysInMonth(_month.Year, _month.Month)).Select(i => _month.AddDays(i));
     private decimal NominalOf(Guid id) => MonthDays.Sum(d => NominalOn(id, d));
-    private decimal AbsenceOf(Guid id) => MonthDays.Sum(d => _calendars[id].Exceptions.FirstOrDefault(e => d >= e.From && d <= e.To) is { } e ? Math.Max(0, NominalOn(id, d) - e.AvailableHours) : 0);
+    private decimal AbsenceOf(Guid id) => MonthDays.Sum(d => _calendars[id].Exceptions.Where(e => d >= e.From && d <= e.To).MinBy(e => e.AvailableHours) is { } e ? Math.Max(0, NominalOn(id, d) - e.AvailableHours) : 0);
     private decimal NominalMonth => People.Where(p => _focus is null || p.Id == _focus).Sum(p => NominalOf(p.Id));
     private decimal AbsenceHours => People.Where(p => _focus is null || p.Id == _focus).Sum(p => AbsenceOf(p.Id));
     private decimal Effective => _rows.Where(r => r.Date.Month == _month.Month && (_focus is null || r.ActorId == _focus)).Sum(r => r.AvailableHours);
@@ -145,8 +145,17 @@
     {
         _actors = await Session.Get<ActorModel[]>(Session.TeamPath("actors"));
         _sprints = await Session.Get<SprintModel[]>(Session.TeamPath("sprints"));
+        // Праздники и встречи подкоманд действуют на их участников так же, как в расчёте ёмкости.
+        var departments = _actors.Where(a => a.Kind == "Department").ToDictionary(a => a.Id, a => a.ParentId);
+        var shared = new Dictionary<Guid, CalendarDto>();
+        foreach (var id in departments.Keys) shared[id] = await Session.Get<CalendarDto>(Session.TeamPath($"actors/{id}/calendar"));
         foreach (var person in _actors.Where(a => a.Kind == "Person"))
-            _calendars[person.Id] = await Session.Get<CalendarDto>(Session.TeamPath($"actors/{person.Id}/calendar"));
+        {
+            var own = await Session.Get<CalendarDto>(Session.TeamPath($"actors/{person.Id}/calendar"));
+            var memberOf = CapacityMath.DepartmentsWithParents(person.DepartmentIds.Append(person.ParentId ?? Guid.Empty).Where(departments.ContainsKey),
+                id => departments.GetValueOrDefault(id) is { } parent && departments.ContainsKey(parent) ? parent : null);
+            _calendars[person.Id] = CapacityMath.Combine(own, memberOf.Select(id => shared[id]));
+        }
         await LoadMonth();
     });
 

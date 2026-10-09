@@ -200,8 +200,11 @@ public static class PlanningEndpoints
         if (end < start) throw new ApiException(400, "Конец периода раньше начала.");
         if (end.DayNumber - start.DayNumber > 366) throw new ApiException(400, "Период не должен превышать 366 дней.");
         var people = await db.Actors.AsNoTracking().Where(x => x.TeamId == teamId && !x.Archived && x.Kind == ActorKind.Person).OrderBy(x => x.Name).ToListAsync();
+        var departments = await db.Actors.AsNoTracking().Where(x => x.TeamId == teamId && !x.Archived && x.Kind == ActorKind.Department).ToDictionaryAsync(x => x.Id, x => x.ParentId);
         var personIds = people.Select(x => x.Id).ToArray();
-        var calendars = await db.Calendars.AsNoTracking().Where(x => personIds.Contains(x.ActorId)).ToListAsync();
+        var memberships = await db.ActorDepartments.AsNoTracking().Where(x => personIds.Contains(x.ActorId)).ToListAsync();
+        var owners = personIds.Concat(departments.Keys).ToArray();
+        var calendars = await db.Calendars.AsNoTracking().Where(x => owners.Contains(x.ActorId)).ToListAsync();
         var calendarIds = calendars.Select(x => x.Id).ToArray();
         var exceptions = await db.CalendarExceptions.AsNoTracking().Where(x => calendarIds.Contains(x.CalendarId)).ToListAsync();
         var blocks = await db.RecurringBlocks.AsNoTracking().Where(x => calendarIds.Contains(x.CalendarId)).ToListAsync();
@@ -215,7 +218,13 @@ public static class PlanningEndpoints
             work.Add(new CapacityWork(person.Id, task.EstimateHours ?? 0m, task.StartDate, task.EndDate, task.Deadline));
         }
         var dtos = calendars.ToDictionary(x => x.ActorId, x => ToCalendarDto(x, exceptions, blocks));
-        return CapacityMath.Build(people.Select(x => (x.Id, x.Name)), id => dtos.GetValueOrDefault(id) ?? CapacityMath.DefaultCalendar(id), work, start, end);
+        CalendarDto CalendarOf(Guid id)
+        {
+            var own = memberships.Where(x => x.ActorId == id).Select(x => x.DepartmentId).Where(departments.ContainsKey);
+            var shared = CapacityMath.DepartmentsWithParents(own, x => departments.TryGetValue(x, out var parent) && parent is { } p && departments.ContainsKey(p) ? p : null);
+            return CapacityMath.Combine(dtos.GetValueOrDefault(id) ?? CapacityMath.DefaultCalendar(id), shared.Select(x => dtos.GetValueOrDefault(x)).OfType<CalendarDto>());
+        }
+        return CapacityMath.Build(people.Select(x => (x.Id, x.Name)), CalendarOf, work, start, end);
     }
 
     private static Actor? ResolvePerson(Assignment assignment, List<Actor> people) =>
@@ -291,22 +300,22 @@ public static class PlanningEndpoints
 
     private static async Task<WorkCalendar> Calendar(AlvaDbContext db, Guid teamId, Guid actorId)
     {
-        await EnsurePerson(db, teamId, actorId);
+        await EnsureCalendarOwner(db, teamId, actorId);
         return await db.Calendars.AsNoTracking().SingleOrDefaultAsync(x => x.ActorId == actorId) ?? new WorkCalendar { ActorId = actorId };
     }
 
     private static async Task<WorkCalendar> EditableCalendar(AlvaDbContext db, Guid teamId, Guid actorId)
     {
-        await EnsurePerson(db, teamId, actorId);
+        await EnsureCalendarOwner(db, teamId, actorId);
         if (await db.Calendars.SingleOrDefaultAsync(x => x.ActorId == actorId) is { } calendar) return calendar;
         var created = new WorkCalendar { ActorId = actorId };
         db.Add(created);
         return created;
     }
 
-    private static async Task EnsurePerson(AlvaDbContext db, Guid teamId, Guid actorId)
+    private static async Task EnsureCalendarOwner(AlvaDbContext db, Guid teamId, Guid actorId)
     {
-        if (!await db.Actors.AnyAsync(x => x.TeamId == teamId && x.Id == actorId && !x.Archived && x.Kind == ActorKind.Person)) throw new ApiException(404, "Человек не найден в команде.");
+        if (!await db.Actors.AnyAsync(x => x.TeamId == teamId && x.Id == actorId && !x.Archived && (x.Kind == ActorKind.Person || x.Kind == ActorKind.Department))) throw new ApiException(404, "Человек или подкоманда не найдены в команде.");
     }
 
     private static async Task<CalendarDto> ToCalendarDto(AlvaDbContext db, WorkCalendar calendar)

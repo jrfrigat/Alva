@@ -43,7 +43,7 @@
             var row = _rows.FirstOrDefault(r => r.Date == date);
             var avail = row?.AvailableHours ?? 0;
             var alloc = row?.AllocatedHours ?? 0;
-            var absence = _calendar?.Exceptions.FirstOrDefault(e => date >= e.From && date <= e.To);
+            var absence = _calendar?.Exceptions.Where(e => date >= e.From && date <= e.To).MinBy(e => e.AvailableHours);
             var weekend = Nominal(date) == 0 && absence is null;
             var tasks = TasksOn(date);
             var state = weekend ? "off" : absence is not null ? "absence" : alloc > avail ? "over" : "ok";
@@ -117,7 +117,7 @@
     private decimal WeekBlocks => Week.Sum(d => Math.Min(Nominal(d), Blocks(d).Sum(b => b.Hours)));
     private decimal WeekAvailable => _rows.Sum(r => r.AvailableHours);
     private decimal WeekAllocated => _rows.Sum(r => r.AllocatedHours);
-    private decimal WeekAbsence => Week.Where(d => _calendar?.Exceptions.Any(e => d >= e.From && d <= e.To) == true).Sum(d => Math.Max(0, Nominal(d) - _calendar!.Exceptions.First(e => d >= e.From && d <= e.To).AvailableHours));
+    private decimal WeekAbsence => Week.Where(d => _calendar?.Exceptions.Any(e => d >= e.From && d <= e.To) == true).Sum(d => Math.Max(0, Nominal(d) - _calendar!.Exceptions.Where(e => d >= e.From && d <= e.To).Min(e => e.AvailableHours)));
     private CalendarExceptionDto? NextAbsence => Upcoming.FirstOrDefault();
     private IEnumerable<CalendarExceptionDto> Upcoming => _calendar is null ? [] : _calendar.Exceptions.Where(e => e.To >= Today).OrderBy(e => e.From);
     private string Pattern
@@ -152,6 +152,16 @@
             _tasks = await Session.Get<TaskModel[]>(Session.TeamPath("tasks"));
             _sprints = await Session.Get<SprintModel[]>(Session.TeamPath("sprints"));
             _calendar = await Session.Get<CalendarDto>(Session.TeamPath($"actors/{ActorId}/calendar"));
+            // Праздники и встречи подкоманд действуют на сотрудника так же, как в расчёте ёмкости.
+            var departments = _actors.Where(a => a.Kind == "Department").ToDictionary(a => a.Id, a => a.ParentId);
+            if (Person is { } person)
+            {
+                var memberOf = CapacityMath.DepartmentsWithParents(person.DepartmentIds.Append(person.ParentId ?? Guid.Empty).Where(departments.ContainsKey),
+                    id => departments.GetValueOrDefault(id) is { } parent && departments.ContainsKey(parent) ? parent : null);
+                var shared = new List<CalendarDto>();
+                foreach (var id in memberOf) shared.Add(await Session.Get<CalendarDto>(Session.TeamPath($"actors/{id}/calendar")));
+                _calendar = CapacityMath.Combine(_calendar, shared);
+            }
             await LoadWeek();
             _loadedFor = ActorId;
         });

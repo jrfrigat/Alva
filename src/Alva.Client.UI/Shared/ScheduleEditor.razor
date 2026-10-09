@@ -1,22 +1,35 @@
 @* Редактор рабочего графика по макету p16: часы по дням недели, повторяющиеся вычеты, отпуска и
-   праздники, расчёт ёмкости и применение графика к другим сотрудникам. *@
+   праздники, расчёт ёмкости и применение графика к другим сотрудникам. Для подкоманды — только общие
+   вычеты и нерабочие периоды, которые действуют на всех её участников. *@
 @inject AlvaSession Session
 <section class="alva-page-header">
     <div class="alva-page-header__text">
-        <FlareBreadcrumb Items="@(new BreadcrumbItem[] { new("Ёмкость", "/capacity"), new("Графики людей", "/capacity/people"), new(Person?.Name ?? "Сотрудник", $"/capacity/{ActorId}"), new("Редактор графика") })" Separator="›" AriaLabel="Путь к редактору" />
-        <h1 class="alva-page-header__title">Редактор рабочего графика</h1>
-        <p class="alva-page-header__desc">Рабочие часы, выходные, отпуска и повторяющиеся нерабочие интервалы @(Person is null ? "" : $"для {Person.Name}") — с проекцией на ёмкость спринтов.</p>
+        @if (IsDepartment)
+        {
+            <FlareBreadcrumb Items="@(new BreadcrumbItem[] { new("Команда", "/team"), new("Подкоманды", "/team/departments"), new(Actor!.Name), new("График подкоманды") })" Separator="›" AriaLabel="Путь к редактору" />
+            <h1 class="alva-page-header__title">График подкоманды «@Actor.Name»</h1>
+            <p class="alva-page-header__desc">Общие нерабочие дни и повторяющиеся встречи подкоманды. Они вычитаются из ёмкости всех её участников и вложенных подкоманд поверх их личных графиков.</p>
+        }
+        else
+        {
+            <FlareBreadcrumb Items="@(new BreadcrumbItem[] { new("Ёмкость", "/capacity"), new("Графики людей", "/capacity/people"), new(Person?.Name ?? "Сотрудник", $"/capacity/{ActorId}"), new("Редактор графика") })" Separator="›" AriaLabel="Путь к редактору" />
+            <h1 class="alva-page-header__title">Редактор рабочего графика</h1>
+            <p class="alva-page-header__desc">Рабочие часы, выходные, отпуска и повторяющиеся нерабочие интервалы @(Person is null ? "" : $"для {Person.Name}") — с проекцией на ёмкость спринтов.</p>
+        }
     </div>
+    @if (!IsDepartment)
+    {
     <div class="alva-page-header__actions">
         <FlareButton Variant="ButtonVariant.Tonal" Size="ButtonSize.Sm" OnClick="Reset" Disabled="@(!Dirty)"><LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.Undo" Size="18px" /></LeadingIcon><ChildContent>Сбросить изменения</ChildContent></FlareButton>
         <FlareButton Variant="ButtonVariant.Tonal" Size="ButtonSize.Sm" OnClick="() => _applyOpen = !_applyOpen"><LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.GroupAdd" Size="18px" /></LeadingIcon><ChildContent>Применить к выбранным сотрудникам</ChildContent></FlareButton>
         <FlareButton Size="ButtonSize.Sm" Loading="_busy" OnClick="Save" Disabled="@(!Dirty)"><LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.Save" Size="18px" /></LeadingIcon><ChildContent>Сохранить график</ChildContent></FlareButton>
     </div>
+    }
 </section>
 <PageFeedback Error="@_error" />
 @if (_saved) { <FlareAlert Severity="AlertSeverity.Success" Title="График сохранён">Ёмкость пересчитана по новому графику.</FlareAlert> }
 
-@if (_applyOpen)
+@if (_applyOpen && !IsDepartment)
 {
     <section class="alva-panel">
         <header class="alva-panel__header"><FlareIconView Value="@MaterialDesign3Icons.Regular.GroupAdd" Size="20px" Class="alva-panel__icon" /><div><h2 class="alva-panel__title">Применить недельные часы к сотрудникам</h2><p class="alva-panel__subtitle">Часовой пояс и часы по дням копируются; отпуска и вычеты у каждого остаются свои.</p></div></header>
@@ -34,6 +47,8 @@
 {
 <div class="alva-schedule">
     <div class="alva-schedule__main">
+        @if (!IsDepartment)
+        {
         <section class="alva-panel">
             <header class="alva-panel__header"><FlareIconView Value="@MaterialDesign3Icons.Regular.EditCalendar" Size="20px" Class="alva-panel__icon" /><div><h2 class="alva-panel__title">Рабочая неделя @(Person?.Name)</h2><p class="alva-panel__subtitle">Базовый цикл рабочей недели и часовой пояс</p></div></header>
             <div class="alva-schedule__meta">
@@ -56,6 +71,7 @@
                 }
             </div>
         </section>
+        }
 
         <section class="alva-panel">
             <header class="alva-panel__header alva-panel__header--split">
@@ -104,6 +120,19 @@
     </div>
 
     <aside class="alva-schedule__side">
+        @if (IsDepartment)
+        {
+        <section class="alva-panel">
+            <header class="alva-panel__header"><FlareIconView Value="@MaterialDesign3Icons.Regular.Groups" Size="20px" Class="alva-panel__icon" /><div><h2 class="alva-panel__title">Участники</h2><p class="alva-panel__subtitle">На них действует этот график</p></div></header>
+            @foreach (var person in Members)
+            {
+                <a class="alva-person-link" href="@($"/capacity/{person.Id}/schedule")" @key="person.Id"><span class="alva-slot__mark" aria-hidden="true">@AlvaFormat.Initials(person.Name)</span><span>@person.Name</span></a>
+            }
+            @if (!Members.Any()) { <p class="alva-kpi__note">В подкоманде пока нет участников.</p> }
+        </section>
+        }
+        else
+        {
         <section class="alva-panel">
             <header class="alva-panel__header"><FlareIconView Value="@MaterialDesign3Icons.Regular.Calculate" Size="20px" Class="alva-panel__icon" /><h2 class="alva-panel__title">Расчёт ёмкости на 2 недели</h2></header>
             <div class="alva-ring" style="--alva-ring:@Pct(Net, Nominal)">
@@ -124,6 +153,7 @@
                 <a class="alva-person-link @(person.Id == ActorId ? "alva-person-link--active" : "")" href="@($"/capacity/{person.Id}/schedule")" @key="person.Id"><span class="alva-slot__mark" aria-hidden="true">@AlvaFormat.Initials(person.Name)</span><span>@person.Name</span></a>
             }
         </section>
+        }
     </aside>
 </div>
 }
@@ -134,7 +164,7 @@
     private static readonly string[] DayNames = ["Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота", "Воскресенье"];
     private static readonly string[] Abbr = ["ПН", "ВТ", "СР", "ЧТ", "ПТ", "СБ", "ВС"];
     private CalendarDto? _calendar;
-    private ActorModel[] _people = [];
+    private ActorModel[] _actors = [], _people = [];
     private CapacityDto[] _window = [];
     private decimal[] _hours = new decimal[7], _lastHours = new decimal[7];
     private string _timeZone = "Europe/Moscow";
@@ -147,7 +177,20 @@
     private Guid _loadedFor;
 
     private static DateOnly Today => DateOnly.FromDateTime(DateTime.Today);
+    private ActorModel? Actor => _actors.FirstOrDefault(a => a.Id == ActorId);
     private ActorModel? Person => _people.FirstOrDefault(p => p.Id == ActorId);
+    private bool IsDepartment => Actor?.Kind == "Department";
+
+    /// <summary>Люди подкоманды и всех вложенных в неё подкоманд.</summary>
+    private IEnumerable<ActorModel> Members
+    {
+        get
+        {
+            var scope = new HashSet<Guid> { ActorId };
+            for (var grown = true; grown;) grown = _actors.Where(a => a.Kind == "Department" && a.ParentId is { } p && scope.Contains(p)).Aggregate(false, (any, a) => scope.Add(a.Id) | any);
+            return _people.Where(p => p.DepartmentIds.Any(scope.Contains) || p.ParentId is { } parent && scope.Contains(parent));
+        }
+    }
     private decimal[] Saved => _calendar is null ? new decimal[7] : [_calendar.Monday, _calendar.Tuesday, _calendar.Wednesday, _calendar.Thursday, _calendar.Friday, _calendar.Saturday, _calendar.Sunday];
     private bool Dirty => _calendar is not null && (!_hours.SequenceEqual(Saved) || _timeZone != _calendar.TimeZone);
 
@@ -170,7 +213,8 @@
         _applyTo.Clear(); _saved = false;
         await Run(async () =>
         {
-            _people = (await Session.Get<ActorModel[]>(Session.TeamPath("actors"))).Where(a => a.Kind == "Person").OrderBy(a => a.Name).ToArray();
+            _actors = await Session.Get<ActorModel[]>(Session.TeamPath("actors"));
+            _people = _actors.Where(a => a.Kind == "Person").OrderBy(a => a.Name).ToArray();
             await LoadCalendar();
             _loadedFor = ActorId;
         });

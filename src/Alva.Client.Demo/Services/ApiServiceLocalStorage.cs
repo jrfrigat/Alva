@@ -156,7 +156,14 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
         var people = store.Actors.Where(a => a.Kind == "Person").ToArray();
         var work = store.Tasks.Where(t => t.TeamId == teamId && t.Status is not ("Done" or "Cancelled") && t.ResolvedPersonId.HasValue)
             .Select(t => new CapacityWork(t.ResolvedPersonId!.Value, t.EstimateHours ?? 0m, t.StartDate, t.EndDate, t.Deadline));
-        return CapacityMath.Build(people.Select(p => (p.Id, p.Name)), id => Calendar(store, id), work, from, to);
+        var departments = store.Actors.Where(a => a.Kind == "Department").ToDictionary(a => a.Id, a => a.ParentId);
+        CalendarDto CalendarOf(ActorModel person)
+        {
+            var own = person.DepartmentIds.Append(person.ParentId ?? Guid.Empty).Where(departments.ContainsKey);
+            var shared = CapacityMath.DepartmentsWithParents(own, id => departments.GetValueOrDefault(id) is { } parent && departments.ContainsKey(parent) ? parent : null);
+            return CapacityMath.Combine(Calendar(store, person.Id), shared.Select(id => store.Calendars.FirstOrDefault(c => c.ActorId == id)).OfType<CalendarDto>());
+        }
+        return CapacityMath.Build(people.Select(p => (p.Id, p.Name)), id => CalendarOf(people.First(p => p.Id == id)), work, from, to);
     }
 
     private static RiskDto[] Risks(DemoStore store, Guid teamId, DateOnly today)
