@@ -10,6 +10,12 @@
      одноимённые компоненты, а не на конкретный экран. */
   --flare-btn-height-md: 32px;
   --flare-input-height-md: 30px;
+
+  /* DESIGN.md, Components: «Alternating row background on subtle hover (#F1F5F9)». Flare красит
+     и зебру, и hover сетки этими переменными — значит цвет задаётся ими, а не переопределением
+     селектора :hover. */
+  --flare-state-hover-layer: #F1F5F9;
+  --flare-stripe-bg: #F8FAFC;
 }
 
 /* DESIGN.md, Typography: «Tabular figures (tnum) ... strictly mandated for all workload
@@ -23,19 +29,16 @@
 /* ---------------------------------------------------------------- Плотность данных ----------
    DESIGN.md, Components: «Row Density: Compact row height capped at 34px. Alternating row
    background on subtle hover (#F1F5F9)» и «Headers: Grounded in #F8FAFC with 11px uppercase
-   label styling (label-md)». У сетки Flare нет переменной высоты строки, поэтому правило идёт
-   по её классу: если класс переименуют, правила просто перестанут применяться — проверяется
-   глазами на demo (F5). */
-.flare-theme-alva .flare-datagrid__row,
-.flare-theme-alva .flare-datagrid tbody tr {
+   label styling (label-md)».
+   Классы проверены по CSS самого Flare (flare.components 0.43.0): строка — .flare-datagrid__row,
+   ячейка заголовка — .flare-datagrid__th, обычная — .flare-datagrid__td. Прежний вариант с
+   `thead th` был написан по догадке и в заголовки не попадал; переменной высоты строки у сетки
+   нет, поэтому высота задана классом строки. */
+.flare-theme-alva .flare-datagrid__row {
   height: 34px;
 }
 
-.flare-theme-alva .flare-datagrid tbody tr:hover {
-  background: #F1F5F9;
-}
-
-.flare-theme-alva .flare-datagrid thead th {
+.flare-theme-alva .flare-datagrid__th {
   height: 34px;
   padding: 0 8px;
   background: #F8FAFC;
@@ -48,6 +51,12 @@
   /* Дизайн разделяет плоскости рамкой, а не тенью и не тональной высотой. */
   border-bottom: 1px solid #E2E8F0;
 }
+
+/* Ячейки дизайна: внутренние отступы 4px по вертикали и 8px по горизонтали. */
+.flare-theme-alva .flare-datagrid__td {
+  padding: 4px 8px;
+}
+
 
 /* ------------------------------------------------------ Семантика риска и ёмкости -------------
    DESIGN.md, Colors: «Critical / Overcapacity / Deadline Breach: coral-crimson (#EF4444, dark tier
