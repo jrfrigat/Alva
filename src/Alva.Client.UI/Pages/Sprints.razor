@@ -29,7 +29,7 @@ else
 }
 @if(Planning)
 {
-    if(PlanSprint is not null){<SprintPlanning Sprint="PlanSprint" Sprints="_sprints" Tasks="_tasks" Changed="Load" OnParams="()=>Edit(PlanSprint)" />}
+    if(PlanSprint is not null){<SprintPlanning Sprint="PlanSprint" Sprints="_sprints" Tasks="_tasks" Changed="Reload" OnParams="()=>Edit(PlanSprint)" />}
     else if(!_busy){<FlareEmptyState Title="Нечего планировать" Description="Создайте спринт, чтобы собрать в него задачи из пула."><FlareButton Size="ButtonSize.Sm" OnClick="New">Новый спринт</FlareButton></FlareEmptyState>}
 }
 else if(SprintId is null){<SprintRegistry Sprints="_sprints" Tasks="_tasks" />}
@@ -48,5 +48,7 @@ else if(Current is not null){<SprintDetails Sprint="Current" Tasks="_tasks" OnEd
     private void New(){_editing=new SprintModel();_start=_editing.StartDate;_end=_editing.EndDate;}
     private void Edit(SprintModel sprint){_editing=new SprintModel{Id=sprint.Id,Name=sprint.Name,Goal=sprint.Goal,StartDate=sprint.StartDate,EndDate=sprint.EndDate,Status=sprint.Status};_start=sprint.StartDate;_end=sprint.EndDate;}
     private void Close()=>_editing=null;
+    /// <summary>Доска изменила спринт или задачи: открытая форма параметров устарела.</summary>
+    private Task Reload(){_editing=null;return Load();}
     private Task Save()=>Run(async()=>{var s=_editing!;var saved=await Session.Save<SprintModel>(s.Id==Guid.Empty?HttpMethod.Post:HttpMethod.Put,Session.TeamPath("sprints"+(s.Id==Guid.Empty?"":$"/{s.Id}")),new SprintRequest(s.Name,s.Goal,_start!.Value,_end!.Value,s.Status));_sprints=await Session.Get<SprintModel[]>(Session.TeamPath("sprints"));_editing=null;Navigation.NavigateTo($"/sprints/{saved.Id}/plan");});
 }
