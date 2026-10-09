@@ -23,6 +23,10 @@ builder.Services.AddScoped(_ =>
     client.DefaultRequestHeaders.Add("X-Alva-Request", "1");
     return client;
 });
+#if ALVA_DEMO
+builder.Services.AddScoped<IApiService, ApiServiceLocalStorage>();
+#else
 builder.Services.AddScoped<IApiService, ApiServiceHttp>();
+#endif
 builder.Services.AddScoped<AlvaSession>();
 await builder.Build().RunAsync();

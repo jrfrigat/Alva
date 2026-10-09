@@ -10,6 +10,9 @@
     <WasmFingerprintAssets>false</WasmFingerprintAssets>
     <BlazorWebAssemblyLoadAllGlobalizationData>true</BlazorWebAssemblyLoadAllGlobalizationData>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(AlvaDemo)' == 'true'">
+    <DefineConstants>$(DefineConstants);ALVA_DEMO</DefineConstants>
+  </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\Alva.Contracts\Alva.Contracts.csproj" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.12" />
