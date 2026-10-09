@@ -4,6 +4,12 @@
 .flare-theme-alva {
   /* Дизайн называет Inter единственной гарнитурой; слой приложения берёт её отсюда. */
   --alva-font: Inter, "Segoe UI", system-ui, sans-serif;
+
+  /* DESIGN.md, Components: «Primary: solid sapphire indigo ... height 32px (compact)» и
+     «Standard Inputs: 30px compact height». Это переменные Flare, поэтому действуют на все
+     одноимённые компоненты, а не на конкретный экран. */
+  --flare-btn-height-md: 32px;
+  --flare-input-height-md: 30px;
 }
 
 /* DESIGN.md, Typography: «Tabular figures (tnum) ... strictly mandated for all workload
@@ -13,3 +19,33 @@
 .flare-theme-alva th {
   font-variant-numeric: tabular-nums;
 }
+
+/* ---------------------------------------------------------------- Плотность данных ----------
+   DESIGN.md, Components: «Row Density: Compact row height capped at 34px. Alternating row
+   background on subtle hover (#F1F5F9)» и «Headers: Grounded in #F8FAFC with 11px uppercase
+   label styling (label-md)». У сетки Flare нет переменной высоты строки, поэтому правило идёт
+   по её классу: если класс переименуют, правила просто перестанут применяться — проверяется
+   глазами на demo (F5). */
+.flare-theme-alva .flare-datagrid__row,
+.flare-theme-alva .flare-datagrid tbody tr {
+  height: 34px;
+}
+
+.flare-theme-alva .flare-datagrid tbody tr:hover {
+  background: #F1F5F9;
+}
+
+.flare-theme-alva .flare-datagrid thead th {
+  height: 34px;
+  padding: 0 8px;
+  background: #F8FAFC;
+  color: #434655;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 14px;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  /* Дизайн разделяет плоскости рамкой, а не тенью и не тональной высотой. */
+  border-bottom: 1px solid #E2E8F0;
+}
+
