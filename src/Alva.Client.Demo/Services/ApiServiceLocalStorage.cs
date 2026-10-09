@@ -119,7 +119,7 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
             ["api", "teams", var t, "projects"] => store.Projects.Where(p => p.TeamIds.Contains(Id(t))).ToArray(),
             ["api", "teams", _, "actors"] => store.Actors.ToArray(),
             ["api", "teams", var t, "sprints"] => store.Sprints.Where(x => store.SprintTeam.GetValueOrDefault(x.Id) == Id(t)).ToArray(),
-            ["api", "teams", var t, "tasks"] => store.Tasks.Where(x => x.TeamId == Id(t)).ToArray(),
+            ["api", "teams", var t, "tasks"] => WithRollup(store.Tasks.Where(x => x.TeamId == Id(t)).ToArray()),
             ["api", "teams", _, "tasks", var id, "history"] => History(store, Id(id)),
             ["api", "teams", _, "actors", var a, "calendar"] => Calendar(store, Id(a)),
             ["api", "teams", var t, "capacity"] => Capacity(store, Id(t), QueryDate(query, "from", today), QueryDate(query, "to", today.AddDays(13))),
@@ -148,6 +148,22 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
 
     private static HistoryDto[] History(DemoStore store, Guid taskId) =>
         store.History.TryGetValue(taskId, out var entries) ? [.. entries] : [];
+
+    /// <summary>Оценка и срок с подъёмом по дереву, как их отдаёт API.</summary>
+    private static TaskModel[] WithRollup(TaskModel[] tasks)
+    {
+        var children = tasks.Where(t => t.ParentId is not null).ToLookup(t => t.ParentId!.Value);
+        var done = new HashSet<Guid>();
+        void Resolve(TaskModel task)
+        {
+            if (!done.Add(task.Id)) return;
+            foreach (var child in children[task.Id]) Resolve(child);
+            task.EffectiveEstimateHours = task.EstimateHours ?? children[task.Id].Sum(c => c.EffectiveEstimateHours);
+            task.EffectiveDeadline = children[task.Id].Select(c => c.EffectiveDeadline).Append(task.Deadline).Max();
+        }
+        foreach (var task in tasks) Resolve(task);
+        return tasks;
+    }
 
     private static CalendarDto Calendar(DemoStore store, Guid actorId) =>
         store.Calendars.FirstOrDefault(c => c.ActorId == actorId) ?? CapacityMath.DefaultCalendar(actorId);

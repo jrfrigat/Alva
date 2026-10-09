@@ -81,7 +81,7 @@ else
                     else { <span class="alva-week__muted">@(task?.AssignmentTargetId is { } target ? Actor(target)?.Name ?? "—" : "Не назначена")</span> }
                 </span>
                 <span role="cell" class="alva-risk-table__dates alva-num">
-                    <span>@(task?.Deadline is { } due ? due.ToString("d MMM") : "без срока")</span>
+                    <span>@(DueOf(task) is { } due ? due.ToString("d MMM") : "без срока")</span>
                     <span class="@(slip > 0 ? "alva-risk-table__slip" : "")">@(risk.ForecastDate is { } forecast ? $"→ {forecast:d MMM}" : "→ не рассчитан")@(slip > 0 ? $" (+{slip} дн.)" : "")</span>
                 </span>
             </div>
@@ -154,10 +154,11 @@ else
         .Where(r => string.IsNullOrWhiteSpace(_search) || r.Title.Contains(_search, StringComparison.OrdinalIgnoreCase) || r.Reasons.Any(x => x.Contains(_search, StringComparison.OrdinalIgnoreCase)));
 
     /// <summary>На сколько дней прогноз позже срока задачи.</summary>
-    private int Slip(RiskDto risk) => TaskOf(risk.TaskId)?.Deadline is { } due && risk.ForecastDate is { } forecast ? Math.Max(0, forecast.DayNumber - due.DayNumber) : 0;
+    private static DateOnly? DueOf(TaskModel? task) => task?.EffectiveDeadline ?? task?.Deadline;
+    private int Slip(RiskDto risk) => DueOf(TaskOf(risk.TaskId)) is { } due && risk.ForecastDate is { } forecast ? Math.Max(0, forecast.DayNumber - due.DayNumber) : 0;
 
     private (RiskDto Risk, DateOnly Due)? Nearest => _risks
-        .Where(r => Slip(r) > 0).Select(r => (Risk: r, Due: TaskOf(r.TaskId)!.Deadline!.Value))
+        .Where(r => Slip(r) > 0).Select(r => (Risk: r, Due: DueOf(TaskOf(r.TaskId))!.Value))
         .OrderBy(x => x.Due).Cast<(RiskDto, DateOnly)?>().FirstOrDefault();
 
     private static int Pct(int part, int whole) => whole <= 0 ? 0 : (int)Math.Round(part * 100.0 / whole);

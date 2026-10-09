@@ -39,6 +39,10 @@ public sealed class TaskModel
     public Guid? AssignmentTargetId { get; set; }
     public Guid? ResolvedPersonId { get; set; }
     public long Version { get; set; }
+    /// <summary>Оценка с подъёмом по дереву: своя или сумма подзадач.</summary>
+    public decimal EffectiveEstimateHours { get; set; }
+    /// <summary>Срок с подъёмом по дереву: самый поздний из своего и сроков подзадач.</summary>
+    public DateOnly? EffectiveDeadline { get; set; }
 }
 public sealed class SprintModel
 {
