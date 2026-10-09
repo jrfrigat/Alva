@@ -23,5 +23,6 @@ builder.Services.AddScoped(_ =>
     client.DefaultRequestHeaders.Add("X-Alva-Request", "1");
     return client;
 });
+builder.Services.AddScoped<IApiService, ApiServiceHttp>();
 builder.Services.AddScoped<AlvaSession>();
 await builder.Build().RunAsync();
