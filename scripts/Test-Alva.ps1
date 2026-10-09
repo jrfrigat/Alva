@@ -94,18 +94,23 @@ function Assert-True([bool] $Condition, [string] $Message) {
 try {
     [void](New-Item -ItemType Directory -Path $temporaryDirectory)
     [IO.File]::WriteAllText($emptyEnvironment, '')
+    # A fixed free port: an ephemeral one is reassigned when the app restarts below.
+    $probe = [Net.Sockets.TcpListener]::new([Net.IPAddress]::Loopback, 0)
+    $probe.Start()
+    $hostPort = ([Net.IPEndPoint]$probe.LocalEndpoint).Port
+    $probe.Stop()
     # Override network IPAM to let Docker choose a free subnet; PostgreSQL is private.
-    [IO.File]::WriteAllText($overridePath, @'
+    [IO.File]::WriteAllText($overridePath, @"
 services:
   db:
     ports: !reset []
   app:
-    ports: !override ["127.0.0.1::8080"]
+    ports: !override ["127.0.0.1:${hostPort}:8080"]
 networks:
   proxy:
     ipam:
       config: !reset []
-'@)
+"@)
     foreach ($name in $environmentOverrides.Keys) {
         $previousEnvironment[$name] = [Environment]::GetEnvironmentVariable($name, 'Process')
         [Environment]::SetEnvironmentVariable($name, $environmentOverrides[$name], 'Process')
