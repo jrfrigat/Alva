@@ -11,7 +11,14 @@ using System.Net;
 using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
-builder.Services.AddDbContext<AlvaDbContext>(o => o.UseNpgsql(builder.Configuration.GetConnectionString("Alva") ?? "Host=localhost;Database=alva;Username=alva"));
+var databaseProvider = builder.Configuration["Database:Provider"] ?? "Npgsql";
+builder.Services.AddDbContext<AlvaDbContext>(o =>
+{
+    if (string.Equals(databaseProvider, "Sqlite", StringComparison.OrdinalIgnoreCase))
+        o.UseSqlite(builder.Configuration["Database:SqliteConnection"] ?? "Data Source=alva-dev.db");
+    else
+        o.UseNpgsql(builder.Configuration.GetConnectionString("Alva") ?? "Host=localhost;Database=alva;Username=alva");
+});
 builder.Services.ConfigureHttpJsonOptions(o => o.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 builder.Services.AddProblemDetails();
 builder.Services.AddSingleton<PasswordHasher<UserAccount>>();
@@ -57,13 +64,19 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapAuth();
 app.MapActors();
+app.MapTasks();
+app.MapPlanning();
+app.MapCapacity();
 app.MapData();
 app.MapGet("/health/live", () => Results.Ok(new { status = "live" }));
 app.MapGet("/health/ready", async (AlvaDbContext db, CancellationToken ct) => await db.Database.CanConnectAsync(ct) ? Results.Ok(new { status = "ready" }) : Results.StatusCode(503));
 if (builder.Configuration.GetValue("Database:MigrateOnStartup", true))
 {
     using var scope = app.Services.CreateScope();
-    await scope.ServiceProvider.GetRequiredService<AlvaDbContext>().Database.MigrateAsync();
+    var database = scope.ServiceProvider.GetRequiredService<AlvaDbContext>().Database;
+    // Провайдер выбирается конфигом: для SQLite (локальный запуск) миграции Npgsql неприменимы.
+    if (database.IsSqlite()) await database.EnsureCreatedAsync();
+    else await database.MigrateAsync();
 }
 app.UseBlazorFrameworkFiles();
 app.UseStaticFiles();
