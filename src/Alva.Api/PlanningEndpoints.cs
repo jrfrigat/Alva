@@ -21,7 +21,6 @@ public static class PlanningEndpoints
         {
             await AccessControl.RequireTeam(db, user, teamId, "projects", "edit");
             var name = AccessControl.RequiredName(request.Name);
-            if (!await db.ProjectTeams.AnyAsync(x => x.TeamId == teamId)) throw new ApiException(500, "Команда не найдена.");
             var project = new Project { WorkspaceId = await WorkspaceOf(db, teamId), Name = name, Description = request.Description ?? "" };
             db.Add(project);
             await LinkTeams(db, project, request.TeamIds);
