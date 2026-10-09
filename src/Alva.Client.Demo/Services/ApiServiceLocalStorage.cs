@@ -175,29 +175,29 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
         var people = store.Actors.Where(a => a.Kind == "Person").ToArray();
         var work = OpenTasks(store, teamId).Where(x => x.Task.ResolvedPersonId.HasValue)
             .Select(x => new CapacityWork(x.Task.ResolvedPersonId!.Value, x.Task.EstimateHours ?? 0m, x.Start, x.End, x.Task.Deadline));
-        var departments = store.Actors.Where(a => a.Kind == "Department").ToDictionary(a => a.Id, a => a.ParentId);
-        CalendarDto CalendarOf(ActorModel person)
-        {
-            var own = person.DepartmentIds.Append(person.ParentId ?? Guid.Empty).Where(departments.ContainsKey);
-            var shared = CapacityMath.DepartmentsWithParents(own, id => departments.GetValueOrDefault(id) is { } parent && departments.ContainsKey(parent) ? parent : null);
-            return CapacityMath.Combine(Calendar(store, person.Id), shared.Select(id => store.Calendars.FirstOrDefault(c => c.ActorId == id)).OfType<CalendarDto>());
-        }
-        return CapacityMath.Build(people.Select(p => (p.Id, p.Name)), id => CalendarOf(people.First(p => p.Id == id)), work, from, to);
+        return CapacityMath.Build(people.Select(p => (p.Id, p.Name)), id => CalendarOf(store, people.First(p => p.Id == id)), work, from, to);
     }
 
+    /// <summary>Календарь человека вместе с общими графиками его подкоманд и их родителей.</summary>
+    private static CalendarDto CalendarOf(DemoStore store, ActorModel person)
+    {
+        var departments = store.Actors.Where(a => a.Kind == "Department").ToDictionary(a => a.Id, a => a.ParentId);
+        var own = person.DepartmentIds.Append(person.ParentId ?? Guid.Empty).Where(departments.ContainsKey);
+        var shared = CapacityMath.DepartmentsWithParents(own, id => departments.GetValueOrDefault(id) is { } parent && departments.ContainsKey(parent) ? parent : null);
+        return CapacityMath.Combine(Calendar(store, person.Id), shared.Select(id => store.Calendars.FirstOrDefault(c => c.ActorId == id)).OfType<CalendarDto>());
+    }
+
+    /// <summary>Риски тем же расчётом, что в API; зависимостей в demo нет.</summary>
     private static RiskDto[] Risks(DemoStore store, Guid teamId, DateOnly today)
     {
-        var risks = new List<RiskDto>();
-        foreach (var task in store.Tasks.Where(t => t.TeamId == teamId && t.Status is not ("Done" or "Cancelled")))
+        var actors = store.Actors.ToDictionary(a => a.Id);
+        var tasks = OpenTasks(store, teamId).Select(x =>
         {
-            var reasons = new List<string>();
-            if (task.Deadline.HasValue && task.EndDate.HasValue && task.EndDate > task.Deadline) reasons.Add("Прогноз позже срока");
-            if (task.Deadline.HasValue && task.Deadline < today) reasons.Add("Срок прошёл");
-            if (task is { EstimateHours: null, ResolvedPersonId: null } && task.Status == "Planned") reasons.Add("Нет оценки или исполнителя");
-            if (reasons.Count == 0) continue;
-            risks.Add(new RiskDto(task.Id, task.Title, reasons.Count > 1 ? "High" : "Medium", [.. reasons], task.EndDate ?? task.Deadline));
-        }
-        return [.. risks];
+            var person = x.Task.ResolvedPersonId is { } id ? actors.GetValueOrDefault(id) : null;
+            var target = person is null && x.Task.AssignmentTargetId is { } targetId ? actors.GetValueOrDefault(targetId)?.Name : null;
+            return new RiskTask(x.Task.Id, x.Task.ParentId, x.Task.Title, x.Task.EstimateHours, x.Start, x.End, x.Task.Deadline, person?.Id, person?.Name, target);
+        }).ToArray();
+        return RiskMath.Assess(tasks, [], id => CalendarOf(store, actors[id]), today);
     }
 
     public async Task<T> Save<T>(HttpMethod method, string path, object value)

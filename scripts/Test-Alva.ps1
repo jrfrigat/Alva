@@ -327,6 +327,16 @@ networks:
     Assert-True ($demand.Count -eq 5 -and ($demand | Measure-Object hours -Sum).Sum -eq 10) 'Role work in a sprint was not spread over the sprint working days.'
     Write-Host 'PASS: unassigned role demand follows the sprint window.'
 
+    # The department holiday set above falls into this task's window and must surface as a risk cause.
+    $holidayTask = Invoke-Api $owner POST "api/teams/$teamId/tasks" @{
+        title = 'Holiday risk'; projectId = $projectDto.id; estimateHours = 4
+        startDate = $sprintStart.ToString('yyyy-MM-dd'); endDate = $sprintStart.AddDays(2).ToString('yyyy-MM-dd')
+    } -ExpectedStatus @(200, 201)
+    [void](Invoke-Api $owner PUT "api/teams/$teamId/tasks/$($holidayTask.id)/assignment" @{ targetId = $person.id } -ExpectedStatus @(200, 204))
+    $holidayRisk = @(Invoke-Api $owner GET "api/teams/$teamId/risks" | Where-Object taskId -eq $holidayTask.id)[0]
+    Assert-True ($null -ne $holidayRisk -and @($holidayRisk.reasons | Where-Object { $_ -like 'Исполнитель недоступен:*' }).Count -eq 1) 'A holiday in the task window was not reported as a risk.'
+    Write-Host 'PASS: risks report an unavailable assignee.'
+
     # Restart the real published API. Cookie keys and business records must persist.
     Invoke-Compose -Arguments @('restart', 'app')
     Invoke-Compose -Arguments @('up', '-d', '--wait', '--wait-timeout', '90', 'app')

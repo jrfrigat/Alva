@@ -207,26 +207,26 @@ public static class PlanningEndpoints
         return (start, end);
     }
 
-    /// <summary>Открытые задачи команды с первым назначением и окном: свои даты, иначе даты спринта.</summary>
-    private static async Task<List<(TaskCard Task, Assignment Assignment, DateOnly? Start, DateOnly? End)>> OpenWork(AlvaDbContext db, Guid teamId)
+    /// <summary>Открытые задачи команды с первым назначением (если есть) и окном: свои даты, иначе даты спринта.</summary>
+    private static async Task<List<(TaskCard Task, Assignment? Assignment, DateOnly? Start, DateOnly? End)>> OpenWork(AlvaDbContext db, Guid teamId)
     {
         var tasks = await db.Tasks.AsNoTracking().Where(x => x.TeamId == teamId && !x.Archived && x.Status != WorkStatus.Done && x.Status != WorkStatus.Cancelled).ToListAsync();
         var taskIds = tasks.Select(x => x.Id).ToArray();
         var assignments = await db.Assignments.AsNoTracking().Where(x => taskIds.Contains(x.TaskId)).ToListAsync();
         var sprints = await db.Sprints.AsNoTracking().Where(x => x.TeamId == teamId).ToDictionaryAsync(x => x.Id);
-        var result = new List<(TaskCard, Assignment, DateOnly?, DateOnly?)>();
+        var result = new List<(TaskCard, Assignment?, DateOnly?, DateOnly?)>();
         foreach (var task in tasks)
         {
-            if (assignments.FirstOrDefault(x => x.TaskId == task.Id) is not { } assignment) continue;
+            var assignment = assignments.FirstOrDefault(x => x.TaskId == task.Id);
             var sprint = task.SprintId is { } id ? sprints.GetValueOrDefault(id) : null;
             result.Add((task, assignment, task.StartDate ?? sprint?.StartDate, task.EndDate ?? sprint?.EndDate));
         }
         return result;
     }
 
-    internal static async Task<CapacityDto[]> Capacity(AlvaDbContext db, Guid teamId, DateOnly? from, DateOnly? to)
+    /// <summary>Календари людей команды вместе с общими графиками их подкоманд — так их видят ёмкость и риски.</summary>
+    private static async Task<(List<Actor> People, Func<Guid, CalendarDto> CalendarOf)> PeopleCalendars(AlvaDbContext db, Guid teamId)
     {
-        var (start, end) = Period(from, to);
         var people = await db.Actors.AsNoTracking().Where(x => x.TeamId == teamId && !x.Archived && x.Kind == ActorKind.Person).OrderBy(x => x.Name).ToListAsync();
         var departments = await db.Actors.AsNoTracking().Where(x => x.TeamId == teamId && !x.Archived && x.Kind == ActorKind.Department).ToDictionaryAsync(x => x.Id, x => x.ParentId);
         var personIds = people.Select(x => x.Id).ToArray();
@@ -236,9 +236,6 @@ public static class PlanningEndpoints
         var calendarIds = calendars.Select(x => x.Id).ToArray();
         var exceptions = await db.CalendarExceptions.AsNoTracking().Where(x => calendarIds.Contains(x.CalendarId)).ToListAsync();
         var blocks = await db.RecurringBlocks.AsNoTracking().Where(x => calendarIds.Contains(x.CalendarId)).ToListAsync();
-        var work = new List<CapacityWork>();
-        foreach (var (task, assignment, taskStart, taskEnd) in await OpenWork(db, teamId))
-            if (ResolvePerson(assignment, people) is { } person) work.Add(new CapacityWork(person.Id, task.EstimateHours ?? 0m, taskStart, taskEnd, task.Deadline));
         var dtos = calendars.ToDictionary(x => x.ActorId, x => ToCalendarDto(x, exceptions, blocks));
         CalendarDto CalendarOf(Guid id)
         {
@@ -246,7 +243,17 @@ public static class PlanningEndpoints
             var shared = CapacityMath.DepartmentsWithParents(own, x => departments.TryGetValue(x, out var parent) && parent is { } p && departments.ContainsKey(p) ? p : null);
             return CapacityMath.Combine(dtos.GetValueOrDefault(id) ?? CapacityMath.DefaultCalendar(id), shared.Select(x => dtos.GetValueOrDefault(x)).OfType<CalendarDto>());
         }
-        return CapacityMath.Build(people.Select(x => (x.Id, x.Name)), CalendarOf, work, start, end);
+        return (people, CalendarOf);
+    }
+
+    internal static async Task<CapacityDto[]> Capacity(AlvaDbContext db, Guid teamId, DateOnly? from, DateOnly? to)
+    {
+        var (start, end) = Period(from, to);
+        var (people, calendarOf) = await PeopleCalendars(db, teamId);
+        var work = new List<CapacityWork>();
+        foreach (var (task, assignment, taskStart, taskEnd) in await OpenWork(db, teamId))
+            if (assignment is not null && ResolvePerson(assignment, people) is { } person) work.Add(new CapacityWork(person.Id, task.EstimateHours ?? 0m, taskStart, taskEnd, task.Deadline));
+        return CapacityMath.Build(people.Select(x => (x.Id, x.Name)), calendarOf, work, start, end);
     }
 
     /// <summary>Потребность ролей и подкоманд: задачи, назначенные на них без выбранного человека.</summary>
@@ -256,7 +263,7 @@ public static class PlanningEndpoints
         var targets = await db.Actors.AsNoTracking().Where(x => x.TeamId == teamId && !x.Archived && x.Kind != ActorKind.Person).ToDictionaryAsync(x => x.Id);
         var work = new List<DemandWork>();
         foreach (var (task, assignment, taskStart, taskEnd) in await OpenWork(db, teamId))
-            if (assignment.ResolvedPersonId is null && targets.TryGetValue(assignment.TargetId, out var target))
+            if (assignment is { ResolvedPersonId: null } && targets.TryGetValue(assignment.TargetId, out var target))
                 work.Add(new DemandWork(target.Id, target.Name, target.Kind.ToString(), task.EstimateHours ?? 0m, taskStart, taskEnd, task.Deadline));
         return CapacityMath.Demand(work, start, end);
     }
@@ -266,62 +273,18 @@ public static class PlanningEndpoints
 
     internal static async Task<RiskDto[]> Risks(AlvaDbContext db, Guid teamId)
     {
-        var today = DateOnly.FromDateTime(DateTime.Today);
-        var tasks = await db.Tasks.AsNoTracking().Where(x => x.TeamId == teamId && !x.Archived && x.Status != WorkStatus.Done && x.Status != WorkStatus.Cancelled).ToArrayAsync();
-        var ids = tasks.Select(x => x.Id).ToArray();
-        var assignments = await db.Assignments.AsNoTracking().Where(x => ids.Contains(x.TaskId)).ToListAsync();
-        var people = await db.Actors.AsNoTracking().Where(x => x.TeamId == teamId && !x.Archived && x.Kind == ActorKind.Person).ToListAsync();
-        var personIds = people.Select(x => x.Id).ToArray();
-        var calendars = await db.Calendars.AsNoTracking().Where(x => personIds.Contains(x.ActorId)).ToDictionaryAsync(x => x.ActorId);
-        var dependencies = await db.Dependencies.AsNoTracking().Where(x => ids.Contains(x.PredecessorId) || ids.Contains(x.SuccessorId)).ToListAsync();
-        var estimates = TaskEndpoints.EffectiveEstimates(tasks);
-        var deadlines = TaskEndpoints.EffectiveDeadlines(tasks);
-        var load = new Dictionary<Guid, decimal>();
-        foreach (var task in tasks)
+        var (people, calendarOf) = await PeopleCalendars(db, teamId);
+        var targets = await db.Actors.AsNoTracking().Where(x => x.TeamId == teamId && !x.Archived && x.Kind != ActorKind.Person).ToDictionaryAsync(x => x.Id, x => x.Name);
+        var work = await OpenWork(db, teamId);
+        var ids = work.Select(x => x.Task.Id).ToArray();
+        var dependencies = await db.Dependencies.AsNoTracking().Where(x => ids.Contains(x.SuccessorId)).Select(x => new RiskDependency(x.PredecessorId, x.SuccessorId)).ToListAsync();
+        var tasks = work.Select(x =>
         {
-            if (assignments.FirstOrDefault(x => x.TaskId == task.Id) is not { } assignment) continue;
-            var person = ResolvePerson(assignment, people);
-            if (person is null) continue;
-            load[person.Id] = load.GetValueOrDefault(person.Id) + (task.EstimateHours ?? estimates.GetValueOrDefault(task.Id));
-        }
-        var capacity = new Dictionary<Guid, decimal>();
-        foreach (var person in people)
-        {
-            var weekly = calendars.TryGetValue(person.Id, out var calendar) ? calendar.Monday + calendar.Tuesday + calendar.Wednesday + calendar.Thursday + calendar.Friday : 40m;
-            capacity[person.Id] = weekly <= 0 ? (load.GetValueOrDefault(person.Id) > 0 ? 2m : 0m) : load.GetValueOrDefault(person.Id) / weekly;
-        }
-        var result = new List<RiskDto>();
-        foreach (var task in tasks)
-        {
-            var reasons = new List<string>();
-            var assignment = assignments.FirstOrDefault(x => x.TaskId == task.Id);
-            var person = assignment is null ? null : ResolvePerson(assignment, people);
-            if (assignment is null) reasons.Add("Нет исполнителя");
-            var deadline = deadlines.GetValueOrDefault(task.Id);
-            var forecast = Forecast(today, estimates.GetValueOrDefault(task.Id));
-            if (deadline is { } passed && passed < today) reasons.Add("Срок прошёл");
-            else if (deadline is { } due && forecast > due) reasons.Add("Прогноз позже срока");
-            if (person is not null && capacity.GetValueOrDefault(person.Id) > 1m) reasons.Add($"Перегрузка исполнителя: {person.Name}");
-            if (dependencies.Where(x => x.SuccessorId == task.Id).Select(x => x.PredecessorId).ToArray() is { Length: > 0 } predecessors && tasks.Any(x => predecessors.Contains(x.Id) && x.Status != WorkStatus.Done)) reasons.Add("Зависимость не завершена");
-            if (reasons.Count == 0) continue;
-            var severe = (deadline is { } d && d < today) || (deadline is { } due2 && forecast > due2 && forecast.DayNumber - due2.DayNumber > 3);
-            result.Add(new RiskDto(task.Id, task.Title, severe ? "High" : "Medium", reasons.ToArray(), forecast));
-        }
-        return result.OrderByDescending(x => x.Severity).ThenBy(x => x.ForecastDate).ThenBy(x => x.Title).ToArray();
-    }
-
-    private static DateOnly Forecast(DateOnly today, decimal estimate)
-    {
-        if (estimate <= 0) return today;
-        var days = (int)Math.Ceiling(estimate / 8m);
-        var date = today;
-        var added = 0;
-        while (added < days)
-        {
-            date = date.AddDays(1);
-            if (date.DayOfWeek is not (DayOfWeek.Saturday or DayOfWeek.Sunday)) added++;
-        }
-        return date;
+            var person = x.Assignment is null ? null : ResolvePerson(x.Assignment, people);
+            var target = x.Assignment is not null && person is null ? targets.GetValueOrDefault(x.Assignment.TargetId) : null;
+            return new RiskTask(x.Task.Id, x.Task.ParentId, x.Task.Title, x.Task.EstimateHours, x.Start, x.End, x.Task.Deadline, person?.Id, person?.Name, target);
+        }).ToArray();
+        return RiskMath.Assess(tasks, dependencies, calendarOf, DateOnly.FromDateTime(DateTime.Today));
     }
 
     private static async Task<DashboardDto> Dashboard(AlvaDbContext db, Guid teamId)
