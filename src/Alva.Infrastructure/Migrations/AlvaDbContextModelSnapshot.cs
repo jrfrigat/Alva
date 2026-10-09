@@ -58,6 +58,8 @@ namespace Alva.Infrastructure.Migrations
 
                     b.HasIndex("TeamId");
 
+                    b.HasIndex("UserId");
+
                     b.ToTable("Actors");
                 });
 
@@ -132,6 +134,42 @@ namespace Alva.Infrastructure.Migrations
                     b.HasIndex("CalendarId");
 
                     b.ToTable("CalendarExceptions");
+                });
+
+            modelBuilder.Entity("Alva.Domain.PermissionGrant", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Area")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<bool>("Edit")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("Manage")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid>("TeamId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("View")
+                        .HasColumnType("boolean");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("TeamId", "UserId", "Area")
+                        .IsUnique();
+
+                    b.ToTable("PermissionGrants");
                 });
 
             modelBuilder.Entity("Alva.Domain.Project", b =>
@@ -399,6 +437,61 @@ namespace Alva.Infrastructure.Migrations
                     b.ToTable("Teams");
                 });
 
+            modelBuilder.Entity("Alva.Domain.TeamMembership", b =>
+                {
+                    b.Property<Guid>("TeamId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("TeamId", "UserId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("TeamMemberships");
+                });
+
+            modelBuilder.Entity("Alva.Domain.UserAccount", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("DisplayName")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<int>("FailedLogins")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset?>("LockedUntil")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("NormalizedEmail")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("PasswordHash")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NormalizedEmail")
+                        .IsUnique();
+
+                    b.ToTable("Users");
+                });
+
             modelBuilder.Entity("Alva.Domain.WorkCalendar", b =>
                 {
                     b.Property<Guid>("Id")
@@ -468,6 +561,24 @@ namespace Alva.Infrastructure.Migrations
                     b.ToTable("Workspaces");
                 });
 
+            modelBuilder.Entity("Alva.Domain.WorkspaceMembership", b =>
+                {
+                    b.Property<Guid>("WorkspaceId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("IsOwner")
+                        .HasColumnType("boolean");
+
+                    b.HasKey("WorkspaceId", "UserId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("WorkspaceMemberships");
+                });
+
             modelBuilder.Entity("Alva.Domain.Actor", b =>
                 {
                     b.HasOne("Alva.Domain.Actor", null)
@@ -480,6 +591,11 @@ namespace Alva.Infrastructure.Migrations
                         .HasForeignKey("TeamId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.HasOne("Alva.Domain.UserAccount", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict);
                 });
 
             modelBuilder.Entity("Alva.Domain.ActorRole", b =>
@@ -522,6 +638,21 @@ namespace Alva.Infrastructure.Migrations
                     b.HasOne("Alva.Domain.WorkCalendar", null)
                         .WithMany()
                         .HasForeignKey("CalendarId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Alva.Domain.PermissionGrant", b =>
+                {
+                    b.HasOne("Alva.Domain.Team", null)
+                        .WithMany()
+                        .HasForeignKey("TeamId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Alva.Domain.UserAccount", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
@@ -630,11 +761,41 @@ namespace Alva.Infrastructure.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Alva.Domain.TeamMembership", b =>
+                {
+                    b.HasOne("Alva.Domain.Team", null)
+                        .WithMany()
+                        .HasForeignKey("TeamId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Alva.Domain.UserAccount", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Alva.Domain.WorkCalendar", b =>
                 {
                     b.HasOne("Alva.Domain.Actor", null)
                         .WithMany()
                         .HasForeignKey("ActorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Alva.Domain.WorkspaceMembership", b =>
+                {
+                    b.HasOne("Alva.Domain.UserAccount", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Alva.Domain.Workspace", null)
+                        .WithMany()
+                        .HasForeignKey("WorkspaceId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });

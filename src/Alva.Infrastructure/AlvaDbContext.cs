@@ -20,9 +20,24 @@ public class AlvaDbContext(DbContextOptions<AlvaDbContext> options) : DbContext(
     public DbSet<CalendarException> CalendarExceptions => Set<CalendarException>();
     public DbSet<RecurringBlock> RecurringBlocks => Set<RecurringBlock>();
     public DbSet<TaskHistory> TaskHistory => Set<TaskHistory>();
+    public DbSet<UserAccount> Users => Set<UserAccount>();
+    public DbSet<WorkspaceMembership> WorkspaceMemberships => Set<WorkspaceMembership>();
+    public DbSet<TeamMembership> TeamMemberships => Set<TeamMembership>();
+    public DbSet<PermissionGrant> PermissionGrants => Set<PermissionGrant>();
 
     protected override void OnModelCreating(ModelBuilder b)
     {
+        b.Entity<UserAccount>().HasIndex(x => x.NormalizedEmail).IsUnique();
+        b.Entity<WorkspaceMembership>().HasKey(x => new { x.WorkspaceId, x.UserId });
+        b.Entity<WorkspaceMembership>().HasOne<Workspace>().WithMany().HasForeignKey(x => x.WorkspaceId);
+        b.Entity<WorkspaceMembership>().HasOne<UserAccount>().WithMany().HasForeignKey(x => x.UserId);
+        b.Entity<TeamMembership>().HasKey(x => new { x.TeamId, x.UserId });
+        b.Entity<TeamMembership>().HasOne<Team>().WithMany().HasForeignKey(x => x.TeamId);
+        b.Entity<TeamMembership>().HasOne<UserAccount>().WithMany().HasForeignKey(x => x.UserId);
+        b.Entity<PermissionGrant>().HasOne<Team>().WithMany().HasForeignKey(x => x.TeamId);
+        b.Entity<PermissionGrant>().HasOne<UserAccount>().WithMany().HasForeignKey(x => x.UserId);
+        b.Entity<PermissionGrant>().HasIndex(x => new { x.TeamId, x.UserId, x.Area }).IsUnique();
+        b.Entity<Actor>().HasOne<UserAccount>().WithMany().HasForeignKey(x => x.UserId);
         b.Entity<ProjectTeam>().HasKey(x => new { x.ProjectId, x.TeamId });
         b.Entity<ActorRole>().HasKey(x => new { x.ActorId, x.RoleId });
         b.Entity<Team>().HasOne<Workspace>().WithMany().HasForeignKey(x => x.WorkspaceId);
