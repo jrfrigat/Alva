@@ -72,6 +72,13 @@
   border-left: 1px dashed #CBD5E1;
 }
 
+/* Дорожка линейного прогресса в макете — surface-container (#E5EEFF). Flare 0.43.0 красит её
+   прямо secondary-container без своего токена, и пустая полоса выглядит заполненной; цвет
+   переопределён на самом элементе прогресса, чтобы не трогать тональные кнопки. */
+.flare-theme-alva .flare-progress {
+  --flare-color-secondary-container: var(--flare-color-surface-container);
+}
+
 /* Линия перед нижним блоком меню (Моя работа / Данные / Настройки). */
 .flare-theme-alva .alva-nav-sep {
   margin: 4px 12px 8px;

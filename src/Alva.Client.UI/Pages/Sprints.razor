@@ -9,19 +9,7 @@
 @if(Session.TeamId is null){<TeamRequired />}
 else
 {
-<FlareGrid MinColumnWidth="min(100%,24rem)">
-@foreach(var sprint in _sprints)
-{
-    var tasks=_tasks.Where(t=>t.SprintId==sprint.Id).ToArray();var complete=tasks.Count(t=>t.Status=="Done");
-    <FlareCard Variant="CardVariant.Outlined"><FlareCardContent><FlareStack>
-        <FlareStack Row StretchFirst Wrap><FlareText Element="h2" Typo="TypographyScale.TitleLarge">@sprint.Name</FlareText><AlvaStatusChip Tone="AlvaTones.Status(sprint.Status)">@Labels.Status(sprint.Status)</AlvaStatusChip></FlareStack>
-        <FlareText>@sprint.Goal</FlareText><FlareText Typo="TypographyScale.BodySmall">@sprint.StartDate.ToString("dd.MM") — @sprint.EndDate.ToString("dd.MM.yyyy") · @complete / @tasks.Length задач</FlareText>
-        <FlareProgressLinear Value="@(tasks.Length==0?0:100d*complete/tasks.Length)" aria-label="Прогресс спринта" />
-        <FlareButton Variant="ButtonVariant.Text" OnClick="()=>Edit(sprint)" Size="ButtonSize.Sm">Открыть и спланировать</FlareButton>
-    </FlareStack></FlareCardContent></FlareCard>
-}
-</FlareGrid>
-@if(_sprints.Length==0){<FlareEmptyState Title="Первый спринт начинается с цели" Description="Задайте сроки и соберите задачи команды." />}
+@if(SprintId is null){<SprintRegistry Sprints="_sprints" Tasks="_tasks" />}
 @if(_editing is not null)
 {
 <FlareCard Variant="CardVariant.Outlined"><FlareCardContent><FlareStack Gap="FlareSpacing.Large">

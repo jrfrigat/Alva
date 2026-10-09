@@ -59,7 +59,7 @@
             <span class="alva-task__summary-label">Суммарно:</span>
             <span class="alva-task__summary-value alva-num">
                 <FlareIconView Value="@MaterialDesign3Icons.Regular.Schedule" Size="16px" />
-                @Hours(Children.Sum(c => c.EstimateHours ?? 0)) ч (@Children.Length @Plural(Children.Length, "подзадача", "подзадачи", "подзадач"))
+                @AlvaFormat.Hours(Children.Sum(c => c.EstimateHours ?? 0)) ч (@Children.Length @AlvaFormat.Plural(Children.Length, "подзадача", "подзадачи", "подзадач"))
             </span>
             @if (Children.Where(c => c.Deadline.HasValue).Select(c => c.Deadline!.Value).DefaultIfEmpty().Max() is var last && last != default)
             {
@@ -81,7 +81,7 @@
                         <a class="alva-subtasks__title" href="@($"/tasks/{child.Id}")" title="@child.Title">@child.Title</a>
                     </span>
                     <span role="cell">@AssigneeView(child)</span>
-                    <span class="alva-subtasks__est alva-num" role="cell">@(child.EstimateHours.HasValue ? $"{Hours(child.EstimateHours.Value)} ч" : "—")</span>
+                    <span class="alva-subtasks__est alva-num" role="cell">@(child.EstimateHours.HasValue ? $"{AlvaFormat.Hours(child.EstimateHours.Value)} ч" : "—")</span>
                 </div>
             }
             <div class="alva-subtasks__add">
@@ -118,7 +118,7 @@
             <FlareIconView Value="@MaterialDesign3Icons.Regular.PersonAdd" Size="22px" Class="alva-panel__icon" />
             <div>
                 <div class="alva-assign__title">Назначение исполнителя</div>
-                <div class="alva-assign__task alva-num">@Code(Item)@(Item.EstimateHours.HasValue ? $" ({Hours(Item.EstimateHours.Value)}ч)" : "")</div>
+                <div class="alva-assign__task alva-num">@Code(Item)@(Item.EstimateHours.HasValue ? $" ({AlvaFormat.Hours(Item.EstimateHours.Value)}ч)" : "")</div>
             </div>
         </div>
     </HeaderContent>
@@ -200,11 +200,6 @@
     }
 
     private static string Code(TaskModel task) => "#" + task.Id.ToString("N")[..4].ToUpperInvariant();
-    private static string Hours(decimal value) => value.ToString("0.#");
-    private static string Plural(int n, string one, string few, string many) =>
-        (n % 100 is >= 11 and <= 14) ? many : (n % 10) switch { 1 => one, >= 2 and <= 4 => few, _ => many };
-    private static string Initials(string name) =>
-        string.Concat(name.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(w => char.ToUpperInvariant(w[0])));
     private string ProjectName(Guid? id) => Projects.FirstOrDefault(x => x.Id == id)?.Name ?? "Текучка";
     private string SprintName(Guid? id) => Sprints.FirstOrDefault(x => x.Id == id)?.Name ?? "Без спринта";
     private string TaskName(Guid? id) => Tasks.FirstOrDefault(x => x.Id == id)?.Title ?? "Корневая задача";
@@ -222,7 +217,7 @@
         }
         else if (target.Kind == "Person" || person is not null)
         {
-            <span class="alva-slot"><span class="alva-slot__mark" aria-hidden="true">@Initials(person!.Name)</span><span class="alva-slot__text"><span class="alva-slot__name">@person.Name</span><span class="alva-slot__meta">@(target.Kind == "Person" ? "Человек" : $"{Labels.Kind(target.Kind)}: {target.Name}")</span></span></span>
+            <span class="alva-slot"><span class="alva-slot__mark" aria-hidden="true">@AlvaFormat.Initials(person!.Name)</span><span class="alva-slot__text"><span class="alva-slot__name">@person.Name</span><span class="alva-slot__meta">@(target.Kind == "Person" ? "Человек" : $"{Labels.Kind(target.Kind)}: {target.Name}")</span></span></span>
         }
         else
         {
@@ -251,14 +246,14 @@
                     <div class="alva-candidate @(kind != "Person" ? "alva-candidate--group" : "") @(actor.Id == _assignTarget ? "alva-candidate--selected" : "") @(actor.Id == recommended ? "alva-candidate--recommended" : "")" @key="actor.Id">
                         <FlareRadio TValue="Guid?" Value="actor.Id">
                             <span class="alva-candidate__content">
-                                <span class="alva-slot__mark alva-candidate__avatar" aria-hidden="true">@Initials(actor.Name)</span>
+                                <span class="alva-slot__mark alva-candidate__avatar" aria-hidden="true">@AlvaFormat.Initials(actor.Name)</span>
                                 <span class="alva-candidate__body">
                                     <span class="alva-candidate__name">@actor.Name @if (actor.Id == recommended) { <AlvaStatusChip Tone="AlvaTone.Ok">Рекомендовано</AlvaStatusChip> }</span>
                                     <span class="alva-candidate__meta">@CandidateMeta(actor)</span>
                                     @if (percent is not null)
                                     {
                                         <span class="alva-candidate__state alva-candidate__state--@tone.ToString().ToLowerInvariant()">
-                                            @(percent > 100 ? $"Перегружен (дефицит {Hours(-reserve)}ч)" : percent > 80 ? $"Оптимально (резерв +{Hours(reserve)}ч)" : $"Свободен (резерв +{Hours(reserve)}ч)")
+                                            @(percent > 100 ? $"Перегружен (дефицит {AlvaFormat.Hours(-reserve)}ч)" : percent > 80 ? $"Оптимально (резерв +{AlvaFormat.Hours(reserve)}ч)" : $"Свободен (резерв +{AlvaFormat.Hours(reserve)}ч)")
                                         </span>
                                     }
                                     @if (actor.Id == Item.AssignmentTargetId || actor.Id == Item.ResolvedPersonId) { <span class="alva-candidate__current">Текущий исполнитель</span> }
