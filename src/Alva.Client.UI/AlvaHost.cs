@@ -1,7 +1,5 @@
-using Flare.Abstractions.Tokens;
+using Alva.Theme.Alva;
 using Flare.Extensions;
-using Flare.Theme.MaterialDesign3.Tokens;
-using Flare.Theme.MaterialDesign3Expressive;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Microsoft.Extensions.DependencyInjection;
@@ -23,8 +21,10 @@ public static class AlvaHost
         builder.RootComponents.Add<HeadOutlet>("head::after");
         builder.Services.AddFlare(options =>
         {
-            options.DefaultTheme = new MaterialDesign3ExpressiveTheme();
-            options.DefaultPalette = PaletteFactory.Brand("alva-sapphire", "Alva Sapphire", MaterialDesign3Tokens.LightColors, MaterialDesign3Tokens.DarkColors, "#1D4ED8", "Alva");
+            // Тема Alva выведена из MD3E и приносит цвета, форму и шкалу дизайна Stitch
+            // (проект Alva.Theme.Alva) — вместо стоковых значений Material.
+            options.DefaultTheme = AlvaTheme.Create();
+            options.DefaultPalette = AlvaPalettes.Sapphire;
         });
         builder.Services.AddScoped<Services.AlvaSession>();
     }

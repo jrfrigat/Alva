@@ -4,6 +4,7 @@
     <Project Path="src/Alva.Client/Alva.Client.csproj" />
     <Project Path="src/Alva.Client.Demo/Alva.Client.Demo.csproj" />
     <Project Path="src/Alva.Client.UI/Alva.Client.UI.csproj" />
+    <Project Path="src/Alva.Theme.Alva/Alva.Theme.Alva.csproj" />
     <Project Path="src/Alva.Contracts/Alva.Contracts.csproj" />
     <Project Path="src/Alva.Domain/Alva.Domain.csproj" />
     <Project Path="src/Alva.Infrastructure/Alva.Infrastructure.csproj" />

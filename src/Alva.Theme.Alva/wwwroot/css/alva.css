@@ -1,0 +1,15 @@
+/* Alva — правила, которые токенами не выражаются. Подключается темой как style-asset, поэтому
+   ограничено её же классом: тема может быть активна и для поддерева (FlareThemeScope). */
+
+.flare-theme-alva {
+  /* Дизайн называет Inter единственной гарнитурой; слой приложения берёт её отсюда. */
+  --alva-font: Inter, "Segoe UI", system-ui, sans-serif;
+}
+
+/* DESIGN.md, Typography: «Tabular figures (tnum) ... strictly mandated for all workload
+   quantities, timelines, budget metrics, and percentages». Класс .alva-num ставят числа Alva. */
+.flare-theme-alva .alva-num,
+.flare-theme-alva td,
+.flare-theme-alva th {
+  font-variant-numeric: tabular-nums;
+}

@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <SupportedPlatform Include="browser" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!--
+      Тема зависит от языка дизайна, а не от приложения: базовые значения приходят из Material 3
+      Expressive, а всё, что Alva действительно переопределяет, высказано в AlvaTheme. Пакет темы нужен
+      только ради базовых токенов (см. docs/ru/theme-creation-guide.md, «Деривация от встроенной темы»).
+    -->
+    <PackageReference Include="Flare.Theme.MaterialDesign3Expressive" Version="0.43.0" />
+  </ItemGroup>
+
+</Project>
