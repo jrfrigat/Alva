@@ -58,6 +58,24 @@
 }
 
 
+/* Заголовок раздела меню — в макете это статичная подпись, а не раскрывающийся узел:
+   font-label-sm, прописные, tracking-wider, цвет on-surface-variant. */
+.flare-theme-alva .alva-nav-group-label {
+  margin-top: 8px;
+  padding: 4px 12px;
+  color: #434655;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+/* Линия перед нижним блоком меню (Моя работа / Данные / Настройки). */
+.flare-theme-alva .alva-nav-sep {
+  margin: 4px 12px 8px;
+  border-top: 1px solid #E2E8F0;
+}
+
 /* ------------------------------------------------------ Семантика риска и ёмкости -------------
    DESIGN.md, Colors: «Critical / Overcapacity / Deadline Breach: coral-crimson (#EF4444, dark tier
    #DC2626) ... Warning / Unassigned / Dependency Hazard: amber-tangerine (#F59E0B, dark tier

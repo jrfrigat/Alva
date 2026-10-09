@@ -18,8 +18,24 @@
         </FlareStack>
     </FlareLayoutAppBar>
     <FlareLayoutDrawer @bind-Open="_open" Variant="DrawerVariant.Responsive" Width="15rem" AriaLabel="Навигация">
-        <FlareNavMenu>
-            @foreach (var item in NavigationItems.All)
+        <FlareNavMenu AriaLabel="Навигация">
+            <FlareNavLink Href="@NavigationItems.Overview.Path" Match="NavMatchMode.Exact">
+                <IconContent><FlareIconView Value="@NavigationItems.Overview.Icon" Size="1.25rem" /></IconContent>
+                <ChildContent>@NavigationItems.Overview.Label</ChildContent>
+            </FlareNavLink>
+            @foreach (var group in NavigationItems.Groups)
+            {
+                <div class="alva-nav-group-label">@group.Title</div>
+                @foreach (var item in group.Entries)
+                {
+                    <FlareNavLink Href="@item.Path" Match="NavMatchMode.Exact">
+                        <IconContent><FlareIconView Value="@item.Icon" Size="1.25rem" /></IconContent>
+                        <ChildContent>@item.Label</ChildContent>
+                    </FlareNavLink>
+                }
+            }
+            <div class="alva-nav-sep"></div>
+            @foreach (var item in NavigationItems.Tail)
             {
                 <FlareNavLink Href="@item.Path" Match="NavMatchMode.Exact">
                     <IconContent><FlareIconView Value="@item.Icon" Size="1.25rem" /></IconContent>
