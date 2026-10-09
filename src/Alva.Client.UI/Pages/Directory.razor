@@ -1,4 +1,3 @@
-@page "/projects"
 @page "/team"
 @page "/team/departments"
 @page "/team/roles"
@@ -12,40 +11,16 @@
 @if(Session.TeamId is null) { <TeamRequired /> }
 else
 {
-@if(!IsProjects) { <FlareStack Row Wrap><FlareButton Href="/team" Size="ButtonSize.Sm" Variant="ButtonVariant.Text">Люди</FlareButton><FlareButton Href="/team/departments" Size="ButtonSize.Sm" Variant="ButtonVariant.Text">Подкоманды</FlareButton><FlareButton Href="/team/roles" Size="ButtonSize.Sm" Variant="ButtonVariant.Text">Роли</FlareButton></FlareStack> }
+<FlareStack Row Wrap><FlareButton Href="/team" Size="ButtonSize.Sm" Variant="ButtonVariant.Text">Люди</FlareButton><FlareButton Href="/team/departments" Size="ButtonSize.Sm" Variant="ButtonVariant.Text">Подкоманды</FlareButton><FlareButton Href="/team/roles" Size="ButtonSize.Sm" Variant="ButtonVariant.Text">Роли</FlareButton></FlareStack>
 <FlareGrid MinColumnWidth="min(100%,24rem)" Gap="FlareSpacing.Large">
 <FlareCard Variant="CardVariant.Outlined"><FlareCardContent>
-@if(IsProjects)
-{
-    <FlareDataGrid TItem="ProjectModel" Items="_projects" Height="auto" Hoverable Dense="true">
-    <Columns>
-        <FlareColumn TItem="ProjectModel" Title="Проект" Field="p=>p!.Name" Sortable Filterable><Template Context="p"><FlareButton Variant="ButtonVariant.Text" Size="ButtonSize.Sm" OnClick="()=>EditProject(p!)">@p!.Name</FlareButton></Template></FlareColumn>
-        <FlareColumn TItem="ProjectModel" Title="Описание" Field="p=>p!.Description" />
-    </Columns><EmptyStateContent><FlareEmptyState Compact Title="Добавьте первый проект" Description="Объедините связанные задачи общим результатом." /></EmptyStateContent>
-    </FlareDataGrid>
-}
-else
-{
     <FlareDataGrid TItem="ActorModel" Items="_actors.Where(a=>a.Kind==Kind)" Height="auto" Hoverable Dense="true">
     <Columns>
         <FlareColumn TItem="ActorModel" Title="Имя" Field="a=>a!.Name" Sortable Filterable><Template Context="a"><FlareButton Variant="ButtonVariant.Text" Size="ButtonSize.Sm" OnClick="()=>EditActor(a!)">@a!.Name</FlareButton></Template></FlareColumn>
         <FlareColumn TItem="ActorModel" Title="Почта" Field="a=>a!.Email" />
     </Columns><EmptyStateContent><FlareEmptyState Compact Title="Список пока пуст" Description="Добавьте участников, подкоманды и роли для назначения задач." /></EmptyStateContent>
     </FlareDataGrid>
-}
 </FlareCardContent></FlareCard>
-@if(_project is not null)
-{
-<FlareCard Variant="CardVariant.Outlined"><FlareCardContent><FlareStack>
-    <FlareText Element="h2" Typo="TypographyScale.TitleLarge">@(_project.Id==Guid.Empty?"Новый проект":"Проект")</FlareText>
-    <FlareTextField Label="Название" @bind-Value="_project.Name" Required />
-    <FlareTextArea Label="Описание" @bind-Value="_project.Description" AutoGrow />
-    <FlareText Typo="TypographyScale.LabelLarge">Команды проекта</FlareText>
-    @foreach(var team in Session.Teams) { <FlareCheckbox Value="_project.TeamIds.Contains(team.Id)" ValueChanged="(bool value)=>ToggleTeam(team.Id,value)">@team.Name</FlareCheckbox> }
-    <FlareStack Row Wrap><FlareButton Loading="_busy" OnClick="SaveProject" Disabled="@(string.IsNullOrWhiteSpace(_project.Name))">Сохранить</FlareButton><FlareButton Variant="ButtonVariant.Text" OnClick="Close">Закрыть</FlareButton>
-    @if(_project.Id!=Guid.Empty) { <FlareButton Variant="ButtonVariant.Text" Color="FlareColor.Error" OnClick="ArchiveProject">Архивировать</FlareButton> }</FlareStack>
-</FlareStack></FlareCardContent></FlareCard>
-}
 @if(_actor is not null)
 {
 <FlareCard Variant="CardVariant.Outlined"><FlareCardContent><FlareStack>
@@ -66,26 +41,21 @@ else
 </FlareGrid>
 }
 @code {
-    private ProjectModel[] _projects=[];private ActorModel[] _actors=[];private ProjectModel? _project;private ActorModel? _actor;private Guid? _role;private bool _busy;private string? _error;
+    private ActorModel[] _actors=[];private ActorModel? _actor;private Guid? _role;private bool _busy;private string? _error;
     private string Route=>new Uri(Navigation.Uri).AbsolutePath;
-    private bool IsProjects=>Route=="/projects";
     private string Kind=>Route.EndsWith("departments")?"Department":Route.EndsWith("roles")?"Role":"Person";
-    private string Title=>IsProjects?"Проекты":Kind=="Role"?"Роли команды":Kind=="Department"?"Подкоманды":"Люди команды";
-    private string Category=>IsProjects?"Реестр · Проекты":Kind=="Role"?"Реестр · Роли":Kind=="Department"?"Реестр · Подкоманды":"Реестр · Люди";
+    private string Title=>Kind=="Role"?"Роли команды":Kind=="Department"?"Подкоманды":"Люди команды";
+    private string Category=>Kind=="Role"?"Реестр · Роли":Kind=="Department"?"Реестр · Подкоманды":"Реестр · Люди";
     protected override async Task OnParametersSetAsync(){Close();await Load();}
     private async Task Run(Func<Task> action){_busy=true;_error=null;try{await action();}catch(Exception e) when(e is HttpRequestException or InvalidOperationException){_error=e.Message;}finally{_busy=false;}}
-    private Task Load()=>Run(async()=>{await Session.Initialize();if(Session.TeamId is null)return;_projects=await Session.Get<ProjectModel[]>(Session.TeamPath("projects"));_actors=await Session.Get<ActorModel[]>(Session.TeamPath("actors"));});
-    private void New(){if(IsProjects)_project=new ProjectModel {TeamIds=[Session.TeamId!.Value]};else _actor=new ActorModel {Kind=Kind};}
-    private void Close(){_project=null;_actor=null;_role=null;}
-    private void EditProject(ProjectModel model){Close();_project=new ProjectModel{Id=model.Id,Name=model.Name,Description=model.Description,TeamIds=[..model.TeamIds]};}
+    private Task Load()=>Run(async()=>{await Session.Initialize();if(Session.TeamId is null)return;_actors=await Session.Get<ActorModel[]>(Session.TeamPath("actors"));});
+    private void New()=>_actor=new ActorModel {Kind=Kind};
+    private void Close(){_actor=null;_role=null;}
     private void EditActor(ActorModel model){Close();_actor=new ActorModel{Id=model.Id,Name=model.Name,Kind=model.Kind,Email=model.Email,ParentId=model.ParentId,RoleIds=[..model.RoleIds],DepartmentIds=[..model.DepartmentIds],UserId=model.UserId};}
     private void ToggleDepartment(Guid id,bool value)=>_actor!.DepartmentIds=value?_actor.DepartmentIds.Append(id).Distinct().ToArray():_actor.DepartmentIds.Where(x=>x!=id).ToArray();
-    private void ToggleTeam(Guid id,bool value){_project!.TeamIds=value?_project.TeamIds.Append(id).Distinct().ToArray():_project.TeamIds.Where(x=>x!=id).ToArray();}
     private string ActorName(Guid? id)=>_actors.FirstOrDefault(a=>a.Id==id)?.Name??"Без подкоманды";
     private void AddRole(){if(_role.HasValue)_actor!.RoleIds=_actor.RoleIds.Append(_role.Value).Distinct().ToArray();_role=null;}
     private void RemoveRole(Guid id)=>_actor!.RoleIds=_actor.RoleIds.Where(x=>x!=id).ToArray();
-    private Task SaveProject()=>Run(async()=>{var p=_project!;await Session.Send(p.Id==Guid.Empty?HttpMethod.Post:HttpMethod.Put,Session.TeamPath("projects"+(p.Id==Guid.Empty?"":$"/{p.Id}")),new ProjectRequest(p.Name,p.Description,p.TeamIds));Close();_projects=await Session.Get<ProjectModel[]>(Session.TeamPath("projects"));});
-    private Task ArchiveProject()=>Run(async()=>{await Session.Send(HttpMethod.Delete,Session.TeamPath($"projects/{_project!.Id}"),new{});Close();_projects=await Session.Get<ProjectModel[]>(Session.TeamPath("projects"));});
     private Task SaveActor()=>Run(async()=>{var a=_actor!;await Session.Send(a.Id==Guid.Empty?HttpMethod.Post:HttpMethod.Put,Session.TeamPath("actors"+(a.Id==Guid.Empty?"":$"/{a.Id}")),new ActorRequest(a.Name,a.Kind,a.Email,a.ParentId,a.UserId,a.RoleIds,a.DepartmentIds));Close();_actors=await Session.Get<ActorModel[]>(Session.TeamPath("actors"));});
     private Task ArchiveActor()=>Run(async()=>{await Session.Send(HttpMethod.Delete,Session.TeamPath($"actors/{_actor!.Id}"),new{});Close();_actors=await Session.Get<ActorModel[]>(Session.TeamPath("actors"));});
 }
