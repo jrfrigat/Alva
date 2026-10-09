@@ -1,0 +1,20 @@
+@page "/analytics"
+@inject AlvaSession Session
+<PageTitle>Аналитика · Alva</PageTitle>
+<FlareText Element="h1" Typo="TypographyScale.HeadlineLarge">Риски и причины</FlareText>
+<PageFeedback Loading="_busy" Error="@_error" />
+@if(Session.TeamId is null){<TeamRequired />}
+else
+{
+<FlareDataGrid TItem="RiskDto" Items="_risks" Height="auto" Hoverable><Columns>
+    <FlareColumn TItem="RiskDto" Title="Задача" Field="r=>r!.Title" Sortable Filterable><Template Context="risk"><FlareLink Href="@($"/tasks/{risk!.TaskId}")">@risk.Title</FlareLink></Template></FlareColumn>
+    <FlareColumn TItem="RiskDto" Title="Уровень" Field="r=>r!.Severity" Sortable />
+    <FlareColumn TItem="RiskDto" Title="Причины"><Template Context="risk">@string.Join(" · ",risk!.Reasons)</Template></FlareColumn>
+    <FlareColumn TItem="RiskDto" Title="Прогноз" Field="r=>r!.ForecastDate" />
+</Columns><EmptyStateContent><FlareEmptyState Compact Title="Открытых рисков нет" Description="Проверены сроки, загрузка, зависимости и назначение задач." /></EmptyStateContent></FlareDataGrid>
+<FlareButton Href="/capacity" Variant="ButtonVariant.Tonal">Загрузка и доступность команды</FlareButton>
+}
+@code {
+    private RiskDto[] _risks=[];private bool _busy;private string? _error;
+    protected override async Task OnInitializedAsync(){_busy=true;try{await Session.Initialize();if(Session.TeamId.HasValue)_risks=await Session.Get<RiskDto[]>(Session.TeamPath("risks"));}catch(Exception e) when(e is HttpRequestException or InvalidOperationException){_error=e.Message;}finally{_busy=false;}}
+}

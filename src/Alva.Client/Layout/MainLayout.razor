@@ -1,12 +1,17 @@
 @inherits LayoutComponentBase
+@implements IAsyncDisposable
+@inject AlvaSession Session
+@inject NavigationManager Navigation
+@inject IBrowserViewportService Viewport
 <a class="skip-link" href="#main-content">К содержимому</a>
 <FlareLayout>
     <FlareLayoutAppBar DrawerToggle="true">
         <FlareStack Row Align="FlareAlignItems.Center" Gap="FlareSpacing.Medium" Style="flex:1;min-width:0">
             <FlareLink Href="/" Underline="LinkUnderline.None" Class="alva-brand">alva<span class="brand-dot">.</span></FlareLink>
             <FlareSpacer />
-            <FlareButton Href="/workspaces" Variant="ButtonVariant.Text">Команды</FlareButton>
-            <FlareButton Href="/login" Variant="ButtonVariant.Tonal">Войти</FlareButton>
+            <FlareButton Href="/workspaces" Variant="ButtonVariant.Text" Size="ButtonSize.Sm">@Session.TeamName</FlareButton>
+            @if (Session.User is not null) { <FlareButton Href="/settings" Variant="ButtonVariant.Tonal" Size="ButtonSize.Sm">@Session.User.DisplayName</FlareButton> }
+            else { <FlareButton Href="/login" Variant="ButtonVariant.Tonal" Size="ButtonSize.Sm">Войти</FlareButton> }
         </FlareStack>
     </FlareLayoutAppBar>
     <FlareLayoutDrawer @bind-Open="_open" Variant="DrawerVariant.Responsive" Width="15rem" AriaLabel="Навигация">
@@ -22,4 +27,14 @@
     </FlareLayoutDrawer>
     <FlareLayoutContent><main id="main-content"><FlareContainer MaxWidth="ContainerMaxWidth.Xl"><FlareStack Gap="FlareSpacing.XLarge">@Body</FlareStack></FlareContainer></main></FlareLayoutContent>
 </FlareLayout>
-@code { private bool _open = true; }
+@code {
+    private bool _open;
+    private IAsyncDisposable? _viewportSubscription;
+    protected override void OnInitialized() => Session.Changed += Refresh;
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if(firstRender) _viewportSubscription = await Viewport.SubscribeBreakpointAsync((Breakpoint bp) => InvokeAsync(() => { _open = !bp.IsAtMost(Breakpoint.Sm); StateHasChanged(); }));
+    }
+    private void Refresh() => InvokeAsync(StateHasChanged);
+    public async ValueTask DisposeAsync() { Session.Changed -= Refresh; if(_viewportSubscription is not null) await _viewportSubscription.DisposeAsync(); }
+}

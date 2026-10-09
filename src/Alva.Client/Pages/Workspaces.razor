@@ -1,0 +1,34 @@
+@page "/workspaces"
+@inject AlvaSession Session
+@inject NavigationManager Navigation
+<PageTitle>Команды · Alva</PageTitle>
+<FlareText Element="h1" Typo="TypographyScale.HeadlineLarge">Рабочее пространство</FlareText>
+<PageFeedback Loading="_busy" Error="@_error" />
+@if (Session.User is null) { <TeamRequired /> }
+else
+{
+<FlareGrid MinColumnWidth="min(100%, 20rem)">
+    <FlareCard Variant="CardVariant.Outlined"><FlareCardContent><FlareStack>
+        <FlareText Element="h2" Typo="TypographyScale.TitleLarge">Пространства</FlareText>
+        @foreach(var item in Session.Workspaces) { <FlareButton Variant="@(Session.WorkspaceId == item.Id ? ButtonVariant.Tonal : ButtonVariant.Text)" OnClick="() => SelectWorkspace(item.Id)">@item.Name</FlareButton> }
+        <FlareTextField Label="Новое пространство" @bind-Value="_spaceName" />
+        <FlareButton Disabled="@(string.IsNullOrWhiteSpace(_spaceName) || _busy)" OnClick="CreateSpace">Создать пространство</FlareButton>
+    </FlareStack></FlareCardContent></FlareCard>
+    <FlareCard Variant="CardVariant.Outlined"><FlareCardContent><FlareStack>
+        <FlareText Element="h2" Typo="TypographyScale.TitleLarge">Команды</FlareText>
+        @foreach(var item in Session.Teams) { <FlareButton Variant="@(Session.TeamId == item.Id ? ButtonVariant.Tonal : ButtonVariant.Text)" OnClick="() => SelectTeam(item.Id)">@item.Name</FlareButton> }
+        @if (Session.Teams.Length == 0) { <FlareText>Создайте первую команду в пространстве.</FlareText> }
+        <FlareTextField Label="Новая команда" @bind-Value="_teamName" />
+        <FlareButton Disabled="@(Session.WorkspaceId is null || string.IsNullOrWhiteSpace(_teamName) || _busy)" OnClick="CreateTeam">Создать команду</FlareButton>
+    </FlareStack></FlareCardContent></FlareCard>
+</FlareGrid>
+}
+@code {
+    private string? _spaceName, _teamName, _error; private bool _busy;
+    protected override async Task OnInitializedAsync() => await Run(Session.Initialize);
+    private async Task Run(Func<Task> action) { _busy=true; _error=null; try { await action(); } catch(Exception e) when(e is HttpRequestException or InvalidOperationException) { _error=e.Message; } finally { _busy=false; } }
+    private Task SelectWorkspace(Guid id) => Run(() => Session.SelectWorkspace(id));
+    private Task SelectTeam(Guid id) => Run(async () => { await Session.SelectTeam(id); Navigation.NavigateTo("/"); });
+    private Task CreateSpace() => Run(async () => { await Session.Send(HttpMethod.Post,"api/workspaces",new { name=_spaceName }); _spaceName=null; await Session.LoadWorkspaces(); });
+    private Task CreateTeam() => Run(async () => { await Session.Send(HttpMethod.Post,$"api/workspaces/{Session.WorkspaceId}/teams",new { name=_teamName }); _teamName=null; await Session.SelectWorkspace(Session.WorkspaceId!.Value); });
+}

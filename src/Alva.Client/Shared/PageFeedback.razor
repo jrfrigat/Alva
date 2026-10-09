@@ -1,0 +1,6 @@
+@if (!string.IsNullOrEmpty(Error)) { <FlareAlert Severity="AlertSeverity.Error" Title="Не удалось выполнить действие">@Error</FlareAlert> }
+@if (Loading) { <FlareProgressLinear Value="null" aria-label="Загрузка данных" /> }
+@code {
+    [Parameter] public string? Error { get; set; }
+    [Parameter] public bool Loading { get; set; }
+}

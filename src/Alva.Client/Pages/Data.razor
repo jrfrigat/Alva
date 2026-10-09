@@ -1,0 +1,19 @@
+@page "/data"
+@inject AlvaSession Session
+<PageTitle>Данные · Alva</PageTitle>
+<FlareText Element="h1" Typo="TypographyScale.HeadlineLarge">Импорт и экспорт</FlareText>
+<PageFeedback Loading="_busy" Error="@_error" />
+@if(Session.TeamId is null){<TeamRequired />}
+else
+{
+<FlareGrid MinColumnWidth="min(100%,24rem)">
+<FlareCard Variant="CardVariant.Outlined"><FlareCardContent><FlareStack Gap="FlareSpacing.Large"><FlareText Element="h2" Typo="TypographyScale.TitleLarge">Экспорт данных команды</FlareText><FlareText>Скачайте данные для резервной копии или работы в таблицах.</FlareText><FlareStack Row Wrap>@foreach(var format in Formats){<FlareButton Href="@(Session.TeamPath("data/export?format="+format))" Variant="ButtonVariant.Tonal" Target="_blank">@format.ToUpperInvariant()</FlareButton>}</FlareStack></FlareStack></FlareCardContent></FlareCard>
+<FlareCard Variant="CardVariant.Outlined"><FlareCardContent><FlareStack Gap="FlareSpacing.Large"><FlareText Element="h2" Typo="TypographyScale.TitleLarge">Импорт данных</FlareText><FlareText>Выберите файл JSON, CSV или XLSX. Используйте экспорт Alva как образец структуры.</FlareText><FlareSelect TValue="string" Label="Формат" Items="Formats" @bind-Value="_format" /><FlareFileUploadButton Text="Выбрать файл" Accept=".json,.csv,.xlsx" Multiple="false" OnFilesChanged="SelectFiles" ShowFileList MaxFileSize="10485760" /><FlareButton OnClick="Import" Loading="_busy" Disabled="@(_file is null)">Импортировать</FlareButton>@if(_success){<FlareAlert Severity="AlertSeverity.Success">Данные импортированы. Откройте нужный раздел для проверки.</FlareAlert>}</FlareStack></FlareCardContent></FlareCard>
+</FlareGrid>
+}
+@code {
+    private static readonly string[] Formats=["json","csv","xlsx"];private string _format="json";private IBrowserFile? _file;private bool _busy,_success;private string? _error;
+    protected override async Task OnInitializedAsync(){try{await Session.Initialize();}catch(Exception e) when(e is HttpRequestException or InvalidOperationException){_error=e.Message;}}
+    private void SelectFiles(IReadOnlyList<IBrowserFile> files){_file=files.FirstOrDefault();_success=false;}
+    private async Task Import(){_busy=true;_success=false;_error=null;try{await using var stream=_file!.OpenReadStream(10*1024*1024);await Session.Import(_format,stream);_success=true;}catch(Exception e) when(e is HttpRequestException or InvalidOperationException or IOException){_error=e.Message;}finally{_busy=false;}}
+}

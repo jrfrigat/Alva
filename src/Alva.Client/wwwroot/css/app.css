@@ -2,5 +2,5 @@ html,body{margin:0;min-height:100%;font-family:var(--flare-font-family,Roboto,sy
 *{box-sizing:border-box}
 .alva-brand{font-size:2rem;font-weight:800;letter-spacing:-.09em}.brand-dot{color:var(--flare-color-primary,#6750a4)}
 .skip-link{position:fixed;top:-6rem;left:1rem;z-index:100000;padding:1rem;background:var(--flare-color-surface,#fff)}.skip-link:focus{top:1rem}
-#flare-splash{min-height:100dvh;display:grid;place-content:center}#blazor-error-ui{display:none;position:fixed;bottom:0;padding:1rem;background:#f9dedc;width:100%;z-index:100000}
+#flare-splash{min-height:100dvh;display:grid;place-content:center;background:#f8fafc;color:#1e293b}#blazor-error-ui{display:none;position:fixed;bottom:0;padding:1rem;background:#f9dedc;color:#410e0b;width:100%;z-index:100000}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important}}

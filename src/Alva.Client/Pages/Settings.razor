@@ -1,0 +1,30 @@
+@page "/settings"
+@inject AlvaSession Session
+@inject IThemeService Theme
+@inject NavigationManager Navigation
+<PageTitle>Настройки · Alva</PageTitle>
+<FlareText Element="h1" Typo="TypographyScale.HeadlineLarge">Настройки</FlareText>
+<PageFeedback Error="@_error" Loading="_busy" />
+<FlareGrid MinColumnWidth="min(100%,24rem)">
+<FlareCard Variant="CardVariant.Outlined"><FlareCardContent><FlareStack Gap="FlareSpacing.Large"><FlareText Element="h2" Typo="TypographyScale.TitleLarge">Внешний вид</FlareText><FlareSelect TValue="ThemeMode" Label="Режим" Items="Modes" ItemLabel="ModeLabel" Value="Theme.Mode" ValueChanged="Theme.SetModeAsync" /></FlareStack></FlareCardContent></FlareCard>
+@if(Session.User is not null)
+{
+<FlareCard Variant="CardVariant.Outlined"><FlareCardContent><FlareStack Gap="FlareSpacing.Large"><FlareText Element="h2" Typo="TypographyScale.TitleLarge">Профиль</FlareText><FlareText>@Session.User.Email</FlareText><FlareTextField Label="Ваше имя" @bind-Value="_displayName" /><FlareButton OnClick="SaveProfile" Loading="_busy" Disabled="@(string.IsNullOrWhiteSpace(_displayName))">Сохранить профиль</FlareButton><FlareButton Variant="ButtonVariant.Text" OnClick="Logout">Выйти из Alva</FlareButton></FlareStack></FlareCardContent></FlareCard>
+@if(Session.WorkspaceId.HasValue)
+{
+<FlareCard Variant="CardVariant.Outlined"><FlareCardContent><FlareStack Gap="FlareSpacing.Large"><FlareText Element="h2" Typo="TypographyScale.TitleLarge">Пространство и доступ</FlareText><FlareTextField Label="Название пространства" @bind-Value="_spaceName" /><FlareCheckbox @bind-Value="_permissions">Ограничивать доступ по разрешениям</FlareCheckbox><FlareText>По умолчанию все участники команды видят её данные. Изменение доступно владельцу пространства.</FlareText><FlareButton OnClick="SaveSpace" Loading="_busy">Сохранить пространство</FlareButton></FlareStack></FlareCardContent></FlareCard>
+<FlareCard Variant="CardVariant.Outlined"><FlareCardContent><FlareStack Gap="FlareSpacing.Large"><FlareText Element="h2" Typo="TypographyScale.TitleLarge">Участники пространства</FlareText><FlareText>Добавьте зарегистрированного пользователя по почте и выберите команды.</FlareText><FlareTextField Label="Почта участника" Type="email" @bind-Value="_memberEmail" />@foreach(var team in Session.Teams){<FlareCheckbox Value="_memberTeams.Contains(team.Id)" ValueChanged="(bool value)=>ToggleMemberTeam(team.Id,value)">@team.Name</FlareCheckbox>}<FlareCheckbox @bind-Value="_owner">Владелец пространства</FlareCheckbox><FlareButton OnClick="SaveMember" Disabled="@(string.IsNullOrWhiteSpace(_memberEmail) || _busy)">Сохранить участника</FlareButton>@foreach(var member in _members){<FlareText>@member.DisplayName · @member.Email @(member.IsOwner?"· владелец":"")</FlareText>}</FlareStack></FlareCardContent></FlareCard>
+}
+}
+</FlareGrid>
+@code {
+    private static readonly ThemeMode[] Modes=[ThemeMode.Auto,ThemeMode.Light,ThemeMode.Dark,ThemeMode.HighContrast];private bool _busy,_permissions,_owner;private string? _error,_displayName,_spaceName,_memberEmail;private Guid[] _memberTeams=[];private MemberDto[] _members=[];
+    private static string ModeLabel(ThemeMode mode)=>mode switch{ThemeMode.Auto=>"Как на устройстве",ThemeMode.Light=>"Светлый",ThemeMode.Dark=>"Тёмный",_=>"Высокая контрастность"};
+    protected override async Task OnInitializedAsync(){await Run(async()=>{await Session.Initialize();_displayName=Session.User?.DisplayName;if(Session.WorkspaceId.HasValue){var spaces=await Session.Get<WorkspaceDto[]>("api/workspaces");var space=spaces.First(x=>x.Id==Session.WorkspaceId);_spaceName=space.Name;_permissions=space.EnforcePermissions;_members=await Session.Get<MemberDto[]>($"api/workspaces/{Session.WorkspaceId}/members");}});}
+    private async Task Run(Func<Task> action){_busy=true;_error=null;try{await action();}catch(Exception e) when(e is HttpRequestException or InvalidOperationException){_error=e.Message;}finally{_busy=false;}}
+    private Task SaveProfile()=>Run(async()=>{await Session.Send(HttpMethod.Put,"api/auth/profile",new ProfileRequest(_displayName!));await Session.RefreshUser();});
+    private Task SaveSpace()=>Run(async()=>{await Session.Send(HttpMethod.Put,$"api/workspaces/{Session.WorkspaceId}",new WorkspaceSettingsRequest(_spaceName!,_permissions));await Session.LoadWorkspaces();});
+    private Task Logout()=>Run(async()=>{await Session.Logout();Navigation.NavigateTo("/login");});
+    private void ToggleMemberTeam(Guid id,bool value)=>_memberTeams=value?_memberTeams.Append(id).Distinct().ToArray():_memberTeams.Where(x=>x!=id).ToArray();
+    private Task SaveMember()=>Run(async()=>{await Session.Send(HttpMethod.Post,$"api/workspaces/{Session.WorkspaceId}/members",new MembershipRequest(_memberEmail!,_memberTeams,_owner));_members=await Session.Get<MemberDto[]>($"api/workspaces/{Session.WorkspaceId}/members");});
+}

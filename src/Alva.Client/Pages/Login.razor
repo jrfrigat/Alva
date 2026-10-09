@@ -1,0 +1,37 @@
+@page "/login"
+@inject AlvaSession Session
+@inject NavigationManager Navigation
+<PageTitle>Вход · Alva</PageTitle>
+<FlareContainer MaxWidth="ContainerMaxWidth.Sm">
+<FlareCard Variant="CardVariant.Outlined"><FlareCardContent><FlareStack Gap="FlareSpacing.Large">
+    <FlareText Element="h1" Typo="TypographyScale.HeadlineLarge">@(_register ? "Создайте пространство для команды" : "Добро пожаловать в Alva")</FlareText>
+    <FlareText>Планируйте спринты, распределяйте работу и замечайте перегрузки заранее.</FlareText>
+    <PageFeedback Error="@_error" />
+    <EditForm Model="this" OnSubmit="Submit">
+    <FlareStack Gap="FlareSpacing.Medium">
+        @if (_register) { <FlareTextField Label="Ваше имя" @bind-Value="_displayName" Required Autocomplete="name" /><FlareTextField Label="Название рабочего пространства" @bind-Value="_workspaceName" Required /> }
+        <FlareTextField Label="Электронная почта" @bind-Value="_email" Type="email" Required Autocomplete="email" />
+        <FlareTextField Label="Пароль" @bind-Value="_password" Type="password" Required Autocomplete="@(_register ? "new-password" : "current-password")" HelperText="@(_register ? "Не менее 12 символов" : null)" />
+        <FlareButton Type="ButtonType.Submit" Loading="_busy" FullWidth>@(_register ? "Создать пространство" : "Войти")</FlareButton>
+        <FlareButton Variant="ButtonVariant.Text" OnClick="Toggle">@(_register ? "У меня уже есть аккаунт" : "Создать аккаунт")</FlareButton>
+    </FlareStack>
+    </EditForm>
+</FlareStack></FlareCardContent></FlareCard>
+</FlareContainer>
+@code {
+    private string? _email, _password, _displayName, _workspaceName, _error;
+    private bool _register, _busy;
+    private void Toggle() { _register = !_register; _error = null; }
+    private async Task Submit()
+    {
+        _busy = true; _error = null;
+        try
+        {
+            if (_register && (_password?.Length ?? 0) < 12) throw new InvalidOperationException("Пароль должен содержать не менее 12 символов.");
+            await Session.Authenticate(_register ? "register" : "login", new { email = _email, password = _password, displayName = _displayName, workspaceName = _workspaceName });
+            Navigation.NavigateTo("/workspaces");
+        }
+        catch (Exception error) when (error is HttpRequestException or InvalidOperationException) { _error = error.Message; }
+        finally { _busy = false; }
+    }
+}

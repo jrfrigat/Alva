@@ -1,0 +1,59 @@
+@page "/sprints"
+@page "/sprints/{SprintId:guid}"
+@inject AlvaSession Session
+<PageTitle>Спринты · Alva</PageTitle>
+<FlareStack Row Wrap StretchFirst Align="FlareAlignItems.Center"><FlareText Element="h1" Typo="TypographyScale.HeadlineLarge">Спринты команды</FlareText><FlareButton Size="ButtonSize.Sm" OnClick="New" Disabled="@(Session.TeamId is null)">Новый спринт</FlareButton></FlareStack>
+<PageFeedback Loading="_busy" Error="@_error" />
+@if(Session.TeamId is null){<TeamRequired />}
+else
+{
+<FlareGrid MinColumnWidth="min(100%,24rem)">
+@foreach(var sprint in _sprints)
+{
+    var tasks=_tasks.Where(t=>t.SprintId==sprint.Id).ToArray();var complete=tasks.Count(t=>t.Status=="Done");
+    <FlareCard Variant="CardVariant.Outlined"><FlareCardContent><FlareStack>
+        <FlareStack Row StretchFirst Wrap><FlareText Element="h2" Typo="TypographyScale.TitleLarge">@sprint.Name</FlareText><FlareChip Size="ChipSize.Sm">@Labels.Status(sprint.Status)</FlareChip></FlareStack>
+        <FlareText>@sprint.Goal</FlareText><FlareText Typo="TypographyScale.BodySmall">@sprint.StartDate.ToString("dd.MM") — @sprint.EndDate.ToString("dd.MM.yyyy") · @complete / @tasks.Length задач</FlareText>
+        <FlareProgressLinear Value="@(tasks.Length==0?0:100d*complete/tasks.Length)" aria-label="Прогресс спринта" />
+        <FlareButton Variant="ButtonVariant.Text" OnClick="()=>Edit(sprint)" Size="ButtonSize.Sm">Открыть и спланировать</FlareButton>
+    </FlareStack></FlareCardContent></FlareCard>
+}
+</FlareGrid>
+@if(_sprints.Length==0){<FlareEmptyState Title="Первый спринт начинается с цели" Description="Задайте сроки и соберите задачи команды." />}
+@if(_editing is not null)
+{
+<FlareCard Variant="CardVariant.Outlined"><FlareCardContent><FlareStack Gap="FlareSpacing.Large">
+    <FlareStack Row StretchFirst><FlareText Element="h2" Typo="TypographyScale.TitleLarge">Планирование спринта</FlareText><FlareButton OnClick="Close" Variant="ButtonVariant.Text" Size="ButtonSize.Sm">Закрыть</FlareButton></FlareStack>
+    <FlareGrid MinColumnWidth="min(100%,15rem)">
+        <FlareTextField Label="Название" @bind-Value="_editing.Name" Required /><FlareTextField Label="Цель" @bind-Value="_editing.Goal" />
+        <FlareDatePicker Label="Начало" @bind-Value="_start" /><FlareDatePicker Label="Окончание" @bind-Value="_end" Min="_start" />
+        <FlareSelect TValue="string" Label="Статус" Items="_statuses" ItemLabel="Labels.Status" @bind-Value="_editing.Status" />
+    </FlareGrid>
+    <FlareButton OnClick="Save" Loading="_busy" Disabled="@(string.IsNullOrWhiteSpace(_editing.Name) || !_start.HasValue || !_end.HasValue)">Сохранить спринт</FlareButton>
+    @if(_editing.Id!=Guid.Empty)
+    {
+    <FlareGrid MinColumnWidth="min(100%,24rem)">
+    <FlareStack><FlareText Element="h3" Typo="TypographyScale.TitleMedium">Пул задач</FlareText>
+        @foreach(var task in _tasks.Where(t=>t.SprintId is null && t.Status!="Done" && t.Status!="Cancelled")) { <FlareStack Row StretchFirst Align="FlareAlignItems.Center"><FlareLink Href="@($"/tasks/{task.Id}")">@task.Title</FlareLink><FlareButton Size="ButtonSize.Sm" Variant="ButtonVariant.Tonal" OnClick="()=>SetSprint(task,_editing.Id)" Disabled="_busy">В спринт</FlareButton></FlareStack> }
+    </FlareStack>
+    <FlareStack><FlareText Element="h3" Typo="TypographyScale.TitleMedium">В спринте</FlareText>
+        @foreach(var task in _tasks.Where(t=>t.SprintId==_editing.Id)) { <FlareStack Row StretchFirst Align="FlareAlignItems.Center"><FlareLink Href="@($"/tasks/{task.Id}")">@task.Title · @(task.EstimateHours??0) ч</FlareLink><FlareButton Size="ButtonSize.Sm" Variant="ButtonVariant.Text" OnClick="()=>SetSprint(task,null)" Disabled="_busy">В пул</FlareButton></FlareStack> }
+    </FlareStack>
+    </FlareGrid>
+    <FlareText>Объём: @_tasks.Where(t=>t.SprintId==_editing.Id).Sum(t=>t.EstimateHours??0) ч. <FlareLink Href="/capacity">Сверить с ёмкостью команды</FlareLink></FlareText>
+    }
+</FlareStack></FlareCardContent></FlareCard>
+}
+}
+@code {
+    [Parameter]public Guid? SprintId{get;set;}
+    private SprintModel[] _sprints=[];private TaskModel[] _tasks=[];private SprintModel? _editing;private DateOnly? _start,_end;private bool _busy;private string? _error;private readonly string[] _statuses=["Planned","Active","Completed"];
+    protected override async Task OnParametersSetAsync(){await Load();if(SprintId.HasValue && _sprints.FirstOrDefault(s=>s.Id==SprintId) is {} sprint)Edit(sprint);}
+    private async Task Run(Func<Task> action){_busy=true;_error=null;try{await action();}catch(Exception e) when(e is HttpRequestException or InvalidOperationException){_error=e.Message;}finally{_busy=false;}}
+    private Task Load()=>Run(async()=>{await Session.Initialize();if(Session.TeamId is null)return;_sprints=await Session.Get<SprintModel[]>(Session.TeamPath("sprints"));_tasks=await Session.Get<TaskModel[]>(Session.TeamPath("tasks"));});
+    private void New(){_editing=new SprintModel();_start=_editing.StartDate;_end=_editing.EndDate;}
+    private void Edit(SprintModel sprint){_editing=new SprintModel{Id=sprint.Id,Name=sprint.Name,Goal=sprint.Goal,StartDate=sprint.StartDate,EndDate=sprint.EndDate,Status=sprint.Status};_start=sprint.StartDate;_end=sprint.EndDate;}
+    private void Close()=>_editing=null;
+    private Task Save()=>Run(async()=>{var s=_editing!;var saved=await Session.Save<SprintModel>(s.Id==Guid.Empty?HttpMethod.Post:HttpMethod.Put,Session.TeamPath("sprints"+(s.Id==Guid.Empty?"":$"/{s.Id}")),new SprintRequest(s.Name,s.Goal,_start!.Value,_end!.Value,s.Status));_sprints=await Session.Get<SprintModel[]>(Session.TeamPath("sprints"));Edit(saved);});
+    private Task SetSprint(TaskModel t,Guid? sprint)=>Run(async()=>{await Session.Send(HttpMethod.Put,Session.TeamPath($"tasks/{t.Id}"),new TaskRequest(t.Title,t.Description,t.Status,t.ProjectId,sprint,t.ParentId,t.EstimateHours,t.Deadline,t.StartDate,t.EndDate,t.Order,t.Version));_tasks=await Session.Get<TaskModel[]>(Session.TeamPath("tasks"));});
+}

@@ -1,0 +1,9 @@
+@inject AlvaSession Session
+@if (Session.User is null)
+{
+    <FlareEmptyState Title="Войдите в Alva" Description="Ваши команды и планы доступны после входа."><ActionContent><FlareButton Href="/login">Войти</FlareButton></ActionContent></FlareEmptyState>
+}
+else
+{
+    <FlareEmptyState Title="Выберите команду" Description="Создайте или выберите команду в рабочем пространстве."><ActionContent><FlareButton Href="/workspaces">Выбрать команду</FlareButton></ActionContent></FlareEmptyState>
+}

@@ -1,0 +1,90 @@
+@page "/tasks"
+@page "/tasks/{TaskId:guid}"
+@page "/unassigned"
+@page "/my-work"
+@inject AlvaSession Session
+@inject NavigationManager Navigation
+<PageTitle>Задачи · Alva</PageTitle>
+<FlareStack Row Wrap Align="FlareAlignItems.Center" StretchFirst>
+    <FlareText Element="h1" Typo="TypographyScale.HeadlineLarge">@PageHeading</FlareText>
+    <FlareButton OnClick="NewTask" Disabled="@(Session.TeamId is null)" Size="ButtonSize.Sm">Новая задача</FlareButton>
+</FlareStack>
+<PageFeedback Error="@_error" Loading="_busy" />
+@if(Session.TeamId is null) { <TeamRequired /> }
+else
+{
+<FlareStack Row Wrap Gap="FlareSpacing.Small">
+    <FlareTextField Label="Поиск задач" @bind-Value="_search" Immediate Clearable Style="flex:2;min-width:min(100%,15rem)" />
+    <FlareSelect TValue="Guid?" Label="Проект" Items="_projects.Select(x => (Guid?)x.Id)" ItemLabel="ProjectName" NullOption="Все проекты" @bind-Value="_projectFilter" Style="flex:1;min-width:12rem" />
+    <FlareSelect TValue="string" Label="Статус" Items="_statuses" ItemLabel="Labels.Status" NullOption="Все статусы" @bind-Value="_statusFilter" Style="flex:1;min-width:12rem" />
+</FlareStack>
+<FlareStack Row Wrap Gap="FlareSpacing.Small"><FlareButton Href="/tasks" Variant="ButtonVariant.Text" Size="ButtonSize.Sm">Все задачи</FlareButton><FlareButton Href="/unassigned" Variant="ButtonVariant.Text" Size="ButtonSize.Sm">Без исполнителя</FlareButton><FlareButton Href="/my-work" Variant="ButtonVariant.Text" Size="ButtonSize.Sm">Моя работа</FlareButton><FlareButton OnClick="Load" Variant="ButtonVariant.Text" Size="ButtonSize.Sm">Обновить</FlareButton></FlareStack>
+<FlareGrid MinColumnWidth="min(100%, 26rem)" Gap="FlareSpacing.Large">
+<FlareCard Variant="CardVariant.Outlined"><FlareCardContent>
+    @if (!Filtered.Any()) { <FlareEmptyState Compact Title="Задач пока нет" Description="Добавьте первую задачу или измените фильтры." /> }
+    else {
+    <FlareDataTree TItem="TaskModel" Items="Roots" KeySelector="t => t!.Id" ChildrenProvider="Children" HasChildren="HasChildren" ItemClick="Edit" Height="34rem">
+        <ItemTemplate Context="task"><FlareStack Row Align="FlareAlignItems.Center" Gap="FlareSpacing.Small" Wrap>
+            <FlareText>@task!.Title</FlareText><FlareChip Size="ChipSize.Sm">@Labels.Status(task.Status)</FlareChip>
+            @if(task.EstimateHours.HasValue) { <FlareText Typo="TypographyScale.LabelSmall">@task.EstimateHours ч</FlareText> }
+        </FlareStack></ItemTemplate>
+    </FlareDataTree>
+    }
+</FlareCardContent></FlareCard>
+@if(_editing is not null)
+{
+<FlareCard Variant="CardVariant.Outlined"><FlareCardContent><FlareStack Gap="FlareSpacing.Medium">
+    <FlareStack Row StretchFirst><FlareText Element="h2" Typo="TypographyScale.TitleLarge">@(_editing.Id == Guid.Empty ? "Новая задача" : "Карточка задачи")</FlareText><FlareButton OnClick="Close" Variant="ButtonVariant.Text" Size="ButtonSize.Sm">Закрыть</FlareButton></FlareStack>
+    <FlareTextField Label="Название" @bind-Value="_editing.Title" Required MaxLength="500" />
+    <FlareTextArea Label="Описание" @bind-Value="_editing.Description" AutoGrow />
+    <FlareGrid MinColumnWidth="min(100%,12rem)">
+        <FlareSelect TValue="string" Label="Статус" Items="_statuses" ItemLabel="Labels.Status" @bind-Value="_editing.Status" />
+        <FlareSelect TValue="Guid?" Label="Проект" Items="_projects.Select(x => (Guid?)x.Id)" ItemLabel="ProjectName" NullOption="Текучка" @bind-Value="_editing.ProjectId" />
+        <FlareSelect TValue="Guid?" Label="Спринт" Items="_sprints.Select(x => (Guid?)x.Id)" ItemLabel="SprintName" NullOption="Без спринта" @bind-Value="_editing.SprintId" />
+        <FlareSelect TValue="Guid?" Label="Родительская задача" Items="_tasks.Where(x => x.Id != _editing.Id).Select(x => (Guid?)x.Id)" ItemLabel="TaskName" NullOption="Корневая задача" @bind-Value="_editing.ParentId" Searchable />
+        <FlareNumericField TValue="decimal?" Label="Оценка, часы" @bind-Value="_editing.EstimateHours" Min="0" />
+        <FlareDatePicker Label="Дедлайн" @bind-Value="_editing.Deadline" />
+        <FlareDatePicker Label="Начало" @bind-Value="_editing.StartDate" />
+        <FlareDatePicker Label="Окончание" @bind-Value="_editing.EndDate" />
+    </FlareGrid>
+    <FlareSelect TValue="Guid?" Label="Исполнитель, подкоманда или роль" Items="_actors.Select(x => (Guid?)x.Id)" ItemLabel="ActorName" NullOption="Не назначена" @bind-Value="_editing.AssignmentTargetId" Searchable />
+    @if(_actors.FirstOrDefault(a=>a.Id==_editing.AssignmentTargetId)?.Kind is "Role" or "Department") { <FlareSelect TValue="Guid?" Label="Конкретный исполнитель" Items="@(_actors.Where(a=>a.Kind=="Person").Select(a=>(Guid?)a.Id))" ItemLabel="ActorName" NullOption="Пока не выбран" @bind-Value="_editing.ResolvedPersonId" Searchable /> }
+    <FlareStack Row Wrap><FlareButton Loading="_busy" Disabled="@(string.IsNullOrWhiteSpace(_editing.Title))" OnClick="Save">Сохранить задачу</FlareButton>
+        @if(_editing.Id != Guid.Empty) { <FlareButton Variant="ButtonVariant.Text" OnClick="() => NewChild(_editing.Id)">Подзадача</FlareButton><FlareButton Color="FlareColor.Error" Variant="ButtonVariant.Text" OnClick="Archive">Архивировать</FlareButton> }
+    </FlareStack>
+    @if(_history.Length>0) { <FlareText Element="h3" Typo="TypographyScale.TitleMedium">История</FlareText>@foreach(var entry in _history) { <FlareText Typo="TypographyScale.BodySmall">@entry.At.ToLocalTime().ToString("g") · @entry.Summary</FlareText> } }
+</FlareStack></FlareCardContent></FlareCard>
+}
+</FlareGrid>
+}
+@code {
+    [Parameter] public Guid? TaskId { get; set; }
+    private TaskModel[] _tasks=[]; private ProjectModel[] _projects=[]; private SprintModel[] _sprints=[]; private ActorModel[] _actors=[]; private HistoryDto[] _history=[];
+    private TaskModel? _editing; private string? _error,_search,_statusFilter; private Guid? _projectFilter; private bool _busy;
+    private readonly string[] _statuses=["Backlog","Planned","InProgress","Done","Cancelled"];
+    private string Route => new Uri(Navigation.Uri).AbsolutePath;
+    private string PageHeading => Route == "/my-work" ? "Моя работа" : Route == "/unassigned" ? "Без исполнителя" : "Задачи команды";
+    private IEnumerable<TaskModel> Filtered => _tasks.Where(t => (string.IsNullOrWhiteSpace(_search) || t.Title.Contains(_search,StringComparison.OrdinalIgnoreCase)) && (!_projectFilter.HasValue || t.ProjectId==_projectFilter) && (_statusFilter is null || t.Status==_statusFilter) && (Route != "/unassigned" || t.AssignmentTargetId is null || _actors.FirstOrDefault(a=>a.Id==t.AssignmentTargetId)?.Kind=="Role") && (Route != "/my-work" || _actors.Any(a=>a.Id==t.AssignmentTargetId && a.Email==Session.User?.Email)));
+    private IEnumerable<TaskModel> Roots => Filtered.Where(t=>t.ParentId is null || !Filtered.Any(p=>p.Id==t.ParentId)).OrderBy(t=>t.Order);
+    private Task<IEnumerable<TaskModel?>> Children(TaskModel? task) => Task.FromResult(Filtered.Where(t=>t.ParentId==task!.Id).OrderBy(t=>t.Order).Cast<TaskModel?>());
+    private bool HasChildren(TaskModel? task) => Filtered.Any(t=>t.ParentId==task!.Id);
+    private string ProjectName(Guid? id)=>_projects.FirstOrDefault(x=>x.Id==id)?.Name??"Текучка";
+    private string SprintName(Guid? id)=>_sprints.FirstOrDefault(x=>x.Id==id)?.Name??"Без спринта";
+    private string TaskName(Guid? id)=>_tasks.FirstOrDefault(x=>x.Id==id)?.Title??"Корневая задача";
+    private string ActorName(Guid? id) { var actor=_actors.FirstOrDefault(x=>x.Id==id);return actor is null?"Не назначена":$"{actor.Name} · {Labels.Kind(actor.Kind)}"; }
+    protected override async Task OnParametersSetAsync() { await Load(); if(TaskId.HasValue && _tasks.FirstOrDefault(t=>t.Id==TaskId) is {} task) await Edit(task); }
+    private async Task Run(Func<Task> action) { _busy=true; _error=null;try{await action();}catch(Exception e) when(e is HttpRequestException or InvalidOperationException){_error=e.Message;}finally{_busy=false;} }
+    private Task Load()=>Run(async()=>{await Session.Initialize();if(Session.TeamId is null)return;_tasks=await Session.Get<TaskModel[]>(Session.TeamPath("tasks"));_projects=await Session.Get<ProjectModel[]>(Session.TeamPath("projects"));_actors=await Session.Get<ActorModel[]>(Session.TeamPath("actors"));_sprints=await Session.Get<SprintModel[]>(Session.TeamPath("sprints"));});
+    private void NewTask(){_editing=new TaskModel { TeamId=Session.TeamId!.Value };_history=[];}
+    private void NewChild(Guid id){NewTask();_editing!.ParentId=id;}
+    private void Close(){_editing=null;_history=[];}
+    private async Task Edit(TaskModel? task){if(task is null)return;_editing=System.Text.Json.JsonSerializer.Deserialize<TaskModel>(System.Text.Json.JsonSerializer.Serialize(task));_history=[];try{_history=await Session.Get<HistoryDto[]>(Session.TeamPath($"tasks/{task.Id}/history"));}catch(Exception e) when(e is HttpRequestException or InvalidOperationException){_error=e.Message;}}
+    private Task Save()=>Run(async()=>{
+        var model=_editing!;var request=new TaskRequest(model.Title,model.Description,model.Status,model.ProjectId,model.SprintId,model.ParentId,model.EstimateHours,model.Deadline,model.StartDate,model.EndDate,model.Order,model.Id==Guid.Empty?null:model.Version);
+        var saved=await Session.Save<TaskModel>(model.Id==Guid.Empty?HttpMethod.Post:HttpMethod.Put,Session.TeamPath("tasks"+(model.Id==Guid.Empty?"":$"/{model.Id}")),request);
+        if(model.AssignmentTargetId.HasValue)await Session.Send(HttpMethod.Put,Session.TeamPath($"tasks/{saved.Id}/assignment"),new AssignmentRequest(model.AssignmentTargetId.Value,model.ResolvedPersonId));
+        else if(model.Id!=Guid.Empty && _tasks.Any(t=>t.Id==model.Id && t.AssignmentTargetId.HasValue))await Session.Send(HttpMethod.Delete,Session.TeamPath($"tasks/{saved.Id}/assignment"),new{});
+        _tasks=await Session.Get<TaskModel[]>(Session.TeamPath("tasks"));await Edit(_tasks.First(t=>t.Id==saved.Id));
+    });
+    private Task Archive()=>Run(async()=>{await Session.Send(HttpMethod.Delete,Session.TeamPath($"tasks/{_editing!.Id}"),new{});Close();_tasks=await Session.Get<TaskModel[]>(Session.TeamPath("tasks"));});
+}
