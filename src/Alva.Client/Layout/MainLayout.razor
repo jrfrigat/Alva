@@ -7,7 +7,10 @@
 <FlareLayout>
     <FlareLayoutAppBar DrawerToggle="true">
         <FlareStack Row Align="FlareAlignItems.Center" Gap="FlareSpacing.Medium" Style="flex:1;min-width:0">
-            <FlareLink Href="/" Underline="LinkUnderline.None" Class="alva-brand">alva<span class="brand-dot">.</span></FlareLink>
+            <FlareStack Gap="FlareSpacing.Small" Class="alva-brand-block">
+                <FlareLink Href="/" Underline="LinkUnderline.None" Class="alva-brand">alva<span class="brand-dot">.</span></FlareLink>
+                <span class="alva-micro-label alva-brand-caption">Планирование ресурсов</span>
+            </FlareStack>
             <FlareSpacer />
             <FlareButton Href="/workspaces" Variant="ButtonVariant.Text" Size="ButtonSize.Sm">@Session.TeamName</FlareButton>
             @if (Session.User is not null) { <FlareButton Href="/settings" Variant="ButtonVariant.Tonal" Size="ButtonSize.Sm">@Session.User.DisplayName</FlareButton> }
@@ -27,14 +30,28 @@
     </FlareLayoutDrawer>
     <FlareLayoutContent><main id="main-content"><FlareContainer MaxWidth="ContainerMaxWidth.Xl"><FlareStack Gap="FlareSpacing.XLarge">@Body</FlareStack></FlareContainer></main></FlareLayoutContent>
 </FlareLayout>
+@if (_mobile)
+{
+    <FlareBottomNav Position="BottomNavPosition.Fixed" AriaLabel="Основные разделы">
+        @foreach (var item in NavigationItems.Primary)
+        {
+            <FlareBottomNavItem Href="@item.Path" Match="NavMatchMode.Exact" Tooltip="@item.Label">
+                <IconContent><FlareIconView Value="@item.Icon" Size="1.35rem" /></IconContent>
+                <ChildContent>@item.Label</ChildContent>
+            </FlareBottomNavItem>
+        }
+    </FlareBottomNav>
+}
 @code {
     private bool _open;
+    private bool _mobile;
     private IAsyncDisposable? _viewportSubscription;
     protected override void OnInitialized() => Session.Changed += Refresh;
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if(firstRender) _viewportSubscription = await Viewport.SubscribeBreakpointAsync((Breakpoint bp) => InvokeAsync(() => { _open = !bp.IsAtMost(Breakpoint.Sm); StateHasChanged(); }));
+        if (firstRender) _viewportSubscription = await Viewport.SubscribeBreakpointAsync((Breakpoint bp) => InvokeAsync(() => { _mobile = bp.IsAtMost(Breakpoint.Sm); _open = !_mobile; StateHasChanged(); }));
     }
     private void Refresh() => InvokeAsync(StateHasChanged);
-    public async ValueTask DisposeAsync() { Session.Changed -= Refresh; if(_viewportSubscription is not null) await _viewportSubscription.DisposeAsync(); }
+    public async ValueTask DisposeAsync() { Session.Changed -= Refresh; if (_viewportSubscription is not null) await _viewportSubscription.DisposeAsync(); }
 }
+

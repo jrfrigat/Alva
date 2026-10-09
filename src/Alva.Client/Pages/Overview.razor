@@ -1,15 +1,17 @@
 @page "/"
 @inject AlvaSession Session
 <PageTitle>Обзор · Alva</PageTitle>
-<FlareStack Row Wrap Align="FlareAlignItems.Center" StretchFirst><FlareStack Gap="FlareSpacing.Small"><FlareText Element="h1" Typo="TypographyScale.HeadlineLarge">@Session.TeamName</FlareText><FlareText>Планы команды, ближайшие сроки и работа под риском.</FlareText></FlareStack><FlareButton Href="/tasks" Size="ButtonSize.Sm">К задачам</FlareButton></FlareStack>
+<AlvaPageHeader Category="Команда · Обзор" Title="@Session.TeamName" Description="Планы команды, ближайшие сроки и работа под риском.">
+    <Actions><FlareButton Href="/tasks" Size="ButtonSize.Sm">К задачам</FlareButton></Actions>
+</AlvaPageHeader>
 <PageFeedback Error="@_error" Loading="_busy" />
 @if(Session.TeamId is null){<TeamRequired />}
 else
 {
 <FlareGrid MinColumnWidth="min(100%,14rem)">
-    <FlareCard Variant="CardVariant.Tonal"><FlareCardContent><FlareText Typo="TypographyScale.HeadlineLarge">@_tasks.Count(t=>t.Status=="InProgress")</FlareText><FlareText>Задач в работе</FlareText></FlareCardContent></FlareCard>
-    <FlareCard Variant="CardVariant.Outlined"><FlareCardContent><FlareText Typo="TypographyScale.HeadlineLarge">@_sprints.Count(s=>s.Status=="Active")</FlareText><FlareText>Активных спринтов</FlareText></FlareCardContent></FlareCard>
-    <FlareCard Variant="CardVariant.Outlined"><FlareCardContent><FlareText Typo="TypographyScale.HeadlineLarge">@_risks.Length</FlareText><FlareText>Задач под риском</FlareText></FlareCardContent></FlareCard>
+    <div class="alva-metric"><span class="alva-metric__value">@_tasks.Count(t=>t.Status=="InProgress")</span><span class="alva-metric__label">Задач в работе</span></div>
+    <div class="alva-metric"><span class="alva-metric__value">@_sprints.Count(s=>s.Status=="Active")</span><span class="alva-metric__label">Активных спринтов</span></div>
+    <div class="alva-metric"><span class="alva-metric__value">@_risks.Length</span><span class="alva-metric__label">Задач под риском</span></div>
 </FlareGrid>
 <FlareGrid MinColumnWidth="min(100%,24rem)">
 <FlareCard Variant="CardVariant.Outlined"><FlareCardContent><FlareStack Gap="FlareSpacing.Large">

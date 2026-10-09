@@ -2,7 +2,9 @@
 @page "/sprints/{SprintId:guid}"
 @inject AlvaSession Session
 <PageTitle>Спринты · Alva</PageTitle>
-<FlareStack Row Wrap StretchFirst Align="FlareAlignItems.Center"><FlareText Element="h1" Typo="TypographyScale.HeadlineLarge">Спринты команды</FlareText><FlareButton Size="ButtonSize.Sm" OnClick="New" Disabled="@(Session.TeamId is null)">Новый спринт</FlareButton></FlareStack>
+<AlvaPageHeader Category="Планирование · Спринты" Title="Спринты команды" Description="Цели, сроки и состав спринтов команды.">
+    <Actions><FlareButton Size="ButtonSize.Sm" OnClick="New" Disabled="@(Session.TeamId is null)">Новый спринт</FlareButton></Actions>
+</AlvaPageHeader>
 <PageFeedback Loading="_busy" Error="@_error" />
 @if(Session.TeamId is null){<TeamRequired />}
 else
@@ -12,7 +14,7 @@ else
 {
     var tasks=_tasks.Where(t=>t.SprintId==sprint.Id).ToArray();var complete=tasks.Count(t=>t.Status=="Done");
     <FlareCard Variant="CardVariant.Outlined"><FlareCardContent><FlareStack>
-        <FlareStack Row StretchFirst Wrap><FlareText Element="h2" Typo="TypographyScale.TitleLarge">@sprint.Name</FlareText><FlareChip Size="ChipSize.Sm">@Labels.Status(sprint.Status)</FlareChip></FlareStack>
+        <FlareStack Row StretchFirst Wrap><FlareText Element="h2" Typo="TypographyScale.TitleLarge">@sprint.Name</FlareText><AlvaStatusChip Tone="AlvaTones.Status(sprint.Status)">@Labels.Status(sprint.Status)</AlvaStatusChip></FlareStack>
         <FlareText>@sprint.Goal</FlareText><FlareText Typo="TypographyScale.BodySmall">@sprint.StartDate.ToString("dd.MM") — @sprint.EndDate.ToString("dd.MM.yyyy") · @complete / @tasks.Length задач</FlareText>
         <FlareProgressLinear Value="@(tasks.Length==0?0:100d*complete/tasks.Length)" aria-label="Прогресс спринта" />
         <FlareButton Variant="ButtonVariant.Text" OnClick="()=>Edit(sprint)" Size="ButtonSize.Sm">Открыть и спланировать</FlareButton>

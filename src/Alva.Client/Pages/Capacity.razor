@@ -2,19 +2,19 @@
 @page "/capacity/{ActorId:guid}"
 @inject AlvaSession Session
 <PageTitle>Ёмкость · Alva</PageTitle>
-<FlareText Element="h1" Typo="TypographyScale.HeadlineLarge">Ёмкость команды</FlareText>
-<FlareText>Доступные часы и назначенная работа за выбранный период.</FlareText>
+<AlvaPageHeader Category="Ресурсы · Ёмкость" Title="Ёмкость команды" Description="Доступные часы и назначенная работа за выбранный период." />
 <PageFeedback Loading="_busy" Error="@_error" />
 @if(Session.TeamId is null){<TeamRequired />}
 else
 {
 <FlareStack Row Wrap Align="FlareAlignItems.End"><FlareDatePicker Label="С" @bind-Value="_from" /><FlareDatePicker Label="По" @bind-Value="_to" Min="_from" /><FlareButton Size="ButtonSize.Sm" OnClick="Load" Disabled="_busy">Показать</FlareButton></FlareStack>
 @if(_days.Length>0){<FlareChart Type="ChartType.Bar" Data="Chart" Height="260" aria-label="Доступные и назначенные часы по людям" />}
-<FlareDataGrid TItem="CapacitySummary" Items="Summary" Height="auto" Hoverable><Columns>
+<FlareDataGrid TItem="CapacitySummary" Items="Summary" Height="auto" Hoverable Dense="true"><Columns>
     <FlareColumn TItem="CapacitySummary" Title="Человек" Field="a=>a!.Name"><Template Context="person"><FlareButton Href="@($"/capacity/{person!.Id}")" Variant="ButtonVariant.Text" Size="ButtonSize.Sm">@person.Name</FlareButton></Template></FlareColumn>
     <FlareColumn TItem="CapacitySummary" Title="Доступно, ч" Field="a=>a!.Available" Sortable />
     <FlareColumn TItem="CapacitySummary" Title="Назначено, ч" Field="a=>a!.Allocated" Sortable />
     <FlareColumn TItem="CapacitySummary" Title="Перегрузка, ч" Field="a=>Math.Max(0,a!.Allocated-a.Available)" />
+    <FlareColumn TItem="CapacitySummary" Title="Статус"><Template Context="person"><AlvaStatusChip Tone="AlvaTones.Capacity(person!.Allocated,person.Available)">@(person.Allocated>person.Available?"Перегруз":"Норма")</AlvaStatusChip></Template></FlareColumn>
 </Columns><EmptyStateContent><FlareEmptyState Compact Title="Нет данных о доступности" Description="Добавьте людей команды и настройте рабочие графики." /></EmptyStateContent></FlareDataGrid>
 <FlareCalendar Events="Events" InitialDate="_from" MondayFirst />
 @if(_calendar is not null)

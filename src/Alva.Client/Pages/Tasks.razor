@@ -5,10 +5,9 @@
 @inject AlvaSession Session
 @inject NavigationManager Navigation
 <PageTitle>Задачи · Alva</PageTitle>
-<FlareStack Row Wrap Align="FlareAlignItems.Center" StretchFirst>
-    <FlareText Element="h1" Typo="TypographyScale.HeadlineLarge">@PageHeading</FlareText>
-    <FlareButton OnClick="NewTask" Disabled="@(Session.TeamId is null)" Size="ButtonSize.Sm">Новая задача</FlareButton>
-</FlareStack>
+<AlvaPageHeader Category="Планирование · Задачи" Title="@PageHeading" Description="Пул задач команды: дерево, статусы и назначения.">
+    <Actions><FlareButton OnClick="NewTask" Disabled="@(Session.TeamId is null)" Size="ButtonSize.Sm">Новая задача</FlareButton></Actions>
+</AlvaPageHeader>
 <PageFeedback Error="@_error" Loading="_busy" />
 @if(Session.TeamId is null) { <TeamRequired /> }
 else
@@ -25,7 +24,7 @@ else
     else {
     <FlareDataTree TItem="TaskModel" Items="Roots" KeySelector="t => t!.Id" ChildrenProvider="Children" HasChildren="HasChildren" ItemClick="Edit" Height="34rem">
         <ItemTemplate Context="task"><FlareStack Row Align="FlareAlignItems.Center" Gap="FlareSpacing.Small" Wrap>
-            <FlareText>@task!.Title</FlareText><FlareChip Size="ChipSize.Sm">@Labels.Status(task.Status)</FlareChip>
+            <FlareText>@task!.Title</FlareText><AlvaStatusChip Tone="AlvaTones.Status(task.Status)">@Labels.Status(task.Status)</AlvaStatusChip>
             @if(task.EstimateHours.HasValue) { <FlareText Typo="TypographyScale.LabelSmall">@task.EstimateHours ч</FlareText> }
         </FlareStack></ItemTemplate>
     </FlareDataTree>

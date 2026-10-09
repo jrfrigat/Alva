@@ -1,0 +1,31 @@
+@* Единый заголовок экрана Alva: micro-label, headline, описание, действия. *@
+<header class="alva-page-header">
+    <div class="alva-page-header__text">
+        @if (!string.IsNullOrWhiteSpace(Category))
+        {
+            <div class="alva-micro-label"><span>@Category</span></div>
+        }
+        <h1 class="alva-page-header__title">@Title</h1>
+        @if (!string.IsNullOrWhiteSpace(Description))
+        {
+            <p class="alva-page-header__desc">@Description</p>
+        }
+    </div>
+    @if (Actions is not null)
+    {
+        <div class="alva-page-header__actions">@Actions</div>
+    }
+</header>
+@code {
+    /// <summary>Основной заголовок экрана (h1).</summary>
+    [Parameter, EditorRequired] public string Title { get; set; } = "";
+
+    /// <summary>Категория над заголовком в стиле micro-label.</summary>
+    [Parameter] public string? Category { get; set; }
+
+    /// <summary>Пояснение под заголовком.</summary>
+    [Parameter] public string? Description { get; set; }
+
+    /// <summary>Действия экрана (кнопки и т.п.).</summary>
+    [Parameter] public RenderFragment? Actions { get; set; }
+}

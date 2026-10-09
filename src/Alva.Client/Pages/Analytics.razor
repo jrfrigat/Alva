@@ -1,14 +1,14 @@
 @page "/analytics"
 @inject AlvaSession Session
 <PageTitle>Аналитика · Alva</PageTitle>
-<FlareText Element="h1" Typo="TypographyScale.HeadlineLarge">Риски и причины</FlareText>
+<AlvaPageHeader Category="Аналитика · Риски" Title="Риски и причины" Description="Сроки, загрузка, зависимости и назначение задач команды." />
 <PageFeedback Loading="_busy" Error="@_error" />
 @if(Session.TeamId is null){<TeamRequired />}
 else
 {
-<FlareDataGrid TItem="RiskDto" Items="_risks" Height="auto" Hoverable><Columns>
+<FlareDataGrid TItem="RiskDto" Items="_risks" Height="auto" Hoverable Dense="true"><Columns>
     <FlareColumn TItem="RiskDto" Title="Задача" Field="r=>r!.Title" Sortable Filterable><Template Context="risk"><FlareLink Href="@($"/tasks/{risk!.TaskId}")">@risk.Title</FlareLink></Template></FlareColumn>
-    <FlareColumn TItem="RiskDto" Title="Уровень" Field="r=>r!.Severity" Sortable />
+    <FlareColumn TItem="RiskDto" Title="Уровень" Field="r=>r!.Severity" Sortable><Template Context="risk"><AlvaStatusChip Tone="AlvaTones.Severity(risk!.Severity)">@risk.Severity</AlvaStatusChip></Template></FlareColumn>
     <FlareColumn TItem="RiskDto" Title="Причины"><Template Context="risk">@string.Join(" · ",risk!.Reasons)</Template></FlareColumn>
     <FlareColumn TItem="RiskDto" Title="Прогноз" Field="r=>r!.ForecastDate" />
 </Columns><EmptyStateContent><FlareEmptyState Compact Title="Открытых рисков нет" Description="Проверены сроки, загрузка, зависимости и назначение задач." /></EmptyStateContent></FlareDataGrid>

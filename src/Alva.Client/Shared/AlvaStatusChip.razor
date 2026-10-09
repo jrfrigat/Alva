@@ -1,0 +1,14 @@
+@* Чип статуса, ёмкости или роли в дизайн-системе Alva. *@
+<span class="alva-chip alva-chip--@ToneClass" title="@Title">@ChildContent</span>
+@code {
+    /// <summary>Тональность чипа: нейтральный, инфо, норма, предупреждение, критично, роль/подкоманда.</summary>
+    [Parameter] public AlvaTone Tone { get; set; } = AlvaTone.Neutral;
+
+    /// <summary>Подсказка при наведении.</summary>
+    [Parameter] public string? Title { get; set; }
+
+    /// <summary>Текст чипа.</summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    private string ToneClass => Tone.ToString().ToLowerInvariant();
+}

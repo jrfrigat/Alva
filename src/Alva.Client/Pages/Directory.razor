@@ -5,7 +5,9 @@
 @inject AlvaSession Session
 @inject NavigationManager Navigation
 <PageTitle>@Title · Alva</PageTitle>
-<FlareStack Row Wrap StretchFirst Align="FlareAlignItems.Center"><FlareText Element="h1" Typo="TypographyScale.HeadlineLarge">@Title</FlareText><FlareButton Size="ButtonSize.Sm" OnClick="New" Disabled="@(Session.TeamId is null)">Добавить</FlareButton></FlareStack>
+<AlvaPageHeader Category="@Category" Title="@Title">
+    <Actions><FlareButton Size="ButtonSize.Sm" OnClick="New" Disabled="@(Session.TeamId is null)">Добавить</FlareButton></Actions>
+</AlvaPageHeader>
 <PageFeedback Loading="_busy" Error="@_error" />
 @if(Session.TeamId is null) { <TeamRequired /> }
 else
@@ -15,7 +17,7 @@ else
 <FlareCard Variant="CardVariant.Outlined"><FlareCardContent>
 @if(IsProjects)
 {
-    <FlareDataGrid TItem="ProjectModel" Items="_projects" Height="auto" Hoverable>
+    <FlareDataGrid TItem="ProjectModel" Items="_projects" Height="auto" Hoverable Dense="true">
     <Columns>
         <FlareColumn TItem="ProjectModel" Title="Проект" Field="p=>p!.Name" Sortable Filterable><Template Context="p"><FlareButton Variant="ButtonVariant.Text" Size="ButtonSize.Sm" OnClick="()=>EditProject(p!)">@p!.Name</FlareButton></Template></FlareColumn>
         <FlareColumn TItem="ProjectModel" Title="Описание" Field="p=>p!.Description" />
@@ -24,7 +26,7 @@ else
 }
 else
 {
-    <FlareDataGrid TItem="ActorModel" Items="_actors.Where(a=>a.Kind==Kind)" Height="auto" Hoverable>
+    <FlareDataGrid TItem="ActorModel" Items="_actors.Where(a=>a.Kind==Kind)" Height="auto" Hoverable Dense="true">
     <Columns>
         <FlareColumn TItem="ActorModel" Title="Имя" Field="a=>a!.Name" Sortable Filterable><Template Context="a"><FlareButton Variant="ButtonVariant.Text" Size="ButtonSize.Sm" OnClick="()=>EditActor(a!)">@a!.Name</FlareButton></Template></FlareColumn>
         <FlareColumn TItem="ActorModel" Title="Почта" Field="a=>a!.Email" />
@@ -69,6 +71,7 @@ else
     private bool IsProjects=>Route=="/projects";
     private string Kind=>Route.EndsWith("departments")?"Department":Route.EndsWith("roles")?"Role":"Person";
     private string Title=>IsProjects?"Проекты":Kind=="Role"?"Роли команды":Kind=="Department"?"Подкоманды":"Люди команды";
+    private string Category=>IsProjects?"Реестр · Проекты":Kind=="Role"?"Реестр · Роли":Kind=="Department"?"Реестр · Подкоманды":"Реестр · Люди";
     protected override async Task OnParametersSetAsync(){Close();await Load();}
     private async Task Run(Func<Task> action){_busy=true;_error=null;try{await action();}catch(Exception e) when(e is HttpRequestException or InvalidOperationException){_error=e.Message;}finally{_busy=false;}}
     private Task Load()=>Run(async()=>{await Session.Initialize();if(Session.TeamId is null)return;_projects=await Session.Get<ProjectModel[]>(Session.TeamPath("projects"));_actors=await Session.Get<ActorModel[]>(Session.TeamPath("actors"));});
