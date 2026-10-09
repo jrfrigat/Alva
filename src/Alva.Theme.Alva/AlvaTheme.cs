@@ -176,6 +176,9 @@ public static class AlvaTheme
         },
 
         Alert = d.Alert with { Radius = Radius },
+
+        // «Tree Indentation: 16px per hierarchy level»; пунктирная направляющая — в alva.css.
+        Tree = d.Tree with { Indent = "16px" },
     };
 
     /// <summary>Единый радиус дизайна для кнопок, полей, карточек и бейджей.</summary>

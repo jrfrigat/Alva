@@ -4,7 +4,14 @@
 @page "/my-work"
 @inject AlvaSession Session
 @inject NavigationManager Navigation
-<PageTitle>Задачи · Alva</PageTitle>
+<PageTitle>@(Current is null ? "Задачи" : Current.Title) · Alva</PageTitle>
+@if (Current is not null)
+{
+    <PageFeedback Error="@_error" Loading="_busy" />
+    <TaskDetails Item="Current" Tasks="_tasks" Projects="_projects" Sprints="_sprints" Actors="_actors" Changed="Load" />
+}
+else
+{
 <AlvaPageHeader Category="Планирование · Задачи" Title="@PageHeading" Description="Пул задач команды: дерево, статусы и назначения.">
     <Actions><FlareButton OnClick="NewTask" Disabled="@(Session.TeamId is null)" Size="ButtonSize.Sm">Новая задача</FlareButton></Actions>
 </AlvaPageHeader>
@@ -22,7 +29,7 @@ else
 <FlareCard Variant="CardVariant.Outlined"><FlareCardContent>
     @if (!Filtered.Any()) { <FlareEmptyState Compact Title="Задач пока нет" Description="Добавьте первую задачу или измените фильтры." /> }
     else {
-    <FlareDataTree TItem="TaskModel" Items="Roots" KeySelector="t => t!.Id" ChildrenProvider="Children" HasChildren="HasChildren" ItemClick="Edit" Height="34rem">
+    <FlareDataTree TItem="TaskModel" Items="Roots" KeySelector="t => t!.Id" ChildrenProvider="Children" HasChildren="HasChildren" ItemClick="Open" Height="34rem">
         <ItemTemplate Context="task"><FlareStack Row Align="FlareAlignItems.Center" Gap="FlareSpacing.Small" Wrap>
             <FlareText>@task!.Title</FlareText><AlvaStatusChip Tone="AlvaTones.Status(task.Status)">@Labels.Status(task.Status)</AlvaStatusChip>
             @if(task.EstimateHours.HasValue) { <FlareText Typo="TypographyScale.LabelSmall">@task.EstimateHours ч</FlareText> }
@@ -56,6 +63,7 @@ else
 }
 </FlareGrid>
 }
+}
 @code {
     [Parameter] public Guid? TaskId { get; set; }
     private TaskModel[] _tasks=[]; private ProjectModel[] _projects=[]; private SprintModel[] _sprints=[]; private ActorModel[] _actors=[]; private HistoryDto[] _history=[];
@@ -71,19 +79,20 @@ else
     private string SprintName(Guid? id)=>_sprints.FirstOrDefault(x=>x.Id==id)?.Name??"Без спринта";
     private string TaskName(Guid? id)=>_tasks.FirstOrDefault(x=>x.Id==id)?.Title??"Корневая задача";
     private string ActorName(Guid? id) { var actor=_actors.FirstOrDefault(x=>x.Id==id);return actor is null?"Не назначена":$"{actor.Name} · {Labels.Kind(actor.Kind)}"; }
-    protected override async Task OnParametersSetAsync() { await Load(); if(TaskId.HasValue && _tasks.FirstOrDefault(t=>t.Id==TaskId) is {} task) await Edit(task); }
+    private TaskModel? Current => TaskId.HasValue ? _tasks.FirstOrDefault(t=>t.Id==TaskId) : null;
+    protected override async Task OnParametersSetAsync() { _editing=null; await Load(); }
+    private Task Open(TaskModel? task){ if(task is not null) Navigation.NavigateTo($"/tasks/{task.Id}"); return Task.CompletedTask; }
     private async Task Run(Func<Task> action) { _busy=true; _error=null;try{await action();}catch(Exception e) when(e is HttpRequestException or InvalidOperationException){_error=e.Message;}finally{_busy=false;} }
     private Task Load()=>Run(async()=>{await Session.Initialize();if(Session.TeamId is null)return;_tasks=await Session.Get<TaskModel[]>(Session.TeamPath("tasks"));_projects=await Session.Get<ProjectModel[]>(Session.TeamPath("projects"));_actors=await Session.Get<ActorModel[]>(Session.TeamPath("actors"));_sprints=await Session.Get<SprintModel[]>(Session.TeamPath("sprints"));});
     private void NewTask(){_editing=new TaskModel { TeamId=Session.TeamId!.Value };_history=[];}
     private void NewChild(Guid id){NewTask();_editing!.ParentId=id;}
     private void Close(){_editing=null;_history=[];}
-    private async Task Edit(TaskModel? task){if(task is null)return;_editing=System.Text.Json.JsonSerializer.Deserialize<TaskModel>(System.Text.Json.JsonSerializer.Serialize(task));_history=[];try{_history=await Session.Get<HistoryDto[]>(Session.TeamPath($"tasks/{task.Id}/history"));}catch(Exception e) when(e is HttpRequestException or InvalidOperationException){_error=e.Message;}}
     private Task Save()=>Run(async()=>{
         var model=_editing!;var request=new TaskRequest(model.Title,model.Description,model.Status,model.ProjectId,model.SprintId,model.ParentId,model.EstimateHours,model.Deadline,model.StartDate,model.EndDate,model.Order,model.Id==Guid.Empty?null:model.Version);
         var saved=await Session.Save<TaskModel>(model.Id==Guid.Empty?HttpMethod.Post:HttpMethod.Put,Session.TeamPath("tasks"+(model.Id==Guid.Empty?"":$"/{model.Id}")),request);
         if(model.AssignmentTargetId.HasValue)await Session.Send(HttpMethod.Put,Session.TeamPath($"tasks/{saved.Id}/assignment"),new AssignmentRequest(model.AssignmentTargetId.Value,model.ResolvedPersonId));
         else if(model.Id!=Guid.Empty && _tasks.Any(t=>t.Id==model.Id && t.AssignmentTargetId.HasValue))await Session.Send(HttpMethod.Delete,Session.TeamPath($"tasks/{saved.Id}/assignment"),new{});
-        _tasks=await Session.Get<TaskModel[]>(Session.TeamPath("tasks"));await Edit(_tasks.First(t=>t.Id==saved.Id));
+        Close();Navigation.NavigateTo($"/tasks/{saved.Id}");
     });
     private Task Archive()=>Run(async()=>{await Session.Send(HttpMethod.Delete,Session.TeamPath($"tasks/{_editing!.Id}"),new{});Close();_tasks=await Session.Get<TaskModel[]>(Session.TeamPath("tasks"));});
 }

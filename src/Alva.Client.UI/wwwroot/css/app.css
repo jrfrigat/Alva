@@ -43,3 +43,78 @@ html,body{margin:0;min-height:100%;font-family:var(--alva-font);background:var(-
 .alva-user{display:flex;align-items:center;gap:.375rem;text-decoration:none;color:var(--flare-color-on-surface,var(--alva-on-surface));font-size:13px;font-weight:700}
 .alva-user__avatar{display:grid;place-items:center;width:32px;height:32px;border-radius:9999px;background:var(--flare-color-primary,var(--alva-primary));color:var(--flare-color-on-primary,#fff)}
 @media(max-width:767px){.alva-brand__text,.alva-appbar__sep,.alva-user__name{display:none}}
+
+/* Страница задачи (p9): панель действий, заголовок с полосой риска, белые панели-секции. */
+.alva-task{display:flex;flex-direction:column;gap:1rem}
+.alva-task__actions{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem}
+.alva-task__heading{display:flex;align-items:center;gap:.75rem;min-width:0}
+.alva-task__bar{flex:none;align-self:stretch;width:6px;min-height:2rem;border-radius:9999px;background:var(--alva-primary-container)}
+.alva-task__bar--critical{background:var(--alva-critical)}.alva-task__bar--warning{background:var(--alva-warning)}.alva-task__bar--ok{background:var(--alva-ok)}
+.alva-task__title{margin:0;font-size:1.375rem;line-height:1.75rem;font-weight:700;letter-spacing:-.015em;color:var(--flare-color-on-surface,var(--alva-on-surface))}
+.alva-task__code{color:var(--flare-color-primary,var(--alva-primary));font-variant-numeric:tabular-nums}
+.alva-task__assignee{display:flex;flex-direction:column;gap:.375rem}
+.alva-panel{display:flex;flex-direction:column;gap:.75rem;padding:1rem;border:1px solid #e2e8f0;border-radius:6px;background:var(--flare-color-surface-container-lowest,#fff)}
+.alva-panel__header{display:flex;align-items:flex-start;gap:.5rem}
+.alva-panel__icon{color:var(--flare-color-primary,var(--alva-primary));margin-top:2px}
+.alva-panel__title{margin:0;font-size:1.125rem;line-height:1.5rem;font-weight:600;letter-spacing:-.01em;color:var(--flare-color-on-surface,var(--alva-on-surface))}
+.alva-panel__subtitle{margin:0;font-size:12px;line-height:16px;font-weight:600;color:var(--flare-color-on-surface-variant,var(--alva-on-surface-variant))}
+.alva-task__summary{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem;padding:.375rem .75rem;border-radius:6px;background:var(--flare-color-surface-container-low,#eff4ff);font-size:12px;font-weight:600}
+.alva-task__summary-label{color:var(--flare-color-on-surface-variant,var(--alva-on-surface-variant))}
+.alva-task__summary-value{display:inline-flex;align-items:center;gap:.25rem;color:var(--flare-color-primary,var(--alva-primary))}
+.alva-task__summary-date{display:inline-flex;align-items:center;gap:.25rem;color:var(--flare-color-on-surface,var(--alva-on-surface))}
+.alva-task__summary-sep{width:1px;height:14px;background:#cbd5e1}
+
+/* Таблица подзадач «Матрёшки»: заголовок 11px прописными, строки от 34px. */
+.alva-subtasks{display:flex;flex-direction:column;border:1px solid #e2e8f0;border-radius:6px;overflow:hidden}
+.alva-subtasks__head,.alva-subtasks__row{display:grid;grid-template-columns:minmax(0,1fr) minmax(10rem,14rem) 4.5rem;align-items:center;gap:.75rem;padding:4px 8px}
+.alva-subtasks__head{min-height:34px;background:var(--flare-color-surface-container,#e5eeff);font-size:11px;font-weight:600;letter-spacing:.03em;text-transform:uppercase;color:var(--flare-color-on-surface-variant,var(--alva-on-surface-variant))}
+.alva-subtasks__row{min-height:44px;border-top:1px solid #e2e8f0}
+.alva-subtasks__row:hover{background:#f1f5f9}
+.alva-subtasks__name{display:flex;align-items:center;gap:.5rem;min-width:0}
+.alva-subtasks__arrow{flex:none;color:#94a3b8}
+.alva-subtasks__code{flex:none;font-size:12px;font-weight:700;color:var(--flare-color-primary,var(--alva-primary));text-decoration:none;font-variant-numeric:tabular-nums}
+.alva-subtasks__title{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;font-weight:600;color:var(--flare-color-on-surface,var(--alva-on-surface));text-decoration:none}
+.alva-subtasks__title:hover,.alva-subtasks__code:hover{text-decoration:underline}
+.alva-subtasks__est{text-align:right;font-size:12px}
+.alva-subtasks__add{display:flex;align-items:center;gap:.5rem;padding:4px 8px;border-top:1px solid #e2e8f0;background:#f8fafc}
+.alva-subtasks__add>:first-child{flex:1}
+@media(max-width:767px){.alva-subtasks__head,.alva-subtasks__row{grid-template-columns:minmax(0,1fr)}.alva-subtasks__head span:not(:first-child),.alva-subtasks__est{display:none}}
+
+/* Исполнитель или слот: человек — круглая метка с инициалами, роль/подкоманда — фиолетовый слот. */
+.alva-slot{display:inline-flex;align-items:center;gap:.5rem;min-width:0}
+.alva-slot__mark{display:grid;flex:none;place-items:center;width:28px;height:28px;border-radius:9999px;background:var(--flare-color-primary,var(--alva-primary));color:#fff;font-size:11px;font-weight:700}
+.alva-slot--role .alva-slot__mark{background:var(--alva-role)}
+.alva-slot--empty .alva-slot__mark{background:#e2e8f0;color:#64748b}
+.alva-slot__text{display:flex;flex-direction:column;min-width:0;line-height:1.2}
+.alva-slot__name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;font-weight:600;color:var(--flare-color-on-surface,var(--alva-on-surface))}
+.alva-slot--role .alva-slot__name{color:#6d28d9}
+.alva-slot__meta{font-size:11px;color:var(--flare-color-on-surface-variant,var(--alva-on-surface-variant))}
+.alva-slot__meta--critical{color:var(--alva-critical-text);font-weight:600}.alva-slot__meta--warning{color:var(--alva-warning-text);font-weight:600}
+
+/* История изменений. */
+.alva-history{display:flex;align-items:flex-start;gap:.75rem;padding:.5rem;border-radius:6px;background:#f8fafc}
+.alva-history__body{display:flex;flex-direction:column;gap:2px;min-width:0}
+.alva-history__summary{font-size:13px;line-height:18px;color:var(--flare-color-on-surface,var(--alva-on-surface))}
+.alva-history__time{font-size:11px;color:var(--flare-color-on-surface-variant,var(--alva-on-surface-variant))}
+
+/* Панель назначения исполнителя: кандидаты с загрузкой, выбранный и рекомендованный выделены. */
+.alva-assign__header{display:flex;align-items:flex-start;gap:.5rem}
+.alva-assign__title{font-size:1.125rem;line-height:1.5rem;font-weight:600}
+.alva-assign__task{font-size:12px;font-weight:700;color:var(--flare-color-primary,var(--alva-primary))}
+.alva-assign{display:flex;flex-direction:column;gap:.75rem;padding:1rem}
+.alva-assign__list{display:flex;flex-direction:column;gap:.5rem;padding-top:.75rem}
+.alva-assign__caption{display:flex;justify-content:space-between;font-size:11px;font-weight:700;color:var(--flare-color-on-surface-variant,var(--alva-on-surface-variant))}
+.alva-assign__group legend{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.alva-assign__footer{display:flex;justify-content:space-between;gap:.5rem;padding-top:.75rem;border-top:1px solid #e2e8f0}
+.alva-candidate{margin-bottom:.5rem;padding:.75rem;border:1px solid transparent;border-radius:6px;background:var(--flare-color-surface-container-low,#eff4ff)}
+.alva-candidate--recommended{border-color:#6ee7b7;background:#ecfdf5}
+.alva-candidate--selected{border-color:var(--flare-color-primary-container,#1d4ed8)}
+.alva-candidate__content{display:flex;flex:1;align-items:flex-start;gap:.75rem;min-width:0}
+.alva-candidate__avatar{width:36px;height:36px;font-size:13px}
+.alva-candidate__body{display:flex;flex:1;flex-direction:column;gap:2px;min-width:0}
+.alva-candidate__name{display:flex;flex-wrap:wrap;align-items:center;gap:.375rem;font-size:15px;font-weight:600}
+.alva-candidate__meta{font-size:11px;font-weight:600;color:var(--flare-color-on-surface-variant,var(--alva-on-surface-variant))}
+.alva-candidate__state{margin-top:.25rem;font-size:12px;font-weight:700}
+.alva-candidate__state--critical{color:var(--alva-critical-text)}.alva-candidate__state--ok{color:#047857}.alva-candidate__state--info{color:var(--flare-color-on-surface,var(--alva-on-surface))}
+.alva-candidate__current{font-size:11px;font-weight:700;color:var(--flare-color-on-surface-variant,var(--alva-on-surface-variant))}
+.alva-candidate__side{flex:none}

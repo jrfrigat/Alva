@@ -1,0 +1,360 @@
+@* Страница задачи по макету p9: крошки, действия, описание и параметры, «Матрёшка» подзадач,
+   история и боковая панель назначения исполнителя с загрузкой кандидатов. *@
+@inject AlvaSession Session
+@inject NavigationManager Navigation
+<div class="alva-task">
+    <FlareBreadcrumb Items="Crumbs" Separator="›" AriaLabel="Путь к задаче" />
+    <div class="alva-task__actions">
+        <FlareButton Loading="_busy" Disabled="@string.IsNullOrWhiteSpace(_model.Title)" OnClick="Save" Size="ButtonSize.Sm">
+            <LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.Save" Size="18px" /></LeadingIcon>
+            <ChildContent>Сохранить</ChildContent>
+        </FlareButton>
+        <FlareButton Variant="ButtonVariant.Tonal" OnClick="OpenAssign" Size="ButtonSize.Sm">
+            <LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.PersonAdd" Size="18px" /></LeadingIcon>
+            <ChildContent>Назначить исполнителя</ChildContent>
+        </FlareButton>
+        <FlareIconButton Icon="@MaterialDesign3Icons.Regular.Delete" Color="FlareColor.Error" Size="ButtonSize.Sm" Tooltip="Архивировать задачу" AriaLabel="Архивировать задачу" OnClick="Archive" />
+    </div>
+    <div class="alva-task__heading">
+        <span class="alva-task__bar alva-task__bar--@RiskTone.ToString().ToLowerInvariant()" aria-hidden="true"></span>
+        <h1 class="alva-task__title"><span class="alva-task__code">@Code(Item)</span> @Item.Title</h1>
+        <AlvaStatusChip Tone="AlvaTones.Status(Item.Status)">@Labels.Status(Item.Status)</AlvaStatusChip>
+    </div>
+    <PageFeedback Error="@_error" />
+
+    <section class="alva-panel">
+        <header class="alva-panel__header">
+            <FlareIconView Value="@MaterialDesign3Icons.Regular.Description" Size="20px" Class="alva-panel__icon" />
+            <h2 class="alva-panel__title">Описание и параметры</h2>
+        </header>
+        <FlareStack Gap="FlareSpacing.Medium">
+            <FlareTextField Label="Название" @bind-Value="_model.Title" Required MaxLength="500" />
+            <FlareTextArea Label="Описание и цели" @bind-Value="_model.Description" AutoGrow />
+            <FlareGrid MinColumnWidth="min(100%,12rem)">
+                <FlareSelect TValue="string" Label="Статус" Items="Statuses" ItemLabel="Labels.Status" @bind-Value="_model.Status" />
+                <FlareSelect TValue="Guid?" Label="Проект" Items="Projects.Select(x => (Guid?)x.Id)" ItemLabel="ProjectName" NullOption="Текучка" @bind-Value="_model.ProjectId" />
+                <FlareSelect TValue="Guid?" Label="Спринт" Items="Sprints.Select(x => (Guid?)x.Id)" ItemLabel="SprintName" NullOption="Без спринта" @bind-Value="_model.SprintId" />
+                <FlareSelect TValue="Guid?" Label="Родительская задача" Items="Tasks.Where(x => x.Id != Item.Id).Select(x => (Guid?)x.Id)" ItemLabel="TaskName" NullOption="Корневая задача" @bind-Value="_model.ParentId" Searchable />
+                <FlareNumericField TValue="decimal?" Label="Оценка, часы" @bind-Value="_model.EstimateHours" Min="0" />
+                <FlareDatePicker Label="Дедлайн" @bind-Value="_model.Deadline" />
+                <FlareDatePicker Label="Начало" @bind-Value="_model.StartDate" />
+                <FlareDatePicker Label="Окончание" @bind-Value="_model.EndDate" />
+            </FlareGrid>
+            <div class="alva-task__assignee">
+                <span class="alva-micro-label">Исполнитель</span>
+                @AssigneeView(Item)
+            </div>
+        </FlareStack>
+    </section>
+
+    <section class="alva-panel">
+        <header class="alva-panel__header">
+            <FlareIconView Value="@MaterialDesign3Icons.Regular.Layers" Size="20px" Class="alva-panel__icon" />
+            <div>
+                <h2 class="alva-panel__title">Бесконечная декомпозиция (Матрёшка)</h2>
+                <p class="alva-panel__subtitle">Рекурсивное каскадирование оценок и исполнителей</p>
+            </div>
+        </header>
+        <div class="alva-task__summary">
+            <span class="alva-task__summary-label">Суммарно:</span>
+            <span class="alva-task__summary-value alva-num">
+                <FlareIconView Value="@MaterialDesign3Icons.Regular.Schedule" Size="16px" />
+                @Hours(Children.Sum(c => c.EstimateHours ?? 0)) ч (@Children.Length @Plural(Children.Length, "подзадача", "подзадачи", "подзадач"))
+            </span>
+            @if (Children.Where(c => c.Deadline.HasValue).Select(c => c.Deadline!.Value).DefaultIfEmpty().Max() is var last && last != default)
+            {
+                <span class="alva-task__summary-sep" aria-hidden="true"></span>
+                <span class="alva-task__summary-date alva-num"><FlareIconView Value="@MaterialDesign3Icons.Regular.Event" Size="16px" /> до @last.ToString("d MMM yyyy")</span>
+            }
+        </div>
+        <div class="alva-subtasks" role="table" aria-label="Подзадачи">
+            <div class="alva-subtasks__head" role="row">
+                <span role="columnheader">Иерархия подзадач</span><span role="columnheader">Исполнитель / слот</span><span role="columnheader" class="alva-subtasks__est">Оценка</span>
+            </div>
+            @for (var i = 0; i < Children.Length; i++)
+            {
+                var child = Children[i];
+                <div class="alva-subtasks__row" role="row" @key="child.Id">
+                    <span class="alva-subtasks__name" role="cell">
+                        <FlareIconView Value="@MaterialDesign3Icons.Regular.SubdirectoryArrowRight" Size="16px" Class="alva-subtasks__arrow" />
+                        <a class="alva-subtasks__code" href="@($"/tasks/{child.Id}")">@Code(Item).@(i + 1)</a>
+                        <a class="alva-subtasks__title" href="@($"/tasks/{child.Id}")" title="@child.Title">@child.Title</a>
+                    </span>
+                    <span role="cell">@AssigneeView(child)</span>
+                    <span class="alva-subtasks__est alva-num" role="cell">@(child.EstimateHours.HasValue ? $"{Hours(child.EstimateHours.Value)} ч" : "—")</span>
+                </div>
+            }
+            <div class="alva-subtasks__add">
+                <FlareTextField @bind-Value="_quickTitle" Immediate Placeholder="Быстрое добавление вложенной матрёшки (Enter)…" AriaLabel="Название новой подзадачи" OnKeyDown="QuickKey" Variant="InputVariant.Bare">
+                    <AdornmentStart><FlareIconView Value="@MaterialDesign3Icons.Regular.AddCircle" Size="18px" /></AdornmentStart>
+                </FlareTextField>
+                <FlareButton Variant="ButtonVariant.Tonal" Size="ButtonSize.Sm" Disabled="@string.IsNullOrWhiteSpace(_quickTitle)" OnClick="QuickAdd">Добавить матрёшку</FlareButton>
+            </div>
+        </div>
+    </section>
+
+    <section class="alva-panel">
+        <header class="alva-panel__header">
+            <FlareIconView Value="@MaterialDesign3Icons.Regular.History" Size="20px" Class="alva-panel__icon" />
+            <h2 class="alva-panel__title">История изменений (@_history.Length)</h2>
+        </header>
+        @if (_history.Length == 0) { <FlareEmptyState Compact Title="Изменений пока нет" Description="Правки задачи появятся здесь." /> }
+        @foreach (var entry in _history)
+        {
+            <div class="alva-history">
+                <FlareAvatar FallbackIcon="@MaterialDesign3Icons.Regular.History" Size="AvatarSize.Sm" />
+                <div class="alva-history__body">
+                    <span class="alva-history__summary">@entry.Summary</span>
+                    <span class="alva-history__time alva-num">@entry.At.ToLocalTime().ToString("g")</span>
+                </div>
+            </div>
+        }
+    </section>
+</div>
+
+<FlareDrawer Anchor="DrawerAnchor.Right" @bind-Open="_assignOpen" Width="26rem" AriaLabel="Назначение исполнителя">
+    <HeaderContent>
+        <div class="alva-assign__header">
+            <FlareIconView Value="@MaterialDesign3Icons.Regular.PersonAdd" Size="22px" Class="alva-panel__icon" />
+            <div>
+                <div class="alva-assign__title">Назначение исполнителя</div>
+                <div class="alva-assign__task alva-num">@Code(Item)@(Item.EstimateHours.HasValue ? $" ({Hours(Item.EstimateHours.Value)}ч)" : "")</div>
+            </div>
+        </div>
+    </HeaderContent>
+    <ChildContent>
+        <div class="alva-assign">
+            <span class="alva-micro-label">Тип балансировки</span>
+            <FlareTabs @bind-ActiveIndex="_assignTab">
+                @foreach (var kind in Kinds)
+                {
+                    <FlareTab Label="@Labels.Kind(kind)">@Candidates(kind)</FlareTab>
+                }
+            </FlareTabs>
+            @if (Actors.FirstOrDefault(a => a.Id == _assignTarget)?.Kind is "Role" or "Department")
+            {
+                <FlareSelect TValue="Guid?" Label="Конкретный исполнитель" Items="@(Actors.Where(a => a.Kind == "Person").Select(a => (Guid?)a.Id))" ItemLabel="ActorName" NullOption="Пока не выбран — требуется человек" @bind-Value="_assignPerson" Searchable />
+            }
+            <div class="alva-assign__footer">
+                <FlareButton Variant="ButtonVariant.Text" Size="ButtonSize.Sm" OnClick="() => _assignOpen = false">Отмена</FlareButton>
+                <FlareButton Size="ButtonSize.Sm" Loading="_busy" Disabled="@(_assignTarget is null)" OnClick="ApplyAssign">
+                    <LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.Check" Size="18px" /></LeadingIcon>
+                    <ChildContent>Применить назначение</ChildContent>
+                </FlareButton>
+            </div>
+        </div>
+    </ChildContent>
+</FlareDrawer>
+
+@code {
+    /// <summary>Открытая задача.</summary>
+    [Parameter, EditorRequired] public TaskModel Item { get; set; } = default!;
+
+    /// <summary>Все задачи команды: из них берутся подзадачи и родитель.</summary>
+    [Parameter] public TaskModel[] Tasks { get; set; } = [];
+    [Parameter] public ProjectModel[] Projects { get; set; } = [];
+    [Parameter] public SprintModel[] Sprints { get; set; } = [];
+    [Parameter] public ActorModel[] Actors { get; set; } = [];
+
+    /// <summary>Вызывается после изменения задач: страница перечитывает их.</summary>
+    [Parameter] public EventCallback Changed { get; set; }
+
+    private static readonly string[] Statuses = ["Backlog", "Planned", "InProgress", "Done", "Cancelled"];
+    private static readonly string[] Kinds = ["Person", "Department", "Role"];
+    private TaskModel _model = new();
+    private HistoryDto[] _history = [];
+    private Dictionary<Guid, (decimal Available, decimal Allocated)> _load = [];
+    private Guid _loadedFor;
+    private string? _error, _quickTitle, _assignSearch;
+    private bool _busy, _assignOpen;
+    private int _assignTab;
+    private Guid? _assignTarget, _assignPerson;
+
+    private TaskModel[] Children => Tasks.Where(t => t.ParentId == Item.Id).OrderBy(t => t.Order).ToArray();
+
+    private IEnumerable<BreadcrumbItem> Crumbs
+    {
+        get
+        {
+            yield return new("Задачи", "/tasks");
+            if (Projects.FirstOrDefault(p => p.Id == Item.ProjectId) is { } project) yield return new(project.Name, "/projects");
+            if (Sprints.FirstOrDefault(s => s.Id == Item.SprintId) is { } sprint) yield return new(sprint.Name, $"/sprints/{sprint.Id}");
+            yield return new(Code(Item));
+        }
+    }
+
+    /// <summary>Полоса у заголовка: просрочка — crimson, нет исполнителя — amber, иначе sapphire.</summary>
+    private AlvaTone RiskTone =>
+        Item.Status is "Done" or "Cancelled" ? AlvaTone.Ok
+        : Item.Deadline < DateOnly.FromDateTime(DateTime.Today) ? AlvaTone.Critical
+        : Item.AssignmentTargetId is null ? AlvaTone.Warning
+        : AlvaTone.Info;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (_model.Id == Item.Id && _model.Version == Item.Version) return;
+        _model = System.Text.Json.JsonSerializer.Deserialize<TaskModel>(System.Text.Json.JsonSerializer.Serialize(Item))!;
+        _quickTitle = null;
+        try { _history = await Session.Get<HistoryDto[]>(Session.TeamPath($"tasks/{Item.Id}/history")); }
+        catch (Exception e) when (e is HttpRequestException or InvalidOperationException) { _error = e.Message; }
+    }
+
+    private static string Code(TaskModel task) => "#" + task.Id.ToString("N")[..4].ToUpperInvariant();
+    private static string Hours(decimal value) => value.ToString("0.#");
+    private static string Plural(int n, string one, string few, string many) =>
+        (n % 100 is >= 11 and <= 14) ? many : (n % 10) switch { 1 => one, >= 2 and <= 4 => few, _ => many };
+    private static string Initials(string name) =>
+        string.Concat(name.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(w => char.ToUpperInvariant(w[0])));
+    private string ProjectName(Guid? id) => Projects.FirstOrDefault(x => x.Id == id)?.Name ?? "Текучка";
+    private string SprintName(Guid? id) => Sprints.FirstOrDefault(x => x.Id == id)?.Name ?? "Без спринта";
+    private string TaskName(Guid? id) => Tasks.FirstOrDefault(x => x.Id == id)?.Title ?? "Корневая задача";
+    private string ActorName(Guid? id) => Actors.FirstOrDefault(x => x.Id == id)?.Name ?? "Не назначена";
+
+    /// <summary>Исполнитель или слот: человек — инициалы; роль/подкоманда — фиолетовый слот и
+    /// «Требуется человек», пока конкретный исполнитель не выбран.</summary>
+    private RenderFragment AssigneeView(TaskModel task) => __builder =>
+    {
+        var target = Actors.FirstOrDefault(a => a.Id == task.AssignmentTargetId);
+        var person = Actors.FirstOrDefault(a => a.Id == task.ResolvedPersonId) ?? (target?.Kind == "Person" ? target : null);
+        if (target is null)
+        {
+            <span class="alva-slot alva-slot--empty"><span class="alva-slot__mark" aria-hidden="true">?</span><span class="alva-slot__text"><span class="alva-slot__name">Не назначена</span><span class="alva-slot__meta alva-slot__meta--warning">Нет исполнителя</span></span></span>
+        }
+        else if (target.Kind == "Person" || person is not null)
+        {
+            <span class="alva-slot"><span class="alva-slot__mark" aria-hidden="true">@Initials(person!.Name)</span><span class="alva-slot__text"><span class="alva-slot__name">@person.Name</span><span class="alva-slot__meta">@(target.Kind == "Person" ? "Человек" : $"{Labels.Kind(target.Kind)}: {target.Name}")</span></span></span>
+        }
+        else
+        {
+            <span class="alva-slot alva-slot--role"><span class="alva-slot__mark" aria-hidden="true"><FlareIconView Value="@MaterialDesign3Icons.Regular.Groups" Size="14px" /></span><span class="alva-slot__text"><span class="alva-slot__name">@Labels.Kind(target.Kind): @target.Name</span><span class="alva-slot__meta alva-slot__meta--critical">Требуется человек</span></span></span>
+        }
+    };
+
+    /// <summary>Кандидаты одного вида. У людей — загрузка за окно спринта (или 14 дней).</summary>
+    private RenderFragment Candidates(string kind) => __builder =>
+    {
+        var list = Actors.Where(a => a.Kind == kind && (string.IsNullOrWhiteSpace(_assignSearch) || a.Name.Contains(_assignSearch, StringComparison.OrdinalIgnoreCase))).ToArray();
+        var recommended = kind == "Person" ? list.Where(a => _load.ContainsKey(a.Id) && _load[a.Id].Available > 0).OrderBy(a => Percent(a.Id)).FirstOrDefault()?.Id : null;
+        <div class="alva-assign__list">
+            <FlareTextField @bind-Value="_assignSearch" Immediate Clearable Placeholder="@($"Поиск по команде {Session.TeamName}…")" AriaLabel="Поиск кандидата">
+                <AdornmentStart><FlareIconView Value="@MaterialDesign3Icons.Regular.Search" Size="18px" /></AdornmentStart>
+            </FlareTextField>
+            <div class="alva-assign__caption"><span>Кандидаты команды (@list.Length)</span>@if (kind == "Person") { <span>Ёмкость периода</span> }</div>
+            @if (list.Length == 0) { <FlareEmptyState Compact Title="Никого не найдено" Description="Добавьте участников в разделе «Команда»." /> }
+            <FlareRadioGroup TValue="Guid?" @bind-Value="_assignTarget" Label="@($"Кандидаты: {Labels.Kind(kind)}")" Class="alva-assign__group">
+                @foreach (var actor in list)
+                {
+                    var percent = kind == "Person" && _load.ContainsKey(actor.Id) ? Percent(actor.Id) : (int?)null;
+                    var reserve = _load.TryGetValue(actor.Id, out var l) ? l.Available - l.Allocated : 0;
+                    var tone = percent is null ? AlvaTone.Role : percent > 100 ? AlvaTone.Critical : percent > 80 ? AlvaTone.Info : AlvaTone.Ok;
+                    @* Вся карточка — подпись радиокнопки: клик по ней выбирает кандидата. *@
+                    <div class="alva-candidate @(actor.Id == _assignTarget ? "alva-candidate--selected" : "") @(actor.Id == recommended ? "alva-candidate--recommended" : "")" @key="actor.Id">
+                        <FlareRadio TValue="Guid?" Value="actor.Id">
+                            <span class="alva-candidate__content">
+                                <span class="alva-slot__mark alva-candidate__avatar" aria-hidden="true">@Initials(actor.Name)</span>
+                                <span class="alva-candidate__body">
+                                    <span class="alva-candidate__name">@actor.Name @if (actor.Id == recommended) { <AlvaStatusChip Tone="AlvaTone.Ok">Рекомендовано</AlvaStatusChip> }</span>
+                                    <span class="alva-candidate__meta">@CandidateMeta(actor)</span>
+                                    @if (percent is not null)
+                                    {
+                                        <span class="alva-candidate__state alva-candidate__state--@tone.ToString().ToLowerInvariant()">
+                                            @(percent > 100 ? $"Перегружен (дефицит {Hours(-reserve)}ч)" : percent > 80 ? $"Оптимально (резерв +{Hours(reserve)}ч)" : $"Свободен (резерв +{Hours(reserve)}ч)")
+                                        </span>
+                                    }
+                                    @if (actor.Id == Item.AssignmentTargetId || actor.Id == Item.ResolvedPersonId) { <span class="alva-candidate__current">Текущий исполнитель</span> }
+                                </span>
+                                @if (percent is not null) { <span class="alva-candidate__side"><AlvaStatusChip Tone="tone" Title="Загрузка за период">@percent%</AlvaStatusChip></span> }
+                            </span>
+                        </FlareRadio>
+                    </div>
+                }
+            </FlareRadioGroup>
+        </div>
+    };
+
+    private string CandidateMeta(ActorModel actor)
+    {
+        if (actor.Kind != "Person") return $"{Labels.Kind(actor.Kind)} · {Actors.Count(a => a.RoleIds.Contains(actor.Id) || a.DepartmentIds.Contains(actor.Id))} чел.";
+        var tags = Actors.Where(a => actor.RoleIds.Contains(a.Id) || actor.DepartmentIds.Contains(a.Id)).Select(a => a.Name).ToArray();
+        return tags.Length > 0 ? string.Join(" / ", tags) : "Участник команды";
+    }
+
+    private int Percent(Guid actorId)
+    {
+        var (available, allocated) = _load[actorId];
+        return available > 0 ? (int)Math.Round(allocated / available * 100) : allocated > 0 ? 999 : 0;
+    }
+
+    private async Task OpenAssign()
+    {
+        _assignTarget = Item.AssignmentTargetId;
+        _assignPerson = Item.ResolvedPersonId;
+        _assignTab = Math.Max(0, Array.IndexOf(Kinds, Actors.FirstOrDefault(a => a.Id == Item.AssignmentTargetId)?.Kind ?? "Person"));
+        _assignOpen = true;
+        if (_loadedFor == Item.Id) return;
+        var sprint = Sprints.FirstOrDefault(s => s.Id == Item.SprintId);
+        var from = sprint?.StartDate ?? DateOnly.FromDateTime(DateTime.Today);
+        var to = sprint?.EndDate ?? from.AddDays(13);
+        await Run(async () =>
+        {
+            var rows = await Session.Get<CapacityDto[]>(Session.TeamPath($"capacity?from={from:yyyy-MM-dd}&to={to:yyyy-MM-dd}"));
+            _load = rows.GroupBy(r => r.ActorId).ToDictionary(g => g.Key, g => (g.Sum(r => r.AvailableHours), g.Sum(r => r.AllocatedHours)));
+            _loadedFor = Item.Id;
+        });
+    }
+
+    private async Task ApplyAssign()
+    {
+        var person = Actors.FirstOrDefault(a => a.Id == _assignTarget)?.Kind == "Person" ? null : _assignPerson;
+        await Run(async () =>
+        {
+            await Session.Send(HttpMethod.Put, Session.TeamPath($"tasks/{Item.Id}/assignment"), new AssignmentRequest(_assignTarget!.Value, person));
+            _assignOpen = false;
+            _loadedFor = Guid.Empty;
+            await Changed.InvokeAsync();
+        });
+    }
+
+    private Task Save() => Run(async () =>
+    {
+        var m = _model;
+        await Session.Save<TaskModel>(HttpMethod.Put, Session.TeamPath($"tasks/{m.Id}"),
+            new TaskRequest(m.Title, m.Description, m.Status, m.ProjectId, m.SprintId, m.ParentId, m.EstimateHours, m.Deadline, m.StartDate, m.EndDate, m.Order, m.Version));
+        await Changed.InvokeAsync();
+    });
+
+    private async Task QuickKey(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter") await QuickAdd();
+    }
+
+    /// <summary>Подзадача наследует проект и спринт родителя; порядок — в конец списка.</summary>
+    private Task QuickAdd()
+    {
+        var title = _quickTitle?.Trim();
+        if (string.IsNullOrEmpty(title)) return Task.CompletedTask;
+        return Run(async () =>
+        {
+            var order = Children.Select(c => c.Order).DefaultIfEmpty(-1).Max() + 1;
+            await Session.Save<TaskModel>(HttpMethod.Post, Session.TeamPath("tasks"),
+                new TaskRequest(title, "", "Backlog", Item.ProjectId, Item.SprintId, Item.Id, null, null, null, null, order, null));
+            _quickTitle = null;
+            await Changed.InvokeAsync();
+        });
+    }
+
+    private Task Archive() => Run(async () =>
+    {
+        await Session.Send(HttpMethod.Delete, Session.TeamPath($"tasks/{Item.Id}"), new { });
+        await Changed.InvokeAsync();
+        Navigation.NavigateTo("/tasks");
+    });
+
+    private async Task Run(Func<Task> action)
+    {
+        _busy = true; _error = null;
+        try { await action(); }
+        catch (Exception e) when (e is HttpRequestException or InvalidOperationException) { _error = e.Message; }
+        finally { _busy = false; }
+    }
+}

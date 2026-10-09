@@ -65,6 +65,13 @@
   text-transform: uppercase;
 }
 
+/* DESIGN.md, FlareDataTree: «16px per hierarchy level with a subtle 1px dashed guideline (#CBD5E1)».
+   Отступ задан токеном Tree.Indent; токена направляющей у Flare нет — это рамка вложенного списка. */
+.flare-theme-alva .flare-tree-item__children {
+  margin-left: 11px;
+  border-left: 1px dashed #CBD5E1;
+}
+
 /* Линия перед нижним блоком меню (Моя работа / Данные / Настройки). */
 .flare-theme-alva .alva-nav-sep {
   margin: 4px 12px 8px;
