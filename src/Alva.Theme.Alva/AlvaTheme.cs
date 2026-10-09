@@ -1,5 +1,6 @@
 using Flare.Abstractions;
 using Flare.Abstractions.Tokens;
+using Flare.Abstractions.Tokens.Components;
 using Flare.Theme.MaterialDesign3Expressive;
 using Flare.Theming;
 
@@ -90,7 +91,95 @@ public static class AlvaTheme
             Level2 = "0 2px 4px -1px rgba(15, 23, 42, 0.06), 0 1px 2px -1px rgba(15, 23, 42, 0.04)",
             Level3 = "0 10px 15px -3px rgba(15, 23, 42, 0.08), 0 4px 6px -4px rgba(15, 23, 42, 0.04)",
         },
+
+        // Компоненты задаются токенами Flare, а не CSS: тема пишет их в свой стиль после
+        // таблиц ассетов, и переменная из style-asset с тем же селектором ему проигрывает.
+
+        // «Primary: ... height 32px (compact), radius 6px». Капсула MD3E заменена радиусом формы.
+        Button = d.Button with
+        {
+            ContainerRadius = Radius,
+            RadiusXs = CornerRadiusTokens.All(Radius),
+            RadiusSm = CornerRadiusTokens.All(Radius),
+            RadiusMd = CornerRadiusTokens.All(Radius),
+            RadiusLg = CornerRadiusTokens.All(Radius),
+            RadiusXl = CornerRadiusTokens.All(Radius),
+            IconOnlyRadiusXs = Radius,
+            IconOnlyRadiusSm = Radius,
+            IconOnlyRadiusMd = Radius,
+            IconOnlyRadiusLg = Radius,
+            IconOnlyRadiusXl = Radius,
+            HeightXs = "28px",
+            HeightSm = "32px",
+            HeightMd = "32px",
+            HeightLg = "40px",
+            HeightXl = "48px",
+            IconOnlySizeXs = "28px",
+            IconOnlySizeSm = "32px",
+            IconOnlySizeMd = "32px",
+            IconOnlySizeLg = "40px",
+            IconOnlySizeXl = "48px",
+            PaddingInlineXs = "10px",
+            PaddingInlineSm = "12px",
+            PaddingInlineMd = "12px",
+            PaddingInlineLg = "16px",
+            PaddingInlineXl = "20px",
+            IconSizeSm = "18px",
+            IconSizeMd = "18px",
+            OutlinedBorderColor = "#CBD5E1",
+        },
+
+        // «Standard Inputs: 30px compact height, #FFFFFF background, 1px border #CBD5E1».
+        Input = d.Input with
+        {
+            HeightSm = "28px",
+            HeightMd = "30px",
+            OutlinedRadius = Radius,
+            FilledVariantRadius = Radius,
+            OutlinedVariantRadius = Radius,
+            BorderColor = "#CBD5E1",
+            OutlinedVariantBorderColor = "#CBD5E1",
+        },
+
+        // Пункт меню макета: строка ~30px, радиус 4px; активный залит primary-container,
+        // текст белый и жирный, иконка 18px.
+        Nav = d.Nav with
+        {
+            ItemHeight = "32px",
+            ItemRadius = "4px",
+            IndicatorRadius = "4px",
+            ActiveIndicator = "#1D4ED8",
+            ActiveColor = "#FFFFFF",
+            ActiveWeight = "700",
+            IconSize = "18px",
+        },
+
+        // Оболочка макета: белая шапка 56px и белая боковая панель на канве #F8F9FF,
+        // разделённые лёгкой тенью, а не тональной заливкой MD3.
+        Layout = d.Layout with
+        {
+            AppBarHeight = "56px",
+            AppBarBg = "#FFFFFF",
+            AppBarShadow = "0 1px 8px rgba(0, 0, 0, 0.04)",
+            DrawerBg = "#FFFFFF",
+            RailBg = "#FFFFFF",
+            ShellBg = "#F8F9FF",
+            ContentPadding = "1rem 1.25rem",
+        },
+
+        // «Level 1: Pure #FFFFFF cards ... bounded by an explicit 1px outline of #E2E8F0».
+        Card = d.Card with
+        {
+            OutlinedBg = "#FFFFFF",
+            OutlinedBorder = "1px solid #E2E8F0",
+            Radius = Radius,
+        },
+
+        Alert = d.Alert with { Radius = Radius },
     };
+
+    /// <summary>Единый радиус дизайна для кнопок, полей, карточек и бейджей.</summary>
+    private const string Radius = "6px";
 
     /// <summary>Одна ступень шкалы: гарнитура, насыщенность, размер, интерлиньяж, трекинг.</summary>
     private static TypeStyle Type(string weight, string size, string lineHeight, string spacing) => new()

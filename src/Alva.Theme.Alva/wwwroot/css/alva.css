@@ -1,19 +1,14 @@
 /* Alva — правила, которые токенами не выражаются. Подключается темой как style-asset, поэтому
    ограничено её же классом: тема может быть активна и для поддерева (FlareThemeScope). */
 
-.flare-theme-alva {
-  /* Дизайн называет Inter единственной гарнитурой; слой приложения берёт её отсюда. */
-  --alva-font: Inter, "Segoe UI", system-ui, sans-serif;
+/* Размеры и цвета компонентов (кнопки, поля, меню, оболочка, карточки) заданы токенами в
+   AlvaTheme.cs. Здесь — только то, для чего у Flare 0.43.0 токена нет. Переменные на
+   .flare-theme-alva отсюда не задаются: стиль темы идёт позже с тем же селектором и побеждает. */
 
-  /* DESIGN.md, Components: «Primary: solid sapphire indigo ... height 32px (compact)» и
-     «Standard Inputs: 30px compact height». Это переменные Flare, поэтому действуют на все
-     одноимённые компоненты, а не на конкретный экран. */
-  --flare-btn-height-md: 32px;
-  --flare-input-height-md: 30px;
-
-  /* DESIGN.md, Components: «Alternating row background on subtle hover (#F1F5F9)». Flare красит
-     и зебру, и hover сетки этими переменными — значит цвет задаётся ими, а не переопределением
-     селектора :hover. */
+/* DESIGN.md, Components: «Alternating row background on subtle hover (#F1F5F9)». Flare красит
+   зебру и hover сетки этими переменными, а в DataGridTokens их нет; на элементе сетки они
+   перекрывают значение корня темы и не трогают hover остальных компонентов. */
+.flare-theme-alva .flare-datagrid {
   --flare-state-hover-layer: #F1F5F9;
   --flare-stripe-bg: #F8FAFC;
 }
