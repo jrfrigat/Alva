@@ -1,7 +1,7 @@
 :root{--alva-font:Inter,"Segoe UI",system-ui,sans-serif;--alva-primary:#0037b0;--alva-primary-container:#1d4ed8;--alva-primary-hover:#1e40af;--alva-secondary:#3755c3;--alva-tertiary:#5311bc;--alva-surface:#f8f9ff;--alva-surface-lowest:#ffffff;--alva-surface-container:#e5eeff;--alva-surface-high:#dce9ff;--alva-outline:#c4c5d7;--alva-outline-strong:#747686;--alva-on-surface:#0b1c30;--alva-on-surface-variant:#434655;--alva-critical:#ef4444;--alva-critical-text:#dc2626;--alva-warning:#f59e0b;--alva-warning-text:#d97706;--alva-ok:#10b981;--alva-ok-text:#065f46;--alva-role:#8b5cf6;--alva-radius-sm:6px;--alva-radius-md:8px;--alva-row-height:34px;--flare-font-family:var(--alva-font)}
 html,body{margin:0;min-height:100%;font-family:var(--alva-font);background:var(--flare-color-surface,var(--alva-surface));color:var(--flare-color-on-surface,var(--alva-on-surface));-webkit-font-smoothing:antialiased}
 *{box-sizing:border-box}
-.alva-brand{font-size:2rem;font-weight:800;letter-spacing:-.09em}.brand-dot{color:var(--flare-color-primary,#6750a4)}
+
 .skip-link{position:fixed;top:-6rem;left:1rem;z-index:100000;padding:1rem;background:var(--flare-color-surface,#fff)}.skip-link:focus{top:1rem}
 #flare-splash{min-height:100dvh;display:grid;place-content:center;background:#f8fafc;color:#1e293b}#blazor-error-ui{display:none;position:fixed;bottom:0;padding:1rem;background:#f9dedc;color:#410e0b;width:100%;z-index:100000}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important}}
@@ -9,7 +9,7 @@ html,body{margin:0;min-height:100%;font-family:var(--alva-font);background:var(-
 /* --- Alva design system (Stitch / Material 3 Sapphire) --- */
 .alva-micro-label{display:flex;align-items:center;gap:.375rem;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--flare-color-primary,var(--alva-primary-container))}
 .alva-num{font-variant-numeric:tabular-nums}
-.alva-page-header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:.75rem}
+.alva-page-header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:.75rem;padding:1rem;border:1px solid #e2e8f0;border-radius:6px;background:var(--flare-color-surface-container-lowest,#fff)}
 .alva-page-header__text{min-width:0}
 .alva-page-header__title{margin:.125rem 0 0;font-size:1.875rem;line-height:2.375rem;font-weight:700;letter-spacing:-.02em;color:var(--flare-color-on-surface,var(--alva-on-surface))}
 .alva-page-header__desc{margin:.25rem 0 0;font-size:13px;line-height:18px;color:var(--flare-color-on-surface-variant,var(--alva-on-surface-variant))}
@@ -22,11 +22,24 @@ html,body{margin:0;min-height:100%;font-family:var(--alva-font);background:var(-
 .alva-chip--warning{background:#fef3c7;border-color:#fcd34d;color:var(--alva-warning-text)}
 .alva-chip--critical{background:#fee2e2;border-color:#fca5a5;color:var(--alva-critical-text)}
 .alva-chip--role{background:#ede9fe;border-color:#c4b5fd;color:#6d28d9}
-.alva-metric{display:flex;flex-direction:column;gap:.25rem;padding:.75rem;border:1px solid var(--flare-color-outline-variant,var(--alva-outline));border-radius:var(--alva-radius-md);background:var(--flare-color-surface-container-lowest,var(--alva-surface-lowest))}
+.alva-metric{display:flex;flex-direction:column;gap:.5rem;padding:1rem;border:1px solid #e2e8f0;border-radius:6px;background:var(--flare-color-surface-container-lowest,var(--alva-surface-lowest))}
 .alva-metric__value{font-size:1.875rem;line-height:2.25rem;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums;color:var(--flare-color-on-surface,var(--alva-on-surface))}
 .alva-metric__label{font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--flare-color-on-surface-variant,var(--alva-on-surface-variant))}
 .alva-divider{border:0;border-top:1px solid var(--alva-outline);margin:0}
-.alva-brand-block{display:flex;flex-direction:column;gap:.125rem;line-height:1}
-.alva-brand{font-size:1.5rem;font-weight:800;letter-spacing:-.06em}
-.alva-brand-caption{font-size:10px;letter-spacing:.08em;color:var(--flare-color-on-surface-variant,var(--alva-on-surface-variant))}
-@media(min-width:768px){.alva-brand-caption{display:none}}
+
+/* Шапка по макету (p4): знак «A» с названием, разделитель, чип команды, справа пользователь. */
+.alva-appbar{display:flex;align-items:center;gap:1rem;flex:1;min-width:0;padding-inline:.25rem 1.25rem}
+.alva-brand{display:flex;align-items:center;gap:.375rem;text-decoration:none;color:inherit}
+.alva-brand__mark{display:grid;place-items:center;width:28px;height:28px;border-radius:12px;background:var(--flare-color-primary-container,#1d4ed8);color:var(--flare-color-on-primary,#fff);font-size:18px;font-weight:700;box-shadow:0 1px 4px rgba(0,0,0,.1)}
+.alva-brand__text{display:flex;flex-direction:column;line-height:1}
+.alva-brand__name{font-size:15px;font-weight:700;letter-spacing:-.005em;color:var(--flare-color-on-surface,var(--alva-on-surface))}
+.alva-brand__caption{margin-top:2px;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--flare-color-primary,var(--alva-primary))}
+.alva-appbar__sep{width:1px;height:20px;background:color-mix(in srgb,var(--flare-color-outline-variant,#c4c5d7) 40%,transparent)}
+.alva-team-chip{display:inline-flex;align-items:center;gap:.25rem;min-width:0;padding:4px 6px;border-radius:4px;background:var(--flare-color-surface-container-low,#eff4ff);color:var(--flare-color-on-surface,var(--alva-on-surface));font-size:13px;font-weight:700;text-decoration:none;transition:background-color .15s}
+.alva-team-chip:hover{background:var(--flare-color-surface-container,#e5eeff)}
+.alva-team-chip__icon{color:var(--flare-color-primary,var(--alva-primary))}
+.alva-team-chip__chevron{color:var(--flare-color-outline,#747686)}
+.alva-team-chip__name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.alva-user{display:flex;align-items:center;gap:.375rem;text-decoration:none;color:var(--flare-color-on-surface,var(--alva-on-surface));font-size:13px;font-weight:700}
+.alva-user__avatar{display:grid;place-items:center;width:32px;height:32px;border-radius:9999px;background:var(--flare-color-primary,var(--alva-primary));color:var(--flare-color-on-primary,#fff)}
+@media(max-width:767px){.alva-brand__text,.alva-appbar__sep,.alva-user__name{display:none}}

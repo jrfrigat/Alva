@@ -6,16 +6,28 @@
 <a class="skip-link" href="#main-content">К содержимому</a>
 <FlareLayout>
     <FlareLayoutAppBar DrawerToggle="true">
-        <FlareStack Row Align="FlareAlignItems.Center" Gap="FlareSpacing.Medium" Style="flex:1;min-width:0">
-            <FlareStack Gap="FlareSpacing.Small" Class="alva-brand-block">
-                <FlareLink Href="/" Underline="LinkUnderline.None" Class="alva-brand">alva<span class="brand-dot">.</span></FlareLink>
-                <span class="alva-micro-label alva-brand-caption">Планирование ресурсов</span>
-            </FlareStack>
+        @* Шапка макета: знак и название, переключатель команды, справа пользователь. *@
+        <div class="alva-appbar">
+            <a href="/" class="alva-brand" aria-label="Alva — на главную">
+                <span class="alva-brand__mark" aria-hidden="true">A</span>
+                <span class="alva-brand__text"><span class="alva-brand__name">ALVA</span><span class="alva-brand__caption">Планирование ресурсов</span></span>
+            </a>
+            <span class="alva-appbar__sep" aria-hidden="true"></span>
+            <a href="/workspaces" class="alva-team-chip" title="Сменить команду">
+                <FlareIconView Value="@MaterialDesign3Icons.Regular.Groups" Size="18px" Class="alva-team-chip__icon" />
+                <span class="alva-team-chip__name">@Session.TeamName</span>
+                <FlareIconView Value="@MaterialDesign3Icons.Regular.KeyboardArrowDown" Size="16px" Class="alva-team-chip__chevron" />
+            </a>
             <FlareSpacer />
-            <FlareButton Href="/workspaces" Variant="ButtonVariant.Text" Size="ButtonSize.Sm">@Session.TeamName</FlareButton>
-            @if (Session.User is not null) { <FlareButton Href="/settings" Variant="ButtonVariant.Tonal" Size="ButtonSize.Sm">@Session.User.DisplayName</FlareButton> }
-            else { <FlareButton Href="/login" Variant="ButtonVariant.Tonal" Size="ButtonSize.Sm">Войти</FlareButton> }
-        </FlareStack>
+            @if (Session.User is not null)
+            {
+                <a href="/settings" class="alva-user" title="Профиль и настройки">
+                    <span class="alva-user__avatar" aria-hidden="true"><FlareIconView Value="@MaterialDesign3Icons.Regular.Person" Size="18px" /></span>
+                    <span class="alva-user__name">@Session.User.DisplayName</span>
+                </a>
+            }
+            else { <FlareButton Href="/login" Size="ButtonSize.Sm">Войти</FlareButton> }
+        </div>
     </FlareLayoutAppBar>
     <FlareLayoutDrawer @bind-Open="_open" Variant="DrawerVariant.Responsive" Width="18rem" AriaLabel="Навигация">
         <FlareNavMenu AriaLabel="Навигация">
