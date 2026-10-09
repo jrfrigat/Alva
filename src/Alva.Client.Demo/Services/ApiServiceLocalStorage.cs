@@ -149,56 +149,14 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
         store.History.TryGetValue(taskId, out var entries) ? [.. entries] : [];
 
     private static CalendarDto Calendar(DemoStore store, Guid actorId) =>
-        store.Calendars.FirstOrDefault(c => c.ActorId == actorId)
-        ?? new CalendarDto(actorId, "Europe/Moscow", 8m, 8m, 8m, 8m, 8m, 0m, 0m, [], []);
+        store.Calendars.FirstOrDefault(c => c.ActorId == actorId) ?? CapacityMath.DefaultCalendar(actorId);
 
     private static CapacityDto[] Capacity(DemoStore store, Guid teamId, DateOnly from, DateOnly to)
     {
         var people = store.Actors.Where(a => a.Kind == "Person").ToArray();
-        var tasks = store.Tasks.Where(t => t.TeamId == teamId && t.Status != "Cancelled").ToArray();
-        var rows = new List<CapacityDto>();
-        foreach (var person in people)
-        {
-            var calendar = store.Calendars.FirstOrDefault(c => c.ActorId == person.Id);
-            var mine = tasks.Where(t => t.ResolvedPersonId == person.Id).ToArray();
-            for (var date = from; date <= to; date = date.AddDays(1))
-                rows.Add(new CapacityDto(person.Id, person.Name, date, AvailableHours(calendar, date), mine.Where(t => Covers(t, date)).Sum(PerDay)));
-        }
-        return [.. rows];
-    }
-
-    private static bool Covers(TaskModel task, DateOnly date)
-    {
-        var start = task.StartDate ?? task.EndDate ?? task.Deadline;
-        var end = task.EndDate ?? task.Deadline ?? task.StartDate;
-        return start.HasValue && end.HasValue && date >= start.Value && date <= end.Value;
-    }
-
-    private static decimal PerDay(TaskModel task)
-    {
-        var start = task.StartDate ?? task.EndDate ?? task.Deadline;
-        var end = task.EndDate ?? task.Deadline ?? task.StartDate;
-        if (!start.HasValue || !end.HasValue) return task.EstimateHours ?? 0m;
-        var days = Math.Max(1, end.Value.DayNumber - start.Value.DayNumber + 1);
-        return (task.EstimateHours ?? 0m) / days;
-    }
-
-    private static decimal AvailableHours(CalendarDto? calendar, DateOnly date)
-    {
-        if (calendar is null) return 0m;
-        var hours = date.DayOfWeek switch
-        {
-            DayOfWeek.Monday => calendar.Monday,
-            DayOfWeek.Tuesday => calendar.Tuesday,
-            DayOfWeek.Wednesday => calendar.Wednesday,
-            DayOfWeek.Thursday => calendar.Thursday,
-            DayOfWeek.Friday => calendar.Friday,
-            DayOfWeek.Saturday => calendar.Saturday,
-            _ => calendar.Sunday
-        };
-        if (calendar.Exceptions.FirstOrDefault(e => date >= e.From && date <= e.To) is { } exception) hours = exception.AvailableHours;
-        var iso = date.DayOfWeek == DayOfWeek.Sunday ? 7 : (int)date.DayOfWeek;
-        return Math.Max(0m, hours - calendar.RecurringBlocks.Where(b => b.DayOfWeek == iso).Sum(b => b.Hours));
+        var work = store.Tasks.Where(t => t.TeamId == teamId && t.Status is not ("Done" or "Cancelled") && t.ResolvedPersonId.HasValue)
+            .Select(t => new CapacityWork(t.ResolvedPersonId!.Value, t.EstimateHours ?? 0m, t.StartDate, t.EndDate, t.Deadline));
+        return CapacityMath.Build(people.Select(p => (p.Id, p.Name)), id => Calendar(store, id), work, from, to);
     }
 
     private static RiskDto[] Risks(DemoStore store, Guid teamId, DateOnly today)

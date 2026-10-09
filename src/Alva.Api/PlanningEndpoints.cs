@@ -208,52 +208,18 @@ public static class PlanningEndpoints
         var tasks = await db.Tasks.AsNoTracking().Where(x => x.TeamId == teamId && !x.Archived && x.Status != WorkStatus.Done && x.Status != WorkStatus.Cancelled).ToListAsync();
         var taskIds = tasks.Select(x => x.Id).ToArray();
         var assignments = await db.Assignments.AsNoTracking().Where(x => taskIds.Contains(x.TaskId)).ToListAsync();
-        var allocated = new Dictionary<(Guid, DateOnly), decimal>();
+        var work = new List<CapacityWork>();
         foreach (var task in tasks)
         {
-            if (assignments.FirstOrDefault(x => x.TaskId == task.Id) is not { } assignment) continue;
-            var person = ResolvePerson(assignment, people);
-            var estimate = task.EstimateHours ?? 0m;
-            if (person is null || estimate <= 0) continue;
-            var windowStart = task.StartDate ?? task.EndDate ?? task.Deadline;
-            var windowEnd = task.EndDate ?? task.Deadline ?? task.StartDate;
-            if (windowStart is null || windowEnd is null) continue;
-            if (windowEnd < windowStart) windowEnd = windowStart;
-            var perDay = estimate / (windowEnd.Value.DayNumber - windowStart.Value.DayNumber + 1);
-            for (var day = windowStart.Value; day <= windowEnd.Value; day = day.AddDays(1))
-            {
-                if (day < start || day > end) continue;
-                var key = (person.Id, day);
-                allocated[key] = allocated.GetValueOrDefault(key) + perDay;
-            }
+            if (assignments.FirstOrDefault(x => x.TaskId == task.Id) is not { } assignment || ResolvePerson(assignment, people) is not { } person) continue;
+            work.Add(new CapacityWork(person.Id, task.EstimateHours ?? 0m, task.StartDate, task.EndDate, task.Deadline));
         }
-        var result = new List<CapacityDto>();
-        foreach (var person in people)
-        {
-            var calendar = calendars.FirstOrDefault(x => x.ActorId == person.Id);
-            for (var day = start; day <= end; day = day.AddDays(1))
-                result.Add(new CapacityDto(person.Id, person.Name, day, Available(calendar, exceptions, blocks, day), Math.Round(allocated.GetValueOrDefault((person.Id, day)), 2)));
-        }
-        return result.ToArray();
+        var dtos = calendars.ToDictionary(x => x.ActorId, x => ToCalendarDto(x, exceptions, blocks));
+        return CapacityMath.Build(people.Select(x => (x.Id, x.Name)), id => dtos.GetValueOrDefault(id) ?? CapacityMath.DefaultCalendar(id), work, start, end);
     }
 
     private static Actor? ResolvePerson(Assignment assignment, List<Actor> people) =>
         assignment.ResolvedPersonId is { } resolved ? people.FirstOrDefault(x => x.Id == resolved) : people.FirstOrDefault(x => x.Id == assignment.TargetId);
-
-    private static decimal Available(WorkCalendar? calendar, List<CalendarException> exceptions, List<RecurringBlock> blocks, DateOnly day)
-    {
-        if (calendar is null) return 0m;
-        var value = DayHours(calendar, day.DayOfWeek);
-        if (exceptions.FirstOrDefault(x => x.CalendarId == calendar.Id && x.From <= day && day <= x.To) is { } exception) value = exception.AvailableHours;
-        value -= blocks.Where(x => x.CalendarId == calendar.Id && x.DayOfWeek == day.DayOfWeek).Sum(x => x.Hours);
-        return value < 0 ? 0 : value;
-    }
-
-    private static decimal DayHours(WorkCalendar calendar, DayOfWeek day) => day switch
-    {
-        DayOfWeek.Monday => calendar.Monday, DayOfWeek.Tuesday => calendar.Tuesday, DayOfWeek.Wednesday => calendar.Wednesday,
-        DayOfWeek.Thursday => calendar.Thursday, DayOfWeek.Friday => calendar.Friday, DayOfWeek.Saturday => calendar.Saturday, _ => calendar.Sunday
-    };
 
     internal static async Task<RiskDto[]> Risks(AlvaDbContext db, Guid teamId)
     {
@@ -345,10 +311,13 @@ public static class PlanningEndpoints
 
     private static async Task<CalendarDto> ToCalendarDto(AlvaDbContext db, WorkCalendar calendar)
     {
-        var exceptions = await db.CalendarExceptions.AsNoTracking().Where(x => x.CalendarId == calendar.Id).OrderBy(x => x.From).ToArrayAsync();
-        var blocks = await db.RecurringBlocks.AsNoTracking().Where(x => x.CalendarId == calendar.Id).OrderBy(x => x.DayOfWeek).ToArrayAsync();
-        return new CalendarDto(calendar.ActorId, calendar.TimeZone, calendar.Monday, calendar.Tuesday, calendar.Wednesday, calendar.Thursday, calendar.Friday, calendar.Saturday, calendar.Sunday,
-            exceptions.Select(x => new CalendarExceptionDto(x.Id, x.From, x.To, x.AvailableHours, x.Reason)).ToArray(),
-            blocks.Select(x => new RecurringBlockDto(x.Id, (int)x.DayOfWeek, x.Hours, x.Name)).ToArray());
+        var exceptions = await db.CalendarExceptions.AsNoTracking().Where(x => x.CalendarId == calendar.Id).ToListAsync();
+        var blocks = await db.RecurringBlocks.AsNoTracking().Where(x => x.CalendarId == calendar.Id).ToListAsync();
+        return ToCalendarDto(calendar, exceptions, blocks);
     }
+
+    private static CalendarDto ToCalendarDto(WorkCalendar calendar, List<CalendarException> exceptions, List<RecurringBlock> blocks) =>
+        new(calendar.ActorId, calendar.TimeZone, calendar.Monday, calendar.Tuesday, calendar.Wednesday, calendar.Thursday, calendar.Friday, calendar.Saturday, calendar.Sunday,
+            exceptions.Where(x => x.CalendarId == calendar.Id).OrderBy(x => x.From).Select(x => new CalendarExceptionDto(x.Id, x.From, x.To, x.AvailableHours, x.Reason)).ToArray(),
+            blocks.Where(x => x.CalendarId == calendar.Id).OrderBy(x => x.DayOfWeek).Select(x => new RecurringBlockDto(x.Id, (int)x.DayOfWeek, x.Hours, x.Name)).ToArray());
 }
