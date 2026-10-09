@@ -141,6 +141,26 @@ public sealed class CapacityMathTests
     }
 
     [Fact]
+    public void Demand_spreads_role_work_over_working_days_only()
+    {
+        var role = Guid.NewGuid();
+        var demand = CapacityMath.Demand([new DemandWork(role, "Backend", "Role", 16m, Friday, Monday, null)], Friday, Monday);
+
+        Assert.Equal([(Friday, 8m), (Monday, 8m)], demand.Select(x => (x.Date, x.Hours)));
+        Assert.All(demand, x => Assert.Equal(("Backend", "Role"), (x.TargetName, x.Kind)));
+    }
+
+    [Fact]
+    public void Demand_sums_tasks_of_one_target_and_skips_undated_work()
+    {
+        var role = Guid.NewGuid();
+        var work = new[] { new DemandWork(role, "QA", "Department", 4m, Monday, Monday, null), new DemandWork(role, "QA", "Department", 2m, null, null, Monday), new DemandWork(role, "QA", "Department", 9m, null, null, null) };
+
+        Assert.Equal(6m, Assert.Single(CapacityMath.Demand(work, Monday, Monday)).Hours);
+        Assert.Empty(CapacityMath.Demand(work, Saturday, Sunday));
+    }
+
+    [Fact]
     public void Build_ignores_work_of_unknown_people_and_tasks_without_dates()
     {
         var work = new[] { new CapacityWork(Guid.NewGuid(), 8m, Monday, Monday, null), new CapacityWork(Person, 8m, null, null, null) };

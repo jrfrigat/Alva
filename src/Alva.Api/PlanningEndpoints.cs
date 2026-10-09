@@ -78,6 +78,11 @@ public static class PlanningEndpoints
             await AccessControl.RequireTeam(db, user, teamId, "capacity", "view");
             return await Capacity(db, teamId, from, to);
         });
+        group.MapGet("/capacity/demand", async (Guid teamId, DateOnly? from, DateOnly? to, ClaimsPrincipal user, AlvaDbContext db) =>
+        {
+            await AccessControl.RequireTeam(db, user, teamId, "capacity", "view");
+            return await Demand(db, teamId, from, to);
+        });
         group.MapGet("/risks", async (Guid teamId, ClaimsPrincipal user, AlvaDbContext db) =>
         {
             await AccessControl.RequireTeam(db, user, teamId, "analytics", "view");
@@ -193,12 +198,35 @@ public static class PlanningEndpoints
         sprint.StartDate = request.StartDate; sprint.EndDate = request.EndDate; sprint.Status = status;
     }
 
-    internal static async Task<CapacityDto[]> Capacity(AlvaDbContext db, Guid teamId, DateOnly? from, DateOnly? to)
+    private static (DateOnly Start, DateOnly End) Period(DateOnly? from, DateOnly? to)
     {
         var start = from ?? DateOnly.FromDateTime(DateTime.Today);
         var end = to ?? start.AddDays(13);
         if (end < start) throw new ApiException(400, "Конец периода раньше начала.");
         if (end.DayNumber - start.DayNumber > 366) throw new ApiException(400, "Период не должен превышать 366 дней.");
+        return (start, end);
+    }
+
+    /// <summary>Открытые задачи команды с первым назначением и окном: свои даты, иначе даты спринта.</summary>
+    private static async Task<List<(TaskCard Task, Assignment Assignment, DateOnly? Start, DateOnly? End)>> OpenWork(AlvaDbContext db, Guid teamId)
+    {
+        var tasks = await db.Tasks.AsNoTracking().Where(x => x.TeamId == teamId && !x.Archived && x.Status != WorkStatus.Done && x.Status != WorkStatus.Cancelled).ToListAsync();
+        var taskIds = tasks.Select(x => x.Id).ToArray();
+        var assignments = await db.Assignments.AsNoTracking().Where(x => taskIds.Contains(x.TaskId)).ToListAsync();
+        var sprints = await db.Sprints.AsNoTracking().Where(x => x.TeamId == teamId).ToDictionaryAsync(x => x.Id);
+        var result = new List<(TaskCard, Assignment, DateOnly?, DateOnly?)>();
+        foreach (var task in tasks)
+        {
+            if (assignments.FirstOrDefault(x => x.TaskId == task.Id) is not { } assignment) continue;
+            var sprint = task.SprintId is { } id ? sprints.GetValueOrDefault(id) : null;
+            result.Add((task, assignment, task.StartDate ?? sprint?.StartDate, task.EndDate ?? sprint?.EndDate));
+        }
+        return result;
+    }
+
+    internal static async Task<CapacityDto[]> Capacity(AlvaDbContext db, Guid teamId, DateOnly? from, DateOnly? to)
+    {
+        var (start, end) = Period(from, to);
         var people = await db.Actors.AsNoTracking().Where(x => x.TeamId == teamId && !x.Archived && x.Kind == ActorKind.Person).OrderBy(x => x.Name).ToListAsync();
         var departments = await db.Actors.AsNoTracking().Where(x => x.TeamId == teamId && !x.Archived && x.Kind == ActorKind.Department).ToDictionaryAsync(x => x.Id, x => x.ParentId);
         var personIds = people.Select(x => x.Id).ToArray();
@@ -208,15 +236,9 @@ public static class PlanningEndpoints
         var calendarIds = calendars.Select(x => x.Id).ToArray();
         var exceptions = await db.CalendarExceptions.AsNoTracking().Where(x => calendarIds.Contains(x.CalendarId)).ToListAsync();
         var blocks = await db.RecurringBlocks.AsNoTracking().Where(x => calendarIds.Contains(x.CalendarId)).ToListAsync();
-        var tasks = await db.Tasks.AsNoTracking().Where(x => x.TeamId == teamId && !x.Archived && x.Status != WorkStatus.Done && x.Status != WorkStatus.Cancelled).ToListAsync();
-        var taskIds = tasks.Select(x => x.Id).ToArray();
-        var assignments = await db.Assignments.AsNoTracking().Where(x => taskIds.Contains(x.TaskId)).ToListAsync();
         var work = new List<CapacityWork>();
-        foreach (var task in tasks)
-        {
-            if (assignments.FirstOrDefault(x => x.TaskId == task.Id) is not { } assignment || ResolvePerson(assignment, people) is not { } person) continue;
-            work.Add(new CapacityWork(person.Id, task.EstimateHours ?? 0m, task.StartDate, task.EndDate, task.Deadline));
-        }
+        foreach (var (task, assignment, taskStart, taskEnd) in await OpenWork(db, teamId))
+            if (ResolvePerson(assignment, people) is { } person) work.Add(new CapacityWork(person.Id, task.EstimateHours ?? 0m, taskStart, taskEnd, task.Deadline));
         var dtos = calendars.ToDictionary(x => x.ActorId, x => ToCalendarDto(x, exceptions, blocks));
         CalendarDto CalendarOf(Guid id)
         {
@@ -225,6 +247,18 @@ public static class PlanningEndpoints
             return CapacityMath.Combine(dtos.GetValueOrDefault(id) ?? CapacityMath.DefaultCalendar(id), shared.Select(x => dtos.GetValueOrDefault(x)).OfType<CalendarDto>());
         }
         return CapacityMath.Build(people.Select(x => (x.Id, x.Name)), CalendarOf, work, start, end);
+    }
+
+    /// <summary>Потребность ролей и подкоманд: задачи, назначенные на них без выбранного человека.</summary>
+    internal static async Task<CapacityDemandDto[]> Demand(AlvaDbContext db, Guid teamId, DateOnly? from, DateOnly? to)
+    {
+        var (start, end) = Period(from, to);
+        var targets = await db.Actors.AsNoTracking().Where(x => x.TeamId == teamId && !x.Archived && x.Kind != ActorKind.Person).ToDictionaryAsync(x => x.Id);
+        var work = new List<DemandWork>();
+        foreach (var (task, assignment, taskStart, taskEnd) in await OpenWork(db, teamId))
+            if (assignment.ResolvedPersonId is null && targets.TryGetValue(assignment.TargetId, out var target))
+                work.Add(new DemandWork(target.Id, target.Name, target.Kind.ToString(), task.EstimateHours ?? 0m, taskStart, taskEnd, task.Deadline));
+        return CapacityMath.Demand(work, start, end);
     }
 
     private static Actor? ResolvePerson(Assignment assignment, List<Actor> people) =>

@@ -314,6 +314,19 @@ networks:
     } -ExpectedStatus @(400, 403, 404))
     Write-Host 'PASS: project/task writes, cycle rejection, optimistic concurrency and cross-team links.'
 
+    $sprintStart = [DateTime]::Today.AddDays(7 - ([int][DateTime]::Today.DayOfWeek + 6) % 7)
+    $sprint = Invoke-Api $owner POST "api/teams/$teamId/sprints" @{
+        name = 'Demand sprint'; goal = ''; startDate = $sprintStart.ToString('yyyy-MM-dd'); endDate = $sprintStart.AddDays(4).ToString('yyyy-MM-dd')
+    } -ExpectedStatus @(200, 201)
+    $roleTask = Invoke-Api $owner POST "api/teams/$teamId/tasks" @{
+        title = 'Role demand'; projectId = $projectDto.id; sprintId = $sprint.id; estimateHours = 10
+    } -ExpectedStatus @(200, 201)
+    [void](Invoke-Api $owner PUT "api/teams/$teamId/tasks/$($roleTask.id)/assignment" @{ targetId = $role.id } -ExpectedStatus @(200, 204))
+    $range = "from=$($sprintStart.ToString('yyyy-MM-dd'))&to=$($sprintStart.AddDays(6).ToString('yyyy-MM-dd'))"
+    $demand = @(Invoke-Api $owner GET "api/teams/$teamId/capacity/demand?$range" | Where-Object targetId -eq $role.id)
+    Assert-True ($demand.Count -eq 5 -and ($demand | Measure-Object hours -Sum).Sum -eq 10) 'Role work in a sprint was not spread over the sprint working days.'
+    Write-Host 'PASS: unassigned role demand follows the sprint window.'
+
     # Restart the real published API. Cookie keys and business records must persist.
     Invoke-Compose -Arguments @('restart', 'app')
     Invoke-Compose -Arguments @('up', '-d', '--wait', '--wait-timeout', '90', 'app')

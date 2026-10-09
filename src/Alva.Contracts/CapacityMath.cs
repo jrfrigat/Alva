@@ -3,6 +3,9 @@ namespace Alva.Contracts;
 /// <summary>Работа, которая ложится на человека: оценка и окно задачи.</summary>
 public record CapacityWork(Guid PersonId, decimal EstimateHours, DateOnly? Start, DateOnly? End, DateOnly? Deadline);
 
+/// <summary>Работа, назначенная на роль или подкоманду без выбранного человека.</summary>
+public record DemandWork(Guid TargetId, string TargetName, string Kind, decimal EstimateHours, DateOnly? Start, DateOnly? End, DateOnly? Deadline);
+
 /// <summary>
 /// Расчёт ёмкости, общий для API и demo: доступные часы по графику и распределение оценки задачи по дням.
 /// Дни недели вычетов — в нумерации .NET (воскресенье = 0).
@@ -80,6 +83,25 @@ public static class CapacityMath
         var total = weights.Sum();
         for (var i = 0; i < days.Length; i++)
             if (weights[i] > 0) yield return (days[i], estimate * weights[i] / total);
+    }
+
+    /// <summary>
+    /// Нераспределённая потребность по ролям и подкомандам: оценка делится по рабочим дням графика
+    /// по умолчанию, в ответе только дни диапазона, где есть часы.
+    /// </summary>
+    public static CapacityDemandDto[] Demand(IEnumerable<DemandWork> work, DateOnly from, DateOnly to)
+    {
+        var hours = new Dictionary<(Guid, DateOnly), decimal>();
+        var targets = new Dictionary<Guid, (string Name, string Kind)>();
+        foreach (var item in work)
+        {
+            if (Window(item.Start, item.End, item.Deadline) is not { } window) continue;
+            targets[item.TargetId] = (item.TargetName, item.Kind);
+            foreach (var (day, value) in Spread(DefaultCalendar(item.TargetId), item.EstimateHours, window.Start, window.End))
+                if (day >= from && day <= to) hours[(item.TargetId, day)] = hours.GetValueOrDefault((item.TargetId, day)) + value;
+        }
+        return [.. hours.OrderBy(x => targets[x.Key.Item1].Name).ThenBy(x => x.Key.Item2)
+            .Select(x => new CapacityDemandDto(x.Key.Item1, targets[x.Key.Item1].Name, targets[x.Key.Item1].Kind, x.Key.Item2, Math.Round(x.Value, 2)))];
     }
 
     /// <summary>Строки ёмкости по людям и дням диапазона: доступные часы и распределённая на них работа.</summary>

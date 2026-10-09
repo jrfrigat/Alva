@@ -149,10 +149,10 @@
     private static readonly (string Mode, string Label)[] Modes = [("sprints", "По спринтам"), ("weeks", "По неделям"), ("days", "По дням")];
 
     private CapacityDto[] _rows = [];
+    private CapacityDemandDto[] _demand = [];
     private ActorModel[] _actors = [];
     private ActorModel[] _departments = [];
     private SprintModel[] _sprints = [];
-    private TaskModel[] _tasks = [];
     private Period[] _periods = [];
     private string _mode = "sprints";
     private Guid? _department;
@@ -184,18 +184,8 @@
     private decimal Available(Guid id) => _periods.Sum(p => Cell(id, p).Available);
     private decimal Allocated(Guid id) => _periods.Sum(p => Cell(id, p).Allocated);
 
-    /// <summary>Часы задач на роль без человека, попавшие в период пропорционально пересечению окон.</summary>
-    private decimal Demand(ActorModel role, Period period) => _tasks
-        .Where(t => t.AssignmentTargetId == role.Id && t.ResolvedPersonId is null && t.Status is not ("Done" or "Cancelled") && t.EstimateHours > 0)
-        .Sum(t =>
-        {
-            var sprint = _sprints.FirstOrDefault(s => s.Id == t.SprintId);
-            var from = t.StartDate ?? sprint?.StartDate ?? t.Deadline ?? Today;
-            var to = t.EndDate ?? sprint?.EndDate ?? t.Deadline ?? from;
-            if (to < from) to = from;
-            var overlap = Math.Min(to.DayNumber, period.To.DayNumber) - Math.Max(from.DayNumber, period.From.DayNumber) + 1;
-            return overlap <= 0 ? 0 : t.EstimateHours!.Value * overlap / (to.DayNumber - from.DayNumber + 1);
-        });
+    /// <summary>Часы задач на роль или подкоманду без человека в периоде — из capacity/demand.</summary>
+    private decimal Demand(ActorModel role, Period period) => _demand.Where(d => d.TargetId == role.Id && d.Date >= period.From && d.Date <= period.To).Sum(d => d.Hours);
 
     private decimal Demand(ActorModel role) => _periods.Sum(p => Demand(role, p));
 
@@ -235,7 +225,6 @@
             _actors = await Session.Get<ActorModel[]>(Session.TeamPath("actors"));
             _departments = _actors.Where(a => a.Kind == "Department").OrderBy(a => a.Name).ToArray();
             _sprints = await Session.Get<SprintModel[]>(Session.TeamPath("sprints"));
-            _tasks = await Session.Get<TaskModel[]>(Session.TeamPath("tasks"));
             await LoadPeriods();
         }
         catch (Exception e) when (e is HttpRequestException or InvalidOperationException or NotSupportedException) { _error = e.Message; }
@@ -270,5 +259,6 @@
                 .Select(w => new Period($"Неделя {System.Globalization.ISOWeek.GetWeekOfYear(w.ToDateTime(TimeOnly.MinValue))}", $"{w:d MMM} — {w.AddDays(6):d MMM}", w, w.AddDays(6))).ToArray();
         }
         _rows = await Session.Get<CapacityDto[]>(Session.TeamPath($"capacity?from={_periods[0].From:yyyy-MM-dd}&to={_periods[^1].To:yyyy-MM-dd}"));
+        _demand = await Session.Get<CapacityDemandDto[]>(Session.TeamPath($"capacity/demand?from={_periods[0].From:yyyy-MM-dd}&to={_periods[^1].To:yyyy-MM-dd}"));
     }
 }

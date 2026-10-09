@@ -123,6 +123,7 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
             ["api", "teams", _, "tasks", var id, "history"] => History(store, Id(id)),
             ["api", "teams", _, "actors", var a, "calendar"] => Calendar(store, Id(a)),
             ["api", "teams", var t, "capacity"] => Capacity(store, Id(t), QueryDate(query, "from", today), QueryDate(query, "to", today.AddDays(13))),
+            ["api", "teams", var t, "capacity", "demand"] => Demand(store, Id(t), QueryDate(query, "from", today), QueryDate(query, "to", today.AddDays(13))),
             ["api", "teams", var t, "risks"] => Risks(store, Id(t), today),
             _ => throw new NotSupportedException($"Demo: GET {path} не поддерживается.")
         };
@@ -151,11 +152,29 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
     private static CalendarDto Calendar(DemoStore store, Guid actorId) =>
         store.Calendars.FirstOrDefault(c => c.ActorId == actorId) ?? CapacityMath.DefaultCalendar(actorId);
 
+    /// <summary>Открытые задачи команды с окном: свои даты, иначе даты спринта (как в API).</summary>
+    private static IEnumerable<(TaskModel Task, DateOnly? Start, DateOnly? End)> OpenTasks(DemoStore store, Guid teamId) =>
+        store.Tasks.Where(t => t.TeamId == teamId && t.Status is not ("Done" or "Cancelled")).Select(t =>
+        {
+            var sprint = store.Sprints.FirstOrDefault(s => s.Id == t.SprintId);
+            return (t, t.StartDate ?? sprint?.StartDate, t.EndDate ?? sprint?.EndDate);
+        });
+
+    private static CapacityDemandDto[] Demand(DemoStore store, Guid teamId, DateOnly from, DateOnly to)
+    {
+        var targets = store.Actors.Where(a => a.Kind != "Person").ToDictionary(a => a.Id);
+        var work = OpenTasks(store, teamId)
+            .Where(x => x.Task.ResolvedPersonId is null && x.Task.AssignmentTargetId is { } id && targets.ContainsKey(id))
+            .Select(x => (Task: x, Target: targets[x.Task.AssignmentTargetId!.Value]))
+            .Select(x => new DemandWork(x.Target.Id, x.Target.Name, x.Target.Kind, x.Task.Task.EstimateHours ?? 0m, x.Task.Start, x.Task.End, x.Task.Task.Deadline));
+        return CapacityMath.Demand(work, from, to);
+    }
+
     private static CapacityDto[] Capacity(DemoStore store, Guid teamId, DateOnly from, DateOnly to)
     {
         var people = store.Actors.Where(a => a.Kind == "Person").ToArray();
-        var work = store.Tasks.Where(t => t.TeamId == teamId && t.Status is not ("Done" or "Cancelled") && t.ResolvedPersonId.HasValue)
-            .Select(t => new CapacityWork(t.ResolvedPersonId!.Value, t.EstimateHours ?? 0m, t.StartDate, t.EndDate, t.Deadline));
+        var work = OpenTasks(store, teamId).Where(x => x.Task.ResolvedPersonId.HasValue)
+            .Select(x => new CapacityWork(x.Task.ResolvedPersonId!.Value, x.Task.EstimateHours ?? 0m, x.Start, x.End, x.Task.Deadline));
         var departments = store.Actors.Where(a => a.Kind == "Department").ToDictionary(a => a.Id, a => a.ParentId);
         CalendarDto CalendarOf(ActorModel person)
         {

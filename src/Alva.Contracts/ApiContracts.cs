@@ -31,5 +31,6 @@ public record RecurringBlockDto(Guid Id, int DayOfWeek, decimal Hours, string Na
 public record RecurringBlockRequest(int DayOfWeek, decimal Hours, string Name);
 public record CalendarRequest(string TimeZone, decimal Monday, decimal Tuesday, decimal Wednesday, decimal Thursday, decimal Friday, decimal Saturday, decimal Sunday);
 public record CapacityDto(Guid ActorId, string ActorName, DateOnly Date, decimal AvailableHours, decimal AllocatedHours);
+public record CapacityDemandDto(Guid TargetId, string TargetName, string Kind, DateOnly Date, decimal Hours);
 public record RiskDto(Guid TaskId, string Title, string Severity, string[] Reasons, DateOnly? ForecastDate);
 public record DashboardDto(int TotalTasks, int DoneTasks, int ActiveSprints, decimal EstimateHours, RiskDto[] Risks);
