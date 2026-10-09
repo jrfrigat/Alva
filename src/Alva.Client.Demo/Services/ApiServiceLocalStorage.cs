@@ -113,7 +113,7 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
         object result = s switch
         {
             ["api", "auth", "me"] => User ?? new UserInfo(DemoIds.User, "demo@alva.local", _displayName),
-            ["api", "workspaces"] => store.Workspaces.Select(w => new SpaceInfo(w.Id, w.Name)).ToArray(),
+            ["api", "workspaces"] => store.Workspaces.ToArray(),
             ["api", "workspaces", var w, "teams"] => store.Teams.Where(t => t.WorkspaceId == Id(w)).Select(t => new TeamInfo(t.Id, t.Name)).ToArray(),
             ["api", "workspaces", _, "members"] => store.Members.ToArray(),
             ["api", "teams", var t, "projects"] => store.Projects.Where(p => p.TeamIds.Contains(Id(t))).ToArray(),
