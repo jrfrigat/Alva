@@ -1,4 +1,5 @@
 using Alva.Theme.Alva;
+using Flare.Abstractions.Tokens;
 using Flare.Extensions;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
@@ -25,6 +26,9 @@ public static class AlvaHost
             // (проект Alva.Theme.Alva) — вместо стоковых значений Material.
             options.DefaultTheme = AlvaTheme.Create();
             options.DefaultPalette = AlvaPalettes.Sapphire;
+            // Дизайн описывает только светлую схему. Без этого Flare берёт Auto,
+            // сам сохраняет его в localStorage и следует тёмной теме системы.
+            options.DefaultMode = ThemeMode.Light;
         });
         builder.Services.AddScoped<Services.AlvaSession>();
     }
