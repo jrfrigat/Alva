@@ -79,6 +79,28 @@ dotnet run --project src/Alva.Api --urls http://localhost:8080
 `Database__Provider=Sqlite`, поэтому production-путь не меняется.
 `Database:MigrateOnStartup=false` отключает создание схемы при запуске.
 
+## Демо-версия без сервера
+
+Демонстрационная сборка работает целиком в браузере: данные живут в `localStorage`,
+к сети приложение не обращается. Реализация выбирается при сборке свойством
+`AlvaDemo`, поэтому продовая сборка остаётся на HTTP-пути к API.
+
+```powershell
+dotnet publish src/Alva.Client/Alva.Client.csproj -c Release -p:AlvaDemo=true -o dist
+# готовый сайт — в dist/wwwroot
+```
+
+Демо-набор (площадка, команды, участники с графиками, проекты, спринты, дерево
+задач) создаётся при первом запуске; чтобы сбросить его, очистите данные сайта
+в браузере или удалите ключ `alva-demo-data` из `localStorage`.
+
+Workflow `.github/workflows/pages.yml` собирает демо и публикует его на GitHub
+Pages: перед выкладкой `base href` в `index.html` переписывается на подпуть
+репозитория, `index.html` дублируется в `404.html` (клиентская маршрутизация
+отдаёт приложение по любому адресу), а `.nojekyll` сохраняет каталоги
+`_framework` и `_content`. Для публикации включите Pages с источником
+«GitHub Actions» в настройках репозитория.
+
 ## HTTPS и production
 
 Для публичного HTTPS укажите в `.env` домен `ALVA_DOMAIN` с DNS на этот сервер,
@@ -111,7 +133,9 @@ Dockerfile собирает API вместе с WASM и запускает runti
 пользователя. Node/npm для сборки не требуются.
 
 GitHub Actions выполняет restore, Release build, тесты, проверку Compose и сборку
-Docker image. Workflow ничего не публикует. Для работы hosted CI пользователь
+Docker image. Проверочный workflow ничего не публикует: единственная публикация —
+демо-сборка на GitHub Pages через `.github/workflows/pages.yml`, и она не трогает
+серверную часть. Для работы hosted CI пользователь
 подключает remote и отправляет ветку самостоятельно. Локальная рабочая ветка —
 `alva-foundation`; изменения коммитятся отдельно по проверенным задачам.
 

@@ -1,0 +1,45 @@
+name: Publish demo to GitHub Pages
+
+on:
+  push:
+    branches: [ main, alva-foundation ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+      - name: Publish demo client
+        run: dotnet publish src/Alva.Client/Alva.Client.csproj -c Release -p:AlvaDemo=true -o dist
+      - name: Prepare Pages site
+        run: |
+          site="dist/wwwroot"
+          base="/${GITHUB_REPOSITORY#*/}/"
+          sed -i "s#<base href=\"/\" />#<base href=\"${base}\" />#" "$site/index.html"
+          grep -q "<base href=\"${base}\" />" "$site/index.html"
+          cp "$site/index.html" "$site/404.html"
+          touch "$site/.nojekyll"
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist/wwwroot
+      - id: deploy
+        uses: actions/deploy-pages@v4
