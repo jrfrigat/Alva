@@ -263,6 +263,11 @@ networks:
     $projectDto = Invoke-Api $owner POST "api/teams/$teamId/projects" @{
         name = 'Smoke project'; description = 'Disposable integration data'; teamIds = @($teamId)
     } -ExpectedStatus @(200, 201)
+    # A project saved without the team that saves it would vanish from that team's list.
+    $sibling = Invoke-Api $remainingOwner POST "api/workspaces/$workspaceId/teams" @{ name = 'Sibling team' } -ExpectedStatus @(200, 201)
+    [void](Invoke-Api $owner POST "api/teams/$teamId/projects" @{
+        name = 'Detached project'; description = ''; teamIds = @($sibling.id)
+    } -ExpectedStatus @(400))
     $parent = Invoke-Api $owner POST "api/teams/$teamId/tasks" @{
         title = 'Parent'; projectId = $projectDto.id; estimateHours = 8; deadline = '2030-01-31'
     } -ExpectedStatus @(200, 201)

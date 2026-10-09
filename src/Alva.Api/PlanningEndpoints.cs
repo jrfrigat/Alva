@@ -23,7 +23,7 @@ public static class PlanningEndpoints
             var name = AccessControl.RequiredName(request.Name);
             var project = new Project { WorkspaceId = await WorkspaceOf(db, teamId), Name = name, Description = request.Description ?? "" };
             db.Add(project);
-            await LinkTeams(db, project, request.TeamIds);
+            await LinkTeams(db, project, teamId, request.TeamIds);
             await db.SaveChangesAsync();
             return (await ListProjects(db, teamId)).Single(x => x.Id == project.Id);
         });
@@ -33,7 +33,7 @@ public static class PlanningEndpoints
             var project = await FindProject(db, teamId, projectId);
             project.Name = AccessControl.RequiredName(request.Name);
             project.Description = request.Description ?? "";
-            await LinkTeams(db, project, request.TeamIds);
+            await LinkTeams(db, project, teamId, request.TeamIds);
             await db.SaveChangesAsync();
             return (await ListProjects(db, teamId)).Single(x => x.Id == project.Id);
         });
@@ -168,10 +168,12 @@ public static class PlanningEndpoints
     private static async Task<Guid> WorkspaceOf(AlvaDbContext db, Guid teamId) =>
         (await db.Teams.FindAsync(teamId) ?? throw new ApiException(404, "Команда не найдена.")).WorkspaceId;
 
-    private static async Task LinkTeams(AlvaDbContext db, Project project, Guid[]? teamIds)
+    private static async Task LinkTeams(AlvaDbContext db, Project project, Guid teamId, Guid[]? teamIds)
     {
         var ids = (teamIds ?? []).Distinct().ToArray();
         if (ids.Length == 0) throw new ApiException(400, "Проект должен быть связан хотя бы с одной командой.");
+        // Иначе проект пропадает из списка команды, которая его сохраняет.
+        if (!ids.Contains(teamId)) throw new ApiException(400, "Проект должен оставаться связан с командой, в которой его редактируют.");
         if (await db.Teams.CountAsync(x => ids.Contains(x.Id) && x.WorkspaceId == project.WorkspaceId) != ids.Length) throw new ApiException(400, "Команды проекта должны принадлежать тому же рабочему пространству.");
         var existing = await db.ProjectTeams.Where(x => x.ProjectId == project.Id).ToListAsync();
         db.RemoveRange(existing.Where(x => !ids.Contains(x.TeamId)));
