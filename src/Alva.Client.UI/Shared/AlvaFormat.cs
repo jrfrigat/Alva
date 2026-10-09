@@ -23,6 +23,9 @@ public static class AlvaFormat
         return days;
     }
 
+    /// <summary>Короткий код задачи «#1A2B» — последние знаки id: у засеянных данных начало id совпадает.</summary>
+    public static string Code(Guid id) => "#" + id.ToString("N")[^4..].ToUpperInvariant();
+
     /// <summary>Период «12 окт — 25 окт 2026».</summary>
     public static string Period(DateOnly from, DateOnly to) => $"{from:d MMM} — {to:d MMM yyyy}";
 }

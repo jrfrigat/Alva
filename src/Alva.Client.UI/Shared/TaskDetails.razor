@@ -42,7 +42,7 @@
             </FlareGrid>
             <div class="alva-task__assignee">
                 <span class="alva-micro-label">Исполнитель</span>
-                @AssigneeView(Item)
+                <AlvaAssignee Task="Item" Actors="Actors" />
             </div>
         </FlareStack>
     </section>
@@ -80,7 +80,7 @@
                         <a class="alva-subtasks__code" href="@($"/tasks/{child.Id}")">@Code(Item).@(i + 1)</a>
                         <a class="alva-subtasks__title" href="@($"/tasks/{child.Id}")" title="@child.Title">@child.Title</a>
                     </span>
-                    <span role="cell">@AssigneeView(child)</span>
+                    <span role="cell"><AlvaAssignee Task="child" Actors="Actors" /></span>
                     <span class="alva-subtasks__est alva-num" role="cell">@(child.EstimateHours.HasValue ? $"{AlvaFormat.Hours(child.EstimateHours.Value)} ч" : "—")</span>
                 </div>
             }
@@ -199,31 +199,11 @@
         catch (Exception e) when (e is HttpRequestException or InvalidOperationException) { _error = e.Message; }
     }
 
-    private static string Code(TaskModel task) => "#" + task.Id.ToString("N")[..4].ToUpperInvariant();
+    private static string Code(TaskModel task) => AlvaFormat.Code(task.Id);
     private string ProjectName(Guid? id) => Projects.FirstOrDefault(x => x.Id == id)?.Name ?? "Текучка";
     private string SprintName(Guid? id) => Sprints.FirstOrDefault(x => x.Id == id)?.Name ?? "Без спринта";
     private string TaskName(Guid? id) => Tasks.FirstOrDefault(x => x.Id == id)?.Title ?? "Корневая задача";
     private string ActorName(Guid? id) => Actors.FirstOrDefault(x => x.Id == id)?.Name ?? "Не назначена";
-
-    /// <summary>Исполнитель или слот: человек — инициалы; роль/подкоманда — фиолетовый слот и
-    /// «Требуется человек», пока конкретный исполнитель не выбран.</summary>
-    private RenderFragment AssigneeView(TaskModel task) => __builder =>
-    {
-        var target = Actors.FirstOrDefault(a => a.Id == task.AssignmentTargetId);
-        var person = Actors.FirstOrDefault(a => a.Id == task.ResolvedPersonId) ?? (target?.Kind == "Person" ? target : null);
-        if (target is null)
-        {
-            <span class="alva-slot alva-slot--empty"><span class="alva-slot__mark" aria-hidden="true">?</span><span class="alva-slot__text"><span class="alva-slot__name">Не назначена</span><span class="alva-slot__meta alva-slot__meta--warning">Нет исполнителя</span></span></span>
-        }
-        else if (target.Kind == "Person" || person is not null)
-        {
-            <span class="alva-slot"><span class="alva-slot__mark" aria-hidden="true">@AlvaFormat.Initials(person!.Name)</span><span class="alva-slot__text"><span class="alva-slot__name">@person.Name</span><span class="alva-slot__meta">@(target.Kind == "Person" ? "Человек" : $"{Labels.Kind(target.Kind)}: {target.Name}")</span></span></span>
-        }
-        else
-        {
-            <span class="alva-slot alva-slot--role"><span class="alva-slot__mark" aria-hidden="true"><FlareIconView Value="@MaterialDesign3Icons.Regular.Groups" Size="14px" /></span><span class="alva-slot__text"><span class="alva-slot__name">@Labels.Kind(target.Kind): @target.Name</span><span class="alva-slot__meta alva-slot__meta--critical">Требуется человек</span></span></span>
-        }
-    };
 
     /// <summary>Кандидаты одного вида. У людей — загрузка за окно спринта (или 14 дней).</summary>
     private RenderFragment Candidates(string kind) => __builder =>

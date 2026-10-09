@@ -1,15 +1,19 @@
 @page "/sprints"
 @page "/sprints/{SprintId:guid}"
 @inject AlvaSession Session
-<PageTitle>Спринты · Alva</PageTitle>
+<PageTitle>@(Current?.Name ?? "Спринты") · Alva</PageTitle>
+@if(SprintId is null)
+{
 <AlvaPageHeader Category="Планирование · Спринты" Title="Спринты команды" Description="Цели, сроки и состав спринтов команды.">
     <Actions><FlareButton Size="ButtonSize.Sm" OnClick="New" Disabled="@(Session.TeamId is null)">Новый спринт</FlareButton></Actions>
 </AlvaPageHeader>
+}
 <PageFeedback Loading="_busy" Error="@_error" />
 @if(Session.TeamId is null){<TeamRequired />}
 else
 {
 @if(SprintId is null){<SprintRegistry Sprints="_sprints" Tasks="_tasks" />}
+else if(Current is not null){<SprintDetails Sprint="Current" Tasks="_tasks" OnEdit="()=>Edit(Current)" Changed="Load" />}
 @if(_editing is not null)
 {
 <FlareCard Variant="CardVariant.Outlined"><FlareCardContent><FlareStack Gap="FlareSpacing.Large">
@@ -38,7 +42,8 @@ else
 @code {
     [Parameter]public Guid? SprintId{get;set;}
     private SprintModel[] _sprints=[];private TaskModel[] _tasks=[];private SprintModel? _editing;private DateOnly? _start,_end;private bool _busy;private string? _error;private readonly string[] _statuses=["Planned","Active","Completed"];
-    protected override async Task OnParametersSetAsync(){await Load();if(SprintId.HasValue && _sprints.FirstOrDefault(s=>s.Id==SprintId) is {} sprint)Edit(sprint);}
+    private SprintModel? Current => SprintId.HasValue ? _sprints.FirstOrDefault(s=>s.Id==SprintId) : null;
+    protected override async Task OnParametersSetAsync(){_editing=null;await Load();}
     private async Task Run(Func<Task> action){_busy=true;_error=null;try{await action();}catch(Exception e) when(e is HttpRequestException or InvalidOperationException){_error=e.Message;}finally{_busy=false;}}
     private Task Load()=>Run(async()=>{await Session.Initialize();if(Session.TeamId is null)return;_sprints=await Session.Get<SprintModel[]>(Session.TeamPath("sprints"));_tasks=await Session.Get<TaskModel[]>(Session.TeamPath("tasks"));});
     private void New(){_editing=new SprintModel();_start=_editing.StartDate;_end=_editing.EndDate;}

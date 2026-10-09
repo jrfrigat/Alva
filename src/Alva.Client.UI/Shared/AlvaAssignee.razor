@@ -1,0 +1,34 @@
+@* Исполнитель или слот задачи: человек — инициалы; роль/подкоманда — фиолетовый слот и
+   «Требуется человек», пока конкретный исполнитель не выбран. Загрузка, если передана, заменяет
+   подпись под именем: >100% — перегрузка (crimson). *@
+@if (Target is null)
+{
+    <span class="alva-slot alva-slot--empty"><span class="alva-slot__mark" aria-hidden="true">?</span><span class="alva-slot__text"><span class="alva-slot__name">Не назначена</span><span class="alva-slot__meta alva-slot__meta--warning">Нет исполнителя</span></span></span>
+}
+else if (Person is not null)
+{
+    <span class="alva-slot"><span class="alva-slot__mark" aria-hidden="true">@AlvaFormat.Initials(Person.Name)</span><span class="alva-slot__text"><span class="alva-slot__name">@Person.Name</span>
+        @if (Load is { } load)
+        {
+            <span class="alva-slot__meta @(load > 100 ? "alva-slot__meta--critical" : "")">@load% ёмкости@(load > 100 ? " (перегрузка)" : "")</span>
+        }
+        else
+        {
+            <span class="alva-slot__meta">@(Target.Kind == "Person" ? "Человек" : $"{Labels.Kind(Target.Kind)}: {Target.Name}")</span>
+        }
+    </span></span>
+}
+else
+{
+    <span class="alva-slot alva-slot--role"><span class="alva-slot__mark" aria-hidden="true"><FlareIconView Value="@MaterialDesign3Icons.Regular.Groups" Size="14px" /></span><span class="alva-slot__text"><span class="alva-slot__name">@Labels.Kind(Target.Kind): @Target.Name</span><span class="alva-slot__meta alva-slot__meta--critical">Требуется человек</span></span></span>
+}
+@code {
+    [Parameter, EditorRequired] public TaskModel Task { get; set; } = default!;
+    [Parameter] public ActorModel[] Actors { get; set; } = [];
+
+    /// <summary>Загрузка исполнителя в процентах за период, если она известна.</summary>
+    [Parameter] public int? Load { get; set; }
+
+    private ActorModel? Target => Actors.FirstOrDefault(a => a.Id == Task.AssignmentTargetId);
+    private ActorModel? Person => Actors.FirstOrDefault(a => a.Id == Task.ResolvedPersonId) ?? (Target?.Kind == "Person" ? Target : null);
+}

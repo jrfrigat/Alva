@@ -1,0 +1,215 @@
+@* Страница спринта по макету p7: шапка с ходом цикла, KPI риска и ёмкости, таблица задач. *@
+@inject AlvaSession Session
+<section class="alva-sprint-head">
+    <FlareBreadcrumb Items="Crumbs" Separator="/" AriaLabel="Путь к спринту" />
+    <div class="alva-sprint-head__chips">
+        <AlvaStatusChip Tone="AlvaTones.Status(Sprint.Status)">@Labels.Status(Sprint.Status)@(Sprint.Status == "Active" ? $" (день {DayOf} из {AlvaFormat.WorkDays(Sprint.StartDate, Sprint.EndDate)})" : "")</AlvaStatusChip>
+        @if (Risks.Length > 0) { <AlvaStatusChip Tone="AlvaTone.Critical">@Risks.Length @AlvaFormat.Plural(Risks.Length, "задача", "задачи", "задач") с риском</AlvaStatusChip> }
+    </div>
+    <div class="alva-sprint-head__row">
+        <div class="alva-sprint-head__text">
+            <h1 class="alva-sprint-head__title">@Sprint.Name</h1>
+            @if (!string.IsNullOrWhiteSpace(Sprint.Goal)) { <p class="alva-sprint-head__goal">@Sprint.Goal</p> }
+            <span class="alva-sprint-head__meta alva-num">@AlvaFormat.Period(Sprint.StartDate, Sprint.EndDate)</span>
+            <span class="alva-sprint-head__meta alva-num"><FlareIconView Value="@MaterialDesign3Icons.Regular.Timelapse" Size="16px" /> Закрыто: <b>@AlvaFormat.Hours(Done) ч</b> из @AlvaFormat.Hours(Total) ч (@Percent(Done, Total)%)</span>
+        </div>
+        <div class="alva-sprint-head__actions">
+            <FlareButton Variant="ButtonVariant.Tonal" Size="ButtonSize.Sm" OnClick="Edit">
+                <LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.Tune" Size="18px" /></LeadingIcon>
+                <ChildContent>Редактировать состав</ChildContent>
+            </FlareButton>
+            @if (Sprint.Status == "Active")
+            {
+                <FlareButton Size="ButtonSize.Sm" Loading="_busy" OnClick="Complete">
+                    <LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.CheckCircle" Size="18px" /></LeadingIcon>
+                    <ChildContent>Завершить спринт</ChildContent>
+                </FlareButton>
+            }
+        </div>
+    </div>
+    <div class="alva-sprint-head__progress">
+        <div class="alva-sprint-head__progress-top"><span>Общий темп выполнения спринта</span><span class="alva-num">@Percent(Done, Total)% (@AlvaFormat.Hours(Done)/@AlvaFormat.Hours(Total) ч)</span></div>
+        <div class="alva-stacked" role="img" aria-label="@($"Закрыто {AlvaFormat.Hours(Done)} ч, в работе {AlvaFormat.Hours(InWork)} ч, остаток {AlvaFormat.Hours(Total - Done)} ч")">
+            <span class="alva-stacked__done" style="width:@Percent(Done, Total)%"></span><span class="alva-stacked__work" style="width:@Percent(InWork, Total)%"></span>
+        </div>
+        <div class="alva-legend alva-num">
+            <span><i class="alva-legend__swatch alva-legend__swatch--done"></i>Завершено: @AlvaFormat.Hours(Done) ч</span>
+            <span><i class="alva-legend__swatch alva-legend__swatch--work"></i>В работе: @AlvaFormat.Hours(InWork) ч</span>
+            <span><i class="alva-legend__swatch"></i>Остаток: @AlvaFormat.Hours(Total - Done) ч</span>
+        </div>
+    </div>
+</section>
+<PageFeedback Error="@_error" />
+
+<div class="alva-kpis">
+    <section class="alva-kpi">
+        <div class="alva-kpi__head"><div><span class="alva-kpi__label">Остаток</span><span class="alva-kpi__value alva-num">@AlvaFormat.Hours(Total - Done) ч</span></div><span class="alva-kpi__icon"><FlareIconView Value="@MaterialDesign3Icons.Regular.TrendingDown" Size="18px" /></span></div>
+        <p class="alva-kpi__note">Осталось @DaysLeft раб. @AlvaFormat.Plural(DaysLeft, "день", "дня", "дней"); нужный темп — <b class="alva-num">@(DaysLeft > 0 ? AlvaFormat.Hours(Math.Round((Total - Done) / DaysLeft, 1)) : "—") ч/день</b>.</p>
+        <div class="alva-kpi__foot"><span class="alva-num">План: @AlvaFormat.Hours(Total) ч</span><span class="alva-num">Задач: @SprintTasks.Length</span></div>
+    </section>
+
+    <section class="alva-kpi">
+        <div class="alva-kpi__head"><div><span class="alva-kpi__label alva-kpi__label--critical">Факторы риска</span><span class="alva-kpi__value alva-kpi__value--critical alva-num">@Risks.Length @AlvaFormat.Plural(Risks.Length, "задача", "задачи", "задач")</span></div><span class="alva-kpi__icon alva-kpi__icon--critical"><FlareIconView Value="@MaterialDesign3Icons.Regular.Warning" Size="18px" /></span></div>
+        @if (Risks.Length == 0) { <p class="alva-kpi__note">Alva не видит рисков срыва по задачам спринта.</p> }
+        <ul class="alva-factors">
+            @foreach (var reason in Risks.SelectMany(r => r.Reasons).GroupBy(r => r).OrderByDescending(g => g.Count()).Take(3))
+            {
+                <li><span class="alva-factors__dot" aria-hidden="true"></span>@reason.Key<b class="alva-num">@reason.Count()</b></li>
+            }
+        </ul>
+        @if (Risks.Length > 0)
+        {
+            var high = Risks.Any(r => string.Equals(r.Severity, "High", StringComparison.OrdinalIgnoreCase));
+            <div class="alva-kpi__foot"><span>Критичность:</span><AlvaStatusChip Tone="@(high ? AlvaTone.Critical : AlvaTone.Warning)">@(high ? "Высокая" : "Средняя")</AlvaStatusChip></div>
+        }
+    </section>
+
+    <section class="alva-kpi">
+        <div class="alva-kpi__head"><div><span class="alva-kpi__label">Ёмкость и загрузка</span><span class="alva-num"><span class="alva-kpi__value">@Percent(_load.Values.Sum(l => l.Allocated), _load.Values.Sum(l => l.Available))%</span> <span class="alva-kpi__unit">общая</span></span></div><span class="alva-kpi__icon"><FlareIconView Value="@MaterialDesign3Icons.Regular.Groups" Size="18px" /></span></div>
+        @foreach (var (actor, pct) in People.Take(3))
+        {
+            <div class="alva-loadbar">
+                <div class="alva-loadbar__row"><span>@actor.Name</span><span class="alva-loadbar__pct alva-loadbar__pct--@Tone(pct).ToString().ToLowerInvariant() alva-num">@pct% @(pct > 100 ? "перегрузка" : pct > 80 ? "в норме" : "свободен")</span></div>
+                <div class="alva-loadbar__track"><span class="alva-loadbar__fill alva-loadbar__fill--@Tone(pct).ToString().ToLowerInvariant()" style="width:@Math.Min(100, pct)%"></span></div>
+            </div>
+        }
+        @if (People.Length == 0) { <p class="alva-kpi__note">Нет рабочих графиков людей за период спринта.</p> }
+        @if (People.LastOrDefault() is { Actor: { } free } && _load.TryGetValue(free.Id, out var freeLoad) && freeLoad.Available > freeLoad.Allocated)
+        {
+            <div class="alva-kpi__foot"><span>Резерв ёмкости:</span><span class="alva-kpi__aside--primary alva-num">@free.Name (+@AlvaFormat.Hours(freeLoad.Available - freeLoad.Allocated) ч)</span></div>
+        }
+    </section>
+
+    <section class="alva-kpi">
+        <div class="alva-kpi__head"><div><span class="alva-kpi__label">Проекты в спринте</span><span class="alva-kpi__value alva-num">@Shares.Length @AlvaFormat.Plural(Shares.Length, "проект", "проекта", "проектов")</span></div><span class="alva-kpi__icon"><FlareIconView Value="@MaterialDesign3Icons.Regular.FolderSpecial" Size="18px" /></span></div>
+        <ul class="alva-shares">
+            @foreach (var (name, share) in Shares)
+            {
+                <li><span class="alva-shares__name">@name</span><span class="alva-shares__bar"><span style="width:@share%"></span></span><b class="alva-num">@share%</b></li>
+            }
+        </ul>
+    </section>
+</div>
+
+<section class="alva-panel alva-sprint-tasks">
+    <header class="alva-sprint-tasks__head">
+        <h2 class="alva-panel__title">Задачи в итерации</h2>
+        <div class="alva-quickfilter" role="group" aria-label="Быстрый фильтр">
+            <span class="alva-quickfilter__label">Быстрый фильтр:</span>
+            @foreach (var (key, label) in Filters)
+            {
+                <button type="button" class="alva-quickfilter__item @(_filter == key ? "alva-quickfilter__item--active" : "")" aria-pressed="@(_filter == key)" @onclick="() => _filter = key">@label (@Filtered(key).Count())</button>
+            }
+        </div>
+    </header>
+    <div class="alva-sprint-table" role="table" aria-label="Задачи спринта">
+        <div class="alva-sprint-table__head" role="row"><span role="columnheader">#</span><span role="columnheader">Задача</span><span role="columnheader">Проект</span><span role="columnheader">Исполнитель</span><span role="columnheader">Оценка</span><span role="columnheader">Статус</span></div>
+        @{ var index = 0; }
+        @foreach (var task in Filtered(_filter))
+        {
+            index++;
+            var person = task.ResolvedPersonId ?? (_actors.FirstOrDefault(a => a.Id == task.AssignmentTargetId)?.Kind == "Person" ? task.AssignmentTargetId : null);
+            <div class="alva-sprint-table__row @(task.Status == "Done" ? "alva-sprint-table__row--done" : "")" role="row" @key="task.Id">
+                <span role="cell" class="alva-num alva-sprint-table__index">@index</span>
+                <span role="cell" class="alva-sprint-table__task">
+                    <a href="@($"/tasks/{task.Id}")" class="alva-sprint-table__title">@task.Title</a>
+                    <span class="alva-sprint-table__meta alva-num">@AlvaFormat.Code(task.Id)@(task.Deadline.HasValue ? $" · Дедлайн: {task.Deadline:d MMM}" : "")@(Risks.Any(r => r.TaskId == task.Id) ? " · под риском" : "")</span>
+                </span>
+                <span role="cell"><span class="alva-project-chip">@ProjectName(task.ProjectId)</span></span>
+                <span role="cell"><AlvaAssignee Task="task" Actors="_actors" Load="@(person is { } p && _load.ContainsKey(p) ? LoadOf(p) : null)" /></span>
+                <span role="cell" class="alva-num alva-sprint-table__est">@(task.EstimateHours.HasValue ? $"{AlvaFormat.Hours(task.EstimateHours.Value)} ч" : "—")</span>
+                <span role="cell"><AlvaStatusChip Tone="AlvaTones.Status(task.Status)">@Labels.Status(task.Status)</AlvaStatusChip></span>
+            </div>
+        }
+        @if (!Filtered(_filter).Any()) { <div class="alva-sprint-table__empty">Задач по этому фильтру нет.</div> }
+    </div>
+    <footer class="alva-sprint-tasks__foot">
+        <span class="alva-num">Итоги по выборке: План: <b>@AlvaFormat.Hours(Filtered(_filter).Sum(t => t.EstimateHours ?? 0)) ч</b> · Закрыто: <b>@AlvaFormat.Hours(Filtered(_filter).Where(t => t.Status == "Done").Sum(t => t.EstimateHours ?? 0)) ч</b> · Задач с рисками: <b class="alva-kpi__alert">@Filtered(_filter).Count(t => Risks.Any(r => r.TaskId == t.Id))</b></span>
+        <FlareButton Size="ButtonSize.Sm" OnClick="Edit">
+            <LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.Add" Size="18px" /></LeadingIcon>
+            <ChildContent>Добавить задачу в спринт</ChildContent>
+        </FlareButton>
+    </footer>
+</section>
+
+@code {
+    [Parameter, EditorRequired] public SprintModel Sprint { get; set; } = default!;
+    [Parameter] public TaskModel[] Tasks { get; set; } = [];
+
+    /// <summary>Открыть редактирование состава (планирование спринта).</summary>
+    [Parameter] public EventCallback OnEdit { get; set; }
+
+    /// <summary>Спринт изменён (например, завершён) — страница перечитывает данные.</summary>
+    [Parameter] public EventCallback Changed { get; set; }
+
+    private static readonly (string Key, string Label)[] Filters = [("all", "Все"), ("risk", "С рисками"), ("unassigned", "Неназначенные"), ("work", "В работе")];
+    private RiskDto[] _risks = [];
+    private ActorModel[] _actors = [];
+    private ProjectModel[] _projects = [];
+    private Dictionary<Guid, (decimal Available, decimal Allocated)> _load = [];
+    private string _filter = "all";
+    private string? _error;
+    private bool _busy;
+    private Guid _loadedFor;
+
+    private static DateOnly Today => DateOnly.FromDateTime(DateTime.Today);
+    private TaskModel[] SprintTasks => Tasks.Where(t => t.SprintId == Sprint.Id && t.Status != "Cancelled").OrderBy(t => t.Order).ToArray();
+    private RiskDto[] Risks => _risks.Where(r => SprintTasks.Any(t => t.Id == r.TaskId)).ToArray();
+    private decimal Total => SprintTasks.Sum(t => t.EstimateHours ?? 0);
+    private decimal Done => SprintTasks.Where(t => t.Status == "Done").Sum(t => t.EstimateHours ?? 0);
+    private decimal InWork => SprintTasks.Where(t => t.Status == "InProgress").Sum(t => t.EstimateHours ?? 0);
+    private int DayOf => Math.Clamp(AlvaFormat.WorkDays(Sprint.StartDate, Today < Sprint.StartDate ? Sprint.StartDate : Today), 1, Math.Max(1, AlvaFormat.WorkDays(Sprint.StartDate, Sprint.EndDate)));
+    private int DaysLeft => Today > Sprint.EndDate ? 0 : AlvaFormat.WorkDays(Today < Sprint.StartDate ? Sprint.StartDate : Today, Sprint.EndDate);
+    private static int Percent(decimal part, decimal whole) => whole <= 0 ? 0 : (int)Math.Round(part / whole * 100);
+    private static AlvaTone Tone(int pct) => pct > 100 ? AlvaTone.Critical : pct > 80 ? AlvaTone.Info : AlvaTone.Ok;
+    private int LoadOf(Guid id) => Percent(_load[id].Allocated, _load[id].Available);
+    private string ProjectName(Guid? id) => _projects.FirstOrDefault(p => p.Id == id)?.Name ?? "Текучка";
+
+    private IEnumerable<BreadcrumbItem> Crumbs => [new("Спринты", "/sprints"), new(Sprint.Name)];
+
+    /// <summary>Люди спринта (исполнители его задач) по убыванию загрузки за окно спринта.</summary>
+    private (ActorModel Actor, int Pct)[] People => _actors
+        .Where(a => a.Kind == "Person" && _load.ContainsKey(a.Id) && SprintTasks.Any(t => t.ResolvedPersonId == a.Id || t.AssignmentTargetId == a.Id))
+        .Select(a => (a, LoadOf(a.Id))).OrderByDescending(x => x.Item2).ToArray();
+
+    private (string Name, int Share)[] Shares => SprintTasks.GroupBy(t => t.ProjectId)
+        .Select(g => (ProjectName(g.Key), Percent(g.Sum(t => t.EstimateHours ?? 0), Total)))
+        .OrderByDescending(x => x.Item2).ToArray();
+
+    private IEnumerable<TaskModel> Filtered(string key) => key switch
+    {
+        "risk" => SprintTasks.Where(t => _risks.Any(r => r.TaskId == t.Id)),
+        "unassigned" => SprintTasks.Where(t => t.AssignmentTargetId is null || (t.ResolvedPersonId is null && _actors.FirstOrDefault(a => a.Id == t.AssignmentTargetId)?.Kind != "Person")),
+        "work" => SprintTasks.Where(t => t.Status == "InProgress"),
+        _ => SprintTasks
+    };
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (_loadedFor == Sprint.Id) return;
+        try
+        {
+            _risks = await Session.Get<RiskDto[]>(Session.TeamPath("risks"));
+            _actors = await Session.Get<ActorModel[]>(Session.TeamPath("actors"));
+            _projects = await Session.Get<ProjectModel[]>(Session.TeamPath("projects"));
+            var rows = await Session.Get<CapacityDto[]>(Session.TeamPath($"capacity?from={Sprint.StartDate:yyyy-MM-dd}&to={Sprint.EndDate:yyyy-MM-dd}"));
+            _load = rows.GroupBy(r => r.ActorId).ToDictionary(g => g.Key, g => (g.Sum(r => r.AvailableHours), g.Sum(r => r.AllocatedHours)));
+            _loadedFor = Sprint.Id;
+        }
+        catch (Exception e) when (e is HttpRequestException or InvalidOperationException or NotSupportedException) { _error = e.Message; }
+    }
+
+    private Task Edit() => OnEdit.InvokeAsync();
+
+    private async Task Complete()
+    {
+        _busy = true; _error = null;
+        try
+        {
+            await Session.Save<SprintModel>(HttpMethod.Put, Session.TeamPath($"sprints/{Sprint.Id}"), new SprintRequest(Sprint.Name, Sprint.Goal, Sprint.StartDate, Sprint.EndDate, "Completed"));
+            await Changed.InvokeAsync();
+        }
+        catch (Exception e) when (e is HttpRequestException or InvalidOperationException) { _error = e.Message; }
+        finally { _busy = false; }
+    }
+}
