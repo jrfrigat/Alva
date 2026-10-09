@@ -549,7 +549,7 @@ internal static class DemoSeed
                 new ActorModel { Id = DemoIds.Department, Name = "Разработка", Kind = "Department" },
                 new ActorModel { Id = DemoIds.BackendRole, Name = "Backend", Kind = "Role", DepartmentIds = [DemoIds.Department] },
                 new ActorModel { Id = DemoIds.FrontendRole, Name = "Frontend", Kind = "Role", DepartmentIds = [DemoIds.Department] },
-                new ActorModel { Id = DemoIds.Anna, Name = "Анна Ковалёва", Kind = "Person", Email = "anna@alva.local", ParentId = DemoIds.Department, RoleIds = [DemoIds.BackendRole], DepartmentIds = [DemoIds.Department] },
+                new ActorModel { Id = DemoIds.Anna, Name = "Анна Ковалёва", Kind = "Person", Email = "anna@alva.local", UserId = DemoIds.User, ParentId = DemoIds.Department, RoleIds = [DemoIds.BackendRole], DepartmentIds = [DemoIds.Department] },
                 new ActorModel { Id = DemoIds.Petr, Name = "Пётр Смирнов", Kind = "Person", Email = "petr@alva.local", ParentId = DemoIds.Department, RoleIds = [DemoIds.FrontendRole], DepartmentIds = [DemoIds.Department] },
                 new ActorModel { Id = DemoIds.Olga, Name = "Ольга Демидова", Kind = "Person", Email = "olga@alva.local", ParentId = DemoIds.Department, RoleIds = [DemoIds.BackendRole], DepartmentIds = [DemoIds.Department] }
             ],

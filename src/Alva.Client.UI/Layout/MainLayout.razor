@@ -21,6 +21,7 @@
             <FlareSpacer />
             @if (Session.User is not null)
             {
+                <RiskBell />
                 <a href="/settings" class="alva-user" title="Профиль и настройки">
                     <span class="alva-user__avatar" aria-hidden="true"><FlareIconView Value="@MaterialDesign3Icons.Regular.Person" Size="18px" /></span>
                     <span class="alva-user__name">@Session.User.DisplayName</span>

@@ -31,5 +31,6 @@ public static class AlvaHost
             options.DefaultMode = ThemeMode.Light;
         });
         builder.Services.AddScoped<Services.AlvaSession>();
+        builder.Services.AddScoped<Services.RiskNotifications>();
     }
 }

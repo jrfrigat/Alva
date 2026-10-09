@@ -1,0 +1,64 @@
+@* Колокольчик рисков в шапке: число непросмотренных рисков по подписке и панель со списком. *@
+@implements IDisposable
+@inject RiskNotifications Notifications
+@inject NavigationManager Navigation
+<FlarePopover @bind-Open="_open" Trigger="PopoverTrigger.Click" Placement="Placement.BottomEnd" MinWidth="min(22rem, 92vw)" MaxWidth="min(26rem, 92vw)" MaxHeight="70vh" Class="alva-bell">
+    <AnchorContent>
+        <FlareBadge Count="Notifications.Unseen" Visible="@(Notifications.Unseen > 0)" Color="FlareColor.Error">
+            <FlareIconButton Icon="@(Notifications.Unseen > 0 ? MaterialDesign3Icons.Regular.NotificationsActive : MaterialDesign3Icons.Regular.Notifications)" AriaLabel="@Label" Tooltip="@Label" />
+        </FlareBadge>
+    </AnchorContent>
+    <ChildContent>
+        <div class="alva-bell__panel" role="region" aria-label="Уведомления о рисках">
+            <div class="alva-bell__head">
+                <FlareText Element="h2" Typo="TypographyScale.TitleMedium">Риски</FlareText>
+                <FlareText Typo="TypographyScale.LabelMedium" Class="alva-bell__scope">@ScopeLabel(Notifications.Scope)</FlareText>
+            </div>
+            @if (Notifications.Items.Length == 0)
+            {
+                <FlareText Typo="TypographyScale.BodyMedium" Class="alva-bell__empty">Рисков по вашей подписке нет.</FlareText>
+            }
+            else
+            {
+                <ul class="alva-bell__list">
+                    @foreach (var item in Notifications.Items)
+                    {
+                        <li class="alva-bell__item @(item.New ? "alva-bell__item--new" : "")">
+                            <div class="alva-bell__title">
+                                <AlvaStatusChip Tone="AlvaTones.Severity(item.Risk.Severity)">@(item.Risk.Severity == "High" ? "Высокий" : "Средний")</AlvaStatusChip>
+                                <a href="/tasks/@item.Risk.TaskId" @onclick="Close">@item.Risk.Title</a>
+                                @if (item.New) { <span class="alva-bell__new">новый</span> }
+                            </div>
+                            <FlareText Typo="TypographyScale.BodySmall" Class="alva-bell__reasons">@string.Join(" · ", item.Risk.Reasons)</FlareText>
+                        </li>
+                    }
+                </ul>
+            }
+            <div class="alva-bell__actions">
+                <FlareButton Variant="ButtonVariant.Text" Size="ButtonSize.Sm" Disabled="@(Notifications.Unseen == 0)" OnClick="Notifications.MarkAllSeen">Отметить всё прочитанным</FlareButton>
+                <FlareButton Variant="ButtonVariant.Tonal" Size="ButtonSize.Sm" OnClick="OpenAll">Все риски</FlareButton>
+            </div>
+        </div>
+    </ChildContent>
+</FlarePopover>
+@code {
+    private bool _open;
+    private string Label => Notifications.Unseen > 0 ? $"Риски: новых {Notifications.Unseen}" : "Риски";
+
+    public static string ScopeLabel(RiskScope scope) => scope switch
+    {
+        RiskScope.High => "Только высокий уровень",
+        RiskScope.Mine => "Только мои задачи",
+        _ => "Все риски команды"
+    };
+
+    protected override void OnInitialized() => Notifications.Changed += Refresh;
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender) await Notifications.Start();
+    }
+    private void Refresh() => InvokeAsync(StateHasChanged);
+    private void Close() => _open = false;
+    private void OpenAll() { _open = false; Navigation.NavigateTo("/analytics"); }
+    public void Dispose() => Notifications.Changed -= Refresh;
+}
