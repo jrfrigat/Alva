@@ -7,7 +7,7 @@
                  Links="@Data.Links().ToArray()" LinkTypes="@Types" ShowCriticalPath="Critical" RollupParents="true"
                  Markers="@DeadlineMarkers" Editable="true" AllowRowChange="false" OnChange="OnChange" OnLinkCreate="OnLinkCreate"
                  OnLinkRejected="OnLinkRejected" Header="Header" DropGroup="@DropGroup" DropAccepts="DropAccepts"
-                 ItemDropGroup="@ItemDropGroup" ItemDropAccepts="ItemDropAccepts" AriaLabel="Задачи во времени">
+                 ItemDropGroup="@ItemDropGroup" ItemDropAccepts="ItemDropAccepts" Suggested="Suggested" AriaLabel="Задачи во времени">
     <RowHeader Context="task">
         @if (DragRows)
         {
@@ -36,6 +36,9 @@
     [Parameter] public Func<object?, bool>? DropAccepts { get; set; }
     [Parameter] public string? ItemDropGroup { get; set; }
     [Parameter] public Func<object?, bool>? ItemDropAccepts { get; set; }
+
+    /// <summary>Предложенные даты задач — призрачные полосы поверх плана.</summary>
+    [Parameter] public IEnumerable<GanttChange>? Suggested { get; set; }
 
     /// <summary>Шапки строк можно перетащить (TaskDrag) — нужен внешний FlareDragContext.</summary>
     [Parameter] public bool DragRows { get; set; }

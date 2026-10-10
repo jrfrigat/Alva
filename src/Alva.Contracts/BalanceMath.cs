@@ -323,11 +323,12 @@ public static class BalanceMath
         {
             var toName = problem.People[to.Person].Name;
             var free = Hours(Math.Max(0, after.FreeByPerson[to.Person]));
+            // Имена без падежей: «Анна Ковалёва: …» читается при любом имени.
             if (from.Person >= 0 && before.OverloadByPerson[from.Person] > 0)
-                parts.Add($"у {problem.People[from.Person].Name} перегруз {Hours(before.OverloadByPerson[from.Person]):0.#} ч → {Hours(after.OverloadByPerson[from.Person]):0.#} ч");
+                parts.Add($"{problem.People[from.Person].Name}: перегруз {Hours(before.OverloadByPerson[from.Person]):0.#} → {Hours(after.OverloadByPerson[from.Person]):0.#} ч");
             else if (from.Person < 0)
-                parts.Add($"человек не был выбран — у {toName} есть время");
-            parts.Add($"у {toName} останется {free:0.#} ч свободно");
+                parts.Add("человек не был выбран");
+            parts.Add($"{toName}: останется свободно {free:0.#} ч");
         }
         if (from.Start != to.Start)
         {

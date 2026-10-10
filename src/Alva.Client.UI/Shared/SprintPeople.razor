@@ -29,6 +29,13 @@
                     <span class="alva-person-card__free alva-num">
                         <b>@(row.Free >= 0 ? $"{AlvaFormat.Hours(row.Free)} ч" : $"−{AlvaFormat.Hours(-row.Free)} ч")</b>
                         <small>@(row.Free >= 0 ? "свободно" : "перегруз")</small>
+                        @if (Shift.GetValueOrDefault(person.Id) is var shift && shift != 0)
+                        {
+                            var after = row.Free - shift;
+                            <small class="alva-person-card__after alva-person-card__after--@(shift > 0 ? "more" : "less")" title="Свободно после применения предложения">
+                                → @(after >= 0 ? $"{AlvaFormat.Hours(after)} ч" : $"−{AlvaFormat.Hours(-after)} ч")
+                            </small>
+                        }
                     </span>
                 </button>
                 <span class="alva-loadbar__track" aria-hidden="true"><span class="alva-loadbar__fill alva-loadbar__fill--@row.Tone" style="width:@Math.Min(100, row.Percent)%"></span></span>
@@ -61,6 +68,9 @@
     /// <summary>Человек в фокусе — его строка подсвечена на Гантте.</summary>
     [Parameter] public Guid? Focus { get; set; }
     [Parameter] public EventCallback<Guid?> FocusChanged { get; set; }
+
+    /// <summary>Сколько часов предложение автобаланса добавит человеку в спринте (минус — снимет).</summary>
+    [Parameter] public IReadOnlyDictionary<Guid, decimal> Shift { get; set; } = new Dictionary<Guid, decimal>();
 
     // Свободные — выше: им и отдавать работу.
     private IReadOnlyList<PersonLoad> Rows => Actors.Where(a => a.Kind == "Person")

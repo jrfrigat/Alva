@@ -323,6 +323,22 @@ a.alva-matrix__name:hover{text-decoration:underline}
 .alva-plan-head__picker>.flare-field,.alva-plan-head__picker>div:not(:first-child){min-width:16rem}
 .alva-plan-head__horizon{font-size:11px;font-weight:600;color:var(--flare-color-on-surface-variant,var(--alva-on-surface-variant))}
 .alva-plan-head__actions{display:flex;flex-wrap:wrap;gap:.5rem}
+.alva-plan-mode{display:flex;flex-direction:column;line-height:1.25}
+.alva-plan-mode small{font-size:11px;color:var(--flare-color-on-surface-variant)}
+.alva-plan-proposal{border-color:var(--flare-color-primary)}
+.alva-plan-proposal__actions{display:flex;flex-wrap:wrap;gap:.5rem;margin-left:auto}
+.alva-plan-proposal__metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,11rem),1fr));gap:.5rem}
+.alva-plan-metric{display:flex;flex-direction:column;gap:2px;padding:.5rem .75rem;border-radius:6px;background:var(--flare-color-surface-container-low)}
+.alva-plan-metric s{color:var(--flare-color-on-surface-variant)}
+.alva-plan-metric b{font-size:15px}
+.alva-plan-metric--better b{color:var(--flare-color-primary)}
+.alva-plan-metric--worse b{color:var(--flare-color-error)}
+.alva-plan-proposal__list{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,22rem),1fr));gap:.5rem;margin:0;padding:0;list-style:none;max-height:18rem;overflow:auto}
+.alva-plan-change{display:flex;align-items:flex-start;gap:.5rem;padding:.5rem;border:1px dashed var(--flare-color-primary);border-radius:6px}
+.alva-plan-change__body{display:flex;flex-direction:column;gap:2px;min-width:0}
+.alva-plan-change__title{overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-weight:600;font-size:13px;color:inherit}
+.alva-plan-change__what{display:flex;flex-wrap:wrap;gap:.25rem .75rem;font-size:12px}
+.alva-plan-change__why{font-size:11px;color:var(--flare-color-on-surface-variant)}
 .alva-plan-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,13rem),1fr));gap:.5rem}
 .alva-plan-kpi{display:grid;grid-template-columns:1fr auto;grid-template-rows:auto auto;align-items:center;gap:2px .5rem;padding:.625rem .75rem;border-radius:6px;background:var(--flare-color-surface-container-low,#eff4ff)}
 .alva-plan-kpi>.alva-kpi__label{grid-column:1}
@@ -352,6 +368,9 @@ a.alva-matrix__name:hover{text-decoration:underline}
 .alva-person-card__free b{font-size:15px;color:var(--flare-color-primary)}
 .alva-person-card__free small{font-size:10px;color:var(--flare-color-on-surface-variant)}
 .alva-person-card--critical .alva-person-card__free b{color:var(--flare-color-error)}
+.alva-person-card__after{font-size:11px!important;font-weight:600}
+.alva-person-card__after--more{color:var(--flare-color-error)!important}
+.alva-person-card__after--less{color:var(--flare-color-primary)!important}
 .alva-person-card__foot{display:flex;flex-wrap:wrap;gap:.375rem;font-size:11px;color:var(--flare-color-on-surface-variant)}
 .alva-person-card__absence{padding:0 6px;border-radius:9999px;background:var(--flare-color-surface-container-highest,var(--flare-color-outline-variant))}
 .alva-gantt-row--draggable{cursor:grab}
@@ -606,6 +625,7 @@ a.alva-matrix__name:hover{text-decoration:underline}
 .alva-gantt-legend__item--free{--_swatch:var(--flare-color-surface-container-lowest,var(--flare-color-surface));--_swatch-border:var(--flare-color-outline-variant)}
 .alva-gantt-legend__item--absence{--_swatch:var(--flare-color-surface-container-highest,var(--flare-color-outline-variant))}
 .alva-gantt-legend__item--demand{--_swatch:var(--flare-color-error-container);--_swatch-border:var(--flare-color-error);--_swatch-style:dashed}
+.alva-gantt-legend__item--suggested{--_swatch:transparent;--_swatch-border:var(--flare-color-primary);--_swatch-style:dashed}
 .alva-gantt .flare-gantt__cell.flare-gantt--kind-load{--flare-gantt-cell-bg:var(--flare-color-primary-container);--flare-gantt-cell-fg:var(--flare-color-on-primary-container)}
 .alva-gantt .flare-gantt__cell.flare-gantt--kind-overload{--flare-gantt-cell-bg:var(--flare-color-error);--flare-gantt-cell-fg:var(--flare-color-on-error)}
 .alva-gantt .flare-gantt__cell.flare-gantt--kind-free{--flare-gantt-cell-bg:var(--flare-color-surface-container-lowest,var(--flare-color-surface));--flare-gantt-cell-fg:var(--flare-color-on-surface-variant);font-weight:400}

@@ -6,7 +6,7 @@
                  ItemSpan="People.Data.Span" ItemKind="People.Data.Kind" ItemSegments="People.Data.Segments" ItemLabel="t => t.Title"
                  Links="@People.Data.Links().ToArray()" Cells="@People.Cells(Scale, Range)" Editable="true"
                  OnChange="OnChange" OnLinkCreate="OnLinkCreate" OnLinkRejected="OnLinkRejected" Header="Header"
-                 DropGroup="@DropGroup" DropAccepts="DropAccepts" ItemDropGroup="@ItemDropGroup" ItemDropAccepts="ItemDropAccepts"
+                 DropGroup="@DropGroup" DropAccepts="DropAccepts" ItemDropGroup="@ItemDropGroup" ItemDropAccepts="ItemDropAccepts" Suggested="Suggested"
                  AriaLabel="Люди и роли во времени">
     <RowHeader Context="row">
         <div class="alva-gantt-row">
@@ -39,6 +39,9 @@
     [Parameter] public Func<object?, bool>? DropAccepts { get; set; }
     [Parameter] public string? ItemDropGroup { get; set; }
     [Parameter] public Func<object?, bool>? ItemDropAccepts { get; set; }
+
+    /// <summary>Предложенные даты и строки задач — призрачные полосы поверх плана.</summary>
+    [Parameter] public IEnumerable<GanttChange>? Suggested { get; set; }
 
     private string RowClass(PeopleRow row) =>
         $"alva-gantt-row--{row.Kind}" + (Focus is { } id && row.Actor?.Id == id ? " alva-gantt-row--focus" : "");

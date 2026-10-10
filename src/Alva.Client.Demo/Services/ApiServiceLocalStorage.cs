@@ -242,10 +242,31 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
         return RiskMath.Assess(tasks, dependencies, id => CalendarOf(store, actors[id]), today);
     }
 
+    /// <summary>
+    /// Автобаланс спринта той же моделью, что на сервере, но без решателя OR-Tools: в браузере есть только жадный
+    /// поиск, поэтому demo предлагает лишь бережный режим.
+    /// </summary>
+    private static BalanceProposalDto Balance(DemoStore store, Guid teamId, Guid sprintId, BalanceRequest request)
+    {
+        var mode = BalanceModes.Normalize(request.Mode);
+        if (mode != BalanceModes.Gentle)
+            throw new NotSupportedException("Demo: режимы «Сроки и связи» и «Максимум» требуют сервера — решатель OR-Tools работает только там.");
+        var sprint = store.Sprints.FirstOrDefault(s => s.Id == sprintId) ?? throw new InvalidOperationException("Спринт не найден.");
+        var people = store.Actors.Where(a => a.Kind == "Person").ToArray();
+        var persons = people.Select(p => new BalancePersonInput(p.Id, p.Name, p.RoleIds, p.DepartmentIds)).ToArray();
+        var tasks = OpenTasks(store, teamId).Select(x => new BalanceTaskInput(x.Task.Id, x.Task.Title, x.Task.Status, x.Task.ParentId, x.Task.SprintId,
+            x.Task.EstimateHours, x.Start, x.End, x.Task.Deadline, x.Task.AssignmentTargetId, x.Task.ResolvedPersonId)).ToArray();
+        var links = TeamDependencies(store, teamId).Select(d => new BalanceLinkInput(d.PredecessorId, d.SuccessorId, d.Kind, d.LagDays)).ToArray();
+        var problem = BalanceMath.Build(mode, sprintId, sprint.StartDate, sprint.EndDate, persons, id => CalendarOf(store, people.First(p => p.Id == id)), tasks, links);
+        return BalanceMath.Proposal(problem, BalanceMath.Greedy(problem), BalanceMath.Heuristic, "Demo: простой поиск без решателя OR-Tools.");
+    }
+
     public async Task<T> Save<T>(HttpMethod method, string path, object value)
     {
         var store = await Load();
         var s = SplitQuery(path).Resource.Split('/', StringSplitOptions.RemoveEmptyEntries);
+        // Автобаланс только считает: хранилище не меняется.
+        if (s is ["api", "teams", var bt, "sprints", var bs, "balance"]) return (T)(object)Balance(store, Id(bt), Id(bs), Read<BalanceRequest>(value));
         object saved = s switch
         {
             ["api", "teams", var t, "tasks"] => SaveTask(store, Id(t), null, value),

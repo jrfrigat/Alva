@@ -14,6 +14,22 @@
         <AlvaStatusChip Tone="@(Sprint.Status == "Planned" ? AlvaTone.Info : AlvaTones.Status(Sprint.Status))">@(Sprint.Status == "Planned" ? "Черновик планирования" : Labels.Status(Sprint.Status))</AlvaStatusChip>
     </div>
     <div class="alva-plan-head__actions">
+        <FlareMenu Anchor="MenuAnchor.BottomLeft" AriaLabel="Режим автобаланса">
+            <Activator>
+                <FlareButton Variant="ButtonVariant.Tonal" Size="ButtonSize.Sm" Loading="_balancing" Disabled="_busy">
+                    <LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.Balance" Size="18px" /></LeadingIcon>
+                    <ChildContent>Автобаланс</ChildContent>
+                </FlareButton>
+            </Activator>
+            <ChildContent>
+                @foreach (var (mode, label, hint) in BalanceModesMenu)
+                {
+                    <FlareMenuItem OnClick="() => Balance(mode)">
+                        <span class="alva-plan-mode"><b>@label</b><small>@hint</small></span>
+                    </FlareMenuItem>
+                }
+            </ChildContent>
+        </FlareMenu>
         <FlareButton Variant="ButtonVariant.Tonal" Size="ButtonSize.Sm" OnClick="() => OnParams.InvokeAsync()">
             <LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.Tune" Size="18px" /></LeadingIcon>
             <ChildContent>Параметры спринта</ChildContent>
@@ -35,6 +51,65 @@
     </div>
 </section>
 <PageFeedback Error="@_error" />
+
+@if (_proposal is { } proposal)
+{
+    <section class="alva-panel alva-plan-proposal" aria-live="polite">
+        <header class="alva-panel__header">
+            <FlareIconView Value="@MaterialDesign3Icons.Regular.Balance" Size="20px" Class="alva-panel__icon" />
+            <div>
+                <h2 class="alva-panel__title">Рекомендация автобаланса: @ModeName(proposal.Mode)</h2>
+                <p class="alva-panel__subtitle">@StatusText(proposal.Status)@(proposal.Note is { } note ? $" · {note}" : "") · Пунктир на Гантте — куда уйдут задачи. Ничего не сохранено, пока вы не примените.</p>
+            </div>
+            <div class="alva-plan-proposal__actions">
+                @if (proposal.Changes.Length > 0)
+                {
+                    <FlareButton Size="ButtonSize.Sm" Loading="_busy" Disabled="Chosen.Count == 0" OnClick="ApplyProposal">Применить выбранные (@Chosen.Count)</FlareButton>
+                }
+                <FlareButton Size="ButtonSize.Sm" Variant="ButtonVariant.Outlined" Disabled="_busy" OnClick="RejectProposal">@(proposal.Changes.Length > 0 ? "Отклонить" : "Закрыть")</FlareButton>
+            </div>
+        </header>
+        <div class="alva-plan-proposal__metrics">
+            @foreach (var (label, before, after, unit) in Metrics(proposal))
+            {
+                <div class="alva-plan-metric alva-plan-metric--@(after < before ? "better" : after > before ? "worse" : "same")">
+                    <span class="alva-kpi__label">@label</span>
+                    <span class="alva-num"><s>@AlvaFormat.Hours(before)</s> → <b>@AlvaFormat.Hours(after)</b> @unit</span>
+                </div>
+            }
+        </div>
+        @if (proposal.Changes.Length == 0)
+        {
+            <p class="alva-panel__subtitle">План уже сбалансирован в этом режиме — менять нечего.</p>
+        }
+        else
+        {
+            <ul class="alva-plan-proposal__list">
+                @foreach (var change in proposal.Changes)
+                {
+                    <li class="alva-plan-change" @key="change.TaskId">
+                        <FlareCheckbox TValue="bool" Value="_chosen.Contains(change.TaskId)" ValueChanged="(bool on) => Choose(change.TaskId, on)"
+                                       AriaLabel="@($"Применить изменение «{change.Title}»")" />
+                        <div class="alva-plan-change__body">
+                            <a class="alva-plan-change__title" href="/tasks/@change.TaskId">@change.Title</a>
+                            <span class="alva-plan-change__what alva-num">
+                                @if (change.FromPersonId != change.ToPersonId)
+                                {
+                                    <span>@(change.FromPersonName ?? "никто") → <b>@change.ToPersonName</b></span>
+                                }
+                                @if (change.FromStart != change.ToStart || change.FromEnd != change.ToEnd)
+                                {
+                                    <span>@AlvaFormat.Period(change.FromStart, change.FromEnd) → <b>@AlvaFormat.Period(change.ToStart, change.ToEnd)</b></span>
+                                }
+                            </span>
+                            <small class="alva-plan-change__why">@change.Reason</small>
+                        </div>
+                    </li>
+                }
+            </ul>
+        }
+    </section>
+}
 
 <FlareDragContext TPayload="PlanDrag" Group="plan" OnDrop="Drop" Class="alva-plan-board">
     <section class="alva-panel alva-plan-pool">
@@ -77,7 +152,7 @@
     </section>
 
     <GanttSprintBoard Sprint="Sprint" Data="_gantt" People="_people" Focus="_focus" OnTaskChange="TaskChange" OnPeopleChange="PeopleChange"
-                      OnLinkCreate="Link" OnLinkRejected="Rejected" OnUnplan="t => Move(t, null)" />
+                      OnLinkCreate="Link" OnLinkRejected="Rejected" OnUnplan="t => Move(t, null)" Suggested="Chosen" />
 
     <div class="alva-plan-side">
         <section class="alva-panel">
@@ -100,7 +175,7 @@
             </div>
         </section>
 
-        <SprintPeople Sprint="Sprint" Actors="_actors" Capacity="_capacity" @bind-Focus="_focus" />
+        <SprintPeople Sprint="Sprint" Actors="_actors" Capacity="_capacity" Shift="Shift" @bind-Focus="_focus" />
     </div>
 </FlareDragContext>
 
@@ -121,7 +196,56 @@
     private Guid? _focus;
     private string _poolFilter = "all";
     private string? _search, _error;
-    private bool _busy;
+    private bool _busy, _balancing;
+    private BalanceProposalDto? _proposal;
+    private HashSet<Guid> _chosen = [];
+
+    private static readonly (string Mode, string Label, string Hint)[] BalanceModesMenu =
+    [
+        (BalanceModes.Gentle, "Бережно", "Только исполнители, даты не трогать"),
+        (BalanceModes.Deadlines, "Сроки и связи", "Сдвигать даты, чтобы успеть к сроку и соблюсти связи"),
+        (BalanceModes.Maximum, "Максимум", "Всё сразу: люди с общей ролью, даты, ровная загрузка")
+    ];
+
+    private static string ModeName(string mode) => BalanceModesMenu.FirstOrDefault(m => m.Mode == mode).Label ?? mode;
+
+    private static string StatusText(string status) => status switch
+    {
+        BalanceMath.Optimal => "Решатель OR-Tools: лучший план найден и доказан",
+        BalanceMath.Feasible => "Решатель OR-Tools: лучший план за отведённое время",
+        _ => "Простой поиск"
+    };
+
+    /// <summary>Метрики, которые есть до или после; дни и часы рядом, чтобы было видно, что улучшилось.</summary>
+    private static IEnumerable<(string Label, decimal Before, decimal After, string Unit)> Metrics(BalanceProposalDto p) => new (string, decimal, decimal, string)[]
+    {
+        ("Перегруз", p.Before.OverloadHours, p.After.OverloadHours, "ч"),
+        ("Самый перегруженный", p.Before.PeakOverloadHours, p.After.PeakOverloadHours, "ч"),
+        ("Просрочка", p.Before.LateDays, p.After.LateDays, "дн."),
+        ("Нарушение связей", p.Before.LinkViolationDays, p.After.LinkViolationDays, "дн."),
+        ("После конца спринта", p.Before.OverflowHours, p.After.OverflowHours, "ч"),
+        ("Разброс свободного времени", p.Before.SpreadHours, p.After.SpreadHours, "ч"),
+        ("Без исполнителя", p.Before.UnassignedHours, p.After.UnassignedHours, "ч")
+    }.Where(m => m.Item2 != 0 || m.Item3 != 0);
+
+    /// <summary>Отмеченные изменения предложения — их показывают призраки и применяет кнопка.</summary>
+    private IReadOnlyList<BalanceChangeDto> Chosen => _proposal?.Changes.Where(c => _chosen.Contains(c.TaskId)).ToArray() ?? [];
+
+    /// <summary>Часы спринта, которые отмеченные изменения переносят между людьми.</summary>
+    private IReadOnlyDictionary<Guid, decimal> Shift
+    {
+        get
+        {
+            var shift = new Dictionary<Guid, decimal>();
+            foreach (var change in Chosen.Where(c => c.FromPersonId != c.ToPersonId))
+            {
+                var hours = Tasks.FirstOrDefault(t => t.Id == change.TaskId)?.EstimateHours ?? 0;
+                if (change.FromPersonId is { } from) shift[from] = shift.GetValueOrDefault(from) - hours;
+                shift[change.ToPersonId] = shift.GetValueOrDefault(change.ToPersonId) + hours;
+            }
+            return shift;
+        }
+    }
 
     private IEnumerable<SprintModel> Choices => Sprints.Where(s => s.Status != "Completed" || s.Id == Sprint.Id).OrderBy(s => s.StartDate);
     private string SprintLabel(Guid id) => Sprints.FirstOrDefault(s => s.Id == id) is { } s ? $"{s.Name} ({s.StartDate:d MMM}–{s.EndDate:d MMM})" : "";
@@ -176,9 +300,10 @@
         catch (Exception e) when (e is HttpRequestException or InvalidOperationException or NotSupportedException) { _error = e.Message; }
     }
 
-    /// <summary>После правки: задачи страницы, ёмкость спринта и данные Гантта — всё, что показывает доска.</summary>
+    /// <summary>После правки: задачи страницы, ёмкость спринта и данные Гантта — всё, что показывает доска. Предложение автобаланса устаревает.</summary>
     private async Task Refresh(bool tasks = true)
     {
+        _proposal = null;
         if (tasks) await Changed.InvokeAsync();
         _capacity = await Session.Get<CapacityDto[]>(Session.TeamPath($"capacity?from={Sprint.StartDate:yyyy-MM-dd}&to={Sprint.EndDate:yyyy-MM-dd}"));
         _load = _capacity.GroupBy(r => r.ActorId).ToDictionary(g => g.Key, g => (g.Sum(r => r.AvailableHours), g.Sum(r => r.AllocatedHours)));
@@ -254,6 +379,42 @@
     private Task Move(TaskModel t, Guid? sprint) => Run(async () =>
     {
         await Session.Send(HttpMethod.Put, Session.TeamPath($"tasks/{t.Id}"), new TaskRequest(t.Title, t.Description, t.Status, t.ProjectId, sprint, t.ParentId, t.EstimateHours, t.Deadline, t.StartDate, t.EndDate, t.Order, t.Version));
+        await Refresh();
+    });
+
+    /// <summary>Просит предложение автобаланса; сервер только считает, план не меняется.</summary>
+    private async Task Balance(string mode)
+    {
+        _balancing = true;
+        await Run(async () =>
+        {
+            var proposal = await Session.Save<BalanceProposalDto>(HttpMethod.Post, Session.TeamPath($"sprints/{Sprint.Id}/balance"), new BalanceRequest(mode));
+            _proposal = proposal;
+            _chosen = proposal.Changes.Select(c => c.TaskId).ToHashSet();
+        });
+        _balancing = false;
+    }
+
+    private void Choose(Guid taskId, bool on)
+    {
+        if (on) _chosen.Add(taskId);
+        else _chosen.Remove(taskId);
+    }
+
+    private void RejectProposal() => _proposal = null;
+
+    /// <summary>Применяет отмеченные изменения обычными правками: даты задачи, затем исполнитель.</summary>
+    private Task ApplyProposal() => Run(async () =>
+    {
+        if (_gantt is null || _people is null) return;
+        foreach (var change in Chosen)
+        {
+            if (_gantt.Tasks.FirstOrDefault(t => t.Id == change.TaskId) is not { } task) continue;
+            if (change.FromStart != change.ToStart || change.FromEnd != change.ToEnd)
+                await _gantt.Save(Session, [new GanttChange(GanttData.Key(task.Id), GanttSpan.FromDays(change.ToStart, change.ToEnd))]);
+            if (change.FromPersonId != change.ToPersonId)
+                await _people.Reassign(Session, task, GanttPeopleData.PersonKey(change.ToPersonId));
+        }
         await Refresh();
     });
 

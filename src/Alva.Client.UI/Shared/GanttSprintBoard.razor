@@ -13,6 +13,10 @@
             <span class="alva-gantt-legend__item alva-gantt-legend__item--risk-high">Риск</span>
             <span class="alva-gantt-legend__item alva-gantt-legend__item--overflow">Выход за спринт</span>
             <span class="alva-gantt-legend__item alva-gantt-legend__item--overload">Перегруз</span>
+            @if (Suggested.Count > 0)
+            {
+                <span class="alva-gantt-legend__item alva-gantt-legend__item--suggested">Предложение</span>
+            }
             <a class="alva-plan-gantt__link" href="/gantt/2d">Открыть Гантт</a>
         </div>
     </header>
@@ -28,7 +32,7 @@
             <Corner><span>Задача · исполнитель</span></Corner>
             <ChildContent>
                 <GanttTaskPanel Data="Data" SprintId="Sprint.Id" DragRows="true" OnChange="OnTaskChange" OnLinkCreate="OnLinkCreate" OnLinkRejected="OnLinkRejected"
-                                DropGroup="plan" DropAccepts="IsTask" ItemDropGroup="plan" ItemDropAccepts="IsPerson">
+                                DropGroup="plan" DropAccepts="IsTask" ItemDropGroup="plan" ItemDropAccepts="IsPerson" Suggested="TaskGhosts">
                     <Header>Проекция 1: задачи спринта</Header>
                     <RowActions Context="task">
                         <FlareIconButton Icon="@MaterialDesign3Icons.Regular.Close" Size="ButtonSize.Sm" Tooltip="Вернуть в бэклог"
@@ -36,7 +40,7 @@
                     </RowActions>
                 </GanttTaskPanel>
                 <GanttPeoplePanel People="People" Range="Range" Focus="Focus" OnChange="OnPeopleChange" OnLinkCreate="OnLinkCreate" OnLinkRejected="OnLinkRejected"
-                                  DropGroup="plan" DropAccepts="IsTask" ItemDropGroup="plan" ItemDropAccepts="IsPerson">
+                                  DropGroup="plan" DropAccepts="IsTask" ItemDropGroup="plan" ItemDropAccepts="IsPerson" Suggested="PeopleGhosts">
                     <Header>Проекция 2: дорожки людей и ёмкость (часы в день)</Header>
                 </GanttPeoplePanel>
             </ChildContent>
@@ -54,6 +58,16 @@
     [Parameter] public EventCallback<GanttLinkEventArgs> OnLinkCreate { get; set; }
     [Parameter] public EventCallback<GanttLinkRejectedEventArgs> OnLinkRejected { get; set; }
     [Parameter] public EventCallback<TaskModel> OnUnplan { get; set; }
+
+    /// <summary>Выбранные изменения автобаланса: показываются призраками, пока их не применят или не отклонят.</summary>
+    [Parameter] public IReadOnlyList<BalanceChangeDto> Suggested { get; set; } = [];
+
+    // На задачах — только новые даты; на людях — новые даты в строке нового человека.
+    private IEnumerable<GanttChange> TaskGhosts => Suggested.Where(c => c.ToStart != c.FromStart || c.ToEnd != c.FromEnd)
+        .Select(c => new GanttChange(GanttData.Key(c.TaskId), GanttSpan.FromDays(c.ToStart, c.ToEnd)));
+
+    private IEnumerable<GanttChange> PeopleGhosts => Suggested
+        .Select(c => new GanttChange(GanttData.Key(c.TaskId), GanttSpan.FromDays(c.ToStart, c.ToEnd), GanttPeopleData.PersonKey(c.ToPersonId)));
 
     private string? _selected;
 
