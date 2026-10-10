@@ -76,7 +76,7 @@
                     {
                         @foreach (var tick in gantt.Axis.Ticks())
                         {
-                            <FlareDropZone Group="@DropGroup" Target="@GanttDropTarget.Format(row.Key, tick.Span)" Placement="DropPlacement.Into" Class="@Css.Classes.Gantt.Drop" Style="@SpanStyle(tick.Span)" />
+                            <FlareDropZone Group="@DropGroup" Target="@GanttDropTarget.Format(row.Key, tick.Span)" Placement="DropPlacement.Into" Accepts="DropAccepts" Class="@Css.Classes.Gantt.Drop" Style="@SpanStyle(tick.Span)" />
                         }
                     }
                     @foreach (var cell in row.Cells)
@@ -94,19 +94,19 @@
                     }
                     @foreach (var bar in row.Bars)
                     {
-                        <div @key="@SlotKey(bar)" class="@Css.Classes.Gantt.BarSlot" style="@BarStyle(bar)">
-                            @if (ItemTooltip is not null && bar.Item is { } tipItem && !bar.IsSummary)
-                            {
-                                <FlarePopover Trigger="PopoverTrigger.Hover" Style="display:block;width:100%;height:100%">
-                                    <AnchorContent>@RenderBar(bar)</AnchorContent>
-                                    <ChildContent>@ItemTooltip(tipItem)</ChildContent>
-                                </FlarePopover>
-                            }
-                            else
-                            {
-                                @RenderBar(bar)
-                            }
-                        </div>
+                        @if (ItemDropGroup is not null && !bar.IsSummary && !bar.IsSuggested)
+                        {
+                            <FlareDropZone @key="@SlotKey(bar)" Group="@ItemDropGroup" Target="@GanttItemDropTarget.Format(bar.Key)" Placement="DropPlacement.Into"
+                                           Accepts="ItemDropAccepts" Class="@($"{Css.Classes.Gantt.BarSlot} {Css.Classes.Gantt.ItemDrop}")" Style="@BarStyle(bar)">
+                                @RenderSlot(bar)
+                            </FlareDropZone>
+                        }
+                        else
+                        {
+                            <div @key="@SlotKey(bar)" class="@Css.Classes.Gantt.BarSlot" style="@BarStyle(bar)">
+                                @RenderSlot(bar)
+                            </div>
+                        }
                     }
                     @foreach (var marker in row.Markers)
                     {
@@ -150,6 +150,22 @@
 </section>
 
 @code {
+    // A bar with its tooltip when the consumer gave one.
+    private RenderFragment RenderSlot(GanttBarLayout<TItem> bar) => __builder =>
+    {
+        if (ItemTooltip is not null && bar.Item is { } tipItem && !bar.IsSummary)
+        {
+            <FlarePopover Trigger="PopoverTrigger.Hover" Style="display:block;width:100%;height:100%">
+                <AnchorContent>@RenderBar(bar)</AnchorContent>
+                <ChildContent>@ItemTooltip(tipItem)</ChildContent>
+            </FlarePopover>
+        }
+        else
+        {
+            @RenderBar(bar)
+        }
+    };
+
     private RenderFragment RenderBar(GanttBarLayout<TItem> bar) => __builder =>
     {
         var progress = bar.Progress is { } p ? Math.Clamp(p, 0, 1) : (double?)null;

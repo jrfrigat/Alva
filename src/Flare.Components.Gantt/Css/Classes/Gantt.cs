@@ -101,6 +101,9 @@ public static class Gantt
     public const string LinkCritical = "flare-gantt__link--critical";
     /// <summary>The <c>flare-gantt__drop</c> CSS class.</summary>
     public const string Drop = "flare-gantt__drop";
+
+    /// <summary>A bar slot that is a drop zone for payloads dropped onto the item.</summary>
+    public const string ItemDrop = "flare-gantt__item-drop";
     /// <summary>The <c>flare-gantt__announce</c> CSS class.</summary>
     public const string Announce = "flare-gantt__announce";
 

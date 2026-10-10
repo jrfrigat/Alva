@@ -54,6 +54,10 @@ scroll and one selection.
 - **`OnChange`** carries the primary change plus the cascade.
 - **`DropGroup`** turns every row × unit into a `FlareDropZone` for an outside `FlareDragContext`; read the
   target with `GanttDropTarget.TryParse`.
+- **`ItemDropGroup`** makes each bar (not summaries or suggestions) a drop zone for dropping onto the item itself, such
+  as a person onto a task; read it with `GanttItemDropTarget.TryParse`. **`DropAccepts`** and **`ItemDropAccepts`** say
+  which payloads units and bars take. During a drag, whatever in a track does not take the payload lets the pointer through,
+  so a payload only units take still lands on a day under a bar.
 
 ## Styling
 Every look is a `--flare-gantt-*` variable falling back to shared Flare tokens. Set the variables on a kind's

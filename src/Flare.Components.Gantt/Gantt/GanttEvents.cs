@@ -79,3 +79,23 @@ public sealed record GanttDropTarget(string RowKey, GanttSpan Span)
         return true;
     }
 }
+
+/// <summary>
+/// Target of a drop zone on one item's bar, encoded in the zone's string <c>Target</c> when the panel's
+/// <c>ItemDropGroup</c> is set: dropping something onto the item itself, such as a person onto a task.
+/// </summary>
+/// <param name="ItemKey">Item the payload was dropped on.</param>
+public sealed record GanttItemDropTarget(string ItemKey)
+{
+    private const char Marker = '';
+
+    /// <summary>The zone target for an item.</summary>
+    public static string Format(string itemKey) => Marker + itemKey;
+
+    /// <summary>Reads a target written by <see cref="Format"/>; false for any other string.</summary>
+    public static bool TryParse(string? targetId, out GanttItemDropTarget? target)
+    {
+        target = targetId is { Length: > 1 } && targetId[0] == Marker ? new GanttItemDropTarget(targetId[1..]) : null;
+        return target is not null;
+    }
+}

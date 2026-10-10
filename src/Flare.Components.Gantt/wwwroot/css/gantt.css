@@ -425,6 +425,40 @@
     bottom: 0;
 }
 
+/* While a drag is on, whatever in a track does not take the payload lets the pointer through, so a unit
+   covered by a bar or a cell still takes a payload only the units accept, and a bar takes one only bars accept. */
+.flare-gantt:has(.flare-drop-zone--candidate) .flare-gantt__track > :not(.flare-drop-zone--candidate) {
+    pointer-events: none;
+}
+
+/* A grid of outlined units is noise; the chart tints them instead and outlines only the one under the pointer. */
+.flare-gantt__drop.flare-drop-zone--candidate,
+.flare-gantt__item-drop.flare-drop-zone--candidate {
+    outline: none;
+}
+
+.flare-gantt__drop.flare-drop-zone--candidate {
+    background: var(--flare-gantt-drop-candidate, color-mix(in srgb, var(--flare-color-primary) 6%, transparent));
+}
+
+.flare-gantt__drop.flare-drop-zone--over,
+.flare-gantt__item-drop.flare-drop-zone--over {
+    outline: none;
+}
+
+.flare-gantt__drop.flare-drop-zone--over {
+    background: var(--flare-gantt-drop-over, color-mix(in srgb, var(--flare-color-primary) 22%, transparent));
+    box-shadow: inset 0 0 0 2px var(--flare-gantt-drop-outline, var(--flare-color-primary));
+}
+
+.flare-gantt__item-drop.flare-drop-zone--candidate .flare-gantt__bar {
+    box-shadow: 0 0 0 1px var(--flare-gantt-drop-outline, var(--flare-color-primary));
+}
+
+.flare-gantt__item-drop.flare-drop-zone--over .flare-gantt__bar {
+    box-shadow: 0 0 0 3px var(--flare-gantt-drop-outline, var(--flare-color-primary));
+}
+
 .flare-gantt__announce {
     position: absolute;
     width: 1px;

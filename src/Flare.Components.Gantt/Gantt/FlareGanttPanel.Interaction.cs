@@ -33,6 +33,20 @@ public partial class FlareGanttPanel<TRow, TItem>
     /// </summary>
     [Parameter] public string? DropGroup { get; set; }
 
+    /// <summary>Which payloads the row and unit zones of <see cref="DropGroup"/> take; null takes every payload of the group.</summary>
+    [Parameter] public Func<object?, bool>? DropAccepts { get; set; }
+
+    /// <summary>
+    /// Drag group of an outside <c>FlareDragContext</c> whose payloads can be dropped onto an item itself. When set, every
+    /// bar that is neither a summary nor a suggestion becomes a drop zone whose target is <see cref="GanttItemDropTarget.Format"/>.
+    /// While a drag is on, whatever in a track does not take the payload lets the pointer through to the zones beneath it,
+    /// so a payload only the units take still lands on a unit covered by a bar.
+    /// </summary>
+    [Parameter] public string? ItemDropGroup { get; set; }
+
+    /// <summary>Which payloads the bar zones of <see cref="ItemDropGroup"/> take; null takes every payload of the group.</summary>
+    [Parameter] public Func<object?, bool>? ItemDropAccepts { get; set; }
+
     private sealed class DragState
     {
         public required string Key { get; init; }

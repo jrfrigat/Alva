@@ -196,4 +196,54 @@ public sealed class GanttInteractionTests : GanttTestBase
         Assert.Equal(new GanttDropTarget("r2", GanttSpan.Day(Day(3))), parsed);
         Assert.False(GanttDropTarget.TryParse("something else", out _));
     }
+
+    [Fact]
+    public void Bars_become_drop_zones_only_with_an_item_drop_group()
+    {
+        var plain = Chart(p => p.Add(x => x.Rows, TwoRows).Add(x => x.Items, Plan));
+        Assert.Empty(plain.FindAll(".flare-gantt__item-drop"));
+
+        var cut = Chart(p => p.Add(x => x.Rows, TwoRows).Add(x => x.Items, Plan).Add(x => x.ItemDropGroup, "people"));
+
+        var zones = cut.FindAll(".flare-gantt__item-drop");
+        Assert.Equal(2, zones.Count);
+        var keys = zones.Select(z => GanttItemDropTarget.TryParse(z.GetAttribute("data-flare-drop"), out var t) ? t!.ItemKey : null);
+        Assert.Equal(["a", "b"], keys);
+        Assert.All(zones, z => Assert.NotNull(z.QuerySelector(".flare-gantt__bar")));
+    }
+
+    [Fact]
+    public void Item_targets_parse_and_never_pass_for_unit_targets()
+    {
+        Assert.True(GanttItemDropTarget.TryParse(GanttItemDropTarget.Format("task-1"), out var item));
+        Assert.Equal(new GanttItemDropTarget("task-1"), item);
+        Assert.False(GanttItemDropTarget.TryParse(GanttDropTarget.Format("r1", GanttSpan.Day(Day(0))), out _));
+        Assert.False(GanttDropTarget.TryParse(GanttItemDropTarget.Format("task-1"), out _));
+        Assert.False(GanttItemDropTarget.TryParse("task-1", out _));
+    }
+
+    [Fact]
+    public void Suggestions_are_never_drop_zones()
+    {
+        var cut = Chart(p => p.Add(x => x.Rows, TwoRows).Add(x => x.Items, Plan).Add(x => x.ItemDropGroup, "people")
+            .Add(x => x.Suggested, new[] { new GanttChange("a", GanttSpan.FromDays(Day(4), Day(5)), "r2") }));
+
+        Assert.Equal(2, cut.FindAll(".flare-gantt__item-drop").Count);
+    }
+
+    [Fact]
+    public void Accepts_reach_the_unit_and_bar_zones()
+    {
+        var cut = Chart(p => p.Add(x => x.Rows, TwoRows).Add(x => x.Items, Plan)
+            .Add(x => x.DropGroup, "plan").Add(x => x.DropAccepts, (object? o) => o is string)
+            .Add(x => x.ItemDropGroup, "plan").Add(x => x.ItemDropAccepts, (object? o) => o is int));
+
+        var zones = cut.FindComponents<FlareDropZone>();
+        var units = zones.Where(z => GanttDropTarget.TryParse(z.Instance.Target, out _)).ToArray();
+        var bars = zones.Where(z => GanttItemDropTarget.TryParse(z.Instance.Target, out _)).ToArray();
+        Assert.Equal(2 * 14, units.Length);
+        Assert.Equal(2, bars.Length);
+        Assert.All(units, z => { Assert.True(z.Instance.Accepts!("task")); Assert.False(z.Instance.Accepts!(7)); });
+        Assert.All(bars, z => { Assert.True(z.Instance.Accepts!(7)); Assert.False(z.Instance.Accepts!("task")); });
+    }
 }
