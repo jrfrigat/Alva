@@ -1,0 +1,136 @@
+using Alva.Client.Models;
+using Alva.Client.Services;
+using Alva.Contracts;
+using Flare.Components.Gantt;
+
+namespace Alva.Client.Shared;
+
+/// <summary>
+/// Данные команды для диаграмм Ганта и то, как Alva раскладывает их на примитивы библиотеки:
+/// окно задачи, вид полосы, выход за спринт, связи. Библиотека Flare.Components.Gantt о задачах не знает —
+/// проекции собираются здесь.
+/// </summary>
+public sealed class GanttData
+{
+    public TaskModel[] Tasks { get; private init; } = [];
+    public SprintModel[] Sprints { get; private init; } = [];
+    public ActorModel[] Actors { get; private init; } = [];
+    public RiskDto[] Risks { get; private init; } = [];
+    public DependencyDto[] Dependencies { get; private init; } = [];
+
+    private Dictionary<Guid, RiskDto> _risks = [];
+    private Dictionary<Guid, SprintModel> _sprints = [];
+    private Dictionary<Guid, ActorModel> _actors = [];
+
+    public static async Task<GanttData> Load(AlvaSession session)
+    {
+        var tasks = session.Get<TaskModel[]>(session.TeamPath("tasks"));
+        var sprints = session.Get<SprintModel[]>(session.TeamPath("sprints"));
+        var actors = session.Get<ActorModel[]>(session.TeamPath("actors"));
+        var risks = session.Get<RiskDto[]>(session.TeamPath("risks"));
+        var dependencies = session.Get<DependencyDto[]>(session.TeamPath("tasks/dependencies"));
+        var data = new GanttData
+        {
+            Tasks = await tasks, Sprints = await sprints, Actors = await actors, Risks = await risks, Dependencies = await dependencies
+        };
+        data._risks = data.Risks.GroupBy(r => r.TaskId).ToDictionary(g => g.Key, g => g.First());
+        data._sprints = data.Sprints.ToDictionary(s => s.Id);
+        data._actors = data.Actors.ToDictionary(a => a.Id);
+        return data;
+    }
+
+    public static string Key(Guid id) => id.ToString("N");
+
+    public TaskModel? Task(string key) => Tasks.FirstOrDefault(t => Key(t.Id) == key);
+
+    public SprintModel? SprintOf(TaskModel task) => task.SprintId is { } id ? _sprints.GetValueOrDefault(id) : null;
+
+    public RiskDto? RiskOf(TaskModel task) => _risks.GetValueOrDefault(task.Id);
+
+    public ActorModel? Actor(Guid? id) => id is { } value ? _actors.GetValueOrDefault(value) : null;
+
+    /// <summary>Окно задачи тем же правилом, что в ёмкости и рисках: свои даты, затем даты спринта, затем срок.</summary>
+    public (DateOnly Start, DateOnly End)? Window(TaskModel task)
+    {
+        var sprint = SprintOf(task);
+        return CapacityMath.Window(task.StartDate ?? sprint?.StartDate, task.EndDate ?? sprint?.EndDate, task.Deadline);
+    }
+
+    public GanttSpan? Span(TaskModel task) => Window(task) is { } w ? GanttSpan.FromDays(w.Start, w.End) : null;
+
+    public static bool IsClosed(TaskModel task) => task.Status is "Done" or "Cancelled";
+
+    /// <summary>Вид полосы: закрыта, высокий или средний риск, обычная работа.</summary>
+    public string Kind(TaskModel task) => IsClosed(task) ? "done" : RiskOf(task)?.Severity switch
+    {
+        "High" => "risk-high",
+        "Medium" => "risk-medium",
+        _ => "work"
+    };
+
+    /// <summary>Часть окна после конца спринта задачи — «выход за спринт».</summary>
+    public IEnumerable<GanttSegment> Segments(TaskModel task)
+    {
+        if (SprintOf(task) is not { } sprint || Window(task) is not { } w || w.End <= sprint.EndDate) yield break;
+        if (w.Start <= sprint.EndDate) yield return new GanttSegment("in-sprint", GanttSpan.FromDays(w.Start, sprint.EndDate));
+        var from = w.Start > sprint.EndDate ? w.Start : sprint.EndDate.AddDays(1);
+        yield return new GanttSegment("overflow", GanttSpan.FromDays(from, w.End), $"+{w.End.DayNumber - sprint.EndDate.DayNumber}");
+    }
+
+    public IEnumerable<GanttLink> Links() => Dependencies.Select(d =>
+        new GanttLink(Key(d.PredecessorId), Key(d.SuccessorId), Type(d.Kind), TimeSpan.FromDays(d.LagDays)));
+
+    public static GanttLinkType Type(string kind) => kind.ToUpperInvariant() switch
+    {
+        "SS" => GanttLinkType.StartToStart,
+        "FF" => GanttLinkType.FinishToFinish,
+        "SF" => GanttLinkType.StartToFinish,
+        _ => GanttLinkType.FinishToStart
+    };
+
+    public static string Code(GanttLinkType type) => type switch
+    {
+        GanttLinkType.StartToStart => "SS",
+        GanttLinkType.FinishToFinish => "FF",
+        GanttLinkType.StartToFinish => "SF",
+        _ => "FS"
+    };
+
+    /// <summary>Кто делает: человек, иначе роль или подкоманда, на которую назначено, иначе никто.</summary>
+    public string Assignee(TaskModel task) =>
+        Actor(task.ResolvedPersonId)?.Name
+        ?? (Actor(task.AssignmentTargetId) is { } target ? $"Требуется: {target.Name}" : "Без исполнителя");
+
+    /// <summary>Сохраняет новые даты задач: первичное изменение и сдвинутые каскадом последователи.</summary>
+    public async Task Save(AlvaSession session, IEnumerable<GanttChange> changes)
+    {
+        foreach (var change in changes)
+        {
+            if (Task(change.ItemKey) is not { } task) continue;
+            var start = DateOnly.FromDateTime(change.Span.Start);
+            var end = DateOnly.FromDateTime(change.Span.End).AddDays(-1);
+            if (end < start) end = start;
+            var request = new TaskRequest(task.Title, task.Description, task.Status, task.ProjectId, task.SprintId, task.ParentId,
+                task.EstimateHours, task.Deadline, start, end, task.Order, task.Version);
+            await session.Send(HttpMethod.Put, session.TeamPath($"tasks/{task.Id}"), request);
+        }
+    }
+
+    public Task AddLink(AlvaSession session, GanttLink link)
+    {
+        var successor = Task(link.ToKey) ?? throw new InvalidOperationException("Задача не найдена.");
+        var predecessor = Task(link.FromKey) ?? throw new InvalidOperationException("Задача не найдена.");
+        return session.Send(HttpMethod.Post, session.TeamPath($"tasks/{successor.Id}/dependencies"),
+            new DependencyRequest(predecessor.Id, successor.Id, Code(link.Type)));
+    }
+
+    /// <summary>Окно оси: спринт с запасом в три дня или все окна и сроки задач.</summary>
+    public GanttSpan Range(SprintModel? sprint, DateOnly today)
+    {
+        if (sprint is not null) return GanttSpan.FromDays(sprint.StartDate.AddDays(-3), sprint.EndDate.AddDays(3));
+        var days = Tasks.SelectMany(t => Window(t) is { } w ? new[] { w.Start, w.End } : [])
+            .Concat(Tasks.Select(t => t.EffectiveDeadline ?? t.Deadline).OfType<DateOnly>())
+            .Append(today).ToArray();
+        return GanttSpan.FromDays(days.Min().AddDays(-3), days.Max().AddDays(3));
+    }
+}

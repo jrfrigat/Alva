@@ -33,11 +33,11 @@ public sealed record GanttTexts(string SelfLink, string Cycle, string Duplicate,
     /// <summary>The built-in texts for <paramref name="culture"/>: Russian for <c>ru</c>, English otherwise.</summary>
     public static GanttTexts For(CultureInfo culture) => culture.TwoLetterISOLanguageName == "ru" ? Russian : English;
 
-    /// <summary>The message for a refused link, or null when it is valid.</summary>
-    public string? Describe(GanttValidation validation) => validation.Code switch
+    /// <summary>The message for a refused link, or null when it is valid; <paramref name="name"/> turns item keys into words.</summary>
+    public string? Describe(GanttValidation validation, Func<string, string>? name = null) => validation.Code switch
     {
         GanttValidationCode.SelfLink => SelfLink,
-        GanttValidationCode.Cycle => string.Format(CultureInfo.CurrentCulture, Cycle, string.Join(" → ", validation.Path)),
+        GanttValidationCode.Cycle => string.Format(CultureInfo.CurrentCulture, Cycle, string.Join(" → ", validation.Path.Select(name ?? (key => key)))),
         GanttValidationCode.Duplicate => Duplicate,
         _ => null
     };

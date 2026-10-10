@@ -120,6 +120,8 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
             ["api", "teams", _, "actors"] => store.Actors.ToArray(),
             ["api", "teams", var t, "sprints"] => store.Sprints.Where(x => store.SprintTeam.GetValueOrDefault(x.Id) == Id(t)).ToArray(),
             ["api", "teams", var t, "tasks"] => WithRollup(store.Tasks.Where(x => x.TeamId == Id(t)).ToArray()),
+            ["api", "teams", var t, "tasks", "dependencies"] => TeamDependencies(store, Id(t)),
+            ["api", "teams", _, "tasks", var id, "dependencies"] => store.Dependencies.Where(d => d.PredecessorId == Id(id) || d.SuccessorId == Id(id)).ToArray(),
             ["api", "teams", _, "tasks", var id, "history"] => History(store, Id(id)),
             ["api", "teams", _, "actors", var a, "calendar"] => Calendar(store, Id(a)),
             ["api", "teams", var t, "capacity"] => Capacity(store, Id(t), QueryDate(query, "from", today), QueryDate(query, "to", today.AddDays(13))),
@@ -145,6 +147,25 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
 
     private static DateOnly QueryDate(Dictionary<string, string> query, string key, DateOnly fallback) =>
         query.TryGetValue(key, out var raw) && DateOnly.TryParse(raw, out var parsed) ? parsed : fallback;
+
+    private static DependencyDto[] TeamDependencies(DemoStore store, Guid teamId)
+    {
+        var ids = store.Tasks.Where(t => t.TeamId == teamId).Select(t => t.Id).ToHashSet();
+        return [.. store.Dependencies.Where(d => ids.Contains(d.PredecessorId) && ids.Contains(d.SuccessorId))];
+    }
+
+    /// <summary>Новая связь с теми же проверками, что в API: без петель, повторов и чужих задач.</summary>
+    private static DependencyDto AddDependency(DemoStore store, object value)
+    {
+        var request = Read<DependencyRequest>(value);
+        if (request.PredecessorId == request.SuccessorId) throw new InvalidOperationException("Задача не может зависеть от самой себя.");
+        if (!store.Tasks.Any(t => t.Id == request.PredecessorId) || !store.Tasks.Any(t => t.Id == request.SuccessorId)) throw new InvalidOperationException("Задача не найдена.");
+        if (store.Dependencies.Any(d => d.PredecessorId == request.PredecessorId && d.SuccessorId == request.SuccessorId)) throw new InvalidOperationException("Зависимость уже существует.");
+        var kind = request.Kind.ToUpperInvariant() is "FS" or "SS" or "FF" or "SF" ? request.Kind.ToUpperInvariant() : throw new InvalidOperationException("Неизвестный вид зависимости.");
+        var dependency = new DependencyDto(Guid.NewGuid(), request.PredecessorId, request.SuccessorId, kind, request.LagDays);
+        store.Dependencies.Add(dependency);
+        return dependency;
+    }
 
     private static HistoryDto[] History(DemoStore store, Guid taskId) =>
         store.History.TryGetValue(taskId, out var entries) ? [.. entries] : [];
@@ -203,7 +224,7 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
         return CapacityMath.Combine(Calendar(store, person.Id), shared.Select(id => store.Calendars.FirstOrDefault(c => c.ActorId == id)).OfType<CalendarDto>());
     }
 
-    /// <summary>Риски тем же расчётом, что в API; зависимостей в demo нет.</summary>
+    /// <summary>Риски тем же расчётом, что в API, включая зависимости.</summary>
     private static RiskDto[] Risks(DemoStore store, Guid teamId, DateOnly today)
     {
         var actors = store.Actors.ToDictionary(a => a.Id);
@@ -213,7 +234,8 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
             var target = person is null && x.Task.AssignmentTargetId is { } targetId ? actors.GetValueOrDefault(targetId)?.Name : null;
             return new RiskTask(x.Task.Id, x.Task.ParentId, x.Task.Title, x.Task.EstimateHours, x.Start, x.End, x.Task.Deadline, person?.Id, person?.Name, target);
         }).ToArray();
-        return RiskMath.Assess(tasks, [], id => CalendarOf(store, actors[id]), today);
+        var dependencies = store.Dependencies.Select(d => new RiskDependency(d.PredecessorId, d.SuccessorId));
+        return RiskMath.Assess(tasks, dependencies, id => CalendarOf(store, actors[id]), today);
     }
 
     public async Task<T> Save<T>(HttpMethod method, string path, object value)
@@ -224,6 +246,7 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
         {
             ["api", "teams", var t, "tasks"] => SaveTask(store, Id(t), null, value),
             ["api", "teams", _, "tasks", var id] => SaveTask(store, Guid.Empty, Id(id), value),
+            ["api", "teams", _, "tasks", _, "dependencies"] => AddDependency(store, value),
             ["api", "teams", var t, "sprints"] => SaveSprint(store, Id(t), null, value),
             ["api", "teams", _, "sprints", var id] => SaveSprint(store, Guid.Empty, Id(id), value),
             _ => throw new NotSupportedException($"Demo: {method} {path} не поддерживается.")
@@ -270,8 +293,14 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
                 if (method == HttpMethod.Delete) { store.Actors.RemoveAll(a => a.Id == Id(id)); store.Calendars.RemoveAll(c => c.ActorId == Id(id)); }
                 else UpdateActor(store, Id(id), value);
                 break;
+            case ["api", "teams", _, "tasks", "dependencies", var dependency]:
+                store.Dependencies.RemoveAll(d => d.Id == Id(dependency));
+                break;
+            case ["api", "teams", _, "tasks", _, "dependencies"]:
+                AddDependency(store, value);
+                break;
             case ["api", "teams", _, "tasks", var id]:
-                if (method == HttpMethod.Delete) store.Tasks.RemoveAll(x => x.Id == Id(id));
+                if (method == HttpMethod.Delete) { store.Tasks.RemoveAll(x => x.Id == Id(id)); store.Dependencies.RemoveAll(d => d.PredecessorId == Id(id) || d.SuccessorId == Id(id)); }
                 else SaveTask(store, Guid.Empty, Id(id), value);
                 break;
             case ["api", "teams", _, "tasks", var id, "assignment"]:
@@ -518,6 +547,7 @@ public sealed class DemoStore
     public List<SprintModel> Sprints { get; set; } = [];
     public List<TaskModel> Tasks { get; set; } = [];
     public List<CalendarDto> Calendars { get; set; } = [];
+    public List<DependencyDto> Dependencies { get; set; } = [];
     public Dictionary<Guid, Guid> SprintTeam { get; set; } = [];
     public Dictionary<Guid, List<HistoryDto>> History { get; set; } = [];
 }
@@ -565,6 +595,7 @@ internal static class DemoSeed
                 new SprintModel { Id = DemoIds.Sprint2, Name = "Спринт 2", Goal = "Отчётность", StartDate = today.AddDays(7), EndDate = today.AddDays(20), Status = "Planned" }
             ],
             SprintTeam = { [DemoIds.Sprint1] = DemoIds.Team, [DemoIds.Sprint2] = DemoIds.Team },
+            Dependencies = [new DependencyDto(new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa1"), DemoIds.ApiTask, DemoIds.UiTask, "FS", 0)],
             Tasks =
             [
                 new TaskModel { Id = DemoIds.ParentTask, TeamId = DemoIds.Team, ProjectId = DemoIds.Project, Title = "Планирование ресурсов", Description = "Иерархия работ и сроки", Status = "InProgress", StartDate = today.AddDays(-7), EndDate = today.AddDays(6), Deadline = today.AddDays(8), Order = 1, Version = 1 },

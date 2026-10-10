@@ -314,6 +314,15 @@ networks:
     } -ExpectedStatus @(400, 403, 404))
     Write-Host 'PASS: project/task writes, cycle rejection, optimistic concurrency and cross-team links.'
 
+    # The Gantt chart reads every link of the team at once.
+    $link = Invoke-Api $owner POST "api/teams/$teamId/tasks/$($child.id)/dependencies" @{
+        predecessorId = $parent.id; successorId = $child.id; kind = 'SS'; lagDays = 1
+    } -ExpectedStatus @(200, 201)
+    $teamLinks = @(Invoke-Api $owner GET "api/teams/$teamId/tasks/dependencies")
+    Assert-True (@($teamLinks | Where-Object { $_.id -eq $link.id -and $_.kind -eq 'SS' -and $_.lagDays -eq 1 }).Count -eq 1) 'The team dependency list misses a new link.'
+    [void](Invoke-Api $stranger GET "api/teams/$teamId/tasks/dependencies" -ExpectedStatus @(403, 404))
+    Write-Host 'PASS: team dependency list for the Gantt chart.'
+
     $sprintStart = [DateTime]::Today.AddDays(7 - ([int][DateTime]::Today.DayOfWeek + 6) % 7)
     $sprint = Invoke-Api $owner POST "api/teams/$teamId/sprints" @{
         name = 'Demand sprint'; goal = ''; startDate = $sprintStart.ToString('yyyy-MM-dd'); endDate = $sprintStart.AddDays(4).ToString('yyyy-MM-dd')

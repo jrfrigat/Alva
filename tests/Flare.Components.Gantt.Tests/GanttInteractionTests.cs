@@ -159,6 +159,7 @@ public sealed class GanttInteractionTests : GanttTestBase
         var refusal = Assert.Single(rejected);
         Assert.Equal(GanttValidationCode.Cycle, refusal.Validation.Code);
         Assert.Equal("Связь создаёт цикл: c → a → b → c.", refusal.Message);
+        Assert.Equal("Связь создаёт цикл: C → A → B → C.", GanttTexts.Russian.Describe(refusal.Validation, key => key.ToUpperInvariant()));
         Assert.Equal(refusal.Message, cut.Find("[role=status]").TextContent);
 
         Bar(cut, "a").KeyDown(new KeyboardEventArgs { Key = "L" });

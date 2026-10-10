@@ -564,3 +564,28 @@ a.alva-matrix__name:hover{text-decoration:underline}
 .alva-bell__title a:hover,.alva-bell__title a:focus-visible{text-decoration:underline}
 .alva-bell__new{color:var(--flare-color-primary);font-weight:700}
 .alva-bell__actions{display:flex;justify-content:space-between;gap:var(--flare-spacing-2)}
+
+/* Гантт по задачам (STORY-8): панель фильтров, легенда, левая колонка и виды полос Alva поверх Flare.Components.Gantt. */
+.alva-gantt-bar__fields{display:flex;flex-wrap:wrap;gap:var(--flare-spacing-4,.5rem)}
+.alva-gantt-legend{display:flex;flex-wrap:wrap;align-items:center;gap:var(--flare-spacing-5,.625rem);font-size:12px;color:var(--flare-color-on-surface-variant)}
+.alva-gantt-legend__item{display:inline-flex;align-items:center;gap:var(--flare-spacing-2,.25rem)}
+.alva-gantt-legend__item::before{content:"";width:1.25rem;height:.625rem;border-radius:var(--flare-shape-extra-small);background:var(--_swatch);border:1px var(--_swatch-style,solid) var(--_swatch-border,transparent)}
+.alva-gantt-legend__item--work{--_swatch:var(--flare-color-primary)}
+.alva-gantt-legend__item--risk-medium{--_swatch:var(--alva-warning,#b45309)}
+.alva-gantt-legend__item--risk-high{--_swatch:var(--flare-color-error)}
+.alva-gantt-legend__item--overflow{--_swatch:var(--flare-color-tertiary,#6d28d9)}
+.alva-gantt-legend__item--done{--_swatch:var(--flare-color-outline-variant)}
+.alva-gantt-legend__notice{margin-left:auto;color:var(--flare-color-primary);font-weight:600}
+.alva-gantt{--flare-gantt-max-height:70vh}
+.alva-gantt-row{display:flex;flex-direction:column;min-width:0;line-height:1.2}
+.alva-gantt-row__title{overflow:hidden;white-space:nowrap;text-overflow:ellipsis;color:var(--flare-color-on-surface);font-weight:600;text-decoration:none}
+.alva-gantt-row__title:hover,.alva-gantt-row__title:focus-visible{text-decoration:underline}
+.alva-gantt-row__meta{overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-size:11px;color:var(--flare-color-on-surface-variant)}
+.alva-gantt-row--closed .alva-gantt-row__title{color:var(--flare-color-on-surface-variant);text-decoration:line-through}
+.alva-gantt .flare-gantt__bar.flare-gantt--kind-risk-medium{--flare-gantt-bar-bg:var(--alva-warning,#b45309)}
+.alva-gantt .flare-gantt__bar.flare-gantt--kind-risk-high{--flare-gantt-bar-bg:var(--flare-color-error);--flare-gantt-bar-fg:var(--flare-color-on-error)}
+.alva-gantt .flare-gantt__bar.flare-gantt--kind-done{--flare-gantt-bar-bg:var(--flare-color-surface-container-high,var(--flare-color-outline-variant));--flare-gantt-bar-fg:var(--flare-color-on-surface-variant)}
+.alva-gantt .flare-gantt__segment.flare-gantt--kind-overflow{--flare-gantt-segment-bg:var(--flare-color-tertiary,#6d28d9);--flare-gantt-segment-fg:var(--flare-color-on-tertiary,#fff);justify-content:flex-end;font-weight:700}
+.alva-gantt .flare-gantt__marker.flare-gantt--kind-today{--flare-gantt-marker:var(--flare-color-primary);--flare-gantt-marker-fg:var(--flare-color-on-primary)}
+.alva-gantt .flare-gantt__marker.flare-gantt--kind-deadline{--flare-gantt-marker-style:dashed}
+.alva-gantt .flare-gantt__region.flare-gantt--kind-sprint .flare-gantt__region-label{top:auto;bottom:var(--flare-spacing-1,.125rem)}

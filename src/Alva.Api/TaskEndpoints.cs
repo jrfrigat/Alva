@@ -97,6 +97,14 @@ public static class TaskEndpoints
             await db.SaveChangesAsync();
             return Results.NoContent();
         });
+        // Все связи между задачами команды — для диаграммы Ганта, которой нужен граф целиком.
+        group.MapGet("/dependencies", async (Guid teamId, ClaimsPrincipal user, AlvaDbContext db) =>
+        {
+            await AccessControl.RequireTeam(db, user, teamId, "tasks", "view");
+            var ids = db.Tasks.Where(x => x.TeamId == teamId && !x.Archived).Select(x => x.Id);
+            return await db.Dependencies.AsNoTracking().Where(x => ids.Contains(x.PredecessorId) && ids.Contains(x.SuccessorId))
+                .Select(x => new DependencyDto(x.Id, x.PredecessorId, x.SuccessorId, x.Kind.ToString(), x.LagDays)).ToArrayAsync();
+        });
         group.MapGet("/{taskId:guid}/dependencies", async (Guid teamId, Guid taskId, ClaimsPrincipal user, AlvaDbContext db) =>
         {
             await AccessControl.RequireTeam(db, user, teamId, "tasks", "view");

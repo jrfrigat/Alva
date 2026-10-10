@@ -159,7 +159,7 @@ public partial class FlareGanttPanel<TRow, TItem>
         var validation = GanttGraph.Validate(Links ?? [], link);
         if (!validation.IsValid)
         {
-            var message = Gantt!.EffectiveTexts.Describe(validation) ?? "";
+            var message = Gantt!.EffectiveTexts.Describe(validation, key => _bars.TryGetValue(key, out var bar) ? bar.Label ?? key : key) ?? "";
             _announcement = message;
             await OnLinkRejected.InvokeAsync(new GanttLinkRejectedEventArgs(link, validation, message));
             return;
