@@ -1,0 +1,183 @@
+@namespace Flare.Components
+@inherits FlareComponentBase
+@using System.Globalization
+
+@* The shared time axis. Panels inside it are projections the consumer builds; they all use this axis, this
+   scroll and this selection, which is what makes several panels one synchronised view. *@
+<div class="@RootClass" style="@RootStyle" role="group" aria-label="@AriaLabel" @attributes="AdditionalAttributes">
+    <div class="@Css.Classes.Gantt.Scroll">
+        <div class="@Css.Classes.Gantt.Header">
+            @if (!Compact)
+            {
+                <div class="@Css.Classes.Gantt.Corner">@Corner</div>
+            }
+            <div class="@Css.Classes.Gantt.Scale" style="width:@GanttFormat.Px(Width)" aria-hidden="true">
+                @if (_major.Count > 0)
+                {
+                    <div class="@($"{Css.Classes.Gantt.ScaleRow} {Css.Classes.Gantt.ScaleRowMajor}")">
+                        @foreach (var tick in _major)
+                        {
+                            <div class="@Css.Classes.Gantt.Tick" style="left:@GanttFormat.Px(tick.Offset * UnitWidth);width:@GanttFormat.Px(tick.Width * UnitWidth)">@tick.Label</div>
+                        }
+                    </div>
+                }
+                <div class="@Css.Classes.Gantt.ScaleRow">
+                    @foreach (var tick in _ticks)
+                    {
+                        <div class="@TickClass(tick)" style="left:@GanttFormat.Px(tick.Offset * UnitWidth);width:@GanttFormat.Px(tick.Width * UnitWidth)">
+                            <span>@tick.Label</span>
+                            @if (tick.Caption is not null)
+                            {
+                                <span class="@Css.Classes.Gantt.TickCaption">@tick.Caption</span>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+        <CascadingValue Value="this" IsFixed="true">
+            @ChildContent
+        </CascadingValue>
+    </div>
+</div>
+
+@code {
+    /// <summary>Visible time.</summary>
+    [Parameter, EditorRequired] public GanttSpan Range { get; set; }
+
+    /// <summary>Step of one axis unit.</summary>
+    [Parameter] public GanttScale Scale { get; set; } = GanttScale.Day;
+
+    /// <summary>Width of one axis unit in pixels.</summary>
+    [Parameter] public double UnitWidth { get; set; } = 40;
+
+    /// <summary>Height of one lane in pixels; a row is as tall as its lanes.</summary>
+    [Parameter] public double RowHeight { get; set; } = 36;
+
+    /// <summary>Space above and below a bar inside its lane, in pixels.</summary>
+    [Parameter] public double BarInset { get; set; } = 6;
+
+    /// <summary>How far a connector steps out of a bar before turning, in pixels.</summary>
+    [Parameter] public double LinkGap { get; set; } = 8;
+
+    /// <summary>Width of the row-header column as a CSS length.</summary>
+    [Parameter] public string SideWidth { get; set; } = "16rem";
+
+    /// <summary>Culture for axis captions and the first day of week; the current culture when null.</summary>
+    [Parameter] public CultureInfo? Culture { get; set; }
+
+    /// <summary>Days to shade as non-working. Used on hour and day scales.</summary>
+    [Parameter] public Func<DateOnly, bool>? NonWorking { get; set; }
+
+    /// <summary>Markers drawn across every panel, such as "today".</summary>
+    [Parameter] public IEnumerable<GanttMarker>? Markers { get; set; }
+
+    /// <summary>Regions drawn across every panel, such as a sprint window.</summary>
+    [Parameter] public IEnumerable<GanttRegion>? Regions { get; set; }
+
+    /// <summary>Key of the selected item; every panel highlights items with this key.</summary>
+    [Parameter] public string? SelectedKey { get; set; }
+
+    /// <summary>Raised when the selection changes.</summary>
+    [Parameter] public EventCallback<string?> SelectedKeyChanged { get; set; }
+
+    /// <summary>Read-only overview without the row-header column, for dashboards and cards.</summary>
+    [Parameter] public bool Compact { get; set; }
+
+    /// <summary>Content of the top-left corner above the row headers.</summary>
+    [Parameter] public RenderFragment? Corner { get; set; }
+
+    /// <summary>The panels.</summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>Texts for announcements and refusals; the built-in ones for <see cref="Culture"/> when null.</summary>
+    [Parameter] public GanttTexts? Texts { get; set; }
+
+    /// <summary>Accessible name of the whole timeline.</summary>
+    [Parameter] public string? AriaLabel { get; set; }
+
+    /// <inheritdoc />
+    protected override string ComponentCssClass => Css.Classes.Gantt.Root;
+
+    private readonly List<IGanttPanel> _panels = [];
+    private IReadOnlyList<GanttTick> _ticks = [];
+    private IReadOnlyList<GanttTick> _major = [];
+    private HashSet<DateOnly> _nonWorkingDays = [];
+    private string? _selected;
+    private string? _selectedParameter;
+
+    /// <summary>The axis built from <see cref="Range"/>, <see cref="Scale"/> and <see cref="Culture"/>.</summary>
+    public GanttAxis Axis { get; private set; } = new(new GanttSpan(DateTime.Today, DateTime.Today.AddDays(1)), GanttScale.Day);
+
+    /// <summary>Width of the time area in pixels.</summary>
+    public double Width => Axis.Units * UnitWidth;
+
+    /// <summary>The texts in use.</summary>
+    public GanttTexts EffectiveTexts => Texts ?? GanttTexts.For(Axis.Culture);
+
+    /// <summary>The selected item key.</summary>
+    public string? Selected => _selected;
+
+    /// <summary>Non-working stretches of the range, merged; empty unless the scale is hours or days.</summary>
+    public IReadOnlyList<GanttSpan> NonWorkingSpans { get; private set; } = [];
+
+    /// <summary>Horizontal position of <paramref name="moment"/> in pixels.</summary>
+    public double X(DateTime moment) => Axis.Offset(moment) * UnitWidth;
+
+    /// <summary>The moment at <paramref name="x"/> pixels.</summary>
+    public DateTime At(double x) => Axis.At(x / UnitWidth);
+
+    /// <summary>True when <paramref name="day"/> is shaded as non-working.</summary>
+    public bool IsNonWorking(DateOnly day) => _nonWorkingDays.Contains(day);
+
+    /// <inheritdoc />
+    protected override void OnParametersSet()
+    {
+        Axis = new GanttAxis(Range, Scale, Culture);
+        _ticks = Axis.Ticks();
+        _major = Axis.MajorTicks();
+        // The parameter wins only when it changes, so an uncontrolled chart keeps the selection made inside it.
+        if (SelectedKey != _selectedParameter) _selected = _selectedParameter = SelectedKey;
+        _nonWorkingDays = [];
+        var spans = new List<GanttSpan>();
+        if (NonWorking is not null && Scale is GanttScale.Hour or GanttScale.Day && Range.End > Range.Start)
+        {
+            for (var day = DateOnly.FromDateTime(Range.Start); day.ToDateTime(TimeOnly.MinValue) < Range.End; day = day.AddDays(1))
+            {
+                if (!NonWorking(day)) continue;
+                _nonWorkingDays.Add(day);
+                var span = GanttSpan.Day(day);
+                if (spans.Count > 0 && spans[^1].End == span.Start) spans[^1] = spans[^1] with { End = span.End };
+                else spans.Add(span);
+            }
+        }
+        NonWorkingSpans = spans;
+    }
+
+    /// <summary>Selects <paramref name="key"/> (or clears with null) and refreshes every panel.</summary>
+    public async Task Select(string? key)
+    {
+        if (_selected == key) return;
+        _selected = key;
+        await SelectedKeyChanged.InvokeAsync(key);
+        Refresh();
+    }
+
+    internal void Register(IGanttPanel panel) => _panels.Add(panel);
+
+    internal void Unregister(IGanttPanel panel) => _panels.Remove(panel);
+
+    internal void Refresh()
+    {
+        foreach (var panel in _panels.ToArray()) panel.Refresh();
+    }
+
+    private string RootClass => Compact ? BuildCssClass(Css.Classes.Gantt.Compact) : BuildCssClass();
+
+    private string RootStyle => $"--flare-gantt-side:{(Compact ? "0px" : SideWidth)};{Style}";
+
+    private string TickClass(GanttTick tick) =>
+        Scale is GanttScale.Day && _nonWorkingDays.Contains(DateOnly.FromDateTime(tick.Span.Start))
+            ? $"{Css.Classes.Gantt.Tick} {Css.Classes.Gantt.TickNonWorking}"
+            : Css.Classes.Gantt.Tick;
+}
