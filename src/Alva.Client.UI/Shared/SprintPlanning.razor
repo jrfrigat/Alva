@@ -1,5 +1,5 @@
 @* Доска планирования спринта по макету p6: KPI ёмкости, пул задач с фильтрами и перетаскиванием,
-   баланс специальностей и состав спринта. *@
+   баланс специальностей, мини-Гантт и состав спринта. *@
 @inject AlvaSession Session
 @inject NavigationManager Navigation
 <section class="alva-plan-head">
@@ -93,6 +93,8 @@
             </div>
         </section>
 
+        <GanttSprintMini Sprint="Sprint" Data="_gantt" />
+
         <section class="alva-panel alva-plan-sprint @(_dragged is not null ? "alva-plan-sprint--target" : "")" @ondragover:preventDefault @ondrop="DropToSprint">
             <header class="alva-panel__header">
                 <FlareIconView Value="@MaterialDesign3Icons.Regular.Checklist" Size="20px" Class="alva-panel__icon" />
@@ -130,6 +132,7 @@
     private ActorModel[] _actors = [];
     private ProjectModel[] _projects = [];
     private Dictionary<Guid, (decimal Available, decimal Allocated)> _load = [];
+    private GanttData? _gantt;
     private Guid _loadedFor;
     private Guid? _dragged;
     private string _poolFilter = "all";
@@ -185,6 +188,7 @@
             _projects = await Session.Get<ProjectModel[]>(Session.TeamPath("projects"));
             await LoadCapacity();
             _loadedFor = Sprint.Id;
+            _gantt = await GanttData.Load(Session);
         }
         catch (Exception e) when (e is HttpRequestException or InvalidOperationException or NotSupportedException) { _error = e.Message; }
     }
@@ -207,6 +211,7 @@
         await Session.Send(HttpMethod.Put, Session.TeamPath($"tasks/{t.Id}"), new TaskRequest(t.Title, t.Description, t.Status, t.ProjectId, sprint, t.ParentId, t.EstimateHours, t.Deadline, t.StartDate, t.EndDate, t.Order, t.Version));
         await Changed.InvokeAsync();
         await LoadCapacity();
+        _gantt = await GanttData.Load(Session);
     });
 
     private Task Commit() => Run(async () =>

@@ -1,0 +1,53 @@
+@using Flare.Components.Gantt
+@* Мини-Гантт планирования спринта (макет p6): задачи спринта на оси его дней, по строке на задачу,
+   с риском, выходом за спринт и связями. Только чтение; полный Гантт — на /gantt/tasks. *@
+<section class="alva-panel alva-plan-gantt">
+    <header class="alva-panel__header">
+        <FlareIconView Value="@MaterialDesign3Icons.Regular.WaterfallChart" Size="20px" Class="alva-panel__icon" />
+        <h2 class="alva-panel__title">Мини-Гантт: @AlvaFormat.WorkDays(Sprint.StartDate, Sprint.EndDate) @AlvaFormat.Plural(AlvaFormat.WorkDays(Sprint.StartDate, Sprint.EndDate), "рабочий день", "рабочих дня", "рабочих дней") спринта</h2>
+        <div class="alva-gantt-legend alva-plan-gantt__legend">
+            <span class="alva-gantt-legend__item alva-gantt-legend__item--work">В спринте</span>
+            <span class="alva-gantt-legend__item alva-gantt-legend__item--overflow">Выход за спринт</span>
+            <a class="alva-plan-gantt__link" href="/gantt/tasks">Открыть Гантт</a>
+        </div>
+    </header>
+    @if (Data is null)
+    {
+        <FlareSkeleton Height="120px" />
+    }
+    else if (Tasks.Length == 0)
+    {
+        <p class="alva-panel__subtitle">Задачи с датами появятся здесь, когда их включат в спринт.</p>
+    }
+    else
+    {
+        <FlareGantt Range="Range" Scale="GanttScale.Day" UnitWidth="32" RowHeight="32" Compact="true" NonWorking="GanttData.IsWeekend"
+                    Markers="@GanttData.TodayMarkers" AriaLabel="Мини-Гантт спринта" Class="alva-gantt alva-plan-gantt__chart">
+            <FlareGanttPanel TRow="TaskModel" TItem="TaskModel" Rows="Tasks" RowKey="t => GanttData.Key(t.Id)" Items="Tasks"
+                             ItemKey="t => GanttData.Key(t.Id)" ItemRow="t => GanttData.Key(t.Id)" ItemSpan="Data.Span" ItemKind="Data.Kind"
+                             ItemSegments="Data.Segments" ItemLabel="@(t => $"{AlvaFormat.Code(t.Id)} {t.Title}")" Links="@Data.Links().ToArray()"
+                             AriaLabel="Задачи спринта во времени" />
+        </FlareGantt>
+    }
+</section>
+
+@code {
+    [Parameter, EditorRequired] public SprintModel Sprint { get; set; } = default!;
+
+    /// <summary>Данные Гантта команды; null, пока загружаются.</summary>
+    [Parameter] public GanttData? Data { get; set; }
+
+    // Задачи спринта с окном, в порядке начала — так читается последовательность работ.
+    private TaskModel[] Tasks => Data?.Tasks.Where(t => t.SprintId == Sprint.Id && t.Status != "Cancelled" && Data.Span(t) is not null)
+        .OrderBy(t => Data.Span(t)!.Value.Start).ThenBy(t => t.Order).ToArray() ?? [];
+
+    // Ось — дни спринта; если работа выходит за спринт, ось продлевается до её конца, чтобы был виден хвост.
+    private GanttSpan Range
+    {
+        get
+        {
+            var end = Tasks.Select(t => Data!.Span(t)!.Value.End).Append(Sprint.EndDate.AddDays(1).ToDateTime(TimeOnly.MinValue)).Max();
+            return new GanttSpan(Sprint.StartDate.ToDateTime(TimeOnly.MinValue), end);
+        }
+    }
+}
