@@ -97,9 +97,12 @@ public sealed class GanttData
     };
 
     /// <summary>Кто делает: человек, иначе роль или подкоманда, на которую назначено, иначе никто.</summary>
-    public string Assignee(TaskModel task) =>
-        Actor(task.ResolvedPersonId)?.Name
-        ?? (Actor(task.AssignmentTargetId) is { } target ? $"Требуется: {target.Name}" : "Без исполнителя");
+    public string Assignee(TaskModel task) => Actor(task.ResolvedPersonId)?.Name ?? Actor(task.AssignmentTargetId) switch
+    {
+        { Kind: "Person" } person => person.Name,
+        { } target => $"Требуется: {target.Name}",
+        null => "Без исполнителя"
+    };
 
     /// <summary>Сохраняет новые даты задач: первичное изменение и сдвинутые каскадом последователи. Задачи, чьи даты не изменились, не трогаются.</summary>
     public async Task Save(AlvaSession session, IEnumerable<GanttChange> changes)
@@ -109,11 +112,50 @@ public sealed class GanttData
             if (Task(change.ItemKey) is not { } task || Span(task) == change.Span) continue;
             var start = DateOnly.FromDateTime(change.Span.Start);
             var end = DateOnly.FromDateTime(change.Span.End).AddDays(-1);
-            if (end < start) end = start;
-            var request = new TaskRequest(task.Title, task.Description, task.Status, task.ProjectId, task.SprintId, task.ParentId,
-                task.EstimateHours, task.Deadline, start, end, task.Order, task.Version);
-            await session.Send(HttpMethod.Put, session.TeamPath($"tasks/{task.Id}"), request);
+            await Put(session, task, task.SprintId, start, end < start ? start : end);
         }
+    }
+
+    /// <summary>Сохраняет правку на Гантте задач и говорит, что сделано.</summary>
+    public async Task<string> Apply(AlvaSession session, GanttChangeEventArgs args)
+    {
+        await Save(session, args.Changes);
+        return args.Changes.Count > 1 ? $"Даты сохранены, сдвинуто последователей: {args.Changes.Count - 1}" : "Даты сохранены";
+    }
+
+    /// <summary>
+    /// Ставит задачу в спринт с началом в указанный день. Длина — прежнее окно задачи, если у неё были свои даты,
+    /// иначе по оценке: 8 часов на рабочий день, не меньше дня.
+    /// </summary>
+    public Task Place(AlvaSession session, TaskModel task, Guid? sprintId, DateOnly start)
+    {
+        DateOnly end;
+        if (task is { StartDate: { } from, EndDate: { } to } && to >= from) end = start.AddDays(to.DayNumber - from.DayNumber);
+        else
+        {
+            end = start;
+            for (var left = Math.Max(1, (int)Math.Ceiling((task.EstimateHours ?? 8) / 8m)) - 1; left > 0;)
+            {
+                end = end.AddDays(1);
+                if (!IsWeekend(end)) left--;
+            }
+        }
+        return Put(session, task, sprintId, start, end);
+    }
+
+    /// <summary>Возвращает задачу из спринта в бэклог; её даты остаются.</summary>
+    public Task Unplan(AlvaSession session, TaskModel task) => Put(session, task, null, task.StartDate, task.EndDate);
+
+    private static Task Put(AlvaSession session, TaskModel task, Guid? sprintId, DateOnly? start, DateOnly? end) =>
+        session.Send(HttpMethod.Put, session.TeamPath($"tasks/{task.Id}"), new TaskRequest(task.Title, task.Description, task.Status,
+            task.ProjectId, sprintId, task.ParentId, task.EstimateHours, task.Deadline, start, end, task.Order, task.Version));
+
+    /// <summary>Ось спринта: его дни, а если работа спринта выходит за конец — до конца этой работы.</summary>
+    public GanttSpan SprintRange(SprintModel sprint)
+    {
+        var end = Tasks.Where(t => t.SprintId == sprint.Id && t.Status != "Cancelled").Select(Span).OfType<GanttSpan>().Select(s => s.End)
+            .Append(sprint.EndDate.AddDays(1).ToDateTime(TimeOnly.MinValue)).Max();
+        return new GanttSpan(sprint.StartDate.ToDateTime(TimeOnly.MinValue), end);
     }
 
     public Task AddLink(AlvaSession session, GanttLink link)

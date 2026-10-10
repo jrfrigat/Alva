@@ -6,12 +6,17 @@
                  ItemSpan="Data.Span" ItemKind="Data.Kind" ItemSegments="Data.Segments" ItemLabel="t => t.Title"
                  Links="@Data.Links().ToArray()" LinkTypes="@Types" ShowCriticalPath="Critical" RollupParents="true"
                  Markers="@DeadlineMarkers" Editable="true" AllowRowChange="false" OnChange="OnChange" OnLinkCreate="OnLinkCreate"
-                 OnLinkRejected="OnLinkRejected" Header="Header" AriaLabel="Задачи во времени">
+                 OnLinkRejected="OnLinkRejected" Header="Header" DropGroup="@DropGroup" DropAccepts="DropAccepts"
+                 ItemDropGroup="@ItemDropGroup" ItemDropAccepts="ItemDropAccepts" AriaLabel="Задачи во времени">
     <RowHeader Context="task">
-        <div class="alva-gantt-row">
-            <a class="alva-gantt-row__title" href="/tasks/@task.Id" title="@task.Title">@task.Title</a>
-            <span class="alva-gantt-row__meta">@Data.Assignee(task) · @AlvaFormat.Hours(task.EffectiveEstimateHours) ч</span>
-        </div>
+        @if (DragRows)
+        {
+            <FlareDraggable Payload="@(new TaskDrag(task.Id))" Class="alva-gantt-row alva-gantt-row--draggable">@RowContent(task)</FlareDraggable>
+        }
+        else
+        {
+            <div class="alva-gantt-row">@RowContent(task)</div>
+        }
     </RowHeader>
 </FlareGanttPanel>
 
@@ -27,6 +32,25 @@
     [Parameter] public EventCallback<GanttChangeEventArgs> OnChange { get; set; }
     [Parameter] public EventCallback<GanttLinkEventArgs> OnLinkCreate { get; set; }
     [Parameter] public EventCallback<GanttLinkRejectedEventArgs> OnLinkRejected { get; set; }
+    [Parameter] public string? DropGroup { get; set; }
+    [Parameter] public Func<object?, bool>? DropAccepts { get; set; }
+    [Parameter] public string? ItemDropGroup { get; set; }
+    [Parameter] public Func<object?, bool>? ItemDropAccepts { get; set; }
+
+    /// <summary>Шапки строк можно перетащить (TaskDrag) — нужен внешний FlareDragContext.</summary>
+    [Parameter] public bool DragRows { get; set; }
+
+    /// <summary>Действия в шапке строки задачи, например «вернуть в бэклог».</summary>
+    [Parameter] public RenderFragment<TaskModel>? RowActions { get; set; }
+
+    private RenderFragment RowContent(TaskModel task) => __builder =>
+    {
+        <span class="alva-gantt-row__body">
+            <a class="alva-gantt-row__title" href="/tasks/@task.Id" title="@task.Title">@task.Title</a>
+            <span class="alva-gantt-row__meta">@Data.Assignee(task) · @AlvaFormat.Hours(task.EffectiveEstimateHours) ч</span>
+        </span>
+        @if (RowActions is not null) { @RowActions(task) }
+    };
 
     private IEnumerable<TaskModel> Roots
     {

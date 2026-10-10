@@ -1,0 +1,94 @@
+@* «Люди спринта» (макет p6_2d, «Фокус балансировки»): кому ещё можно дать работу. Свободные часы в окне спринта,
+   загрузка, роли и отсутствия; человека перетаскивают на задачу, чтобы назначить. Подённая загрузка — в ячейках Гантта. *@
+<section class="alva-panel alva-plan-people">
+    <header class="alva-panel__header">
+        <FlareIconView Value="@MaterialDesign3Icons.Regular.Groups" Size="20px" Class="alva-panel__icon" />
+        <div>
+            <h2 class="alva-panel__title">Люди спринта</h2>
+            <p class="alva-panel__subtitle">Перетащите человека на задачу, чтобы назначить. Клик — показать на Гантте.</p>
+        </div>
+    </header>
+    @if (Rows.Count == 0)
+    {
+        <p class="alva-panel__subtitle">В команде нет людей с графиком на этот спринт.</p>
+    }
+    <div class="alva-plan-people__list">
+        @foreach (var row in Rows)
+        {
+            var person = row.Person;
+            var focused = Focus == person.Id;
+            <FlareDraggable Payload="@(new PersonDrag(person.Id))" @key="person.Id"
+                            Class="@($"alva-person-card alva-person-card--{row.Tone}{(focused ? " alva-person-card--focus" : "")}")">
+                <button type="button" class="alva-person-card__main" aria-pressed="@focused" @onclick="() => Toggle(person.Id)"
+                        title="@($"{person.Name}: назначено {AlvaFormat.Hours(row.Allocated)} ч из {AlvaFormat.Hours(row.Available)} ч")">
+                    <span class="alva-slot__mark" aria-hidden="true">@AlvaFormat.Initials(person.Name)</span>
+                    <span class="alva-person-card__who">
+                        <b>@person.Name</b>
+                        <small>@row.Roles</small>
+                    </span>
+                    <span class="alva-person-card__free alva-num">
+                        <b>@(row.Free >= 0 ? $"{AlvaFormat.Hours(row.Free)} ч" : $"−{AlvaFormat.Hours(-row.Free)} ч")</b>
+                        <small>@(row.Free >= 0 ? "свободно" : "перегруз")</small>
+                    </span>
+                </button>
+                <span class="alva-loadbar__track" aria-hidden="true"><span class="alva-loadbar__fill alva-loadbar__fill--@row.Tone" style="width:@Math.Min(100, row.Percent)%"></span></span>
+                <span class="alva-person-card__foot alva-num">
+                    <span>@row.Percent% · @AlvaFormat.Hours(row.Allocated) / @AlvaFormat.Hours(row.Available) ч</span>
+                    @foreach (var absence in row.Absences)
+                    {
+                        <span class="alva-person-card__absence">@absence</span>
+                    }
+                </span>
+            </FlareDraggable>
+        }
+    </div>
+</section>
+
+@code {
+    private sealed record PersonLoad(ActorModel Person, string Roles, decimal Available, decimal Allocated, string[] Absences)
+    {
+        public decimal Free => Available - Allocated;
+        public int Percent => Available <= 0 ? (Allocated > 0 ? 999 : 0) : (int)Math.Round(Allocated / Available * 100);
+        public string Tone => Allocated > Available ? "critical" : Percent >= 85 ? "info" : "ok";
+    }
+
+    [Parameter, EditorRequired] public SprintModel Sprint { get; set; } = default!;
+    [Parameter] public ActorModel[] Actors { get; set; } = [];
+
+    /// <summary>Ёмкость по дням на окно спринта.</summary>
+    [Parameter] public CapacityDto[] Capacity { get; set; } = [];
+
+    /// <summary>Человек в фокусе — его строка подсвечена на Гантте.</summary>
+    [Parameter] public Guid? Focus { get; set; }
+    [Parameter] public EventCallback<Guid?> FocusChanged { get; set; }
+
+    // Свободные — выше: им и отдавать работу.
+    private IReadOnlyList<PersonLoad> Rows => Actors.Where(a => a.Kind == "Person")
+        .Select(person =>
+        {
+            var days = Capacity.Where(c => c.ActorId == person.Id && c.Date >= Sprint.StartDate && c.Date <= Sprint.EndDate).ToArray();
+            var roles = string.Join(" / ", Actors.Where(a => person.RoleIds.Contains(a.Id)).Select(a => a.Name).DefaultIfEmpty("Участник команды"));
+            return new PersonLoad(person, roles, days.Sum(d => d.AvailableHours), days.Sum(d => d.AllocatedHours), Absences(days));
+        })
+        .Where(p => p.Available > 0 || p.Allocated > 0)
+        .OrderByDescending(p => p.Free).ThenBy(p => p.Person.Name).ToArray();
+
+    /// <summary>Рабочие дни без доступных часов у человека с графиком, свёрнутые в диапазоны: «20–23 окт: нет в графике».</summary>
+    private static string[] Absences(CapacityDto[] days)
+    {
+        if (!days.Any(d => d.AvailableHours > 0)) return [];
+        var off = days.Where(d => d.AvailableHours == 0 && !GanttData.IsWeekend(d.Date)).Select(d => d.Date).Order().ToArray();
+        var ranges = new List<string>();
+        for (var i = 0; i < off.Length;)
+        {
+            var j = i;
+            // Соседние рабочие дни (через выходные тоже) — один диапазон.
+            while (j + 1 < off.Length && Enumerable.Range(1, off[j + 1].DayNumber - off[j].DayNumber - 1).All(k => GanttData.IsWeekend(off[j].AddDays(k)))) j++;
+            ranges.Add(i == j ? $"{off[i]:d MMM}: нет в графике" : $"{off[i]:d}–{off[j]:d MMM}: нет в графике");
+            i = j + 1;
+        }
+        return [.. ranges];
+    }
+
+    private Task Toggle(Guid id) => FocusChanged.InvokeAsync(Focus == id ? null : id);
+}

@@ -210,10 +210,14 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
     private static CapacityDto[] Capacity(DemoStore store, Guid teamId, DateOnly from, DateOnly to)
     {
         var people = store.Actors.Where(a => a.Kind == "Person").ToArray();
-        var work = OpenTasks(store, teamId).Where(x => x.Task.ResolvedPersonId.HasValue)
-            .Select(x => new CapacityWork(x.Task.ResolvedPersonId!.Value, x.Task.EstimateHours ?? 0m, x.Start, x.End, x.Task.Deadline));
+        var work = OpenTasks(store, teamId).Select(x => (x, Person: PersonOf(store, x.Task))).Where(w => w.Person.HasValue)
+            .Select(w => new CapacityWork(w.Person!.Value, w.x.Task.EstimateHours ?? 0m, w.x.Start, w.x.End, w.x.Task.Deadline));
         return CapacityMath.Build(people.Select(p => (p.Id, p.Name)), id => CalendarOf(store, people.First(p => p.Id == id)), work, from, to);
     }
+
+    /// <summary>Кто делает задачу — тем же правилом, что в API: выбранный человек, иначе цель назначения, если это человек.</summary>
+    private static Guid? PersonOf(DemoStore store, TaskModel task) =>
+        task.ResolvedPersonId ?? (store.Actors.FirstOrDefault(a => a.Id == task.AssignmentTargetId) is { Kind: "Person" } target ? target.Id : null);
 
     /// <summary>Календарь человека вместе с общими графиками его подкоманд и их родителей.</summary>
     private static CalendarDto CalendarOf(DemoStore store, ActorModel person)
@@ -230,7 +234,7 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
         var actors = store.Actors.ToDictionary(a => a.Id);
         var tasks = OpenTasks(store, teamId).Select(x =>
         {
-            var person = x.Task.ResolvedPersonId is { } id ? actors.GetValueOrDefault(id) : null;
+            var person = PersonOf(store, x.Task) is { } id ? actors.GetValueOrDefault(id) : null;
             var target = person is null && x.Task.AssignmentTargetId is { } targetId ? actors.GetValueOrDefault(targetId)?.Name : null;
             return new RiskTask(x.Task.Id, x.Task.ParentId, x.Task.Title, x.Task.EstimateHours, x.Start, x.End, x.Task.Deadline, person?.Id, person?.Name, target);
         }).ToArray();

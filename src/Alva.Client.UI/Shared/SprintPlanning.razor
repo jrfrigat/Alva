@@ -1,5 +1,7 @@
-@* Доска планирования спринта по макету p6: KPI ёмкости, пул задач с фильтрами и перетаскиванием,
-   баланс специальностей, мини-Гантт и состав спринта. *@
+@* Доска планирования спринта по макетам p6 и p6_2d: KPI ёмкости, бэклог, Гантт спринта 2D, баланс специальностей
+   и люди спринта. Всё связано перетаскиванием: задача на день Гантта получает срок, на строку человека — ещё и
+   исполнителя; человек на задачу становится исполнителем; задача в бэклог выходит из спринта. *@
+@using Flare.Components.Gantt
 @inject AlvaSession Session
 @inject NavigationManager Navigation
 <section class="alva-plan-head">
@@ -34,7 +36,7 @@
 </section>
 <PageFeedback Error="@_error" />
 
-<div class="alva-plan-board">
+<FlareDragContext TPayload="PlanDrag" Group="plan" OnDrop="Drop" Class="alva-plan-board">
     <section class="alva-panel alva-plan-pool">
         <header class="alva-panel__header">
             <FlareIconView Value="@MaterialDesign3Icons.Regular.Inventory2" Size="20px" Class="alva-panel__icon" />
@@ -50,27 +52,32 @@
         <FlareTextField @bind-Value="_search" Immediate Clearable Placeholder="Поиск по коду или заголовку…" AriaLabel="Поиск в пуле">
             <AdornmentStart><FlareIconView Value="@MaterialDesign3Icons.Regular.Search" Size="18px" /></AdornmentStart>
         </FlareTextField>
-        <div class="alva-plan-cards">
+        <FlareDropZone Target="pool" Accepts="FromSprint" Class="alva-plan-cards">
             @foreach (var task in Pool.Where(t => Matches(t, _poolFilter) && Found(t)))
             {
-                <article class="alva-plan-card @(_dragged == task.Id ? "alva-plan-card--dragging" : "")" draggable="true" @ondragstart="() => _dragged = task.Id" @ondragend="() => _dragged = null" @key="task.Id">
-                    <div class="alva-plan-card__top">
-                        <a class="alva-plan-card__code" href="@($"/tasks/{task.Id}")">@AlvaFormat.Code(task.Id)</a>
-                        <span class="alva-project-chip">@ProjectName(task.ProjectId)</span>
-                        <span class="alva-plan-card__est alva-num"><FlareIconView Value="@MaterialDesign3Icons.Regular.Schedule" Size="15px" /> @(task.EstimateHours.HasValue ? $"{AlvaFormat.Hours(task.EstimateHours.Value)} ч" : "—")</span>
-                    </div>
-                    <div class="alva-plan-card__title">@task.Title</div>
-                    <div class="alva-plan-card__bottom">
-                        <AlvaAssignee Task="task" Actors="_actors" />
-                        <span class="alva-plan-card__deadline alva-num">@(task.Deadline.HasValue ? task.Deadline.Value.ToString("d MMM") : "Без дедлайна")</span>
-                        <FlareButton Size="ButtonSize.Sm" Variant="ButtonVariant.Tonal" Disabled="_busy" OnClick="() => Move(task, Sprint.Id)">В спринт</FlareButton>
-                    </div>
-                </article>
+                <FlareDropZone Target="@($"task:{task.Id}")" Accepts="IsPerson" Class="alva-plan-card-zone" @key="task.Id">
+                    <FlareDraggable Payload="@(new TaskDrag(task.Id))" Class="alva-plan-card">
+                        <div class="alva-plan-card__top">
+                            <a class="alva-plan-card__code" href="@($"/tasks/{task.Id}")">@AlvaFormat.Code(task.Id)</a>
+                            <span class="alva-project-chip">@ProjectName(task.ProjectId)</span>
+                            <span class="alva-plan-card__est alva-num"><FlareIconView Value="@MaterialDesign3Icons.Regular.Schedule" Size="15px" /> @(task.EstimateHours.HasValue ? $"{AlvaFormat.Hours(task.EstimateHours.Value)} ч" : "—")</span>
+                        </div>
+                        <div class="alva-plan-card__title">@task.Title</div>
+                        <div class="alva-plan-card__bottom">
+                            <AlvaAssignee Task="task" Actors="_actors" />
+                            <span class="alva-plan-card__deadline alva-num">@(task.Deadline.HasValue ? task.Deadline.Value.ToString("d MMM") : "Без дедлайна")</span>
+                            <FlareButton Size="ButtonSize.Sm" Variant="ButtonVariant.Tonal" Disabled="_busy" OnClick="() => Move(task, Sprint.Id)">В спринт</FlareButton>
+                        </div>
+                    </FlareDraggable>
+                </FlareDropZone>
             }
             @if (!Pool.Any(t => Matches(t, _poolFilter) && Found(t))) { <FlareEmptyState Compact Title="В пуле пусто" Description="Нет задач по этому фильтру." /> }
-        </div>
-        <div class="alva-plan-hint" @ondragover:preventDefault @ondrop="DropToPool"><FlareIconView Value="@MaterialDesign3Icons.Regular.DragIndicator" Size="16px" /> Перетащите задачу в правый блок, чтобы включить её в спринт</div>
+        </FlareDropZone>
+        <div class="alva-plan-hint"><FlareIconView Value="@MaterialDesign3Icons.Regular.DragIndicator" Size="16px" /> Перетащите задачу на Гантт — на день или на строку человека. Сюда — чтобы вернуть в бэклог.</div>
     </section>
+
+    <GanttSprintBoard Sprint="Sprint" Data="_gantt" People="_people" Focus="_focus" OnTaskChange="TaskChange" OnPeopleChange="PeopleChange"
+                      OnLinkCreate="Link" OnLinkRejected="Rejected" OnUnplan="t => Move(t, null)" />
 
     <div class="alva-plan-side">
         <section class="alva-panel">
@@ -93,34 +100,9 @@
             </div>
         </section>
 
-        <GanttSprintMini Sprint="Sprint" Data="_gantt" />
-
-        <section class="alva-panel alva-plan-sprint @(_dragged is not null ? "alva-plan-sprint--target" : "")" @ondragover:preventDefault @ondrop="DropToSprint">
-            <header class="alva-panel__header">
-                <FlareIconView Value="@MaterialDesign3Icons.Regular.Checklist" Size="20px" Class="alva-panel__icon" />
-                <h2 class="alva-panel__title">Состав спринта (включено в план)</h2>
-                <AlvaStatusChip Tone="AlvaTone.Info">@InSprint.Length @AlvaFormat.Plural(InSprint.Length, "задача", "задачи", "задач") · @AlvaFormat.Hours(Planned) ч</AlvaStatusChip>
-            </header>
-            <p class="alva-panel__subtitle">Крестик возвращает задачу в бэклог.</p>
-            @foreach (var task in InSprint)
-            {
-                var person = task.ResolvedPersonId ?? (_actors.FirstOrDefault(a => a.Id == task.AssignmentTargetId)?.Kind == "Person" ? task.AssignmentTargetId : null);
-                var over = person is { } p && _load.TryGetValue(p, out var l) && l.Allocated > l.Available;
-                <div class="alva-plan-row @(over ? "alva-plan-row--risk" : "")" draggable="true" @ondragstart="() => _dragged = task.Id" @ondragend="() => _dragged = null" @key="task.Id">
-                    <FlareIconView Value="@MaterialDesign3Icons.Regular.DragIndicator" Size="18px" Class="alva-plan-row__grip" />
-                    <div class="alva-plan-row__main">
-                        <div class="alva-plan-row__title"><a class="alva-plan-card__code" href="@($"/tasks/{task.Id}")">@AlvaFormat.Code(task.Id)</a> <a href="@($"/tasks/{task.Id}")" class="alva-sprint-table__title">@task.Title</a></div>
-                        <div class="alva-plan-row__meta"><AlvaAssignee Task="task" Actors="_actors" Load="@(person is { } q && _load.ContainsKey(q) ? Pct(_load[q].Allocated, _load[q].Available) : null)" /><span class="alva-num">Трудозатраты: <b>@(task.EstimateHours.HasValue ? $"{AlvaFormat.Hours(task.EstimateHours.Value)} ч" : "—")</b></span></div>
-                    </div>
-                    <span class="alva-project-chip">@ProjectName(task.ProjectId)</span>
-                    @if (over) { <AlvaStatusChip Tone="AlvaTone.Critical">Риск овертайма</AlvaStatusChip> } else { <AlvaStatusChip Tone="AlvaTones.Status(task.Status)">@Labels.Status(task.Status)</AlvaStatusChip> }
-                    <FlareIconButton Icon="@MaterialDesign3Icons.Regular.Close" Size="ButtonSize.Sm" Tooltip="Вернуть в бэклог" AriaLabel="@($"Вернуть «{task.Title}» в бэклог")" Disabled="_busy" OnClick="() => Move(task, null)" />
-                </div>
-            }
-            @if (InSprint.Length == 0) { <div class="alva-plan-drop">Перетащите сюда задачи из пула или нажмите «В спринт».</div> }
-        </section>
+        <SprintPeople Sprint="Sprint" Actors="_actors" Capacity="_capacity" @bind-Focus="_focus" />
     </div>
-</div>
+</FlareDragContext>
 
 @code {
     [Parameter, EditorRequired] public SprintModel Sprint { get; set; } = default!;
@@ -132,9 +114,11 @@
     private ActorModel[] _actors = [];
     private ProjectModel[] _projects = [];
     private Dictionary<Guid, (decimal Available, decimal Allocated)> _load = [];
+    private CapacityDto[] _capacity = [];
     private GanttData? _gantt;
+    private GanttPeopleData? _people;
     private Guid _loadedFor;
-    private Guid? _dragged;
+    private Guid? _focus;
     private string _poolFilter = "all";
     private string? _search, _error;
     private bool _busy;
@@ -186,32 +170,91 @@
         {
             _actors = await Session.Get<ActorModel[]>(Session.TeamPath("actors"));
             _projects = await Session.Get<ProjectModel[]>(Session.TeamPath("projects"));
-            await LoadCapacity();
             _loadedFor = Sprint.Id;
-            _gantt = await GanttData.Load(Session);
+            await Refresh(tasks: false);
         }
         catch (Exception e) when (e is HttpRequestException or InvalidOperationException or NotSupportedException) { _error = e.Message; }
     }
 
-    private async Task LoadCapacity()
+    /// <summary>После правки: задачи страницы, ёмкость спринта и данные Гантта — всё, что показывает доска.</summary>
+    private async Task Refresh(bool tasks = true)
     {
-        var rows = await Session.Get<CapacityDto[]>(Session.TeamPath($"capacity?from={Sprint.StartDate:yyyy-MM-dd}&to={Sprint.EndDate:yyyy-MM-dd}"));
-        _load = rows.GroupBy(r => r.ActorId).ToDictionary(g => g.Key, g => (g.Sum(r => r.AvailableHours), g.Sum(r => r.AllocatedHours)));
+        if (tasks) await Changed.InvokeAsync();
+        _capacity = await Session.Get<CapacityDto[]>(Session.TeamPath($"capacity?from={Sprint.StartDate:yyyy-MM-dd}&to={Sprint.EndDate:yyyy-MM-dd}"));
+        _load = _capacity.GroupBy(r => r.ActorId).ToDictionary(g => g.Key, g => (g.Sum(r => r.AvailableHours), g.Sum(r => r.AllocatedHours)));
+        _gantt = await GanttData.Load(Session);
+        _people = await GanttPeopleData.Load(Session, _gantt, _gantt.SprintRange(Sprint));
     }
 
     private void Pick(Guid id) => Navigation.NavigateTo($"/sprints/{id}/plan");
 
-    private Task DropToSprint() => _dragged is { } id && Tasks.FirstOrDefault(t => t.Id == id) is { } task && task.SprintId != Sprint.Id ? Move(task, Sprint.Id) : Task.CompletedTask;
-    private Task DropToPool() => _dragged is { } id && Tasks.FirstOrDefault(t => t.Id == id) is { } task && task.SprintId == Sprint.Id ? Move(task, null) : Task.CompletedTask;
+    private bool FromSprint(object? payload) => payload is TaskDrag t && _gantt?.Tasks.FirstOrDefault(x => x.Id == t.TaskId)?.SprintId == Sprint.Id;
+    private static bool IsPerson(object? payload) => payload is PersonDrag;
+
+    /// <summary>
+    /// Сброс на доске. Задача: в бэклог — выходит из спринта; на день Гантта — входит в спринт с этим днём начала,
+    /// а на строке человека или роли проекции 2 ещё и назначается. Человек: на полосу или карточку — исполнитель задачи.
+    /// </summary>
+    private Task Drop(FlareDropEventArgs<PlanDrag?> e) => Run(async () =>
+    {
+        if (_gantt is null || _people is null) return;
+        switch (e.Payload)
+        {
+            case TaskDrag { TaskId: var id } when _gantt.Tasks.FirstOrDefault(t => t.Id == id) is { } task:
+                if (e.TargetId == "pool")
+                {
+                    await _gantt.Unplan(Session, task);
+                }
+                else if (GanttDropTarget.TryParse(e.TargetId, out var cell))
+                {
+                    var row = cell!.RowKey;
+                    if (GanttPeopleData.IsGroup(row)) throw new InvalidOperationException(GanttPeopleData.GroupRefusal);
+                    await _gantt.Place(Session, task, Sprint.Id, DateOnly.FromDateTime(cell.Span.Start));
+                    if (GanttPeopleData.IsRowKey(row)) await _people.Reassign(Session, task, row);
+                }
+                else return;
+                break;
+            case PersonDrag { PersonId: var person } when TaskOf(e.TargetId) is { } task:
+                await _people.Reassign(Session, task, GanttPeopleData.PersonKey(person));
+                break;
+            default:
+                return;
+        }
+        await Refresh();
+    });
+
+    // Задача под человеком: полоса Гантта или карточка бэклога.
+    private TaskModel? TaskOf(string targetId) =>
+        GanttItemDropTarget.TryParse(targetId, out var item) ? _gantt!.Task(item!.ItemKey)
+        : targetId.StartsWith("task:", StringComparison.Ordinal) && Guid.TryParse(targetId[5..], out var id) ? _gantt!.Tasks.FirstOrDefault(t => t.Id == id)
+        : null;
+
+    private Task TaskChange(GanttChangeEventArgs args) => Edit(args, () => _gantt!.Apply(Session, args));
+
+    private Task PeopleChange(GanttChangeEventArgs args) => Edit(args, () => _people!.Apply(Session, args));
+
+    private async Task Edit(GanttChangeEventArgs args, Func<Task<string>> save)
+    {
+        _error = null;
+        try { await save(); }
+        catch (Exception e) when (e is HttpRequestException or InvalidOperationException or NotSupportedException) { args.Cancel = true; _error = e.Message; }
+        try { await Refresh(); }
+        catch (Exception e) when (e is HttpRequestException or InvalidOperationException or NotSupportedException) { _error ??= e.Message; }
+    }
+
+    private Task Link(GanttLinkEventArgs args) => Run(async () =>
+    {
+        await _gantt!.AddLink(Session, args.Link);
+        await Refresh();
+    });
+
+    private void Rejected(GanttLinkRejectedEventArgs args) => _error = args.Message;
 
     /// <summary>Переносит задачу в спринт или в пул: то же изменение задачи, что и в её карточке.</summary>
     private Task Move(TaskModel t, Guid? sprint) => Run(async () =>
     {
-        _dragged = null;
         await Session.Send(HttpMethod.Put, Session.TeamPath($"tasks/{t.Id}"), new TaskRequest(t.Title, t.Description, t.Status, t.ProjectId, sprint, t.ParentId, t.EstimateHours, t.Deadline, t.StartDate, t.EndDate, t.Order, t.Version));
-        await Changed.InvokeAsync();
-        await LoadCapacity();
-        _gantt = await GanttData.Load(Session);
+        await Refresh();
     });
 
     private Task Commit() => Run(async () =>

@@ -48,25 +48,8 @@ else if (_data is not null && _people is not null)
                     <Header>Проекция 1: иерархия работ и фазы во времени</Header>
                 </GanttTaskPanel>
             }
-            <FlareGanttPanel TRow="PeopleRow" TItem="TaskModel" Rows="@_people.Rows" RowKey="r => r.Key" RowChildren="r => r.Children.Count > 0 ? r.Children : null"
-                             RowClass="@(r => $"alva-gantt-row--{r.Kind}")" Items="@_people.Items" ItemKey="t => GanttData.Key(t.Id)" ItemRow="_people.RowOf"
-                             ItemSpan="_data.Span" ItemKind="_data.Kind" ItemSegments="_data.Segments" ItemLabel="t => t.Title"
-                             Links="@_data.Links().ToArray()" Cells="@_people.Cells(_scale, Range)" Editable="true"
-                             OnChange="Change" OnLinkCreate="Link" OnLinkRejected="Rejected" Header="@(_twoD ? PeopleHeader : null)" AriaLabel="Люди и роли во времени">
-                <RowHeader Context="row">
-                    <div class="alva-gantt-row">
-                        @if (row.Kind == "person")
-                        {
-                            <a class="alva-gantt-row__title" href="/capacity/@row.Actor!.Id" title="@row.Name">@row.Name</a>
-                        }
-                        else
-                        {
-                            <span class="alva-gantt-row__title" title="@row.Name">@row.Name</span>
-                        }
-                        <span class="alva-gantt-row__meta">@row.Meta</span>
-                    </div>
-                </RowHeader>
-            </FlareGanttPanel>
+            <GanttPeoplePanel People="_people" Scale="_scale" Range="Range" Header="@(_twoD ? PeopleHeader : null)"
+                              OnChange="Change" OnLinkCreate="Link" OnLinkRejected="Rejected" />
         </ChildContent>
     </FlareGantt>
 }
@@ -127,23 +110,7 @@ else if (_data is not null && _people is not null)
     private async Task Change(GanttChangeEventArgs args)
     {
         _error = null;
-        var primary = args.Changes.FirstOrDefault(c => c.ItemKey == args.ItemKey);
-        if (primary?.RowKey is { } row && GanttPeopleData.IsGroup(row))
-        {
-            args.Cancel = true;
-            _error = "Задачу нельзя назначить на группу — выберите человека или роль.";
-            return;
-        }
-        try
-        {
-            await _data!.Save(Session, args.Changes);
-            if (primary?.RowKey is { } target && _data.Task(args.ItemKey) is { } task)
-            {
-                await _people!.Reassign(Session, task, target);
-                _notice = target == GanttPeopleData.Pool ? "Назначение снято" : "Задача переназначена";
-            }
-            else _notice = args.Changes.Count > 1 ? $"Даты сохранены, сдвинуто последователей: {args.Changes.Count - 1}" : "Даты сохранены";
-        }
+        try { _notice = await _people!.Apply(Session, args); }
         catch (Exception e) when (e is HttpRequestException or InvalidOperationException) { args.Cancel = true; _error = e.Message; }
         await Reload();
     }

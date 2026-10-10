@@ -57,7 +57,7 @@
             }
         </FlareNavMenu>
     </FlareLayoutDrawer>
-    <FlareLayoutContent><main id="main-content"><FlareContainer MaxWidth="ContainerMaxWidth.Xl"><FlareStack @key="PagePath" Gap="FlareSpacing.XLarge">@Body</FlareStack></FlareContainer></main></FlareLayoutContent>
+    <FlareLayoutContent><main id="main-content"><FlareContainer MaxWidth="PageWidth"><FlareStack @key="PagePath" Gap="FlareSpacing.XLarge">@Body</FlareStack></FlareContainer></main></FlareLayoutContent>
 </FlareLayout>
 @if (_mobile)
 {
@@ -78,6 +78,9 @@
     // Страницы с несколькими маршрутами (/team и /team/roles, /capacity и /capacity/people) получают одинаковые
     // параметры, и Blazor не перерисовывает их при переходе из меню; ключ по пути создаёт страницу заново.
     private string PagePath => new Uri(Navigation.Uri).AbsolutePath;
+
+    // Доски на оси времени (Гантты и планирование спринта) занимают всю ширину; остальные страницы читаются в колонке.
+    private ContainerMaxWidth PageWidth => PagePath.StartsWith("/gantt", StringComparison.OrdinalIgnoreCase) || PagePath.EndsWith("/plan", StringComparison.OrdinalIgnoreCase) ? ContainerMaxWidth.Full : ContainerMaxWidth.Xl;
     protected override void OnInitialized() => Session.Changed += Refresh;
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {

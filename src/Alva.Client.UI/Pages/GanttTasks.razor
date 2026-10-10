@@ -104,8 +104,7 @@ else if (_data is not null)
         _error = null;
         try
         {
-            await _data!.Save(Session, args.Changes);
-            _notice = args.Changes.Count > 1 ? $"Даты сохранены, сдвинуто последователей: {args.Changes.Count - 1}" : "Даты сохранены";
+            _notice = await _data!.Apply(Session, args);
         }
         catch (Exception e) when (e is HttpRequestException or InvalidOperationException) { args.Cancel = true; _error = e.Message; }
         await Reload();

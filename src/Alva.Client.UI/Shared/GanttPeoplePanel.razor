@@ -1,0 +1,45 @@
+@using Flare.Components.Gantt
+@* Проекция 2 (макет p6_2d): дорожки людей и ролей с часами ёмкости и задачами исполнителя. Кладётся внутрь
+   FlareGantt — на «Гантте по людям» и на доске планирования спринта. *@
+<FlareGanttPanel TRow="PeopleRow" TItem="TaskModel" Rows="@People.Rows" RowKey="r => r.Key" RowChildren="r => r.Children.Count > 0 ? r.Children : null"
+                 RowClass="RowClass" Items="@People.Items" ItemKey="t => GanttData.Key(t.Id)" ItemRow="People.RowOf"
+                 ItemSpan="People.Data.Span" ItemKind="People.Data.Kind" ItemSegments="People.Data.Segments" ItemLabel="t => t.Title"
+                 Links="@People.Data.Links().ToArray()" Cells="@People.Cells(Scale, Range)" Editable="true"
+                 OnChange="OnChange" OnLinkCreate="OnLinkCreate" OnLinkRejected="OnLinkRejected" Header="Header"
+                 DropGroup="@DropGroup" DropAccepts="DropAccepts" ItemDropGroup="@ItemDropGroup" ItemDropAccepts="ItemDropAccepts"
+                 AriaLabel="Люди и роли во времени">
+    <RowHeader Context="row">
+        <div class="alva-gantt-row">
+            @if (row.Kind == "person")
+            {
+                <a class="alva-gantt-row__title" href="/capacity/@row.Actor!.Id" title="@row.Name">@row.Name</a>
+            }
+            else
+            {
+                <span class="alva-gantt-row__title" title="@row.Name">@row.Name</span>
+            }
+            <span class="alva-gantt-row__meta">@row.Meta</span>
+        </div>
+    </RowHeader>
+</FlareGanttPanel>
+
+@code {
+    [Parameter, EditorRequired] public GanttPeopleData People { get; set; } = null!;
+    [Parameter] public GanttScale Scale { get; set; } = GanttScale.Day;
+    [Parameter, EditorRequired] public GanttSpan Range { get; set; }
+    [Parameter] public RenderFragment? Header { get; set; }
+
+    /// <summary>Человек, чья строка подсвечена.</summary>
+    [Parameter] public Guid? Focus { get; set; }
+
+    [Parameter] public EventCallback<GanttChangeEventArgs> OnChange { get; set; }
+    [Parameter] public EventCallback<GanttLinkEventArgs> OnLinkCreate { get; set; }
+    [Parameter] public EventCallback<GanttLinkRejectedEventArgs> OnLinkRejected { get; set; }
+    [Parameter] public string? DropGroup { get; set; }
+    [Parameter] public Func<object?, bool>? DropAccepts { get; set; }
+    [Parameter] public string? ItemDropGroup { get; set; }
+    [Parameter] public Func<object?, bool>? ItemDropAccepts { get; set; }
+
+    private string RowClass(PeopleRow row) =>
+        $"alva-gantt-row--{row.Kind}" + (Focus is { } id && row.Actor?.Id == id ? " alva-gantt-row--focus" : "");
+}

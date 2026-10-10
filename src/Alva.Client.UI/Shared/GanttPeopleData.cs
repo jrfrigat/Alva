@@ -172,6 +172,26 @@ public sealed class GanttPeopleData
     }
 
     /// <summary>
+    /// Сохраняет правку на Гантте людей: даты с каскадом, затем назначение, если полоса сменила строку.
+    /// Строку группы отклоняет до любого запроса.
+    /// </summary>
+    public async Task<string> Apply(AlvaSession session, GanttChangeEventArgs args)
+    {
+        var primary = args.Changes.FirstOrDefault(c => c.ItemKey == args.ItemKey);
+        if (primary?.RowKey is { } row && IsGroup(row)) throw new InvalidOperationException(GroupRefusal);
+        await Data.Save(session, args.Changes);
+        if (primary?.RowKey is not { } target || Data.Task(args.ItemKey) is not { } task)
+            return args.Changes.Count > 1 ? $"Даты сохранены, сдвинуто последователей: {args.Changes.Count - 1}" : "Даты сохранены";
+        await Reassign(session, task, target);
+        return target == Pool ? "Назначение снято" : "Задача переназначена";
+    }
+
+    public const string GroupRefusal = "Задачу нельзя назначить на группу — выберите человека или роль.";
+
+    /// <summary>Строка проекции людей, а не ключ задачи: человек, роль, группа или «Не назначено».</summary>
+    public static bool IsRowKey(string key) => key == Pool || key.Length > 2 && key[1] == ':';
+
+    /// <summary>
     /// Переназначает задачу на строку: человеку (сохраняя роль или подкоманду назначения, если человек в ней),
     /// роли или подкоманде без человека, либо снимает назначение для «Не назначено».
     /// </summary>
@@ -179,7 +199,7 @@ public sealed class GanttPeopleData
     {
         var path = session.TeamPath($"tasks/{task.Id}/assignment");
         if (rowKey == Pool) return session.Send(HttpMethod.Delete, path, new { });
-        if (IsGroup(rowKey)) throw new InvalidOperationException("Задачу нельзя назначить на группу — выберите человека или роль.");
+        if (IsGroup(rowKey)) throw new InvalidOperationException(GroupRefusal);
         var actor = Data.Actor(Guid.ParseExact(rowKey[2..], "N")) ?? throw new InvalidOperationException("Исполнитель не найден.");
         if (actor.Kind != "Person") return session.Send(HttpMethod.Put, path, new AssignmentRequest(actor.Id));
         var keep = Data.Actor(task.AssignmentTargetId) is { Kind: not "Person" } target
