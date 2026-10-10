@@ -56,7 +56,7 @@ else if (_data is not null)
                                  RowClass="RowClass" Items="@_data.Tasks" ItemKey="t => GanttData.Key(t.Id)" ItemRow="t => GanttData.Key(t.Id)"
                                  ItemSpan="_data.Span" ItemKind="_data.Kind" ItemSegments="_data.Segments" ItemLabel="t => t.Title"
                                  Links="@_data.Links().ToArray()" LinkTypes="@_types" ShowCriticalPath="_critical" RollupParents="true"
-                                 Markers="@DeadlineMarkers" Editable="true" OnChange="Change" OnLinkCreate="Link" OnLinkRejected="Rejected"
+                                 Markers="@DeadlineMarkers" Editable="true" AllowRowChange="false" OnChange="Change" OnLinkCreate="Link" OnLinkRejected="Rejected"
                                  AriaLabel="Задачи во времени">
                     <RowHeader Context="task">
                         <div class="alva-gantt-row">
