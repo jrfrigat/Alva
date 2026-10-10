@@ -1,0 +1,44 @@
+using System.Globalization;
+
+namespace Flare.Components.Gantt;
+
+/// <summary>User-facing texts of the Gantt components. Replace any of them through the components' <c>Texts</c> parameter.</summary>
+/// <param name="SelfLink">Refusal for a link from an item to itself.</param>
+/// <param name="Cycle">Refusal for a link that closes a cycle; <c>{0}</c> is the cycle, keys joined by arrows.</param>
+/// <param name="Duplicate">Refusal for a link that already exists.</param>
+/// <param name="Expand">Label of the expand toggle.</param>
+/// <param name="Collapse">Label of the collapse toggle.</param>
+/// <param name="LinkStarted">Announcement after a link was started from an item; <c>{0}</c> is the item.</param>
+/// <param name="Moved">Announcement after an item moved; <c>{0}</c> is the item, <c>{1}</c> its new span.</param>
+public sealed record GanttTexts(string SelfLink, string Cycle, string Duplicate, string Expand, string Collapse, string LinkStarted, string Moved)
+{
+    /// <summary>English texts.</summary>
+    public static GanttTexts English { get; } = new(
+        "An item cannot depend on itself.",
+        "This link would create a cycle: {0}.",
+        "This link already exists.",
+        "Expand", "Collapse",
+        "Linking from {0}. Choose the successor and press Enter.",
+        "{0} moved to {1}.");
+
+    /// <summary>Russian texts.</summary>
+    public static GanttTexts Russian { get; } = new(
+        "Элемент не может зависеть от самого себя.",
+        "Связь создаёт цикл: {0}.",
+        "Такая связь уже есть.",
+        "Развернуть", "Свернуть",
+        "Связь от {0}. Выберите последователя и нажмите Enter.",
+        "{0} перенесён: {1}.");
+
+    /// <summary>The built-in texts for <paramref name="culture"/>: Russian for <c>ru</c>, English otherwise.</summary>
+    public static GanttTexts For(CultureInfo culture) => culture.TwoLetterISOLanguageName == "ru" ? Russian : English;
+
+    /// <summary>The message for a refused link, or null when it is valid.</summary>
+    public string? Describe(GanttValidation validation) => validation.Code switch
+    {
+        GanttValidationCode.SelfLink => SelfLink,
+        GanttValidationCode.Cycle => string.Format(CultureInfo.CurrentCulture, Cycle, string.Join(" → ", validation.Path)),
+        GanttValidationCode.Duplicate => Duplicate,
+        _ => null
+    };
+}

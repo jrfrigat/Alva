@@ -8,8 +8,10 @@
     <Project Path="src/Alva.Contracts/Alva.Contracts.csproj" />
     <Project Path="src/Alva.Domain/Alva.Domain.csproj" />
     <Project Path="src/Alva.Infrastructure/Alva.Infrastructure.csproj" />
+    <Project Path="src/Flare.Components.Gantt/Flare.Components.Gantt.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Alva.Data.Tests/Alva.Data.Tests.csproj" />
+    <Project Path="tests/Flare.Components.Gantt.Tests/Flare.Components.Gantt.Tests.csproj" />
   </Folder>
 </Solution>

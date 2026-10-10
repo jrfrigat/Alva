@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <!-- Компоненты живут в Flare.Components, как у сателлита Flare.Components.Kanban; движок — в Flare.Components.Gantt. -->
+    <RootNamespace>Flare.Components</RootNamespace>
+    <PackageId>Flare.Components.Gantt</PackageId>
+    <Description>Flare Gantt timeline for the Flare Blazor component library (incubated in Alva, to be moved into Flare).</Description>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <SupportedPlatform Include="browser" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Только Flare: пакет не знает о приложении, которое его использует. -->
+    <PackageReference Include="Flare.Blazor" Version="0.43.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Flare.Components.Gantt.Tests" />
+  </ItemGroup>
+
+</Project>
