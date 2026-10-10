@@ -50,7 +50,16 @@
                         {
                             <span class="@Css.Classes.Gantt.ToggleSpace" aria-hidden="true"></span>
                         }
-                        <div class="@Css.Classes.Gantt.SideContent">@(RowHeader is null ? row.Key : RowHeader(row.Row))</div>
+                        <div class="@Css.Classes.Gantt.SideContent">
+                            @if (RowHeader is null)
+                            {
+                                @row.Key
+                            }
+                            else
+                            {
+                                @RowHeader(row.Row)
+                            }
+                        </div>
                     </div>
                 }
                 <div class="@Css.Classes.Gantt.Track" role="gridcell" style="width:@width;height:@GanttFormat.Px(row.Height)">
@@ -73,7 +82,14 @@
                     @foreach (var cell in row.Cells)
                     {
                         <div class="@($"{Css.Classes.Gantt.Cell} {Css.Classes.Gantt.Kind(cell.Kind)}")" data-kind="@cell.Kind" style="@CellStyle(cell)" title="@cell.Title">
-                            @(CellTemplate is null ? cell.Text : CellTemplate(cell))
+                            @if (CellTemplate is null)
+                            {
+                                @cell.Text
+                            }
+                            else
+                            {
+                                @CellTemplate(cell)
+                            }
                         </div>
                     }
                     @foreach (var bar in row.Bars)
