@@ -101,12 +101,12 @@ public sealed class GanttData
         Actor(task.ResolvedPersonId)?.Name
         ?? (Actor(task.AssignmentTargetId) is { } target ? $"Требуется: {target.Name}" : "Без исполнителя");
 
-    /// <summary>Сохраняет новые даты задач: первичное изменение и сдвинутые каскадом последователи.</summary>
+    /// <summary>Сохраняет новые даты задач: первичное изменение и сдвинутые каскадом последователи. Задачи, чьи даты не изменились, не трогаются.</summary>
     public async Task Save(AlvaSession session, IEnumerable<GanttChange> changes)
     {
         foreach (var change in changes)
         {
-            if (Task(change.ItemKey) is not { } task) continue;
+            if (Task(change.ItemKey) is not { } task || Span(task) == change.Span) continue;
             var start = DateOnly.FromDateTime(change.Span.Start);
             var end = DateOnly.FromDateTime(change.Span.End).AddDays(-1);
             if (end < start) end = start;
@@ -133,4 +133,24 @@ public sealed class GanttData
             .Append(today).ToArray();
         return GanttSpan.FromDays(days.Min().AddDays(-3), days.Max().AddDays(3));
     }
+
+    public static readonly GanttScale[] Scales = [GanttScale.Day, GanttScale.Week, GanttScale.Month];
+
+    public static string ScaleName(GanttScale scale) => scale switch { GanttScale.Week => "Недели", GanttScale.Month => "Месяцы", _ => "Дни" };
+
+    /// <summary>Ширина единицы оси: дню хватает места на часы, неделе и месяцу — на подпись.</summary>
+    public static double UnitWidth(GanttScale scale) => scale switch { GanttScale.Week => 96, GanttScale.Month => 140, _ => 40 };
+
+    public static bool IsWeekend(DateOnly day) => day.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday;
+
+    public static GanttMarker[] TodayMarkers => [new GanttMarker("today", DateTime.Today.AddHours(12), Label: "Сегодня")];
+
+    public SprintModel? Sprint(Guid? id) => id is { } value ? _sprints.GetValueOrDefault(value) : null;
+
+    public string SprintName(Guid? id) => Sprint(id) is { } s ? $"{s.Name} ({s.StartDate:dd.MM}–{s.EndDate:dd.MM})" : "Все задачи";
+
+    /// <summary>Окно выбранного спринта, а без выбора — окна активных спринтов.</summary>
+    public IEnumerable<GanttRegion> SprintRegions(SprintModel? sprint) => sprint is { } s
+        ? [new GanttRegion("sprint", GanttSpan.FromDays(s.StartDate, s.EndDate), Label: $"{s.Name}: {s.StartDate:dd.MM}–{s.EndDate:dd.MM}")]
+        : Sprints.Where(s => s.Status == "Active").Select(s => new GanttRegion("sprint", GanttSpan.FromDays(s.StartDate, s.EndDate), Label: s.Name));
 }

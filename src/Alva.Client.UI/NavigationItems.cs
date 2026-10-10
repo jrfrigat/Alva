@@ -28,6 +28,7 @@ public static class NavigationItems
         new("Диаграммы",
         [
             new("/gantt/tasks", "Гантт по задачам", Flare.Icons.MaterialDesign3Icons.Regular.WaterfallChart, false),
+            new("/gantt/people", "Гантт по людям", Flare.Icons.MaterialDesign3Icons.Regular.StackedBarChart, false),
             new("/projects", "Проекты", Flare.Icons.MaterialDesign3Icons.Regular.FolderSpecial, false)
         ]),
         new("Ёмкость",

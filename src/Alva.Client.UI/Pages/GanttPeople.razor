@@ -1,0 +1,164 @@
+@page "/gantt/people"
+@page "/gantt/2d"
+@inject AlvaSession Session
+@inject NavigationManager Navigation
+@using Flare.Components.Gantt
+@* Гантт по людям (макет p6_2d, проекция 2): дорожки людей и ролей с часами ёмкости и задачами исполнителя.
+   В 2D-режиме над ними — проекция 1 на той же оси. Проекции собирает Alva из примитивов Flare.Components.Gantt. *@
+<PageTitle>@(_twoD ? "Синхронный Гантт 2D" : "Гантт по людям") · Alva</PageTitle>
+<section class="alva-page-header">
+    <div class="alva-page-header__text">
+        <div class="alva-micro-label"><span>Диаграммы · Гантт</span></div>
+        <h1 class="alva-page-header__title">@(_twoD ? "Синхронный Гантт 2D" : "Гантт по людям")</h1>
+        <p class="alva-page-header__desc">Кто чем занят во времени: часы назначенной работы против доступных, перегрузки и отсутствия. Перетащите задачу на другую строку или нажмите Ctrl+↑/↓, чтобы переназначить; Ctrl+стрелка влево/вправо переносит даты.</p>
+    </div>
+</section>
+<PageFeedback Loading="_busy" Error="@_error" />
+@if (Session.TeamId is null) { <TeamRequired /> }
+else if (_data is not null && _people is not null)
+{
+    <div class="alva-filterbar alva-gantt-bar">
+        <div class="alva-gantt-bar__fields">
+            <FlareSelect TValue="Guid?" Items="@(_data.Sprints.OrderBy(s => s.StartDate).Select(s => (Guid?)s.Id))" ItemLabel="_data.SprintName" NullOption="Все задачи"
+                         @bind-Value="_sprintId" @bind-Value:after="LoadCapacity" Size="FieldSize.Sm" InputAttributes="@(Aria("Спринт"))" />
+            <FlareSelect TValue="GanttScale" Items="GanttData.Scales" ItemLabel="GanttData.ScaleName" @bind-Value="_scale" Size="FieldSize.Sm" InputAttributes="@(Aria("Масштаб"))" />
+        </div>
+        <FlareSwitch Value="_twoD" ValueChanged="SetTwoD" Label="Синхронно с задачами (2D)" />
+    </div>
+
+    <div class="alva-gantt-legend" aria-label="Обозначения">
+        <span class="alva-gantt-legend__item alva-gantt-legend__item--load">Загрузка, ч</span>
+        <span class="alva-gantt-legend__item alva-gantt-legend__item--overload">Перегрузка</span>
+        <span class="alva-gantt-legend__item alva-gantt-legend__item--free">Свободно</span>
+        <span class="alva-gantt-legend__item alva-gantt-legend__item--absence">Отсутствие</span>
+        <span class="alva-gantt-legend__item alva-gantt-legend__item--demand">Нужен человек</span>
+        <span class="alva-gantt-legend__item alva-gantt-legend__item--work">Задача</span>
+        <span class="alva-gantt-legend__item alva-gantt-legend__item--risk-high">Высокий риск</span>
+        @if (_notice is not null) { <span class="alva-gantt-legend__notice" role="status">@_notice</span> }
+    </div>
+
+    <FlareGantt Range="@Range" Scale="_scale" UnitWidth="@GanttData.UnitWidth(_scale)" RowHeight="36" SideWidth="22rem"
+                NonWorking="GanttData.IsWeekend" Markers="@GanttData.TodayMarkers" Regions="@_data.SprintRegions(Sprint)" @bind-SelectedKey="_selected"
+                AriaLabel="@(_twoD ? "Синхронный Гантт 2D" : "Гантт по людям")" Class="alva-gantt">
+        <Corner><span>Исполнитель · загрузка за период</span></Corner>
+        <ChildContent>
+            @if (_twoD)
+            {
+                <GanttTaskPanel Data="_data" SprintId="_sprintId" OnChange="Change" OnLinkCreate="Link" OnLinkRejected="Rejected">
+                    <Header>Проекция 1: иерархия работ и фазы во времени</Header>
+                </GanttTaskPanel>
+            }
+            <FlareGanttPanel TRow="PeopleRow" TItem="TaskModel" Rows="@_people.Rows" RowKey="r => r.Key" RowChildren="r => r.Children.Count > 0 ? r.Children : null"
+                             RowClass="@(r => $"alva-gantt-row--{r.Kind}")" Items="@_people.Items" ItemKey="t => GanttData.Key(t.Id)" ItemRow="_people.RowOf"
+                             ItemSpan="_data.Span" ItemKind="_data.Kind" ItemSegments="_data.Segments" ItemLabel="t => t.Title"
+                             Links="@_data.Links().ToArray()" Cells="@_people.Cells(_scale, Range)" Editable="true"
+                             OnChange="Change" OnLinkCreate="Link" OnLinkRejected="Rejected" Header="@(_twoD ? PeopleHeader : null)" AriaLabel="Люди и роли во времени">
+                <RowHeader Context="row">
+                    <div class="alva-gantt-row">
+                        @if (row.Kind == "person")
+                        {
+                            <a class="alva-gantt-row__title" href="/capacity/@row.Actor!.Id" title="@row.Name">@row.Name</a>
+                        }
+                        else
+                        {
+                            <span class="alva-gantt-row__title" title="@row.Name">@row.Name</span>
+                        }
+                        <span class="alva-gantt-row__meta">@row.Meta</span>
+                    </div>
+                </RowHeader>
+            </FlareGanttPanel>
+        </ChildContent>
+    </FlareGantt>
+}
+
+@code {
+    private GanttData? _data;
+    private GanttPeopleData? _people;
+    private bool _busy = true;
+    private string? _error;
+    private string? _notice;
+    private Guid? _sprintId;
+    private GanttScale _scale = GanttScale.Day;
+    private string? _selected;
+    private bool _twoD;
+
+    private static readonly RenderFragment PeopleHeader = @<span>Проекция 2: дорожки ресурсов и ёмкость (часы)</span>;
+
+    private static DateOnly Today => DateOnly.FromDateTime(DateTime.Today);
+    private SprintModel? Sprint => _data?.Sprint(_sprintId);
+    private GanttSpan Range => _data!.Range(Sprint, Today);
+
+    private static Dictionary<string, object> Aria(string label) => new() { ["aria-label"] = label };
+
+    protected override async Task OnInitializedAsync()
+    {
+        _twoD = Navigation.Uri.Contains("/gantt/2d", StringComparison.OrdinalIgnoreCase);
+        await Session.Initialize();
+        await Reload(initial: true);
+    }
+
+    private void SetTwoD(bool value)
+    {
+        _twoD = value;
+        Navigation.NavigateTo(value ? "/gantt/2d" : "/gantt/people", replace: true);
+    }
+
+    private async Task Reload(bool initial = false)
+    {
+        _busy = true;
+        try
+        {
+            if (Session.TeamId is null) return;
+            _data = await GanttData.Load(Session);
+            if (initial) _sprintId = _data.Sprints.FirstOrDefault(s => s.Status == "Active")?.Id;
+            _people = await GanttPeopleData.Load(Session, _data, Range);
+        }
+        catch (Exception e) when (e is HttpRequestException or InvalidOperationException) { _error = e.Message; }
+        finally { _busy = false; }
+    }
+
+    // Ёмкость зависит от окна оси, поэтому новый спринт перечитывает её.
+    private async Task LoadCapacity()
+    {
+        try { _people = await GanttPeopleData.Load(Session, _data!, Range); }
+        catch (Exception e) when (e is HttpRequestException or InvalidOperationException) { _error = e.Message; }
+    }
+
+    private async Task Change(GanttChangeEventArgs args)
+    {
+        _error = null;
+        var primary = args.Changes.FirstOrDefault(c => c.ItemKey == args.ItemKey);
+        if (primary?.RowKey is { } row && GanttPeopleData.IsGroup(row))
+        {
+            args.Cancel = true;
+            _error = "Задачу нельзя назначить на группу — выберите человека или роль.";
+            return;
+        }
+        try
+        {
+            await _data!.Save(Session, args.Changes);
+            if (primary?.RowKey is { } target && _data.Task(args.ItemKey) is { } task)
+            {
+                await _people!.Reassign(Session, task, target);
+                _notice = target == GanttPeopleData.Pool ? "Назначение снято" : "Задача переназначена";
+            }
+            else _notice = args.Changes.Count > 1 ? $"Даты сохранены, сдвинуто последователей: {args.Changes.Count - 1}" : "Даты сохранены";
+        }
+        catch (Exception e) when (e is HttpRequestException or InvalidOperationException) { args.Cancel = true; _error = e.Message; }
+        await Reload();
+    }
+
+    private async Task Link(GanttLinkEventArgs args)
+    {
+        _error = null;
+        try
+        {
+            await _data!.AddLink(Session, args.Link);
+            _notice = "Связь добавлена";
+        }
+        catch (Exception e) when (e is HttpRequestException or InvalidOperationException) { args.Cancel = true; _error = e.Message; }
+        await Reload();
+    }
+
+    private void Rejected(GanttLinkRejectedEventArgs args) => _error = args.Message;
+}

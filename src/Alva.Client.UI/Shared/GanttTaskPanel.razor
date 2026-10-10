@@ -1,0 +1,59 @@
+@using Flare.Components.Gantt
+@* Проекция 1 (макет p6_2d): дерево работ с окнами задач, сроками и связями. Кладётся внутрь FlareGantt —
+   отдельно на «Гантте по задачам» и над людьми в 2D-режиме. *@
+<FlareGanttPanel TRow="TaskModel" TItem="TaskModel" Rows="@Roots" RowKey="t => GanttData.Key(t.Id)" RowChildren="Children"
+                 RowClass="RowClass" Items="@Data.Tasks" ItemKey="t => GanttData.Key(t.Id)" ItemRow="t => GanttData.Key(t.Id)"
+                 ItemSpan="Data.Span" ItemKind="Data.Kind" ItemSegments="Data.Segments" ItemLabel="t => t.Title"
+                 Links="@Data.Links().ToArray()" LinkTypes="@Types" ShowCriticalPath="Critical" RollupParents="true"
+                 Markers="@DeadlineMarkers" Editable="true" AllowRowChange="false" OnChange="OnChange" OnLinkCreate="OnLinkCreate"
+                 OnLinkRejected="OnLinkRejected" Header="Header" AriaLabel="Задачи во времени">
+    <RowHeader Context="task">
+        <div class="alva-gantt-row">
+            <a class="alva-gantt-row__title" href="/tasks/@task.Id" title="@task.Title">@task.Title</a>
+            <span class="alva-gantt-row__meta">@Data.Assignee(task) · @AlvaFormat.Hours(task.EffectiveEstimateHours) ч</span>
+        </div>
+    </RowHeader>
+</FlareGanttPanel>
+
+@code {
+    [Parameter, EditorRequired] public GanttData Data { get; set; } = null!;
+
+    /// <summary>Спринт, задачи которого (и их предки) показываются; null — все задачи.</summary>
+    [Parameter] public Guid? SprintId { get; set; }
+
+    [Parameter] public IReadOnlyCollection<GanttLinkType>? Types { get; set; }
+    [Parameter] public bool Critical { get; set; }
+    [Parameter] public RenderFragment? Header { get; set; }
+    [Parameter] public EventCallback<GanttChangeEventArgs> OnChange { get; set; }
+    [Parameter] public EventCallback<GanttLinkEventArgs> OnLinkCreate { get; set; }
+    [Parameter] public EventCallback<GanttLinkRejectedEventArgs> OnLinkRejected { get; set; }
+
+    private IEnumerable<TaskModel> Roots
+    {
+        get
+        {
+            var ids = Data.Tasks.Select(t => t.Id).ToHashSet();
+            return Visible(Data.Tasks.Where(t => t.ParentId is null || !ids.Contains(t.ParentId.Value)));
+        }
+    }
+
+    private IEnumerable<TaskModel>? Children(TaskModel task) => Visible(Data.Tasks.Where(t => t.ParentId == task.Id));
+
+    // В режиме спринта показываются задачи спринта и их предки, чтобы дерево не рвалось.
+    private IEnumerable<TaskModel> Visible(IEnumerable<TaskModel> tasks)
+    {
+        var ordered = tasks.OrderBy(t => t.Order).ThenBy(t => t.Title);
+        if (SprintId is not { } sprint) return ordered;
+        return ordered.Where(t => InSprint(t, sprint));
+    }
+
+    private bool InSprint(TaskModel task, Guid sprint) =>
+        task.SprintId == sprint || Data.Tasks.Any(c => c.ParentId == task.Id && InSprint(c, sprint));
+
+    private static string? RowClass(TaskModel task) => GanttData.IsClosed(task) ? "alva-gantt-row--closed" : null;
+
+    private IEnumerable<GanttMarker> DeadlineMarkers => Data.Tasks
+        .Where(t => !GanttData.IsClosed(t) && (t.EffectiveDeadline ?? t.Deadline) is not null)
+        .Select(t => new GanttMarker("deadline", (t.EffectiveDeadline ?? t.Deadline)!.Value.AddDays(1).ToDateTime(TimeOnly.MinValue),
+            GanttData.Key(t.Id), "Срок", GanttData.Key(t.Id)));
+}

@@ -18,9 +18,9 @@ else if (_data is not null)
 {
     <div class="alva-filterbar alva-gantt-bar">
         <div class="alva-gantt-bar__fields">
-            <FlareSelect TValue="Guid?" Items="@(_data.Sprints.OrderBy(s => s.StartDate).Select(s => (Guid?)s.Id))" ItemLabel="SprintName" NullOption="Все задачи"
+            <FlareSelect TValue="Guid?" Items="@(_data.Sprints.OrderBy(s => s.StartDate).Select(s => (Guid?)s.Id))" ItemLabel="_data.SprintName" NullOption="Все задачи"
                          @bind-Value="_sprintId" Size="FieldSize.Sm" InputAttributes="@(Aria("Спринт"))" />
-            <FlareSelect TValue="GanttScale" Items="Scales" ItemLabel="ScaleName" @bind-Value="_scale" Size="FieldSize.Sm" InputAttributes="@(Aria("Масштаб"))" />
+            <FlareSelect TValue="GanttScale" Items="GanttData.Scales" ItemLabel="GanttData.ScaleName" @bind-Value="_scale" Size="FieldSize.Sm" InputAttributes="@(Aria("Масштаб"))" />
         </div>
         <div class="alva-quickfilter" role="group" aria-label="Типы связей">
             @foreach (var type in AllTypes)
@@ -47,31 +47,18 @@ else if (_data is not null)
     }
     else
     {
-        <FlareGantt Range="@_data.Range(Sprint, Today)" Scale="_scale" UnitWidth="@UnitWidth" RowHeight="36" SideWidth="22rem"
-                    NonWorking="IsWeekend" Markers="@GlobalMarkers" Regions="@SprintRegions" @bind-SelectedKey="_selected"
+        <FlareGantt Range="@_data.Range(Sprint, Today)" Scale="_scale" UnitWidth="@GanttData.UnitWidth(_scale)" RowHeight="36" SideWidth="22rem"
+                    NonWorking="GanttData.IsWeekend" Markers="@GanttData.TodayMarkers" Regions="@_data.SprintRegions(Sprint)" @bind-SelectedKey="_selected"
                     AriaLabel="Гантт по задачам" Class="alva-gantt">
             <Corner><span>Задача · исполнитель · часы</span></Corner>
             <ChildContent>
-                <FlareGanttPanel TRow="TaskModel" TItem="TaskModel" Rows="@Roots" RowKey="t => GanttData.Key(t.Id)" RowChildren="Children"
-                                 RowClass="RowClass" Items="@_data.Tasks" ItemKey="t => GanttData.Key(t.Id)" ItemRow="t => GanttData.Key(t.Id)"
-                                 ItemSpan="_data.Span" ItemKind="_data.Kind" ItemSegments="_data.Segments" ItemLabel="t => t.Title"
-                                 Links="@_data.Links().ToArray()" LinkTypes="@_types" ShowCriticalPath="_critical" RollupParents="true"
-                                 Markers="@DeadlineMarkers" Editable="true" AllowRowChange="false" OnChange="Change" OnLinkCreate="Link" OnLinkRejected="Rejected"
-                                 AriaLabel="Задачи во времени">
-                    <RowHeader Context="task">
-                        <div class="alva-gantt-row">
-                            <a class="alva-gantt-row__title" href="/tasks/@task.Id" title="@task.Title">@task.Title</a>
-                            <span class="alva-gantt-row__meta">@_data.Assignee(task) · @AlvaFormat.Hours(task.EffectiveEstimateHours) ч</span>
-                        </div>
-                    </RowHeader>
-                </FlareGanttPanel>
+                <GanttTaskPanel Data="_data" SprintId="_sprintId" Types="_types" Critical="_critical" OnChange="Change" OnLinkCreate="Link" OnLinkRejected="Rejected" />
             </ChildContent>
         </FlareGantt>
     }
 }
 
 @code {
-    private static readonly GanttScale[] Scales = [GanttScale.Day, GanttScale.Week, GanttScale.Month];
     private static readonly GanttLinkType[] AllTypes = [GanttLinkType.FinishToStart, GanttLinkType.StartToStart, GanttLinkType.FinishToFinish, GanttLinkType.StartToFinish];
     private GanttData? _data;
     private bool _busy = true;
@@ -84,49 +71,7 @@ else if (_data is not null)
     private HashSet<GanttLinkType> _types = [.. AllTypes];
 
     private static DateOnly Today => DateOnly.FromDateTime(DateTime.Today);
-    private SprintModel? Sprint => _data?.Sprints.FirstOrDefault(s => s.Id == _sprintId);
-    private double UnitWidth => _scale switch { GanttScale.Week => 96, GanttScale.Month => 140, _ => 40 };
-
-    private IEnumerable<TaskModel> Roots
-    {
-        get
-        {
-            var ids = _data!.Tasks.Select(t => t.Id).ToHashSet();
-            return Visible(_data.Tasks.Where(t => t.ParentId is null || !ids.Contains(t.ParentId.Value)));
-        }
-    }
-
-    private IEnumerable<TaskModel>? Children(TaskModel task) => Visible(_data!.Tasks.Where(t => t.ParentId == task.Id));
-
-    // В режиме спринта показываются задачи спринта и их предки, чтобы дерево не рвалось.
-    private IEnumerable<TaskModel> Visible(IEnumerable<TaskModel> tasks)
-    {
-        var ordered = tasks.OrderBy(t => t.Order).ThenBy(t => t.Title);
-        if (_sprintId is not { } sprint) return ordered;
-        return ordered.Where(t => InSprint(t, sprint));
-    }
-
-    private bool InSprint(TaskModel task, Guid sprint) =>
-        task.SprintId == sprint || _data!.Tasks.Any(c => c.ParentId == task.Id && InSprint(c, sprint));
-
-    private string? RowClass(TaskModel task) => GanttData.IsClosed(task) ? "alva-gantt-row--closed" : null;
-
-    private IEnumerable<GanttMarker> GlobalMarkers => [new GanttMarker("today", DateTime.Today.AddHours(12), Label: "Сегодня")];
-
-    private IEnumerable<GanttRegion> SprintRegions => Sprint is { } s
-        ? [new GanttRegion("sprint", GanttSpan.FromDays(s.StartDate, s.EndDate), Label: $"{s.Name}: {s.StartDate:dd.MM}–{s.EndDate:dd.MM}")]
-        : _data!.Sprints.Where(s => s.Status == "Active").Select(s => new GanttRegion("sprint", GanttSpan.FromDays(s.StartDate, s.EndDate), Label: s.Name));
-
-    private IEnumerable<GanttMarker> DeadlineMarkers => _data!.Tasks
-        .Where(t => !GanttData.IsClosed(t) && (t.EffectiveDeadline ?? t.Deadline) is not null)
-        .Select(t => new GanttMarker("deadline", (t.EffectiveDeadline ?? t.Deadline)!.Value.AddDays(1).ToDateTime(TimeOnly.MinValue),
-            GanttData.Key(t.Id), "Срок", GanttData.Key(t.Id)));
-
-    private static bool IsWeekend(DateOnly day) => day.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday;
-
-    private string SprintName(Guid? id) => _data?.Sprints.FirstOrDefault(s => s.Id == id) is { } s ? $"{s.Name} ({s.StartDate:dd.MM}–{s.EndDate:dd.MM})" : "Все задачи";
-
-    private static string ScaleName(GanttScale scale) => scale switch { GanttScale.Week => "Недели", GanttScale.Month => "Месяцы", _ => "Дни" };
+    private SprintModel? Sprint => _data?.Sprint(_sprintId);
 
     private static Dictionary<string, object> Aria(string label) => new() { ["aria-label"] = label };
 

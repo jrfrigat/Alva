@@ -589,3 +589,16 @@ a.alva-matrix__name:hover{text-decoration:underline}
 .alva-gantt .flare-gantt__marker.flare-gantt--kind-today{--flare-gantt-marker:var(--flare-color-primary);--flare-gantt-marker-fg:var(--flare-color-on-primary)}
 .alva-gantt .flare-gantt__marker.flare-gantt--kind-deadline{--flare-gantt-marker-style:dashed}
 .alva-gantt .flare-gantt__region.flare-gantt--kind-sprint .flare-gantt__region-label{top:auto;bottom:var(--flare-spacing-1,.125rem)}
+.alva-gantt-legend__item--load{--_swatch:var(--flare-color-primary-container)}
+.alva-gantt-legend__item--overload{--_swatch:var(--flare-color-error-container);--_swatch-border:var(--flare-color-error)}
+.alva-gantt-legend__item--free{--_swatch:var(--flare-color-surface-container-lowest,var(--flare-color-surface));--_swatch-border:var(--flare-color-outline-variant)}
+.alva-gantt-legend__item--absence{--_swatch:var(--flare-color-surface-container-highest,var(--flare-color-outline-variant))}
+.alva-gantt-legend__item--demand{--_swatch:var(--flare-color-error-container);--_swatch-border:var(--flare-color-error);--_swatch-style:dashed}
+.alva-gantt .flare-gantt__cell.flare-gantt--kind-load{--flare-gantt-cell-bg:var(--flare-color-primary-container);--flare-gantt-cell-fg:var(--flare-color-on-primary-container)}
+.alva-gantt .flare-gantt__cell.flare-gantt--kind-overload{--flare-gantt-cell-bg:var(--flare-color-error);--flare-gantt-cell-fg:var(--flare-color-on-error)}
+.alva-gantt .flare-gantt__cell.flare-gantt--kind-free{--flare-gantt-cell-bg:var(--flare-color-surface-container-lowest,var(--flare-color-surface));--flare-gantt-cell-fg:var(--flare-color-on-surface-variant);font-weight:400}
+.alva-gantt .flare-gantt__cell.flare-gantt--kind-absence{--flare-gantt-cell-bg:var(--flare-color-surface-container-highest,var(--flare-color-outline-variant));--flare-gantt-cell-fg:var(--flare-color-on-surface-variant);font-weight:400}
+.alva-gantt .flare-gantt__cell.flare-gantt--kind-demand{--flare-gantt-cell-bg:var(--flare-color-error-container);--flare-gantt-cell-fg:var(--flare-color-on-error-container);outline:1px dashed var(--flare-color-error);outline-offset:-1px}
+.alva-gantt-row--group .alva-gantt-row__title{text-transform:uppercase;font-size:11px;letter-spacing:.04em;color:var(--flare-color-primary)}
+.alva-gantt-row--role .alva-gantt-row__title{color:var(--flare-color-error)}
+.alva-gantt-row--pool .alva-gantt-row__title{color:var(--flare-color-on-surface-variant)}
