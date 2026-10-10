@@ -225,7 +225,7 @@ public static class PlanningEndpoints
     }
 
     /// <summary>Календари людей команды вместе с общими графиками их подкоманд — так их видят ёмкость и риски.</summary>
-    private static async Task<(List<Actor> People, Func<Guid, CalendarDto> CalendarOf)> PeopleCalendars(AlvaDbContext db, Guid teamId)
+    internal static async Task<(List<Actor> People, Func<Guid, CalendarDto> CalendarOf)> PeopleCalendars(AlvaDbContext db, Guid teamId)
     {
         var people = await db.Actors.AsNoTracking().Where(x => x.TeamId == teamId && !x.Archived && x.Kind == ActorKind.Person).OrderBy(x => x.Name).ToListAsync();
         var departments = await db.Actors.AsNoTracking().Where(x => x.TeamId == teamId && !x.Archived && x.Kind == ActorKind.Department).ToDictionaryAsync(x => x.Id, x => x.ParentId);

@@ -346,6 +346,16 @@ networks:
     Assert-True ($null -ne $holidayRisk -and @($holidayRisk.reasons | Where-Object { $_ -like 'Исполнитель недоступен:*' }).Count -eq 1) 'A holiday in the task window was not reported as a risk.'
     Write-Host 'PASS: risks report an unavailable assignee.'
 
+    # Autobalance runs the OR-Tools native solver inside the Linux container and only proposes changes.
+    foreach ($mode in @('Gentle', 'Deadlines', 'Maximum')) {
+        $proposal = Invoke-Api $owner POST "api/teams/$teamId/sprints/$($sprint.id)/balance" @{ mode = $mode }
+        Assert-True ($proposal.mode -eq $mode -and $proposal.status -in @('Optimal', 'Feasible', 'Heuristic') -and $null -ne $proposal.after) `
+            "Autobalance did not return a proposal in $mode mode."
+    }
+    [void](Invoke-Api $stranger POST "api/teams/$teamId/sprints/$($sprint.id)/balance" @{ mode = 'Gentle' } -ExpectedStatus @(403, 404))
+    [void](Invoke-Api $owner POST "api/teams/$teamId/sprints/$([guid]::NewGuid())/balance" @{ mode = 'Gentle' } -ExpectedStatus @(404))
+    Write-Host 'PASS: sprint autobalance proposes a plan with the native solver.'
+
     # Restart the real published API. Cookie keys and business records must persist.
     Invoke-Compose -Arguments @('restart', 'app')
     Invoke-Compose -Arguments @('up', '-d', '--wait', '--wait-timeout', '90', 'app')

@@ -67,6 +67,7 @@ app.MapActors();
 app.MapTasks();
 app.MapPlanning();
 app.MapCapacity();
+app.MapBalance();
 app.MapData();
 app.MapGet("/health/live", () => Results.Ok(new { status = "live" }));
 app.MapGet("/health/ready", async (AlvaDbContext db, CancellationToken ct) => await db.Database.CanConnectAsync(ct) ? Results.Ok(new { status = "ready" }) : Results.StatusCode(503));
