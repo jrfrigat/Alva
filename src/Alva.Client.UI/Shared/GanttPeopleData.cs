@@ -19,15 +19,17 @@ public sealed class GanttPeopleData
     public GanttData Data { get; }
     public IReadOnlyList<PeopleRow> Rows { get; }
 
-    private readonly CapacityDto[] _capacity;
-    private readonly CapacityDemandDto[] _demand;
+    private readonly ILookup<Guid, CapacityDto> _capacityOf;
+    private readonly ILookup<Guid, CapacityDemandDto> _demandOf;
     private readonly ActorModel[] _departments;
+    private (GanttScale Scale, GanttSpan Range, GanttCell[] Cells)? _cells;
 
     private GanttPeopleData(GanttData data, CapacityDto[] capacity, CapacityDemandDto[] demand)
     {
         Data = data;
-        _capacity = capacity;
-        _demand = demand;
+        _capacityOf = capacity.ToLookup(c => c.ActorId);
+        _demandOf = demand.ToLookup(d => d.TargetId);
+        Items = data.Tasks.Where(t => data.Window(t) is not null).ToArray();
         _departments = data.Actors.Where(a => a.Kind == "Department").OrderBy(a => a.Name).ToArray();
         Rows = BuildRows();
     }
@@ -48,7 +50,7 @@ public sealed class GanttPeopleData
     private static string GroupKey(Guid? id) => "g:" + (id is { } value ? GanttData.Key(value) : "none");
 
     /// <summary>Задачи с окном: у задачи без дат и срока нет полосы.</summary>
-    public IEnumerable<TaskModel> Items => Data.Tasks.Where(t => Data.Window(t) is not null);
+    public IReadOnlyList<TaskModel> Items { get; }
 
     /// <summary>Строка задачи: конкретный человек, иначе цель назначения (человек, роль или подкоманда), иначе «Не назначено».</summary>
     public string RowOf(TaskModel task)
@@ -86,7 +88,7 @@ public sealed class GanttPeopleData
 
     private PeopleRow PersonRow(ActorModel person)
     {
-        var rows = _capacity.Where(c => c.ActorId == person.Id).ToArray();
+        var rows = _capacityOf[person.Id].ToArray();
         var roles = string.Join(" / ", Data.Actors.Where(a => person.RoleIds.Contains(a.Id)).Select(a => a.Name).DefaultIfEmpty("Участник команды"));
         var load = $"{AlvaFormat.Hours(rows.Sum(r => r.AllocatedHours))} / {AlvaFormat.Hours(rows.Sum(r => r.AvailableHours))} ч";
         return new PeopleRow(PersonKey(person.Id), "person", person.Name, $"{roles} · {load}", person, []);
@@ -101,13 +103,22 @@ public sealed class GanttPeopleData
     private Guid? GroupOfRole(ActorModel actor) =>
         actor.Kind == "Department" ? actor.Id : actor.ParentId is { } parent && _departments.Any(d => d.Id == parent) ? parent : null;
 
-    private decimal Demand(Guid actorId) => _demand.Where(d => d.TargetId == actorId).Sum(d => d.Hours);
+    private decimal Demand(Guid actorId) => _demandOf[actorId].Sum(d => d.Hours);
 
     /// <summary>
     /// Часы по единицам оси: у человека — назначено из доступного с видом загрузки, перегрузки, отсутствия или свободного
     /// времени; у роли — потребность без человека.
     /// </summary>
-    public IEnumerable<GanttCell> Cells(GanttScale scale, GanttSpan range)
+    public IReadOnlyList<GanttCell> Cells(GanttScale scale, GanttSpan range)
+    {
+        // Ячейки зависят только от масштаба и окна, а страница перерисовывается на каждом шаге перетаскивания.
+        if (_cells is { } cached && cached.Scale == scale && cached.Range == range) return cached.Cells;
+        var cells = BuildCells(scale, range).ToArray();
+        _cells = (scale, range, cells);
+        return cells;
+    }
+
+    private IEnumerable<GanttCell> BuildCells(GanttScale scale, GanttSpan range)
     {
         var units = Units(scale, DateOnly.FromDateTime(range.Start), DateOnly.FromDateTime(range.End).AddDays(-1)).ToArray();
         foreach (var group in Rows)
@@ -117,7 +128,7 @@ public sealed class GanttPeopleData
             var span = GanttSpan.FromDays(from, to);
             if (row.Kind == "person")
             {
-                var days = _capacity.Where(c => c.ActorId == row.Actor!.Id && c.Date >= from && c.Date <= to).ToArray();
+                var days = _capacityOf[row.Actor!.Id].Where(c => c.Date >= from && c.Date <= to).ToArray();
                 var available = days.Sum(d => d.AvailableHours);
                 var allocated = days.Sum(d => d.AllocatedHours);
                 var title = $"{row.Name}: назначено {AlvaFormat.Hours(allocated)} ч из {AlvaFormat.Hours(available)} ч";
@@ -125,7 +136,7 @@ public sealed class GanttPeopleData
                 {
                     // Выходные — фон оси; пустой рабочий период у человека с графиком — отсутствие.
                     if (Enumerable.Range(0, to.DayNumber - from.DayNumber + 1).All(i => GanttData.IsWeekend(from.AddDays(i)))) continue;
-                    if (!_capacity.Any(c => c.ActorId == row.Actor!.Id && c.AvailableHours > 0)) continue;
+                    if (!_capacityOf[row.Actor!.Id].Any(c => c.AvailableHours > 0)) continue;
                     yield return new GanttCell(row.Key, span, "absence", "—", $"{row.Name}: отсутствует");
                     continue;
                 }
@@ -134,7 +145,7 @@ public sealed class GanttPeopleData
             }
             else if (row.Kind == "role")
             {
-                var hours = _demand.Where(d => d.TargetId == row.Actor!.Id && d.Date >= from && d.Date <= to).Sum(d => d.Hours);
+                var hours = _demandOf[row.Actor!.Id].Where(d => d.Date >= from && d.Date <= to).Sum(d => d.Hours);
                 if (hours > 0) yield return new GanttCell(row.Key, span, "demand", Hours(hours, scale), $"{row.Name}: {AlvaFormat.Hours(hours)} ч без человека");
             }
         }
