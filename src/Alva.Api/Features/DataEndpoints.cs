@@ -77,6 +77,8 @@ public static class DataEndpoints
             await AccessControl.RequireTeam(db, user, teamId, "data", "manage");
             var team = await db.Teams.SingleAsync(x => x.Id == teamId, ct);
             var idMap = package.Rows.ToDictionary(x => x.Id, _ => Guid.NewGuid());
+            // Старые выгрузки: задача без дат из спринта получает окно этого спринта — спринт теперь следует из дат.
+            var sprintWindows = package.Rows.Where(x => x.Kind == "sprint").Select(x => (Sprint)DataTransfer.Entity(x)).ToDictionary(x => x.Id);
             Guid Map(Guid id) => idMap[id]; Guid? Optional(Guid? id) => id.HasValue ? Map(id.Value) : null;
             foreach (var row in package.Rows)
             {
@@ -86,7 +88,13 @@ public static class DataEndpoints
                 {
                     case Project x: x.WorkspaceId = team.WorkspaceId; db.Projects.Add(x); db.ProjectTeams.Add(new() { ProjectId = x.Id, TeamId = teamId }); break;
                     case Sprint x: x.TeamId = teamId; db.Sprints.Add(x); break;
-                    case TaskCard x: x.TeamId = teamId; x.ProjectId = Optional(x.ProjectId); x.SprintId = Optional(x.SprintId); x.ParentId = Optional(x.ParentId); x.Version = 1; db.Tasks.Add(x); break;
+                    case TaskCard x:
+                        if (DataTransfer.LegacySprint(row) is { } legacySprint && sprintWindows.GetValueOrDefault(legacySprint) is { } window)
+                        {
+                            x.StartDate ??= x.EndDate is { } end && end < window.StartDate ? end : window.StartDate;
+                            x.EndDate ??= x.StartDate > window.EndDate ? x.StartDate : window.EndDate;
+                        }
+                        x.TeamId = teamId; x.ProjectId = Optional(x.ProjectId); x.ParentId = Optional(x.ParentId); x.Version = 1; db.Tasks.Add(x); break;
                     case Actor x: x.TeamId = teamId; x.ParentId = Optional(x.ParentId); x.UserId = null; db.Actors.Add(x); break;
                     case ActorRole x: x.ActorId = Map(x.ActorId); x.RoleId = Map(x.RoleId); db.ActorRoles.Add(x); break;
                     case ActorDepartment x: x.ActorId = Map(x.ActorId); x.DepartmentId = Map(x.DepartmentId); db.ActorDepartments.Add(x); break;
@@ -117,12 +125,25 @@ public static class DataTransfer
     public static string Format(string? value) => value?.ToLowerInvariant() switch { null or "json" => "json", "csv" => "csv", "xlsx" => "xlsx", _ => throw new ApiException(400, "Поддерживаются JSON, CSV и XLSX.") };
     public static object Entity(DataRow row) => row.Kind switch
     {
-        "project" => Read<Project>(row), "sprint" => Read<Sprint>(row), "task" => Read<TaskCard>(row), "actor" => Read<Actor>(row),
+        "project" => Read<Project>(row), "sprint" => Read<Sprint>(row), "task" => ReadTask(row), "actor" => Read<Actor>(row),
         "actorRole" => Read<ActorRole>(row), "actorDepartment" => Read<ActorDepartment>(row), "assignment" => Read<Assignment>(row), "dependency" => Read<TaskDependency>(row),
         "calendar" => Read<WorkCalendar>(row), "exception" => Read<CalendarException>(row), "block" => Read<RecurringBlock>(row),
         _ => throw new FormatException("Неизвестный тип записи.")
     };
     private static T Read<T>(DataRow row) => row.Payload.Deserialize<T>(Json) ?? throw new JsonException("Пустая запись.");
+
+    /// <summary>Задача без устаревшего поля sprintId: спринт теперь следует из дат (см. LegacySprint).</summary>
+    private static TaskCard ReadTask(DataRow row)
+    {
+        if (!row.Payload.TryGetProperty("sprintId", out _)) return Read<TaskCard>(row);
+        var payload = System.Text.Json.Nodes.JsonNode.Parse(row.Payload.GetRawText())!.AsObject();
+        payload.Remove("sprintId");
+        return payload.Deserialize<TaskCard>(Json) ?? throw new JsonException("Пустая запись.");
+    }
+
+    /// <summary>Спринт задачи из выгрузок до STORY-27; задача без дат получает при импорте его окно.</summary>
+    public static Guid? LegacySprint(DataRow row) =>
+        row.Kind == "task" && row.Payload.TryGetProperty("sprintId", out var value) && value.ValueKind == JsonValueKind.String && value.TryGetGuid(out var id) ? id : null;
 
     public static List<DataIssue> Validate(DataPackage? package)
     {
@@ -130,6 +151,7 @@ public static class DataTransfer
         if (package is null || package.Version != 1 || package.SourceTeamId == Guid.Empty || package.Rows is null || package.Rows.Length > MaxRows)
         { errors.Add(new(0, "package", "Нужны version=1, sourceTeamId и не более 10000 записей.")); return errors; }
         var values = new Dictionary<Guid, object>(); var rowNumbers = new Dictionary<Guid, int>();
+        var legacy = package.Rows.Where(r => r is not null).GroupBy(r => r.Id).Select(g => g.First()).Where(r => LegacySprint(r) is not null).ToDictionary(r => r.Id, LegacySprint);
         for (var i = 0; i < package.Rows.Length; i++)
         {
             var row = package.Rows[i];
@@ -161,7 +183,7 @@ public static class DataTransfer
                 case Project x: Name(id, x.Name); if (x.WorkspaceId == Guid.Empty) Error(id, "workspaceId", "Пространство источника обязательно."); break;
                 case Sprint x: Team(id, x.TeamId); Name(id, x.Name); Dates(id, x.StartDate, x.EndDate); break;
                 case TaskCard x:
-                    Team(id, x.TeamId); Name(id, x.Title); Ref<Project>(id, x.ProjectId, "projectId", true); Ref<Sprint>(id, x.SprintId, "sprintId", true); Ref<TaskCard>(id, x.ParentId, "parentId", true);
+                    Team(id, x.TeamId); Name(id, x.Title); Ref<Project>(id, x.ProjectId, "projectId", true); Ref<Sprint>(id, legacy.GetValueOrDefault(id), "sprintId", true); Ref<TaskCard>(id, x.ParentId, "parentId", true);
                     if (x.ParentId == id) Error(id, "parentId", "Задача не может быть собственным родителем.");
                     if (x.StartDate.HasValue && x.EndDate.HasValue) Dates(id, x.StartDate.Value, x.EndDate.Value);
                     if (x.Version < 1 || x.Order < 0) Error(id, "version/order", "Версия должна быть положительной, порядок — неотрицательным."); break;

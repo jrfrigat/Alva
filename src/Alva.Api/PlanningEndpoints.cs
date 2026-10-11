@@ -207,21 +207,13 @@ public static class PlanningEndpoints
         return (start, end);
     }
 
-    /// <summary>Открытые задачи команды с первым назначением (если есть) и окном: свои даты, иначе даты спринта.</summary>
+    /// <summary>Открытые задачи команды с первым назначением (если есть) и плановым окном — датами задачи.</summary>
     private static async Task<List<(TaskCard Task, Assignment? Assignment, DateOnly? Start, DateOnly? End)>> OpenWork(AlvaDbContext db, Guid teamId)
     {
         var tasks = await db.Tasks.AsNoTracking().Where(x => x.TeamId == teamId && !x.Archived && x.Status != WorkStatus.Done && x.Status != WorkStatus.Cancelled).ToListAsync();
         var taskIds = tasks.Select(x => x.Id).ToArray();
-        var assignments = await db.Assignments.AsNoTracking().Where(x => taskIds.Contains(x.TaskId)).ToListAsync();
-        var sprints = await db.Sprints.AsNoTracking().Where(x => x.TeamId == teamId).ToDictionaryAsync(x => x.Id);
-        var result = new List<(TaskCard, Assignment?, DateOnly?, DateOnly?)>();
-        foreach (var task in tasks)
-        {
-            var assignment = assignments.FirstOrDefault(x => x.TaskId == task.Id);
-            var sprint = task.SprintId is { } id ? sprints.GetValueOrDefault(id) : null;
-            result.Add((task, assignment, task.StartDate ?? sprint?.StartDate, task.EndDate ?? sprint?.EndDate));
-        }
-        return result;
+        var assignments = (await db.Assignments.AsNoTracking().Where(x => taskIds.Contains(x.TaskId)).ToListAsync()).ToDictionary(x => x.TaskId);
+        return [.. tasks.Select(task => (task, assignments.GetValueOrDefault(task.Id), task.StartDate, task.EndDate))];
     }
 
     /// <summary>Календари людей команды вместе с общими графиками их подкоманд — так их видят ёмкость и риски.</summary>

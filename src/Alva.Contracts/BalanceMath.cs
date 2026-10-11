@@ -27,7 +27,7 @@ public record BalanceProposalDto(string Mode, string Status, BalanceMetricsDto B
 public record BalancePersonInput(Guid Id, string Name, Guid[] Roles, Guid[] Departments);
 
 /// <summary>Открытая задача команды. Start и End — уже окно с датами спринта; Deadline — срок задачи.</summary>
-public record BalanceTaskInput(Guid Id, string Title, string Status, Guid? ParentId, Guid? SprintId, decimal? EstimateHours,
+public record BalanceTaskInput(Guid Id, string Title, string Status, Guid? ParentId, decimal? EstimateHours,
     DateOnly? Start, DateOnly? End, DateOnly? Deadline, Guid? TargetId, Guid? ResolvedPersonId);
 
 /// <summary>Связь задач: тип FS, SS, FF или SF и лаг в днях.</summary>
@@ -114,7 +114,7 @@ public static class BalanceMath
             : t.TargetId is { } g && personIndex.TryGetValue(g, out var gi) ? gi : null;
 
         bool Movable(BalanceTaskInput t) =>
-            t.SprintId == sprintId && t.Status is not ("InProgress" or "Done" or "Cancelled") && !parents.Contains(t.Id)
+            t.Status is not ("InProgress" or "Done" or "Cancelled") && !parents.Contains(t.Id)
             && t.EstimateHours > 0 && t.TargetId is not null && t.Start is { } s && t.End is { } e
             && s >= sprintStart && s <= sprintEnd && e >= s;
 

@@ -12,6 +12,7 @@ public class AlvaDbContext(DbContextOptions<AlvaDbContext> options) : DbContext(
     public DbSet<ProjectTeam> ProjectTeams => Set<ProjectTeam>();
     public DbSet<Sprint> Sprints => Set<Sprint>();
     public DbSet<TaskCard> Tasks => Set<TaskCard>();
+    public DbSet<TaskSprint> TaskSprints => Set<TaskSprint>();
     public DbSet<Actor> Actors => Set<Actor>();
     public DbSet<ActorRole> ActorRoles => Set<ActorRole>();
     public DbSet<ActorDepartment> ActorDepartments => Set<ActorDepartment>();
@@ -25,6 +26,30 @@ public class AlvaDbContext(DbContextOptions<AlvaDbContext> options) : DbContext(
     public DbSet<WorkspaceMembership> WorkspaceMemberships => Set<WorkspaceMembership>();
     public DbSet<TeamMembership> TeamMemberships => Set<TeamMembership>();
     public DbSet<PermissionGrant> PermissionGrants => Set<PermissionGrant>();
+
+    /// <summary>
+    /// Сохраняет изменения и в той же транзакции пересчитывает кэш TaskSprint для задач и спринтов, у которых изменились
+    /// даты, архив или команда. Так кэш не обойдёт ни один путь записи: правка, перенос, рамка родителя, автобаланс, импорт.
+    /// </summary>
+    public override async Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
+    {
+        var (tasks, sprints) = TaskSprintCache.Touched(ChangeTracker);
+        if (tasks.Count == 0 && sprints.Count == 0) return await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+        var own = Database.CurrentTransaction is null ? await Database.BeginTransactionAsync(cancellationToken) : null;
+        try
+        {
+            await TaskSprintCache.Forget(this, tasks, sprints, cancellationToken);
+            var saved = await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+            await TaskSprintCache.Fill(this, tasks, sprints, cancellationToken);
+            await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+            if (own is not null) await own.CommitAsync(cancellationToken);
+            return saved;
+        }
+        finally
+        {
+            if (own is not null) await own.DisposeAsync();
+        }
+    }
 
     protected override void OnModelCreating(ModelBuilder b)
     {
@@ -52,7 +77,6 @@ public class AlvaDbContext(DbContextOptions<AlvaDbContext> options) : DbContext(
         b.Entity<Sprint>().HasOne<Team>().WithMany().HasForeignKey(x => x.TeamId);
         b.Entity<TaskCard>().HasOne<Team>().WithMany().HasForeignKey(x => x.TeamId);
         b.Entity<TaskCard>().HasOne<Project>().WithMany().HasForeignKey(x => x.ProjectId);
-        b.Entity<TaskCard>().HasOne<Sprint>().WithMany().HasForeignKey(x => x.SprintId);
         b.Entity<TaskCard>().HasOne<TaskCard>().WithMany().HasForeignKey(x => x.ParentId);
         b.Entity<Actor>().HasOne<Team>().WithMany().HasForeignKey(x => x.TeamId);
         b.Entity<Actor>().HasOne<Actor>().WithMany().HasForeignKey(x => x.ParentId);
@@ -69,7 +93,11 @@ public class AlvaDbContext(DbContextOptions<AlvaDbContext> options) : DbContext(
         b.Entity<TaskHistory>().HasOne<TaskCard>().WithMany().HasForeignKey(x => x.TaskId);
         b.Entity<TaskCard>().Property(x => x.Version).IsConcurrencyToken();
         b.Entity<TaskCard>().HasIndex(x => new { x.TeamId, x.ParentId, x.Order });
-        b.Entity<TaskCard>().HasIndex(x => new { x.TeamId, x.SprintId });
+        b.Entity<TaskCard>().HasIndex(x => new { x.TeamId, x.StartDate, x.EndDate });
+        b.Entity<TaskSprint>().HasKey(x => new { x.TaskId, x.SprintId });
+        b.Entity<TaskSprint>().HasIndex(x => new { x.TeamId, x.SprintId });
+        b.Entity<TaskSprint>().HasOne<TaskCard>().WithMany().HasForeignKey(x => x.TaskId);
+        b.Entity<TaskSprint>().HasOne<Sprint>().WithMany().HasForeignKey(x => x.SprintId);
         b.Entity<Assignment>().HasIndex(x => x.TaskId).IsUnique();
         b.Entity<WorkCalendar>().HasIndex(x => x.ActorId).IsUnique();
         b.Entity<TaskDependency>().HasIndex(x => new { x.PredecessorId, x.SuccessorId }).IsUnique();

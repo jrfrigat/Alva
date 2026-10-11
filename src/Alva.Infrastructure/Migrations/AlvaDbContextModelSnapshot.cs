@@ -330,9 +330,6 @@ namespace Alva.Infrastructure.Migrations
                     b.Property<Guid?>("ProjectId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid?>("SprintId")
-                        .HasColumnType("uuid");
-
                     b.Property<DateOnly?>("StartDate")
                         .HasColumnType("date");
 
@@ -357,11 +354,9 @@ namespace Alva.Infrastructure.Migrations
 
                     b.HasIndex("ProjectId");
 
-                    b.HasIndex("SprintId");
-
-                    b.HasIndex("TeamId", "SprintId");
-
                     b.HasIndex("TeamId", "ParentId", "Order");
+
+                    b.HasIndex("TeamId", "StartDate", "EndDate");
 
                     b.ToTable("Tasks", t =>
                         {
@@ -424,6 +419,26 @@ namespace Alva.Infrastructure.Migrations
                     b.HasIndex("TaskId");
 
                     b.ToTable("TaskHistory");
+                });
+
+            modelBuilder.Entity("Alva.Domain.TaskSprint", b =>
+                {
+                    b.Property<Guid>("TaskId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("SprintId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("TeamId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("TaskId", "SprintId");
+
+                    b.HasIndex("SprintId");
+
+                    b.HasIndex("TeamId", "SprintId");
+
+                    b.ToTable("TaskSprints");
                 });
 
             modelBuilder.Entity("Alva.Domain.Team", b =>
@@ -741,11 +756,6 @@ namespace Alva.Infrastructure.Migrations
                         .HasForeignKey("ProjectId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("Alva.Domain.Sprint", null)
-                        .WithMany()
-                        .HasForeignKey("SprintId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
                     b.HasOne("Alva.Domain.Team", null)
                         .WithMany()
                         .HasForeignKey("TeamId")
@@ -770,6 +780,21 @@ namespace Alva.Infrastructure.Migrations
 
             modelBuilder.Entity("Alva.Domain.TaskHistory", b =>
                 {
+                    b.HasOne("Alva.Domain.TaskCard", null)
+                        .WithMany()
+                        .HasForeignKey("TaskId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Alva.Domain.TaskSprint", b =>
+                {
+                    b.HasOne("Alva.Domain.Sprint", null)
+                        .WithMany()
+                        .HasForeignKey("SprintId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("Alva.Domain.TaskCard", null)
                         .WithMany()
                         .HasForeignKey("TaskId")

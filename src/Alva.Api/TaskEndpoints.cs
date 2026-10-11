@@ -168,10 +168,9 @@ public static class TaskEndpoints
         if (!Enum.TryParse<WorkStatus>(request.Status, true, out var status) || !Enum.IsDefined(status)) throw new ApiException(400, "Неизвестный статус задачи.");
         if (request.EstimateHours is { } estimate && (estimate < 0 || estimate > 100000)) throw new ApiException(400, "Оценка должна быть неотрицательной.");
         if (request.ProjectId is { } projectId && !await db.ProjectTeams.AnyAsync(x => x.TeamId == teamId && x.ProjectId == projectId)) throw new ApiException(400, "Проект не связан с командой.");
-        if (request.SprintId is { } sprintId && !await db.Sprints.AnyAsync(x => x.TeamId == teamId && x.Id == sprintId)) throw new ApiException(400, "Спринт не принадлежит команде.");
         await ValidateParent(db, teamId, task, request.ParentId);
         task.Title = title; task.Description = request.Description ?? ""; task.Status = status;
-        task.ProjectId = request.ProjectId; task.SprintId = request.SprintId; task.ParentId = request.ParentId;
+        task.ProjectId = request.ProjectId; task.ParentId = request.ParentId;
         task.EstimateHours = request.EstimateHours; task.Deadline = request.Deadline; task.StartDate = request.StartDate; task.EndDate = request.EndDate; task.Order = request.Order;
     }
 
@@ -197,10 +196,15 @@ public static class TaskEndpoints
         var assignments = await db.Assignments.AsNoTracking().Where(x => ids.Contains(x.TaskId)).ToDictionaryAsync(x => x.TaskId);
         var estimates = EffectiveEstimates(tasks);
         var deadlines = EffectiveDeadlines(tasks);
+        // Спринты задачи — из кэша одним запросом по команде, в порядке начала спринта.
+        var sprints = (await db.TaskSprints.AsNoTracking().Where(x => x.TeamId == teamId)
+            .Join(db.Sprints, x => x.SprintId, s => s.Id, (x, s) => new { x.TaskId, x.SprintId, s.StartDate }).ToListAsync())
+            .OrderBy(x => x.StartDate).ToLookup(x => x.TaskId, x => x.SprintId);
         return tasks.OrderBy(x => x.Order).ThenBy(x => x.Title).Select(x =>
         {
             assignments.TryGetValue(x.Id, out var assignment);
-            return new TaskDto(x.Id, x.TeamId, x.ProjectId, x.SprintId, x.ParentId, x.Title, x.Description, x.Status.ToString(), x.EstimateHours, x.Deadline, x.StartDate, x.EndDate, x.Order, assignment?.TargetId, assignment?.ResolvedPersonId, x.Version, estimates.GetValueOrDefault(x.Id), deadlines.GetValueOrDefault(x.Id));
+            Guid[] inSprints = [.. sprints[x.Id]];
+            return new TaskDto(x.Id, x.TeamId, x.ProjectId, inSprints.Length > 0 ? inSprints[0] : null, x.ParentId, x.Title, x.Description, x.Status.ToString(), x.EstimateHours, x.Deadline, x.StartDate, x.EndDate, x.Order, assignment?.TargetId, assignment?.ResolvedPersonId, x.Version, estimates.GetValueOrDefault(x.Id), deadlines.GetValueOrDefault(x.Id), inSprints);
         }).ToArray();
     }
 

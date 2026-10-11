@@ -115,6 +115,29 @@ public sealed class DataEndpointTests
         Assert.Equal(HttpStatusCode.Conflict, (await server.Client.GetAsync($"/api/teams/{server.TeamId}/data/export")).StatusCode);
     }
 
+    [Fact]
+    public async Task An_old_export_with_a_task_sprint_gives_the_undated_task_that_sprint_window()
+    {
+        await using var server = await DataServer.Create();
+        var sourceTeam = Guid.NewGuid();
+        var sprint = new Sprint { TeamId = sourceTeam, Name = "Спринт", StartDate = new(2026, 10, 5), EndDate = new(2026, 10, 18) };
+        var task = new TaskCard { TeamId = sourceTeam, Title = "Без дат" };
+        var payload = System.Text.Json.Nodes.JsonNode.Parse(JsonSerializer.Serialize(task, DataTransfer.Json))!.AsObject();
+        payload["sprintId"] = sprint.Id;
+        var package = new DataPackage(1, sourceTeam,
+            [new("sprint", sprint.Id, JsonSerializer.SerializeToElement(sprint, DataTransfer.Json)), new("task", task.Id, JsonSerializer.SerializeToElement(payload))]);
+
+        var response = await server.Client.PostAsync($"/api/teams/{server.TeamId}/data/import", new ByteArrayContent(DataTransfer.Encode(package, "json")));
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        await server.WithDb(async db =>
+        {
+            var imported = await db.Tasks.SingleAsync();
+            Assert.Equal((sprint.StartDate, sprint.EndDate), (imported.StartDate!.Value, imported.EndDate!.Value));
+            Assert.Equal(imported.Id, (await db.TaskSprints.SingleAsync()).TaskId);
+        });
+    }
+
     private sealed class DataServer(WebApplication app, SqliteConnection connection, Guid workspaceId, Guid teamId, Guid userId) : IAsyncDisposable
     {
         public Guid WorkspaceId => workspaceId;

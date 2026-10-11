@@ -16,7 +16,7 @@ public sealed class BalanceTests
     private static readonly TimeSpan Limit = TimeSpan.FromSeconds(5);
 
     private static BalanceTaskInput Task(string title, decimal hours, DateOnly from, DateOnly to, Guid? person = null, DateOnly? deadline = null, Guid? target = null) =>
-        new(Guid.NewGuid(), title, "Planned", null, Sprint, hours, from, to, deadline, target ?? Role, person);
+        new(Guid.NewGuid(), title, "Planned", null, hours, from, to, deadline, target ?? Role, person);
 
     private static BalanceProblem Problem(string mode, BalanceTaskInput[] tasks, BalanceLinkInput[]? links = null, Func<Guid, CalendarDto>? calendars = null) =>
         BalanceMath.Build(mode, Sprint, Start, End, [Anna, Boris], calendars ?? CapacityMath.DefaultCalendar, tasks, links ?? []);
@@ -133,7 +133,7 @@ public sealed class BalanceTests
         var parent = Task("Эпик", 10, Start, Start.AddDays(2), Anna.Id);
         var child = Task("Часть", 8, Start, Start.AddDays(1), Anna.Id) with { ParentId = parent.Id };
         var running = Task("Идёт", 8, Start, Start.AddDays(1), Anna.Id) with { Status = "InProgress" };
-        var other = Task("Чужой спринт", 8, Start, Start.AddDays(1), Anna.Id) with { SprintId = Guid.NewGuid() };
+        var other = Task("Чужой спринт", 8, End.AddDays(3), End.AddDays(4), Anna.Id);
 
         var problem = Problem(BalanceModes.Maximum, [parent, child, running, other]);
 

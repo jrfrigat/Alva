@@ -15,7 +15,8 @@ public record ProjectDto(Guid Id, string Name, string Description, Guid[] TeamId
 public record ProjectRequest(string Name, string Description, Guid[] TeamIds);
 public record ActorDto(Guid Id, Guid TeamId, string Name, string Kind, string? Email, Guid? ParentId, Guid? UserId, Guid[] RoleIds, Guid[]? DepartmentIds = null);
 public record ActorRequest(string Name, string Kind, string? Email = null, Guid? ParentId = null, Guid? UserId = null, Guid[]? RoleIds = null, Guid[]? DepartmentIds = null);
-public record TaskDto(Guid Id, Guid TeamId, Guid? ProjectId, Guid? SprintId, Guid? ParentId, string Title, string Description, string Status, decimal? EstimateHours, DateOnly? Deadline, DateOnly? StartDate, DateOnly? EndDate, int Order, Guid? AssignmentTargetId, Guid? ResolvedPersonId, long Version, decimal EffectiveEstimateHours, DateOnly? EffectiveDeadline);
+/// <summary>Задача. SprintIds — спринты, с которыми пересекаются её даты (кэш TaskSprint); SprintId — переходно первый из них, уходит в TASK-77.</summary>
+public record TaskDto(Guid Id, Guid TeamId, Guid? ProjectId, Guid? SprintId, Guid? ParentId, string Title, string Description, string Status, decimal? EstimateHours, DateOnly? Deadline, DateOnly? StartDate, DateOnly? EndDate, int Order, Guid? AssignmentTargetId, Guid? ResolvedPersonId, long Version, decimal EffectiveEstimateHours, DateOnly? EffectiveDeadline, Guid[] SprintIds);
 public record TaskRequest(string Title, string Description = "", string Status = "Backlog", Guid? ProjectId = null, Guid? SprintId = null, Guid? ParentId = null, decimal? EstimateHours = null, DateOnly? Deadline = null, DateOnly? StartDate = null, DateOnly? EndDate = null, int Order = 0, long? Version = null);
 public record MoveTaskRequest(Guid? ParentId, int Order, long Version);
 public record AssignmentRequest(Guid TargetId, Guid? ResolvedPersonId = null);

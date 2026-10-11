@@ -36,13 +36,11 @@ public static class BalanceEndpoints
         var tasks = await db.Tasks.AsNoTracking().Where(x => x.TeamId == teamId && !x.Archived && x.Status != WorkStatus.Done && x.Status != WorkStatus.Cancelled).ToListAsync();
         var taskIds = tasks.Select(x => x.Id).ToArray();
         var assignments = await db.Assignments.AsNoTracking().Where(x => taskIds.Contains(x.TaskId)).ToDictionaryAsync(x => x.TaskId);
-        var sprints = await db.Sprints.AsNoTracking().Where(x => x.TeamId == teamId).ToDictionaryAsync(x => x.Id);
         var inputs = tasks.Select(x =>
         {
-            var own = x.SprintId is { } id ? sprints.GetValueOrDefault(id) : null;
             var assignment = assignments.GetValueOrDefault(x.Id);
-            return new BalanceTaskInput(x.Id, x.Title, x.Status.ToString(), x.ParentId, x.SprintId, x.EstimateHours,
-                x.StartDate ?? own?.StartDate, x.EndDate ?? own?.EndDate, x.Deadline, assignment?.TargetId, assignment?.ResolvedPersonId);
+            return new BalanceTaskInput(x.Id, x.Title, x.Status.ToString(), x.ParentId, x.EstimateHours,
+                x.StartDate, x.EndDate, x.Deadline, assignment?.TargetId, assignment?.ResolvedPersonId);
         }).ToArray();
         var links = await db.Dependencies.AsNoTracking().Where(x => taskIds.Contains(x.SuccessorId))
             .Select(x => new BalanceLinkInput(x.PredecessorId, x.SuccessorId, x.Kind.ToString(), x.LagDays)).ToListAsync();

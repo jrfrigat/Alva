@@ -42,7 +42,6 @@ public sealed class TaskCard : Entity
 {
     public Guid TeamId { get; set; }
     public Guid? ProjectId { get; set; }
-    public Guid? SprintId { get; set; }
     public Guid? ParentId { get; set; }
     public string Title { get; set; } = "";
     public string Description { get; set; } = "";
@@ -54,6 +53,16 @@ public sealed class TaskCard : Entity
     public int Order { get; set; }
     public bool Archived { get; set; }
     public long Version { get; set; } = 1;
+}
+/// <summary>
+/// Кэш «задача идёт в спринте»: производные данные из дат задачи и спринта (правило SprintWindows). Пишет только
+/// AlvaDbContext при сохранении изменённых задач и спринтов; API его не принимает.
+/// </summary>
+public sealed class TaskSprint
+{
+    public Guid TeamId { get; set; }
+    public Guid TaskId { get; set; }
+    public Guid SprintId { get; set; }
 }
 public sealed class Actor : Entity
 {

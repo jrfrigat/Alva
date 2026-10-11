@@ -17,7 +17,7 @@ public sealed class DataTransferTests
         var project = new Project { WorkspaceId = Guid.NewGuid(), Name = "Проект, \"Alva\"", Description = "Первая строка\nВторая строка" };
         var sprint = new Sprint { TeamId = TeamId, Name = "Спринт", StartDate = new(2026, 10, 1), EndDate = new(2026, 10, 14) };
         var parent = new TaskCard { TeamId = TeamId, Title = "Parent", ProjectId = project.Id };
-        var task = new TaskCard { TeamId = TeamId, Title = "Child", ParentId = parent.Id, ProjectId = project.Id, SprintId = sprint.Id, EstimateHours = 3.25m };
+        var task = new TaskCard { TeamId = TeamId, Title = "Child", ParentId = parent.Id, ProjectId = project.Id, StartDate = new(2026, 10, 2), EndDate = new(2026, 10, 6), EstimateHours = 3.25m };
         var actor = new Actor { TeamId = TeamId, Name = "Мария", Kind = ActorKind.Person };
         var calendar = new WorkCalendar { ActorId = actor.Id };
         return new(1, TeamId, [Row("project", project), Row("sprint", sprint), Row("task", parent), Row("task", task), Row("actor", actor), Row("calendar", calendar), Row("assignment", new Assignment { TaskId = task.Id, TargetId = actor.Id }), Row("exception", new CalendarException { CalendarId = calendar.Id, From = new(2026, 10, 2), To = new(2026, 10, 2), Reason = "Отпуск" }), Row("block", new RecurringBlock { CalendarId = calendar.Id, DayOfWeek = DayOfWeek.Monday, Hours = 1, Name = "Встреча" })]);
