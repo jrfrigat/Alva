@@ -111,7 +111,12 @@
     opacity: var(--flare-gantt-caption-opacity, 0.75);
 }
 
-/* Panel. */
+/* Panel: as wide as the axis, so its sticky header stays in view however far the axis scrolls. */
+.flare-gantt__panel {
+    width: max-content;
+    min-width: 100%;
+}
+
 .flare-gantt__panel + .flare-gantt__panel {
     border-top: var(--flare-gantt-panel-gap, var(--flare-spacing-2, 0.25rem)) solid var(--flare-gantt-panel-gap-color, var(--flare-color-surface-container));
 }
@@ -125,8 +130,10 @@
     font-weight: 600;
 }
 
+/* The panel isolates its layers: whatever it stacks stays under the sticky scale. */
 .flare-gantt__body {
     position: relative;
+    isolation: isolate;
     width: max-content;
     min-width: 100%;
 }
@@ -178,9 +185,9 @@
 }
 
 /* Rows. */
+/* A row is no stacking context, so its sticky header can rise above the panel's overlays. */
 .flare-gantt__row {
     position: relative;
-    z-index: 1;
     display: flex;
     box-sizing: border-box;
 }
@@ -198,7 +205,7 @@
 .flare-gantt__side {
     position: sticky;
     left: 0;
-    z-index: 2;
+    z-index: 5; /* above bars (1), links and row markers (2) and the front overlay (3) scrolling under it */
     flex: none;
     width: var(--flare-gantt-side);
     display: flex;
