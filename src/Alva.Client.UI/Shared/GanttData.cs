@@ -21,6 +21,7 @@ public sealed class GanttData
     private Dictionary<Guid, RiskDto> _risks = [];
     private Dictionary<Guid, SprintModel> _sprints = [];
     private Dictionary<Guid, ActorModel> _actors = [];
+    private ILookup<Guid, TaskModel>? _children;
 
     public static async Task<GanttData> Load(AlvaSession session)
     {
@@ -56,7 +57,53 @@ public sealed class GanttData
         return CapacityMath.Window(task.StartDate ?? sprint?.StartDate, task.EndDate ?? sprint?.EndDate, task.Deadline);
     }
 
-    public GanttSpan? Span(TaskModel task) => Window(task) is { } w ? GanttSpan.FromDays(w.Start, w.End) : null;
+    /// <summary>Полоса задачи: её окно, а у родителя — не уже окон потомков (родитель охватывает детей).</summary>
+    public GanttSpan? Span(TaskModel task)
+    {
+        var own = Window(task);
+        var under = Cover(task);
+        if (own is not { } w) return under;
+        var span = GanttSpan.FromDays(w.Start, w.End);
+        return under is { } u ? new GanttSpan(Min(span.Start, u.Start), Max(span.End, u.End)) : span;
+    }
+
+    /// <summary>Что полоса задачи должна покрывать — окна всех её потомков; null у листа.</summary>
+    public GanttSpan? Cover(TaskModel task)
+    {
+        GanttSpan? result = null;
+        foreach (var child in Descendants(task))
+            if (Window(child) is { } w)
+            {
+                var span = GanttSpan.FromDays(w.Start, w.End);
+                result = result is { } r ? new GanttSpan(Min(r.Start, span.Start), Max(r.End, span.End)) : span;
+            }
+        return result;
+    }
+
+    private IEnumerable<TaskModel> Descendants(TaskModel task)
+    {
+        _children ??= Tasks.Where(t => t.ParentId is not null).ToLookup(t => t.ParentId!.Value);
+        var visited = new HashSet<Guid> { task.Id };
+        var stack = new Stack<TaskModel>([task]);
+        while (stack.Count > 0)
+            foreach (var child in _children[stack.Pop().Id])
+                if (visited.Add(child.Id))
+                {
+                    yield return child;
+                    stack.Push(child);
+                }
+    }
+
+    private int Depth(TaskModel task)
+    {
+        var depth = 0;
+        for (var parent = task.ParentId; parent is { } id && depth < 64 && Tasks.FirstOrDefault(t => t.Id == id) is { } p; parent = p.ParentId) depth++;
+        return depth;
+    }
+
+    private static DateTime Min(DateTime a, DateTime b) => a < b ? a : b;
+
+    private static DateTime Max(DateTime a, DateTime b) => a > b ? a : b;
 
     public static bool IsClosed(TaskModel task) => task.Status is "Done" or "Cancelled";
 
@@ -104,14 +151,32 @@ public sealed class GanttData
         null => "Без исполнителя"
     };
 
-    /// <summary>Сохраняет новые даты задач: первичное изменение и сдвинутые каскадом последователи. Задачи, чьи даты не изменились, не трогаются.</summary>
+    /// <summary>
+    /// Сохраняет новые даты задач: первичное изменение и сдвинутые каскадом последователи. Задачи, чьи даты не изменились,
+    /// не трогаются. Сдвинутый без изменения длины родитель везёт с собой потомков с собственными датами; сохраняются
+    /// они раньше родителя — иначе сервер расширил бы родителя под их старые места.
+    /// </summary>
     public async Task Save(AlvaSession session, IEnumerable<GanttChange> changes)
     {
+        var spans = new Dictionary<Guid, GanttSpan>();
         foreach (var change in changes)
+            if (Task(change.ItemKey) is { } task) spans[task.Id] = change.Span;
+        foreach (var (id, span) in spans.ToArray())
         {
-            if (Task(change.ItemKey) is not { } task || Span(task) == change.Span) continue;
-            var start = DateOnly.FromDateTime(change.Span.Start);
-            var end = DateOnly.FromDateTime(change.Span.End).AddDays(-1);
+            var task = Tasks.First(t => t.Id == id);
+            if (Span(task) is not { } before || before == span || before.End - before.Start != span.End - span.Start) continue;
+            var shift = span.Start - before.Start;
+            foreach (var child in Descendants(task))
+                if (!spans.ContainsKey(child.Id) && child.StartDate is not null && child.EndDate is not null && Span(child) is { } own)
+                    spans[child.Id] = new GanttSpan(own.Start + shift, own.End + shift);
+        }
+
+        foreach (var (id, span) in spans.OrderByDescending(s => Depth(Tasks.First(t => t.Id == s.Key))))
+        {
+            var task = Tasks.First(t => t.Id == id);
+            if (Span(task) == span) continue;
+            var start = DateOnly.FromDateTime(span.Start);
+            var end = DateOnly.FromDateTime(span.End).AddDays(-1);
             await Put(session, task, task.SprintId, start, end < start ? start : end);
         }
     }

@@ -22,6 +22,7 @@ public static class TaskEndpoints
             var task = new TaskCard { TeamId = teamId };
             db.Add(task);
             await Apply(db, teamId, task, request);
+            await KeepParentsAroundChildren(db, teamId, task, user.UserId());
             db.Add(new TaskHistory { TaskId = task.Id, UserId = user.UserId(), Summary = "Задача создана" });
             await db.SaveChangesAsync();
             return (await List(db, teamId)).Single(x => x.Id == task.Id);
@@ -32,6 +33,7 @@ public static class TaskEndpoints
             var task = await Find(db, teamId, taskId);
             if (request.Version is { } version && version != task.Version) throw new ApiException(409, "Задача изменилась. Обновите данные.");
             await Apply(db, teamId, task, request);
+            await KeepParentsAroundChildren(db, teamId, task, user.UserId());
             task.Version++;
             db.Add(new TaskHistory { TaskId = task.Id, UserId = user.UserId(), Summary = "Задача обновлена" });
             await db.SaveChangesAsync();
@@ -44,6 +46,7 @@ public static class TaskEndpoints
             if (request.Version != task.Version) throw new ApiException(409, "Задача изменилась. Обновите данные.");
             await ValidateParent(db, teamId, task, request.ParentId);
             task.ParentId = request.ParentId; task.Order = request.Order; task.Version++;
+            await KeepParentsAroundChildren(db, teamId, task, user.UserId());
             db.Add(new TaskHistory { TaskId = task.Id, UserId = user.UserId(), Summary = "Перемещена в дереве" });
             await db.SaveChangesAsync();
             return (await List(db, teamId)).Single(x => x.Id == task.Id);
@@ -135,6 +138,24 @@ public static class TaskEndpoints
             await db.SaveChangesAsync();
             return Results.NoContent();
         });
+    }
+
+    /// <summary>
+    /// Родитель охватывает детей: после правки задачи она сама не уже потомков, а предки с датами — не уже её.
+    /// Версию предков не меняем: это следствие чужой правки, и клиент, сохраняющий детей раньше родителя, не получит 409.
+    /// </summary>
+    private static async Task KeepParentsAroundChildren(AlvaDbContext db, Guid teamId, TaskCard task, Guid userId)
+    {
+        var stored = await db.Tasks.Where(x => x.TeamId == teamId && !x.Archived && x.Id != task.Id).ToListAsync();
+        var dates = stored.Select(x => new TaskDates(x.Id, x.ParentId, x.StartDate, x.EndDate))
+            .Append(new TaskDates(task.Id, task.ParentId, task.StartDate, task.EndDate)).ToArray();
+        var entities = stored.Append(task).ToDictionary(x => x.Id);
+        foreach (var update in TaskWindows.Enforce(dates, task.Id))
+        {
+            var entity = entities[update.Id];
+            entity.StartDate = update.Start; entity.EndDate = update.End;
+            if (entity != task) db.Add(new TaskHistory { TaskId = entity.Id, UserId = userId, Summary = "Сроки расширены под подзадачи" });
+        }
     }
 
     internal static async Task<TaskCard> Find(AlvaDbContext db, Guid teamId, Guid taskId) =>

@@ -394,6 +394,19 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
         actor.DepartmentIds = request.DepartmentIds ?? [];
     }
 
+    /// <summary>Родитель охватывает детей — то же правило, что в API; версия предков не меняется.</summary>
+    private static void KeepParentsAroundChildren(DemoStore store, TaskModel task)
+    {
+        var dates = store.Tasks.Where(t => t.TeamId == task.TeamId).Select(t => new TaskDates(t.Id, t.ParentId, t.StartDate, t.EndDate)).ToArray();
+        foreach (var update in TaskWindows.Enforce(dates, task.Id))
+        {
+            var entity = store.Tasks.First(t => t.Id == update.Id);
+            entity.StartDate = update.Start;
+            entity.EndDate = update.End;
+            if (entity != task) AddHistory(store, entity.Id, "Сроки расширены под подзадачи");
+        }
+    }
+
     private static TaskModel SaveTask(DemoStore store, Guid teamId, Guid? id, object value)
     {
         var request = Read<TaskRequest>(value);
@@ -407,6 +420,7 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
             };
             store.Tasks.Add(created);
             AddHistory(store, created.Id, "Задача создана");
+            KeepParentsAroundChildren(store, created);
             return created;
         }
         var task = store.Tasks.FirstOrDefault(t => t.Id == taskId) ?? throw new InvalidOperationException("Задача не найдена.");
@@ -423,6 +437,7 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
         task.Order = request.Order;
         task.Version++;
         AddHistory(store, task.Id, $"Изменена (статус {Labels.Status(task.Status)})");
+        KeepParentsAroundChildren(store, task);
         return task;
     }
 

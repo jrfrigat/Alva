@@ -346,6 +346,20 @@ networks:
     Assert-True ($null -ne $holidayRisk -and @($holidayRisk.reasons | Where-Object { $_ -like 'Исполнитель недоступен:*' }).Count -eq 1) 'A holiday in the task window was not reported as a risk.'
     Write-Host 'PASS: risks report an unavailable assignee.'
 
+    # A parent always covers its children: a child dated past its parent widens the parent.
+    $coverParent = Invoke-Api $owner POST "api/teams/$teamId/tasks" @{
+        title = 'Cover parent'; projectId = $projectDto.id
+        startDate = $sprintStart.ToString('yyyy-MM-dd'); endDate = $sprintStart.AddDays(2).ToString('yyyy-MM-dd')
+    } -ExpectedStatus @(200, 201)
+    [void](Invoke-Api $owner POST "api/teams/$teamId/tasks" @{
+        title = 'Cover child'; projectId = $projectDto.id; parentId = $coverParent.id
+        startDate = $sprintStart.AddDays(-1).ToString('yyyy-MM-dd'); endDate = $sprintStart.AddDays(6).ToString('yyyy-MM-dd')
+    } -ExpectedStatus @(200, 201))
+    $covered = @(Invoke-Api $owner GET "api/teams/$teamId/tasks" | Where-Object id -eq $coverParent.id)[0]
+    Assert-True ($covered.startDate -eq $sprintStart.AddDays(-1).ToString('yyyy-MM-dd') -and $covered.endDate -eq $sprintStart.AddDays(6).ToString('yyyy-MM-dd')) `
+        'A parent task did not widen to cover its child.'
+    Write-Host 'PASS: a parent task covers its children.'
+
     # Autobalance runs the OR-Tools native solver inside the Linux container and only proposes changes.
     foreach ($mode in @('Gentle', 'Deadlines', 'Maximum')) {
         $proposal = Invoke-Api $owner POST "api/teams/$teamId/sprints/$($sprint.id)/balance" @{ mode = $mode }
