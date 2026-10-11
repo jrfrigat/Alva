@@ -291,8 +291,8 @@ public sealed class GanttData
         return new GanttSpan(sprints.Min(s => s.StartDate).ToDateTime(TimeOnly.MinValue), end);
     }
 
-    /// <summary>Подписанные окна спринтов оси: выбранный — «sprint», остальные — «sprint-other».</summary>
-    public IEnumerable<GanttRegion> PlanRegions(SprintModel selected) => PlanSprints(selected).Select(s =>
+    /// <summary>Подписанные окна всех спринтов команды — ось бесконечная, и прошлые спринты тоже видны при прокрутке: выбранный — «sprint», остальные — «sprint-other».</summary>
+    public IEnumerable<GanttRegion> PlanRegions(SprintModel selected) => Sprints.OrderBy(s => s.StartDate).Select(s =>
         new GanttRegion(s.Id == selected.Id ? "sprint" : "sprint-other", GanttSpan.FromDays(s.StartDate, s.EndDate), Label: $"{s.Name}: {s.StartDate:dd.MM}–{s.EndDate:dd.MM}"));
 
     /// <summary>Спринт из <paramref name="sprints"/>, в окно которого попадает день; при пересечении — <paramref name="preferred"/>.</summary>

@@ -23,10 +23,18 @@ public sealed class GanttPeopleData
     private readonly ILookup<Guid, CapacityDemandDto> _demandOf;
     private readonly ActorModel[] _departments;
     private (GanttScale Scale, GanttSpan Range, GanttCell[] Cells)? _cells;
+    private readonly CapacityDto[] _capacity;
+    private readonly CapacityDemandDto[] _demand;
 
-    private GanttPeopleData(GanttData data, CapacityDto[] capacity, CapacityDemandDto[] demand)
+    /// <summary>Окно оси, для которого загружены ёмкость и потребность.</summary>
+    public GanttSpan Covered { get; }
+
+    private GanttPeopleData(GanttData data, GanttSpan covered, CapacityDto[] capacity, CapacityDemandDto[] demand)
     {
         Data = data;
+        Covered = covered;
+        _capacity = capacity;
+        _demand = demand;
         _capacityOf = capacity.ToLookup(c => c.ActorId);
         _demandOf = demand.ToLookup(d => d.TargetId);
         Items = data.Tasks.Where(t => data.Window(t) is not null).ToArray();
@@ -37,12 +45,35 @@ public sealed class GanttPeopleData
     /// <summary>Ёмкость и потребность на окно оси поверх уже загруженных данных Гантта.</summary>
     public static async Task<GanttPeopleData> Load(AlvaSession session, GanttData data, GanttSpan range)
     {
+        var (capacity, demand) = await Fetch(session, range);
+        return new GanttPeopleData(data, range, capacity, demand);
+    }
+
+    /// <summary>
+    /// То же на более длинное окно бесконечной оси: догружаются только отрезки, которых ещё нет, и сливаются с загруженными.
+    /// </summary>
+    public async Task<GanttPeopleData> Extend(AlvaSession session, GanttSpan range)
+    {
+        var capacity = new List<CapacityDto>(_capacity);
+        var demand = new List<CapacityDemandDto>(_demand);
+        foreach (var part in new[] { new GanttSpan(range.Start, Covered.Start), new GanttSpan(Covered.End, range.End) }.Where(p => p.End > p.Start))
+        {
+            var (more, need) = await Fetch(session, part);
+            capacity.AddRange(more);
+            demand.AddRange(need);
+        }
+        var covered = new GanttSpan(range.Start < Covered.Start ? range.Start : Covered.Start, range.End > Covered.End ? range.End : Covered.End);
+        return covered == Covered ? this : new GanttPeopleData(Data, covered, [.. capacity], [.. demand]);
+    }
+
+    private static async Task<(CapacityDto[] Capacity, CapacityDemandDto[] Demand)> Fetch(AlvaSession session, GanttSpan range)
+    {
         var from = DateOnly.FromDateTime(range.Start);
         var to = DateOnly.FromDateTime(range.End).AddDays(-1);
         var query = $"from={from:yyyy-MM-dd}&to={to:yyyy-MM-dd}";
         var capacity = session.Get<CapacityDto[]>(session.TeamPath($"capacity?{query}"));
         var demand = session.Get<CapacityDemandDto[]>(session.TeamPath($"capacity/demand?{query}"));
-        return new GanttPeopleData(data, await capacity, await demand);
+        return (await capacity, await demand);
     }
 
     public static string PersonKey(Guid id) => "p:" + GanttData.Key(id);

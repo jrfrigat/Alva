@@ -23,6 +23,7 @@ else if (_data is not null)
                          @bind-Value="_sprintId" Size="FieldSize.Sm" InputAttributes="@(Aria("Спринт"))" />
             <FlareSelect TValue="GanttScale" Items="GanttData.Scales" ItemLabel="GanttData.ScaleName" @bind-Value="_scale" Size="FieldSize.Sm" InputAttributes="@(Aria("Масштаб"))" />
             <GanttZoom View="tasks" Scale="_scale" @bind-Value="_unit" />
+            <FlareButton Size="ButtonSize.Sm" Variant="ButtonVariant.Text" OnClick="ToToday" Tooltip="К сегодняшнему дню (Alt + колесо — прокрутка по времени)">Сегодня</FlareButton>
         </div>
         <div class="alva-quickfilter" role="group" aria-label="Типы связей">
             @foreach (var type in AllTypes)
@@ -42,7 +43,7 @@ else if (_data is not null)
     }
     else
     {
-        <FlareGantt Range="@_data.Range(Sprint, Today)" Scale="_scale" UnitWidth="_unit" FillWidth="true" Virtualize="true" RowHeight="36" SideWidth="@_side" ResizableSide="true" SideWidthChanged="SaveSide"
+        <FlareGantt @ref="_chart" Range="@Axis()" RangeChanged="r => _range = r" Endless="true" Scale="_scale" UnitWidth="_unit" FillWidth="true" Virtualize="true" RowHeight="36" SideWidth="@_side" ResizableSide="true" SideWidthChanged="SaveSide"
                     NonWorking="GanttData.IsWeekend" Markers="@GanttData.TodayMarkers" Regions="@_data.SprintRegions(Sprint)" @bind-SelectedKey="_selected"
                     AriaLabel="Гантт по задачам" Class="alva-gantt">
             <Corner><span>Задача · исполнитель · часы</span></Corner>
@@ -69,6 +70,18 @@ else if (_data is not null)
 
     private static DateOnly Today => DateOnly.FromDateTime(DateTime.Today);
     private SprintModel? Sprint => _data?.Sprint(_sprintId);
+    private FlareGantt? _chart;
+    private GanttSpan _range;
+    private Guid? _rangeFor = Guid.Empty;
+
+    // Ось — окно спринта (или всех задач), пока пользователь не докрутил дальше; смена спринта начинает её заново.
+    private GanttSpan Axis()
+    {
+        if (_rangeFor != _sprintId) (_range, _rangeFor) = (_data!.Range(Sprint, Today), _sprintId);
+        return _range;
+    }
+
+    private Task ToToday() => _chart?.ScrollTo(DateTime.Today.AddDays(-1)) ?? Task.CompletedTask;
 
     private static Dictionary<string, object> Aria(string label) => new() { ["aria-label"] = label };
 

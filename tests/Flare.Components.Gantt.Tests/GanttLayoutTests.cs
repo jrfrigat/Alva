@@ -69,6 +69,39 @@ public sealed class GanttLayoutTests : GanttTestBase
     }
 
     [Fact]
+    public void Virtualized_columns_are_drawn_only_near_the_visible_part_of_the_axis()
+    {
+        // 14 дней × 40 px = 560 px; видно 80 px с 240-го: рисуется окно 160–400 px, то есть дни 4–9.
+        var cut = Chart(p => p.Add(x => x.Rows, new[] { new Node("r") })
+                .Add(x => x.Items, new[] { new Work("early", "r", Day(0), Day(0)), new Work("late", "r", Day(12), Day(12)) }),
+            g => g.Add(x => x.Virtualize, true));
+        Assert.Equal(14, cut.FindAll(".flare-gantt__scale-row:not(.flare-gantt__scale-row--major) .flare-gantt__tick").Count);
+
+        cut.InvokeAsync(() => cut.Instance.Horizontal(240, 80));
+
+        Assert.Equal(6, cut.FindAll(".flare-gantt__scale-row:not(.flare-gantt__scale-row--major) .flare-gantt__tick").Count);
+        Assert.Empty(cut.FindAll(".flare-gantt__bar"));
+        Assert.Equal("560px", cut.Find(".flare-gantt__scale").GetAttribute("style")!.Split(':')[1]); // the axis keeps its width
+    }
+
+    [Fact]
+    public void An_endless_axis_asks_for_more_time_near_its_edges()
+    {
+        GanttSpan? asked = null;
+        var cut = Chart(p => p.Add(x => x.Rows, new[] { new Node("r") }),
+            g => g.Add(x => x.Endless, true).Add(x => x.RangeChanged, (GanttSpan range) => asked = range));
+
+        // At the left edge with 200 px on screen: three screens (15 days) are added on the left; the right edge is far.
+        cut.InvokeAsync(() => cut.Instance.Horizontal(0, 200));
+        Assert.Equal(new GanttSpan(Day(-15).ToDateTime(TimeOnly.MinValue), Day(14).ToDateTime(TimeOnly.MinValue)), asked);
+
+        // The consumer takes it: the axis moves the scroll by the 600 px added on the left.
+        cut.Render(p => p.Add(x => x.Range, asked!.Value));
+        Assert.Equal("1160px", cut.Find(".flare-gantt__scale").GetAttribute("style")!.Split(':')[1]);
+        Assert.Contains(JSInterop.Invocations, i => i.Identifier == "shift" && (double)i.Arguments[0]! == 600);
+    }
+
+    [Fact]
     public void Without_virtualize_every_row_is_drawn()
     {
         var rows = Enumerable.Range(0, 200).Select(i => new Node($"r{i}")).ToArray();

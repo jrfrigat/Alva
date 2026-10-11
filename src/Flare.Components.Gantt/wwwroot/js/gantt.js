@@ -3,7 +3,7 @@
 
 const MinSide = 120;
 
-export function attach(root, dotnet, virtualize) {
+export function attach(root, dotnet, virtualize, endless) {
     const scroll = root.querySelector('.flare-gantt__scroll');
     const corner = root.querySelector('.flare-gantt__corner');
     let resizing = null;
@@ -79,6 +79,14 @@ export function attach(root, dotnet, virtualize) {
     document.addEventListener('pointermove', track, { capture: true, passive: true });
     document.addEventListener('pointerup', track, { capture: true, passive: true });
 
+    // Alt + wheel scrolls the axis sideways; Shift + wheel and touchpads already do.
+    const wheel = e => {
+        if (!e.altKey || e.ctrlKey) return;
+        e.preventDefault();
+        scroll.scrollLeft += e.deltaY || e.deltaX;
+    };
+    scroll.addEventListener('wheel', wheel, { passive: false });
+
     // Virtualized panels draw only the rows near what is on screen: report, per panel body, which part of it is
     // visible — inside the chart's own scroll box and the window. Not while a drag is on: the drag knows the drop
     // zones it started with, and rows drawn later would not be among them.
@@ -95,10 +103,12 @@ export function attach(root, dotnet, virtualize) {
             from.push(top - r.top);
             to.push(bottom - r.top);
         }
-        if (ids.length) dotnet.invokeMethodAsync('Visible', ids, from, to).catch(() => { });
+        if (virtualize && ids.length) dotnet.invokeMethodAsync('Visible', ids, from, to).catch(() => { });
+        // The visible part of the time area: columns far from it are not drawn, and an endless axis grows near its edges.
+        dotnet.invokeMethodAsync('Horizontal', scroll.scrollLeft, Math.max(0, scroll.clientWidth - side())).catch(() => { });
     };
     const onScroll = () => { if (!windowTimer) windowTimer = setTimeout(visible, 60); };
-    if (virtualize) {
+    if (virtualize || endless) {
         scroll.addEventListener('scroll', onScroll, { passive: true });
         window.addEventListener('scroll', onScroll, { passive: true });
         window.addEventListener('resize', onScroll);
@@ -117,10 +127,13 @@ export function attach(root, dotnet, virtualize) {
             apply();
             setTimeout(apply, 300);
         },
+        // The axis grew on the left: keep the same moment under the eye.
+        shift(px) { scroll.scrollLeft += px; },
         // Where the pointer was last seen, in pixels from the start of the time area; null before any movement.
         pointerX() { return pointer && scale ? pointer.x - scale.getBoundingClientRect().left : null; },
         dispose() {
             clearTimeout(windowTimer);
+            scroll.removeEventListener('wheel', wheel);
             scroll.removeEventListener('scroll', onScroll);
             window.removeEventListener('scroll', onScroll);
             window.removeEventListener('resize', onScroll);

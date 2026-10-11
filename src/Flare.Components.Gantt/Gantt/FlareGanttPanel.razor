@@ -13,15 +13,15 @@
          @onpointermove="PointerMove" @onpointerup="PointerUp" @onpointerleave="PointerCancel" @onpointercancel="PointerCancel">
         @* Behind the rows: unit grid, non-working time and panel-wide regions. *@
         <div class="@Css.Classes.Gantt.Overlay" style="width:@width" aria-hidden="true">
-            @foreach (var span in gantt.NonWorkingSpans)
+            @foreach (var span in gantt.NonWorkingSpans.Where(gantt.InView))
             {
                 <div class="@Css.Classes.Gantt.NonWorking" style="@SpanStyle(span)"></div>
             }
-            @foreach (var tick in gantt.Axis.Ticks())
+            @foreach (var tick in gantt.Ticks.Where(gantt.InView))
             {
                 <div class="@Css.Classes.Gantt.GridLine" style="left:@GanttFormat.Px(tick.Offset * gantt.EffectiveUnitWidth)"></div>
             }
-            @foreach (var region in _panelRegions)
+            @foreach (var region in _panelRegions.Where(r => gantt.InView(r.Span)))
             {
                 <div class="@($"{Css.Classes.Gantt.Region} {Css.Classes.Gantt.Kind(region.Kind)}")" data-kind="@region.Kind" style="@SpanStyle(region.Span)" title="@region.Label">
                     @if (region.Label is not null)
@@ -68,7 +68,7 @@
                     </div>
                 }
                 <div class="@Css.Classes.Gantt.Track" role="gridcell" style="width:@width;height:@GanttFormat.Px(row.Height)">
-                    @foreach (var region in row.Regions)
+                    @foreach (var region in row.Regions.Where(r => gantt.InView(r.Span)))
                     {
                         <div class="@($"{Css.Classes.Gantt.Region} {Css.Classes.Gantt.Kind(region.Kind)}")" data-kind="@region.Kind" style="@SpanStyle(region.Span)" title="@region.Label">
                             @if (region.Label is not null)
@@ -84,7 +84,7 @@
                             <span class="@Css.Classes.Gantt.DropUnit" aria-hidden="true"></span>
                         </FlareDropZone>
                     }
-                    @foreach (var cell in row.Cells)
+                    @foreach (var cell in row.Cells.Where(c => gantt.InView(c.Span)))
                     {
                         <div class="@($"{Css.Classes.Gantt.Cell} {Css.Classes.Gantt.Kind(cell.Kind)}")" data-kind="@cell.Kind" style="@CellStyle(cell)" title="@cell.Title">
                             @if (CellTemplate is null)
@@ -97,7 +97,7 @@
                             }
                         </div>
                     }
-                    @foreach (var bar in row.Bars)
+                    @foreach (var bar in row.Bars.Where(Drawn))
                     {
                         @if (ItemDropGroup is not null && !bar.IsSummary && !bar.IsSuggested)
                         {
@@ -113,7 +113,7 @@
                             </div>
                         }
                     }
-                    @foreach (var marker in row.Markers)
+                    @foreach (var marker in row.Markers.Where(m => gantt.InView(gantt.X(m.At), gantt.X(m.At))))
                     {
                         <div class="@($"{Css.Classes.Gantt.Marker} {Css.Classes.Gantt.Kind(marker.Kind)}")" data-kind="@marker.Kind" style="left:@GanttFormat.Px(gantt.X(marker.At))" title="@marker.Label">
                             @if (marker.Label is not null)
@@ -140,7 +140,7 @@
 
         @* In front of the rows: panel-wide markers such as "today". *@
         <div class="@($"{Css.Classes.Gantt.Overlay} {Css.Classes.Gantt.OverlayFront}")" style="width:@width" aria-hidden="true">
-            @foreach (var marker in _panelMarkers)
+            @foreach (var marker in _panelMarkers.Where(m => gantt.InView(gantt.X(m.At), gantt.X(m.At))))
             {
                 <div class="@($"{Css.Classes.Gantt.Marker} {Css.Classes.Gantt.Kind(marker.Kind)}")" data-kind="@marker.Kind" style="left:@GanttFormat.Px(gantt.X(marker.At))" title="@marker.Label">
                     @if (marker.Label is not null)

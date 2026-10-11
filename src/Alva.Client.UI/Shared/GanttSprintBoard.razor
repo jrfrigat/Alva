@@ -23,6 +23,7 @@
             <Trailing><a class="alva-plan-gantt__link" href="/gantt/2d">Открыть Гантт</a></Trailing>
         </GanttLegend>
         <GanttZoom View="@View" Default="DefaultUnit" @bind-Value="_unit" />
+        <FlareButton Size="ButtonSize.Sm" Variant="ButtonVariant.Text" OnClick="ToToday" Tooltip="К сегодняшнему дню (Alt + колесо — прокрутка по времени)">Сегодня</FlareButton>
     </header>
     @if (Data is null || People is null)
     {
@@ -30,7 +31,7 @@
     }
     else
     {
-        <FlareGantt @ref="_chart" Range="Range" Scale="GanttScale.Day" UnitWidth="_unit" FillWidth="true" Virtualize="true" RowHeight="34"
+        <FlareGantt @ref="_chart" Range="Range" RangeChanged="RangeChanged" Endless="true" Scale="GanttScale.Day" UnitWidth="_unit" FillWidth="true" Virtualize="true" RowHeight="34"
                     SideWidth="@_side" ResizableSide="true" SideWidthChanged="SaveSide" NonWorking="GanttData.IsWeekend"
                     Markers="@GanttData.TodayMarkers" Regions="@Data.PlanRegions(Sprint)" @bind-SelectedKey="_selected"
                     AriaLabel="Гантт спринтов" Class="alva-gantt alva-plan-gantt__chart">
@@ -60,6 +61,11 @@
     [Parameter, EditorRequired] public SprintModel Sprint { get; set; } = default!;
     [Parameter] public GanttData? Data { get; set; }
     [Parameter] public GanttPeopleData? People { get; set; }
+
+    /// <summary>Окно оси: спринты доски и всё, до чего пользователь докрутил; ось бесконечная и просит больше через <see cref="RangeChanged"/>.</summary>
+    [Parameter, EditorRequired] public GanttSpan Range { get; set; }
+
+    [Parameter] public EventCallback<GanttSpan> RangeChanged { get; set; }
     [Parameter] public Guid? Focus { get; set; }
     [Parameter] public EventCallback<GanttChangeEventArgs> OnTaskChange { get; set; }
     [Parameter] public EventCallback<GanttChangeEventArgs> OnPeopleChange { get; set; }
@@ -85,7 +91,6 @@
 
     private int SprintCount => Data?.PlanSprints(Sprint).Count ?? 1;
     private IReadOnlyCollection<Guid> SprintIds => [.. Data!.PlanSprints(Sprint).Select(s => s.Id)];
-    private GanttSpan Range => Data!.PlanRange(Sprint);
 
     protected override async Task OnInitializedAsync() => _side = (await Preferences.Get(View)).Side ?? _side;
 
@@ -96,6 +101,8 @@
         _scrolledTo = Sprint.Id;
         await _chart.ScrollTo(Sprint.StartDate.AddDays(-1).ToDateTime(TimeOnly.MinValue));
     }
+
+    private Task ToToday() => _chart?.ScrollTo(DateTime.Today.AddDays(-1)) ?? Task.CompletedTask;
 
     private async Task SaveSide(string width)
     {

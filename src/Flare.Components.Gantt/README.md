@@ -61,7 +61,9 @@ scroll and one selection.
 - **`ItemCover`** is the span an item must keep covering, such as its children's work: resizing stops at its edges.
 - **`FillWidth`** on `FlareGantt` stretches units to the visible width (`UnitWidth` is the floor); **`ResizableSide`**
   with **`SideWidthChanged`** lets the user drag the row-header edge; **`ScrollTo`** scrolls the axis to a moment;
-  **`Virtualize`** draws only the rows near what is on screen, for charts of hundreds of rows.
+  **`Virtualize`** draws only the rows and columns near what is on screen, for charts of hundreds of rows and long axes;
+  **`Endless`** with **`@bind-Range`** grows the axis when the view nears an edge (keeping the same moment in view when
+  it grows on the left), and `ScrollTo` grows it to a moment outside the range. Alt + wheel scrolls the axis sideways.
 
 ## Styling
 Every look is a `--flare-gantt-*` variable falling back to shared Flare tokens. Set the variables on a kind's

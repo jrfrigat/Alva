@@ -24,6 +24,7 @@ else if (_data is not null && _people is not null)
                          @bind-Value="_sprintId" @bind-Value:after="LoadCapacity" Size="FieldSize.Sm" InputAttributes="@(Aria("Спринт"))" />
             <FlareSelect TValue="GanttScale" Items="GanttData.Scales" ItemLabel="GanttData.ScaleName" @bind-Value="_scale" Size="FieldSize.Sm" InputAttributes="@(Aria("Масштаб"))" />
             <GanttZoom View="people" Scale="_scale" @bind-Value="_unit" />
+            <FlareButton Size="ButtonSize.Sm" Variant="ButtonVariant.Text" OnClick="ToToday" Tooltip="К сегодняшнему дню (Alt + колесо — прокрутка по времени)">Сегодня</FlareButton>
         </div>
         <FlareSwitch Value="_twoD" ValueChanged="SetTwoD" Label="Синхронно с задачами (2D)" />
     </div>
@@ -36,7 +37,7 @@ else if (_data is not null && _people is not null)
         <span class="alva-gantt-legend__item alva-gantt-legend__item--demand">Нужен человек</span>
     </GanttLegend>
 
-    <FlareGantt Range="@Range" Scale="_scale" UnitWidth="_unit" FillWidth="true" Virtualize="true" RowHeight="36" SideWidth="@_side" ResizableSide="true" SideWidthChanged="SaveSide"
+    <FlareGantt @ref="_chart" Range="@_range" RangeChanged="Grow" Endless="true" Scale="_scale" UnitWidth="_unit" FillWidth="true" Virtualize="true" RowHeight="36" SideWidth="@_side" ResizableSide="true" SideWidthChanged="SaveSide"
                 NonWorking="GanttData.IsWeekend" Markers="@GanttData.TodayMarkers" Regions="@_data.SprintRegions(Sprint)" @bind-SelectedKey="_selected"
                 AriaLabel="@(_twoD ? "Синхронный Гантт 2D" : "Гантт по людям")" Class="alva-gantt">
         <Corner><span>Исполнитель · загрузка за период</span></Corner>
@@ -47,7 +48,7 @@ else if (_data is not null && _people is not null)
                     <Header>Проекция 1: иерархия работ и фазы во времени</Header>
                 </GanttTaskPanel>
             }
-            <GanttPeoplePanel People="_people" Scale="_scale" Range="Range" Header="@(_twoD ? PeopleHeader : null)"
+            <GanttPeoplePanel People="_people" Scale="_scale" Range="_range" Header="@(_twoD ? PeopleHeader : null)"
                               OnChange="Change" OnLinkCreate="Link" OnLinkRejected="Rejected" />
         </ChildContent>
     </FlareGantt>
@@ -70,7 +71,20 @@ else if (_data is not null && _people is not null)
 
     private static DateOnly Today => DateOnly.FromDateTime(DateTime.Today);
     private SprintModel? Sprint => _data?.Sprint(_sprintId);
-    private GanttSpan Range => _data!.Range(Sprint, Today);
+    private FlareGantt? _chart;
+    private GanttSpan _range;
+
+    // Окно спринта (или всех задач) — начало оси; дальше она растёт прокруткой.
+    private GanttSpan SprintRange => _data!.Range(Sprint, Today);
+
+    // Ось просит больше времени: ёмкость догружается только для новых отрезков.
+    private async Task Grow(GanttSpan range)
+    {
+        _range = range;
+        if (_people is not null) _people = await _people.Extend(Session, range);
+    }
+
+    private Task ToToday() => _chart?.ScrollTo(DateTime.Today.AddDays(-1)) ?? Task.CompletedTask;
 
     private static Dictionary<string, object> Aria(string label) => new() { ["aria-label"] = label };
 
@@ -101,17 +115,24 @@ else if (_data is not null && _people is not null)
         {
             if (Session.TeamId is null) return;
             _data = await GanttData.Load(Session);
-            if (initial) _sprintId = _data.Sprints.FirstOrDefault(s => s.Status == "Active")?.Id;
-            _people = await GanttPeopleData.Load(Session, _data, Range);
+            if (initial)
+            {
+                _sprintId = _data.Sprints.FirstOrDefault(s => s.Status == "Active")?.Id;
+                _range = SprintRange;
+            }
+            // После правки ось остаётся, где её докрутили, и включает окно спринта.
+            else _range = new GanttSpan(_range.Start < SprintRange.Start ? _range.Start : SprintRange.Start, _range.End > SprintRange.End ? _range.End : SprintRange.End);
+            _people = await GanttPeopleData.Load(Session, _data, _range);
         }
         catch (Exception e) when (e is HttpRequestException or InvalidOperationException) { _error = e.Message; }
         finally { _busy = false; }
     }
 
-    // Ёмкость зависит от окна оси, поэтому новый спринт перечитывает её.
+    // Новый спринт начинает ось заново с его окна и перечитывает ёмкость на неё.
     private async Task LoadCapacity()
     {
-        try { _people = await GanttPeopleData.Load(Session, _data!, Range); }
+        _range = SprintRange;
+        try { _people = await GanttPeopleData.Load(Session, _data!, _range); }
         catch (Exception e) when (e is HttpRequestException or InvalidOperationException) { _error = e.Message; }
     }
 

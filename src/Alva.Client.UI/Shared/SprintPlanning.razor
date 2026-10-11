@@ -151,7 +151,7 @@
         <div class="alva-plan-hint"><FlareIconView Value="@MaterialDesign3Icons.Regular.DragIndicator" Size="16px" /> Перетащите задачу на Гантт — на день или на строку человека. Сюда — чтобы вернуть в бэклог.</div>
     </section>
 
-    <GanttSprintBoard @ref="_board" Sprint="Sprint" Data="_gantt" People="_people" Focus="_focus" OnTaskChange="TaskChange" OnPeopleChange="PeopleChange"
+    <GanttSprintBoard @ref="_board" Sprint="Sprint" Data="_gantt" People="_people" Range="_axis" RangeChanged="Grow" Focus="_focus" OnTaskChange="TaskChange" OnPeopleChange="PeopleChange"
                       OnLinkCreate="Link" OnLinkRejected="Rejected" OnUnplan="t => Move(t, false)" Suggested="Chosen" />
 
     <div class="alva-plan-side">
@@ -313,8 +313,26 @@
         _capacity = await Session.Get<CapacityDto[]>(Session.TeamPath($"capacity?from={Sprint.StartDate:yyyy-MM-dd}&to={Sprint.EndDate:yyyy-MM-dd}"));
         _load = _capacity.GroupBy(r => r.ActorId).ToDictionary(g => g.Key, g => (g.Sum(r => r.AvailableHours), g.Sum(r => r.AllocatedHours)));
         _gantt = await GanttData.Load(Session);
-        _people = await GanttPeopleData.Load(Session, _gantt, _gantt.PlanRange(Sprint));
+        // Ось доски: спринты плана и всё, до чего уже докрутили; ёмкость — на всё это окно.
+        var plan = _gantt.PlanRange(Sprint);
+        _axis = _axisFor == Sprint.Id ? new GanttSpan(Min(_axis.Start, plan.Start), Max(_axis.End, plan.End)) : plan;
+        _axisFor = Sprint.Id;
+        _people = await GanttPeopleData.Load(Session, _gantt, _axis);
     }
+
+    private GanttSpan _axis;
+    private Guid? _axisFor;
+
+    /// <summary>Бесконечная ось просит больше времени: ёмкость людей догружается только для добавленных отрезков.</summary>
+    private async Task Grow(GanttSpan range)
+    {
+        _axis = range;
+        if (_people is not null) _people = await _people.Extend(Session, range);
+    }
+
+    private static DateTime Min(DateTime a, DateTime b) => a < b ? a : b;
+
+    private static DateTime Max(DateTime a, DateTime b) => a > b ? a : b;
 
     private void Pick(Guid id) => Navigation.NavigateTo($"/sprints/{id}/plan");
 

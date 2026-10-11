@@ -300,6 +300,10 @@ public partial class FlareGanttPanel<TRow, TItem> : IGanttPanel
         return $"left:{GanttFormat.Px(x)};width:{GanttFormat.Px(Math.Max(1, Gantt.X(span.End) - x))}";
     }
 
+    // A bar far off the drawn columns is skipped — unless it is the one selected or being dragged.
+    private bool Drawn(GanttBarLayout<TItem> bar) =>
+        Gantt!.InView(bar.Local.X, bar.Local.X + bar.Local.Width) || bar.IsPreview || bar.Key == Gantt.Selected || bar.Key == _drag?.Key;
+
     private string BarStyle(GanttBarLayout<TItem> bar) =>
         $"left:{GanttFormat.Px(bar.Local.X)};top:{GanttFormat.Px(bar.Local.Y)};width:{GanttFormat.Px(bar.Local.Width)};height:{GanttFormat.Px(bar.Local.Height)}";
 
