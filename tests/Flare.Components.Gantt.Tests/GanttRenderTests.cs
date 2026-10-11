@@ -143,6 +143,28 @@ public sealed class GanttRenderTests : GanttTestBase
     }
 
     [Fact]
+    public void Legend_samples_are_the_chart_elements_of_each_kind()
+    {
+        var cut = Render<FlareGanttLegend>(p => p.Add(x => x.Items, new GanttLegendItem[]
+        {
+            new("risk", "Риск"),
+            new("waiting", "Ожидание", GanttLegendShape.Segment, BarKind: "work"),
+            new("sprint", "Спринт", GanttLegendShape.Region),
+            new("overload", "Перегруз", GanttLegendShape.Cell, "Больше, чем доступно")
+        }));
+
+        var samples = cut.FindAll(".flare-gantt-legend__sample");
+        Assert.Equal(4, samples.Count);
+        Assert.Contains("flare-gantt__bar", samples[0].ClassList);
+        Assert.Contains("flare-gantt--kind-risk", samples[0].ClassList);
+        Assert.Contains("flare-gantt--kind-work", samples[1].ClassList);
+        Assert.Contains("flare-gantt--kind-waiting", samples[1].QuerySelector(".flare-gantt__segment")!.ClassList);
+        Assert.Contains("flare-gantt__region", samples[2].ClassList);
+        Assert.Contains("flare-gantt__cell", samples[3].ClassList);
+        Assert.Equal("Больше, чем доступно", cut.FindAll(".flare-gantt-legend__item")[3].GetAttribute("title"));
+    }
+
+    [Fact]
     public void Item_title_replaces_the_label_in_the_bar_tooltip()
     {
         var cut = Chart(p => p

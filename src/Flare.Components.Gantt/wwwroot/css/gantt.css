@@ -495,6 +495,51 @@
     box-shadow: 0 0 0 3px var(--flare-gantt-drop-outline, var(--flare-color-primary));
 }
 
+/* Legend: each sample is the chart's own element for its kind, sized down, so it takes the same look. */
+.flare-gantt-legend {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--flare-gantt-legend-gap, var(--flare-spacing-5, 0.625rem));
+    font-size: var(--flare-gantt-legend-font-size, 0.75rem);
+    color: var(--flare-gantt-legend-fg, var(--flare-color-on-surface-variant));
+}
+
+.flare-gantt-legend__item {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--flare-spacing-2, 0.25rem);
+}
+
+.flare-gantt-legend .flare-gantt-legend__sample {
+    position: relative;
+    inset: auto;
+    display: inline-block;
+    flex: none;
+    width: var(--flare-gantt-legend-sample-width, 1.25rem);
+    height: var(--flare-gantt-legend-sample-height, 0.625rem);
+    padding: 0;
+    overflow: hidden;
+    box-sizing: border-box;
+    cursor: default;
+    pointer-events: none;
+}
+
+/* A cell sample can be the colour of the page (free time); a hairline keeps it visible. */
+.flare-gantt-legend .flare-gantt-legend__sample.flare-gantt__cell {
+    border: 1px solid var(--flare-gantt-legend-sample-border, var(--flare-color-outline-variant));
+}
+
+/* A region is drawn edge to edge on the chart; in the key its own dashed border goes all the way round. */
+.flare-gantt-legend .flare-gantt-legend__sample.flare-gantt__region {
+    border: 1px dashed var(--flare-gantt-region-border, var(--flare-color-primary));
+}
+
+.flare-gantt-legend .flare-gantt-legend__sample > .flare-gantt__segment {
+    inset: 0;
+    padding: 0;
+}
+
 .flare-gantt__announce {
     position: absolute;
     width: 1px;

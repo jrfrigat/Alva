@@ -1,26 +1,33 @@
-@* Одна легенда для всех диаграмм Ганта: что значат цвета и штриховка полос. Свои пункты страницы (спринты, ячейки
-   ёмкости, предложение) идут перед видами полос, уведомление страницы — после. *@
-<div class="@($"alva-gantt-legend {Class}".Trim())" aria-label="Обозначения">
-    @ChildContent
-    <span class="alva-gantt-legend__item alva-gantt-legend__item--work" title="Задача без риска сорвать срок">Работа</span>
-    <span class="alva-gantt-legend__item alva-gantt-legend__item--risk-medium" title="Срок под угрозой: причины — в подсказке полосы">Средний риск</span>
-    <span class="alva-gantt-legend__item alva-gantt-legend__item--risk-high" title="Срок, скорее всего, будет сорван: причины — в подсказке полосы">Высокий риск</span>
-    <span class="alva-gantt-legend__item alva-gantt-legend__item--waiting" title="Родительская задача ждёт окончания подзадач; сплошная часть — её собственная работа">Ожидание подзадач</span>
-    <span class="alva-gantt-legend__item alva-gantt-legend__item--done">Готово</span>
+@using Flare.Components.Gantt
+@* Одна легенда для всех диаграмм Ганта: образцы рисует библиотека теми же элементами, что и график, поэтому цвета
+   берутся из тех же правил .alva-gantt. Свои пункты страницы (спринты, ячейки ёмкости, предложение) идут перед видами
+   полос, ссылка и уведомление страницы — после. *@
+<FlareGanttLegend Items="@AllItems" AriaLabel="Обозначения" Class="@($"alva-gantt alva-gantt-legend {Class}".Trim())">
     @Trailing
     @if (Notice is not null)
     {
         <span class="alva-gantt-legend__notice" role="status">@Notice</span>
     }
-</div>
+</FlareGanttLegend>
 
 @code {
+    private static readonly GanttLegendItem[] Bars =
+    [
+        new("work", "Работа", Title: "Задача без риска сорвать срок"),
+        new("risk-medium", "Средний риск", Title: "Срок под угрозой: причины — в подсказке полосы"),
+        new("risk-high", "Высокий риск", Title: "Срок, скорее всего, будет сорван: причины — в подсказке полосы"),
+        new("waiting", "Ожидание подзадач", GanttLegendShape.Segment, "Родительская задача ждёт окончания подзадач; сплошная часть — её собственная работа", BarKind: "work"),
+        new("done", "Готово")
+    ];
+
     /// <summary>Пункты страницы перед видами полос.</summary>
-    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public IEnumerable<GanttLegendItem> Items { get; set; } = [];
 
     /// <summary>Пункты после видов полос, например ссылка.</summary>
     [Parameter] public RenderFragment? Trailing { get; set; }
 
     [Parameter] public string? Notice { get; set; }
     [Parameter] public string? Class { get; set; }
+
+    private IEnumerable<GanttLegendItem> AllItems => Items.Concat(Bars);
 }

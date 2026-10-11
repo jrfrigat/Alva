@@ -91,6 +91,7 @@ export function attach(root, dotnet, virtualize, endless) {
     // visible — inside the chart's own scroll box and the window. Not while a drag is on: the drag knows the drop
     // zones it started with, and rows drawn later would not be among them.
     let windowTimer = 0;
+    let target = null, retry = 0;
     const visible = () => {
         windowTimer = 0;
         if (root.querySelector('.flare-drop-zone--candidate')) return;
@@ -122,17 +123,29 @@ export function attach(root, dotnet, virtualize, endless) {
 
     return {
         // Пока панели дорисовываются, ось ещё узка и браузер обрежет прокрутку — повторяем, когда ширина готова.
+        // The retry aims at the same moment: a shift from growth on the left in between moves the target with it.
         scrollTo(x) {
-            const apply = () => { scroll.scrollLeft = Math.max(0, x); };
-            apply();
-            setTimeout(apply, 300);
+            target = Math.max(0, x);
+            scroll.scrollLeft = target;
+            clearTimeout(retry);
+            retry = setTimeout(() => {
+                if (target !== null && Math.abs(scroll.scrollLeft - target) > 1) scroll.scrollLeft = target;
+                target = null;
+                if (virtualize || endless) visible();
+            }, 300);
+            if (virtualize || endless) visible();
         },
-        // The axis grew on the left: keep the same moment under the eye.
-        shift(px) { scroll.scrollLeft += px; },
+        // The axis grew on the left: keep the same moment under the eye, and tell .NET at once where the view is now.
+        shift(px) {
+            scroll.scrollLeft += px;
+            if (target !== null) target += px;
+            if (virtualize || endless) visible();
+        },
         // Where the pointer was last seen, in pixels from the start of the time area; null before any movement.
         pointerX() { return pointer && scale ? pointer.x - scale.getBoundingClientRect().left : null; },
         dispose() {
             clearTimeout(windowTimer);
+            clearTimeout(retry);
             scroll.removeEventListener('wheel', wheel);
             scroll.removeEventListener('scroll', onScroll);
             window.removeEventListener('scroll', onScroll);

@@ -97,6 +97,24 @@ public sealed record GanttRegion(string Kind, GanttSpan Span, string? RowKey = n
 /// <param name="Title">Optional tooltip text.</param>
 public sealed record GanttCell(string RowKey, GanttSpan Span, string Kind, string? Text = null, string? Title = null);
 
+/// <summary>What a legend sample is drawn as: the same element the chart draws, so it takes the same look.</summary>
+public enum GanttLegendShape
+{
+    /// <summary>An item bar of the kind.</summary>
+    Bar,
+    /// <summary>A segment of the kind over a bar of <see cref="GanttLegendItem.BarKind"/>.</summary>
+    Segment,
+    /// <summary>A suggested (ghost) bar.</summary>
+    Suggested,
+    /// <summary>A region of the kind.</summary>
+    Region,
+    /// <summary>A value cell of the kind.</summary>
+    Cell
+}
+
+/// <summary>One entry of <c>FlareGanttLegend</c>: a sample of a kind drawn as <paramref name="Shape"/>, a label and an optional hint.</summary>
+public sealed record GanttLegendItem(string Kind, string Label, GanttLegendShape Shape = GanttLegendShape.Bar, string? Title = null, string? BarKind = null);
+
 /// <summary>A dependency from one item to another.</summary>
 /// <param name="FromKey">Predecessor item key.</param>
 /// <param name="ToKey">Successor item key.</param>

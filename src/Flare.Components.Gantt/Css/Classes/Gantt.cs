@@ -113,6 +113,13 @@ public static class Gantt
     /// <summary>The <c>flare-gantt__announce</c> CSS class.</summary>
     public const string Announce = "flare-gantt__announce";
 
+    /// <summary>The <c>flare-gantt-legend</c> CSS class.</summary>
+    public const string Legend = "flare-gantt-legend";
+    /// <summary>The <c>flare-gantt-legend__item</c> CSS class.</summary>
+    public const string LegendItem = "flare-gantt-legend__item";
+    /// <summary>The <c>flare-gantt-legend__sample</c> CSS class.</summary>
+    public const string LegendSample = "flare-gantt-legend__sample";
+
     /// <summary>The modifier class for a consumer kind key, such as <c>flare-gantt--kind-waiting</c>.</summary>
     public static string Kind(string? kind) => string.IsNullOrWhiteSpace(kind) ? "" : "flare-gantt--kind-" + Sanitize(kind);
 
