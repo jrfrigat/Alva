@@ -74,10 +74,10 @@
                     }
                     @if (DropGroup is not null)
                     {
-                        @foreach (var tick in gantt.Axis.Ticks())
-                        {
-                            <FlareDropZone Group="@DropGroup" Target="@GanttDropTarget.Format(row.Key, tick.Span)" Placement="DropPlacement.Into" Accepts="DropAccepts" Class="@Css.Classes.Gantt.Drop" Style="@SpanStyle(tick.Span)" />
-                        }
+                        @* One zone per row, not per unit: the unit under the pointer is lit and resolved by the axis. *@
+                        <FlareDropZone Group="@DropGroup" Target="@GanttRowDropTarget.Format(row.Key)" Placement="DropPlacement.Into" Accepts="DropAccepts" Class="@Css.Classes.Gantt.Drop">
+                            <span class="@Css.Classes.Gantt.DropUnit" aria-hidden="true"></span>
+                        </FlareDropZone>
                     }
                     @foreach (var cell in row.Cells)
                     {

@@ -151,7 +151,7 @@
         <div class="alva-plan-hint"><FlareIconView Value="@MaterialDesign3Icons.Regular.DragIndicator" Size="16px" /> Перетащите задачу на Гантт — на день или на строку человека. Сюда — чтобы вернуть в бэклог.</div>
     </section>
 
-    <GanttSprintBoard Sprint="Sprint" Data="_gantt" People="_people" Focus="_focus" OnTaskChange="TaskChange" OnPeopleChange="PeopleChange"
+    <GanttSprintBoard @ref="_board" Sprint="Sprint" Data="_gantt" People="_people" Focus="_focus" OnTaskChange="TaskChange" OnPeopleChange="PeopleChange"
                       OnLinkCreate="Link" OnLinkRejected="Rejected" OnUnplan="t => Move(t, null)" Suggested="Chosen" />
 
     <div class="alva-plan-side">
@@ -191,6 +191,7 @@
     private Dictionary<Guid, (decimal Available, decimal Allocated)> _load = [];
     private CapacityDto[] _capacity = [];
     private GanttData? _gantt;
+    private GanttSprintBoard? _board;
     private GanttPeopleData? _people;
     private Guid _loadedFor;
     private Guid? _focus;
@@ -333,9 +334,9 @@
                 {
                     await _gantt.Unplan(Session, task);
                 }
-                else if (GanttDropTarget.TryParse(e.TargetId, out var cell))
+                else if (_board is not null && await _board.ResolveDrop(e.TargetId) is { } cell)
                 {
-                    var row = cell!.RowKey;
+                    var row = cell.RowKey;
                     if (GanttPeopleData.IsGroup(row)) throw new InvalidOperationException(GanttPeopleData.GroupRefusal);
                     var day = DateOnly.FromDateTime(cell.Span.Start);
                     var sprint = GanttData.SprintAt(day, _gantt.PlanSprints(Sprint), Sprint.Id)

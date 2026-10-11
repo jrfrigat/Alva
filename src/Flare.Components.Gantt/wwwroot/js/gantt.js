@@ -9,15 +9,26 @@ export function attach(root, dotnet) {
     let resizing = null;
 
     const side = () => corner ? corner.getBoundingClientRect().width : 0;
-    const report = () => {
+    let sent = [-1, -1];
+    let pending = 0;
+    // .NET слышит только устоявшуюся ширину: анимация меню или окна меняет её каждый кадр, а перерисовка оси дорогая.
+    const send = () => {
+        pending = 0;
         if (resizing) return;
-        dotnet.invokeMethodAsync('Viewport', scroll.clientWidth, side()).catch(() => { });
+        const width = scroll.clientWidth, column = side();
+        if (Math.abs(width - sent[0]) < 1 && Math.abs(column - sent[1]) < 1) return;
+        sent = [width, column];
+        dotnet.invokeMethodAsync('Viewport', width, column).catch(() => { });
+    };
+    const report = () => {
+        clearTimeout(pending);
+        pending = setTimeout(send, 150);
     };
     const observer = new ResizeObserver(report);
     observer.observe(scroll);
     // Первый замер может прийтись на ещё не устоявшуюся раскладку страницы — повторяем его, когда она доделана.
-    report();
-    const settle = setTimeout(report, 300);
+    send();
+    const settle = setTimeout(send, 300);
     window.addEventListener('resize', report);
 
     // The column follows the pointer through the CSS variable alone; .NET hears only the final width.
@@ -42,6 +53,30 @@ export function attach(root, dotnet) {
         dotnet.invokeMethodAsync('SideResized', width).catch(() => { });
         report();
     };
+    // A row drop zone covers the whole row; the unit under the pointer is lit here and resolved by .NET from the
+    // last pointer position, so a chart of hundreds of rows needs one zone per row, not one per row and unit.
+    const scale = root.querySelector('.flare-gantt__scale');
+    let pointer = null;
+    let frame = 0;
+    const unitAt = x => [...root.querySelectorAll('.flare-gantt__scale-row:not(.flare-gantt__scale-row--major) > .flare-gantt__tick')]
+        .find(t => x >= t.offsetLeft && x < t.offsetLeft + t.offsetWidth);
+    const light = () => {
+        frame = 0;
+        const zone = root.querySelector('.flare-gantt__drop.flare-drop-zone--over');
+        const unit = zone?.firstElementChild;
+        if (!unit || !pointer || !scale) return;
+        const tick = unitAt(pointer.x - scale.getBoundingClientRect().left);
+        if (!tick) return;
+        unit.style.left = tick.offsetLeft + 'px';
+        unit.style.width = tick.offsetWidth + 'px';
+    };
+    const track = e => {
+        pointer = { x: e.clientX, y: e.clientY };
+        if (!frame && root.querySelector('.flare-drop-zone--candidate')) frame = requestAnimationFrame(light);
+    };
+    document.addEventListener('pointermove', track, { capture: true, passive: true });
+    document.addEventListener('pointerup', track, { capture: true, passive: true });
+
     root.addEventListener('pointerdown', down);
     root.addEventListener('pointermove', move);
     root.addEventListener('pointerup', up);
@@ -54,9 +89,15 @@ export function attach(root, dotnet) {
             apply();
             setTimeout(apply, 300);
         },
+        // Where the pointer was last seen, in pixels from the start of the time area; null before any movement.
+        pointerX() { return pointer && scale ? pointer.x - scale.getBoundingClientRect().left : null; },
         dispose() {
+            document.removeEventListener('pointermove', track, { capture: true });
+            document.removeEventListener('pointerup', track, { capture: true });
+            cancelAnimationFrame(frame);
             observer.disconnect();
             clearTimeout(settle);
+            clearTimeout(pending);
             window.removeEventListener('resize', report);
             root.removeEventListener('pointerdown', down);
             root.removeEventListener('pointermove', move);

@@ -185,16 +185,32 @@ public sealed class GanttInteractionTests : GanttTestBase
     }
 
     [Fact]
-    public void Drop_zones_cover_every_row_and_unit_with_parseable_targets()
+    public void Drop_zones_are_one_per_row_and_resolve_the_unit_under_the_pointer()
     {
         var cut = Chart(p => p.Add(x => x.Rows, TwoRows).Add(x => x.DropGroup, "pool"));
 
         var zones = cut.FindAll(".flare-gantt__drop");
-        Assert.Equal(2 * 14, zones.Count);
-        var target = GanttDropTarget.Format("r2", GanttSpan.Day(Day(3)));
-        Assert.True(GanttDropTarget.TryParse(target, out var parsed));
-        Assert.Equal(new GanttDropTarget("r2", GanttSpan.Day(Day(3))), parsed);
-        Assert.False(GanttDropTarget.TryParse("something else", out _));
+        Assert.Equal(2, zones.Count);
+        var rows = zones.Select(z => GanttRowDropTarget.TryParse(z.GetAttribute("data-flare-drop"), out var t) ? t!.RowKey : null);
+        Assert.Equal(["r1", "r2"], rows);
+        Assert.All(zones, z => Assert.NotNull(z.QuerySelector(".flare-gantt__drop-unit")));
+
+        // 40 px на день: 130 px от начала оси — четвёртый день.
+        Assert.Equal(new GanttDropTarget("r2", GanttSpan.Day(Day(3))), cut.Instance.UnitAt("r2", 130));
+        Assert.Null(cut.Instance.UnitAt("r2", 10_000));
+    }
+
+    [Fact]
+    public async Task Resolve_drop_reads_unit_targets_and_refuses_anything_else()
+    {
+        var cut = Chart(p => p.Add(x => x.Rows, TwoRows));
+        var unit = GanttDropTarget.Format("r2", GanttSpan.Day(Day(3)));
+
+        Assert.Equal(new GanttDropTarget("r2", GanttSpan.Day(Day(3))), await cut.InvokeAsync(() => cut.Instance.ResolveDrop(unit)));
+        Assert.Null(await cut.InvokeAsync(() => cut.Instance.ResolveDrop("something else")));
+        Assert.False(GanttRowDropTarget.TryParse(unit, out _));
+        Assert.False(GanttRowDropTarget.TryParse(GanttItemDropTarget.Format("a"), out _));
+        Assert.False(GanttDropTarget.TryParse(GanttRowDropTarget.Format("r1"), out _));
     }
 
     [Fact]
@@ -239,9 +255,9 @@ public sealed class GanttInteractionTests : GanttTestBase
             .Add(x => x.ItemDropGroup, "plan").Add(x => x.ItemDropAccepts, (object? o) => o is int));
 
         var zones = cut.FindComponents<FlareDropZone>();
-        var units = zones.Where(z => GanttDropTarget.TryParse(z.Instance.Target, out _)).ToArray();
+        var units = zones.Where(z => GanttRowDropTarget.TryParse(z.Instance.Target, out _)).ToArray();
         var bars = zones.Where(z => GanttItemDropTarget.TryParse(z.Instance.Target, out _)).ToArray();
-        Assert.Equal(2 * 14, units.Length);
+        Assert.Equal(2, units.Length);
         Assert.Equal(2, bars.Length);
         Assert.All(units, z => { Assert.True(z.Instance.Accepts!("task")); Assert.False(z.Instance.Accepts!(7)); });
         Assert.All(bars, z => { Assert.True(z.Instance.Accepts!(7)); Assert.False(z.Instance.Accepts!("task")); });

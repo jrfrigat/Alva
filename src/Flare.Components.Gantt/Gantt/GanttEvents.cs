@@ -53,8 +53,8 @@ public sealed class GanttLinkEventArgs(GanttLink Link)
 public sealed record GanttLinkRejectedEventArgs(GanttLink Link, GanttValidation Validation, string Message);
 
 /// <summary>
-/// Target of a drop zone on a row and one axis unit, encoded in the zone's string <c>Target</c>. A consumer
-/// wraps its page in its own <c>FlareDragContext&lt;TPayload&gt;</c> and parses <c>TargetId</c> in its drop handler.
+/// A row and one axis unit a payload was dropped on — what <c>FlareGantt.ResolveDrop</c> returns for a row zone. A consumer
+/// wraps its page in its own <c>FlareDragContext&lt;TPayload&gt;</c> and resolves <c>TargetId</c> in its drop handler.
 /// </summary>
 /// <param name="RowKey">Row the payload was dropped on.</param>
 /// <param name="Span">Axis unit the payload was dropped on.</param>
@@ -77,6 +77,27 @@ public sealed record GanttDropTarget(string RowKey, GanttSpan Span)
             return false;
         target = new GanttDropTarget(parts[0], new GanttSpan(start, end));
         return true;
+    }
+}
+
+/// <summary>
+/// Target of the drop zone of a whole row, which <c>DropGroup</c> renders: one zone per row keeps a chart of hundreds
+/// of rows cheap. The axis unit is not in the target — <c>FlareGantt.ResolveDrop</c> finds it from where the pointer
+/// was released.
+/// </summary>
+/// <param name="RowKey">Row the payload was dropped on.</param>
+public sealed record GanttRowDropTarget(string RowKey)
+{
+    private const char Marker = '\u001D';
+
+    /// <summary>The zone target for a row.</summary>
+    public static string Format(string rowKey) => Marker + rowKey;
+
+    /// <summary>Reads a target written by <see cref="Format"/>; false for any other string.</summary>
+    public static bool TryParse(string? targetId, out GanttRowDropTarget? target)
+    {
+        target = targetId is { Length: > 1 } && targetId[0] == Marker ? new GanttRowDropTarget(targetId[1..]) : null;
+        return target is not null;
     }
 }
 

@@ -104,6 +104,10 @@
         await Preferences.SaveSide(View, width);
     }
 
+    /// <summary>Строка и день сброса на Гантт доски: строку даёт зона, день — место, где отпустили указатель.</summary>
+    public Task<GanttDropTarget?> ResolveDrop(string? targetId) =>
+        _chart?.ResolveDrop(targetId) ?? Task.FromResult<GanttDropTarget?>(null);
+
     private static bool IsTask(object? payload) => payload is TaskDrag;
     private static bool IsPerson(object? payload) => payload is PersonDrag;
 }

@@ -168,14 +168,38 @@
         catch (JSDisconnectedException) { }
     }
 
+    /// <summary>
+    /// The row and axis unit of a drop on a panel's <c>DropGroup</c>: the row comes from the zone, the unit from where
+    /// the pointer was released. Also reads a target already written as <see cref="GanttDropTarget"/>. Null for any
+    /// other target, or when the pointer position is unknown.
+    /// </summary>
+    public async Task<GanttDropTarget?> ResolveDrop(string? targetId)
+    {
+        if (GanttDropTarget.TryParse(targetId, out var direct)) return direct;
+        if (!GanttRowDropTarget.TryParse(targetId, out var row) || _module is null) return null;
+        try { return await _module.InvokeAsync<double?>("pointerX") is { } x ? UnitAt(row!.RowKey, x) : null; }
+        catch (JSDisconnectedException) { return null; }
+    }
+
+    /// <summary>The drop target for <paramref name="rowKey"/> at <paramref name="x"/> pixels into the time area.</summary>
+    internal GanttDropTarget? UnitAt(string rowKey, double x)
+    {
+        var moment = At(x);
+        return Axis.Ticks().FirstOrDefault(t => t.Span.Start <= moment && moment < t.Span.End) is { } tick
+            ? new GanttDropTarget(rowKey, tick.Span)
+            : null;
+    }
+
     /// <summary>Visible width of the time area reported by the browser.</summary>
     [JSInvokable]
     public void Viewport(double width, double side)
     {
         var available = Math.Max(0, width - side - 1);
         if (Math.Abs(available - _available) < 0.5) return;
+        var before = EffectiveUnitWidth;
         _available = available;
-        if (!FillWidth) return;
+        // Перерисовка всей оси и панелей дорогая: только когда ширина единицы действительно изменилась.
+        if (EffectiveUnitWidth == before) return;
         StateHasChanged();
         Refresh();
     }

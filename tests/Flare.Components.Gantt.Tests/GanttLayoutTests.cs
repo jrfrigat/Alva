@@ -36,6 +36,19 @@ public sealed class GanttLayoutTests : GanttTestBase
     }
 
     [Fact]
+    public void A_new_width_that_keeps_the_unit_does_not_rerender()
+    {
+        var cut = Chart(p => p.Add(x => x.Rows, OneRow).Add(x => x.Items, Parent), g => g.Add(x => x.FillWidth, true));
+        var renders = cut.RenderCount;
+
+        // Ось шире видимого — день остаётся 40 px, сколько бы ни менялась ширина окна (анимация меню).
+        foreach (var width in new[] { 500d, 480, 460, 440 }) cut.InvokeAsync(() => cut.Instance.Viewport(width, 160));
+
+        Assert.Equal(40, cut.Instance.EffectiveUnitWidth);
+        Assert.Equal(renders, cut.RenderCount);
+    }
+
+    [Fact]
     public void Dragged_side_width_is_kept_and_reported()
     {
         string? reported = null;

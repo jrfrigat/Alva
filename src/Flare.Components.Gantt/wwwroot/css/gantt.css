@@ -435,11 +435,18 @@
     fill: var(--flare-gantt-link, var(--flare-color-outline));
 }
 
-/* Drop targets for an outside drag. */
+/* Drop targets for an outside drag: one per row, the unit under the pointer lit by the axis script. */
 .flare-gantt__drop {
+    position: absolute;
+    inset: 0;
+}
+
+.flare-gantt__drop-unit {
+    display: none;
     position: absolute;
     top: 0;
     bottom: 0;
+    pointer-events: none;
 }
 
 /* While a drag is on, whatever in a track does not take the payload lets the pointer through, so a unit
@@ -464,6 +471,11 @@
 }
 
 .flare-gantt__drop.flare-drop-zone--over {
+    background: var(--flare-gantt-drop-row, color-mix(in srgb, var(--flare-color-primary) 10%, transparent));
+}
+
+.flare-gantt__drop.flare-drop-zone--over > .flare-gantt__drop-unit {
+    display: block;
     background: var(--flare-gantt-drop-over, color-mix(in srgb, var(--flare-color-primary) 22%, transparent));
     box-shadow: inset 0 0 0 2px var(--flare-gantt-drop-outline, var(--flare-color-primary));
 }
