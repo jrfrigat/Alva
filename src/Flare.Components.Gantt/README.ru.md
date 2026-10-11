@@ -82,8 +82,8 @@ roadmap — всё, что раскладывается во времени по
 - **`OnChange`** получает `GanttChangeEventArgs`:
   - первичное изменение и каскад последователей по `ScheduleMode`;
   - `Cancel` отключает объявление.
-- **Внешнее перетаскивание:** при `DropGroup` каждая строка × шаг оси — `FlareDropZone`.
-  `GanttDropTarget.TryParse(e.TargetId, out var target)` в обработчике вашего `FlareDragContext`.
+- **Внешнее перетаскивание:** при `DropGroup` каждая строка — одна `FlareDropZone`; день под указателем подсвечивает ось.
+  В обработчике вашего `FlareDragContext`: `await gantt.ResolveDrop(e.TargetId)` (`@ref` на `FlareGantt`) вернёт строку и шаг оси — `GanttDropTarget`.
   - `ItemDropGroup` делает зоной сброса саму полосу (не сводную и не предложенную). Цель разбирается через `GanttItemDropTarget.TryParse`.
     Так можно, например, бросить человека на задачу.
   - `DropAccepts` и `ItemDropAccepts` решают, какую нагрузку берут шаги оси и полосы. Остальное не подсвечивается и сброс не принимает.

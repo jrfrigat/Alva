@@ -52,8 +52,8 @@ scroll and one selection.
   - Enter/Space selects;
   - L starts a link, Enter or a click on the target creates it.
 - **`OnChange`** carries the primary change plus the cascade.
-- **`DropGroup`** turns every row × unit into a `FlareDropZone` for an outside `FlareDragContext`; read the
-  target with `GanttDropTarget.TryParse`.
+- **`DropGroup`** makes every row one `FlareDropZone` for an outside `FlareDragContext`; the axis lights the unit under the
+  pointer, and `await gantt.ResolveDrop(e.TargetId)` (a `@ref` to `FlareGantt`) returns the row and unit as `GanttDropTarget`.
 - **`ItemDropGroup`** makes each bar (not summaries or suggestions) a drop zone for dropping onto the item itself, such
   as a person onto a task; read it with `GanttItemDropTarget.TryParse`. **`DropAccepts`** and **`ItemDropAccepts`** say
   which payloads units and bars take. During a drag, whatever in a track does not take the payload lets the pointer through,
