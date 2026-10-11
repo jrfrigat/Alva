@@ -32,6 +32,9 @@ public sealed class TaskSprintCacheTests : IAsyncLifetime
         Assert.True(SprintWindows.Overlaps(null, Day.AddDays(3), Day, Day.AddDays(13)));
         Assert.False(SprintWindows.Overlaps(null, null, Day, Day.AddDays(13)));
         Assert.Null(SprintWindows.Window(null, null));
+        // Бэклог не занимает людей: ёмкость берёт только запланированные задачи.
+        Assert.False(SprintWindows.Planned(null, null));
+        Assert.True(SprintWindows.Planned(Day, null));
     }
 
     [Fact]

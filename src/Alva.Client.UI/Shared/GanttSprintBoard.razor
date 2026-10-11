@@ -40,7 +40,7 @@
                                 DropGroup="plan" DropAccepts="IsTask" ItemDropGroup="plan" ItemDropAccepts="IsPerson" Suggested="TaskGhosts">
                     <Header>Проекция 1: задачи спринтов</Header>
                     <RowActions Context="task">
-                        <FlareIconButton Icon="@MaterialDesign3Icons.Regular.Close" Size="ButtonSize.Sm" Tooltip="Вернуть в бэклог"
+                        <FlareIconButton Icon="@MaterialDesign3Icons.Regular.Close" Size="ButtonSize.Sm" Tooltip="@UnplanHint(task)"
                                          AriaLabel="@($"Вернуть «{task.Title}» в бэклог")" OnClick="() => OnUnplan.InvokeAsync(task)" />
                     </RowActions>
                 </GanttTaskPanel>
@@ -106,6 +106,9 @@
     /// <summary>Строка и день сброса на Гантт доски: строку даёт зона, день — место, где отпустили указатель.</summary>
     public Task<GanttDropTarget?> ResolveDrop(string? targetId) =>
         _chart?.ResolveDrop(targetId) ?? Task.FromResult<GanttDropTarget?>(null);
+
+    // Задача с подзадачами уходит в бэклог вместе с ними — подсказка говорит об этом.
+    private string UnplanHint(TaskModel task) => Data!.ChildrenOf(task).Any() ? "Вернуть в бэклог вместе с подзадачами (снять даты)" : "Вернуть в бэклог (снять даты)";
 
     private static bool IsTask(object? payload) => payload is TaskDrag;
     private static bool IsPerson(object? payload) => payload is PersonDrag;

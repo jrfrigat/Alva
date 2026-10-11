@@ -202,10 +202,14 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
     private static IEnumerable<(TaskModel Task, DateOnly? Start, DateOnly? End)> OpenTasks(DemoStore store, Guid teamId) =>
         store.Tasks.Where(t => t.TeamId == teamId && t.Status is not ("Done" or "Cancelled")).Select(t => (t, t.StartDate, t.EndDate));
 
+    /// <summary>Открытые задачи с плановыми датами: только они занимают людей; бэклог в ёмкость не входит (как в API).</summary>
+    private static IEnumerable<(TaskModel Task, DateOnly? Start, DateOnly? End)> PlannedTasks(DemoStore store, Guid teamId) =>
+        OpenTasks(store, teamId).Where(x => SprintWindows.Planned(x.Start, x.End));
+
     private static CapacityDemandDto[] Demand(DemoStore store, Guid teamId, DateOnly from, DateOnly to)
     {
         var targets = store.Actors.Where(a => a.Kind != "Person").ToDictionary(a => a.Id);
-        var work = OpenTasks(store, teamId)
+        var work = PlannedTasks(store, teamId)
             .Where(x => x.Task.ResolvedPersonId is null && x.Task.AssignmentTargetId is { } id && targets.ContainsKey(id))
             .Select(x => (Task: x, Target: targets[x.Task.AssignmentTargetId!.Value]))
             .Select(x => new DemandWork(x.Target.Id, x.Target.Name, x.Target.Kind, x.Task.Task.EstimateHours ?? 0m, x.Task.Start, x.Task.End, x.Task.Task.Deadline));
@@ -215,7 +219,7 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
     private static CapacityDto[] Capacity(DemoStore store, Guid teamId, DateOnly from, DateOnly to)
     {
         var people = store.Actors.Where(a => a.Kind == "Person").ToArray();
-        var work = OpenTasks(store, teamId).Select(x => (x, Person: PersonOf(store, x.Task))).Where(w => w.Person.HasValue)
+        var work = PlannedTasks(store, teamId).Select(x => (x, Person: PersonOf(store, x.Task))).Where(w => w.Person.HasValue)
             .Select(w => new CapacityWork(w.Person!.Value, w.x.Task.EstimateHours ?? 0m, w.x.Start, w.x.End, w.x.Task.Deadline));
         return CapacityMath.Build(people.Select(p => (p.Id, p.Name)), id => CalendarOf(store, people.First(p => p.Id == id)), work, from, to);
     }

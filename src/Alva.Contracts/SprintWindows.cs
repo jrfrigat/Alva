@@ -11,6 +11,9 @@ public static class SprintWindows
     public static (DateOnly Start, DateOnly End)? Window(DateOnly? start, DateOnly? end) =>
         (start ?? end, end ?? start) is (DateOnly s, DateOnly e) ? (s <= e ? (s, e) : (e, s)) : null;
 
+    /// <summary>У задачи есть плановая дата: она в плане и занимает людей; без них — в бэклоге.</summary>
+    public static bool Planned(DateOnly? start, DateOnly? end) => start is not null || end is not null;
+
     public static bool Overlaps(DateOnly? start, DateOnly? end, DateOnly sprintStart, DateOnly sprintEnd) =>
         Window(start, end) is { } w && w.Start <= sprintEnd && w.End >= sprintStart;
 

@@ -244,7 +244,7 @@ public static class PlanningEndpoints
         var (people, calendarOf) = await PeopleCalendars(db, teamId);
         var work = new List<CapacityWork>();
         foreach (var (task, assignment, taskStart, taskEnd) in await OpenWork(db, teamId))
-            if (assignment is not null && ResolvePerson(assignment, people) is { } person) work.Add(new CapacityWork(person.Id, task.EstimateHours ?? 0m, taskStart, taskEnd, task.Deadline));
+            if (SprintWindows.Planned(taskStart, taskEnd) && assignment is not null && ResolvePerson(assignment, people) is { } person) work.Add(new CapacityWork(person.Id, task.EstimateHours ?? 0m, taskStart, taskEnd, task.Deadline));
         return CapacityMath.Build(people.Select(x => (x.Id, x.Name)), calendarOf, work, start, end);
     }
 
@@ -255,7 +255,7 @@ public static class PlanningEndpoints
         var targets = await db.Actors.AsNoTracking().Where(x => x.TeamId == teamId && !x.Archived && x.Kind != ActorKind.Person).ToDictionaryAsync(x => x.Id);
         var work = new List<DemandWork>();
         foreach (var (task, assignment, taskStart, taskEnd) in await OpenWork(db, teamId))
-            if (assignment is { ResolvedPersonId: null } && targets.TryGetValue(assignment.TargetId, out var target))
+            if (SprintWindows.Planned(taskStart, taskEnd) && assignment is { ResolvedPersonId: null } && targets.TryGetValue(assignment.TargetId, out var target))
                 work.Add(new DemandWork(target.Id, target.Name, target.Kind.ToString(), task.EstimateHours ?? 0m, taskStart, taskEnd, task.Deadline));
         return CapacityMath.Demand(work, start, end);
     }

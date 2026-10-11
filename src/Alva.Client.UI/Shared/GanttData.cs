@@ -51,8 +51,8 @@ public sealed class GanttData
 
     public ActorModel? Actor(Guid? id) => id is { } value ? _actors.GetValueOrDefault(value) : null;
 
-    /// <summary>Окно задачи тем же правилом, что в ёмкости и рисках: свои даты, иначе срок.</summary>
-    public (DateOnly Start, DateOnly End)? Window(TaskModel task) => CapacityMath.Window(task.StartDate, task.EndDate, task.Deadline);
+    /// <summary>Плановое окно задачи; без плановых дат задача в бэклоге и полосы не имеет — её срок виден меткой.</summary>
+    public (DateOnly Start, DateOnly End)? Window(TaskModel task) => SprintWindows.Window(task.StartDate, task.EndDate);
 
     /// <summary>Задачи спринта (по их датам) — индекс строится один раз на загрузку.</summary>
     public IEnumerable<TaskModel> InSprint(Guid sprintId) => (_bySprint ??= Tasks.SelectMany(t => t.SprintIds, (t, s) => (t, s)).ToLookup(x => x.s, x => x.t))[sprintId];
@@ -256,8 +256,15 @@ public sealed class GanttData
         return Put(session, task, start, end);
     }
 
-    /// <summary>Возвращает задачу в бэклог: без плановых дат она не входит ни в один спринт.</summary>
-    public Task Unplan(AlvaSession session, TaskModel task) => Put(session, task, null, null);
+    /// <summary>
+    /// Возвращает задачу в бэклог: без плановых дат она не входит ни в один спринт и не занимает людей. Подзадачи уходят
+    /// вместе с ней, начиная с самых глубоких, — иначе правило «родитель охватывает детей» вернуло бы родителю их окно.
+    /// </summary>
+    public async Task Unplan(AlvaSession session, TaskModel task)
+    {
+        foreach (var item in Descendants(task).Where(t => t.Planned).OrderByDescending(Depth).Append(task))
+            await Put(session, item, null, null);
+    }
 
     private static Task Put(AlvaSession session, TaskModel task, DateOnly? start, DateOnly? end) =>
         session.Send(HttpMethod.Put, session.TeamPath($"tasks/{task.Id}"), new TaskRequest(task.Title, task.Description, task.Status,
