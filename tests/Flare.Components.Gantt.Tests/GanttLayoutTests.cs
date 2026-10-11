@@ -49,6 +49,35 @@ public sealed class GanttLayoutTests : GanttTestBase
     }
 
     [Fact]
+    public void Virtualized_panels_draw_only_rows_near_the_visible_part()
+    {
+        var rows = Enumerable.Range(0, 200).Select(i => new Node($"r{i}")).ToArray();
+        var cut = Chart(p => p.Add(x => x.Rows, rows), g => g.Add(x => x.Virtualize, true));
+        int Drawn() => cut.FindAll(".flare-gantt__row").Count;
+
+        // Строки по 30 px: до того как браузер сообщит видимое, рисуется первый экран с запасом — не все 200.
+        Assert.InRange(Drawn(), 30, 90);
+        Assert.Empty(cut.FindAll(".flare-gantt__spacer"));
+        Assert.Equal("6000px", cut.Find(".flare-gantt__body").GetAttribute("style")!.Split(':')[1]);
+
+        var panel = cut.Find(".flare-gantt__body").GetAttribute("data-panel")!;
+        cut.InvokeAsync(() => cut.Instance.Visible([panel], [3000], [3600]));
+
+        Assert.InRange(Drawn(), 20, 80);
+        Assert.Equal("height:2400px", cut.Find(".flare-gantt__spacer").GetAttribute("style"));
+        Assert.Equal("r80", cut.Find(".flare-gantt__row").GetAttribute("data-row"));
+    }
+
+    [Fact]
+    public void Without_virtualize_every_row_is_drawn()
+    {
+        var rows = Enumerable.Range(0, 200).Select(i => new Node($"r{i}")).ToArray();
+        var cut = Chart(p => p.Add(x => x.Rows, rows));
+
+        Assert.Equal(200, cut.FindAll(".flare-gantt__row").Count);
+    }
+
+    [Fact]
     public void Dragged_side_width_is_kept_and_reported()
     {
         string? reported = null;

@@ -22,6 +22,8 @@ public sealed class GanttData
     private Dictionary<Guid, SprintModel> _sprints = [];
     private Dictionary<Guid, ActorModel> _actors = [];
     private ILookup<Guid, TaskModel>? _children;
+    private Dictionary<string, TaskModel>? _byKey;
+    private readonly Dictionary<string, HashSet<Guid>> _shown = [];
 
     public static async Task<GanttData> Load(AlvaSession session)
     {
@@ -42,7 +44,7 @@ public sealed class GanttData
 
     public static string Key(Guid id) => id.ToString("N");
 
-    public TaskModel? Task(string key) => Tasks.FirstOrDefault(t => Key(t.Id) == key);
+    public TaskModel? Task(string key) => (_byKey ??= Tasks.ToDictionary(t => Key(t.Id))).GetValueOrDefault(key);
 
     public SprintModel? SprintOf(TaskModel task) => task.SprintId is { } id ? _sprints.GetValueOrDefault(id) : null;
 
@@ -82,16 +84,38 @@ public sealed class GanttData
 
     private IEnumerable<TaskModel> Descendants(TaskModel task)
     {
-        _children ??= Tasks.Where(t => t.ParentId is not null).ToLookup(t => t.ParentId!.Value);
+        var children = Children;
         var visited = new HashSet<Guid> { task.Id };
         var stack = new Stack<TaskModel>([task]);
         while (stack.Count > 0)
-            foreach (var child in _children[stack.Pop().Id])
+            foreach (var child in children[stack.Pop().Id])
                 if (visited.Add(child.Id))
                 {
                     yield return child;
                     stack.Push(child);
                 }
+    }
+
+    private ILookup<Guid, TaskModel> Children => _children ??= Tasks.Where(t => t.ParentId is not null).ToLookup(t => t.ParentId!.Value);
+
+    /// <summary>Прямые подзадачи.</summary>
+    public IEnumerable<TaskModel> ChildrenOf(TaskModel task) => Children[task.Id];
+
+    /// <summary>Задачи без родителя в команде — корни дерева.</summary>
+    public IEnumerable<TaskModel> Roots => Tasks.Where(t => t.ParentId is not { } parent || Task(Key(parent)) is null);
+
+    /// <summary>
+    /// Задачи этих спринтов вместе с их предками — чтобы дерево на Гантте спринта не рвалось. Считается один раз на набор
+    /// спринтов: панель спрашивает о каждой строке.
+    /// </summary>
+    public HashSet<Guid> InSprintsWithAncestors(IReadOnlyCollection<Guid> sprints)
+    {
+        var key = string.Join(',', sprints.Order());
+        if (_shown.TryGetValue(key, out var cached)) return cached;
+        var shown = new HashSet<Guid>();
+        foreach (var task in Tasks.Where(t => t.SprintId is { } id && sprints.Contains(id)))
+            for (TaskModel? at = task; at is not null && shown.Add(at.Id); at = at.ParentId is { } parent ? Task(Key(parent)) : null) { }
+        return _shown[key] = shown;
     }
 
     private int Depth(TaskModel task)

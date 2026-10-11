@@ -58,16 +58,9 @@
         @if (RowActions is not null) { @RowActions(task) }
     };
 
-    private IEnumerable<TaskModel> Roots
-    {
-        get
-        {
-            var ids = Data.Tasks.Select(t => t.Id).ToHashSet();
-            return Visible(Data.Tasks.Where(t => t.ParentId is null || !ids.Contains(t.ParentId.Value)));
-        }
-    }
+    private IEnumerable<TaskModel> Roots => Visible(Data.Roots);
 
-    private IEnumerable<TaskModel>? Children(TaskModel task) => Visible(Data.Tasks.Where(t => t.ParentId == task.Id));
+    private IEnumerable<TaskModel>? Children(TaskModel task) => Visible(Data.ChildrenOf(task));
 
     // В режиме спринтов показываются задачи этих спринтов и их предки, чтобы дерево не рвалось.
     private IEnumerable<TaskModel> Visible(IEnumerable<TaskModel> tasks)
@@ -75,11 +68,9 @@
         var ordered = tasks.OrderBy(t => t.Order).ThenBy(t => t.Title);
         IReadOnlyCollection<Guid>? sprints = SprintIds ?? (SprintId is { } one ? [one] : null);
         if (sprints is null) return ordered;
-        return ordered.Where(t => InSprints(t, sprints));
+        var shown = Data.InSprintsWithAncestors(sprints);
+        return ordered.Where(t => shown.Contains(t.Id));
     }
-
-    private bool InSprints(TaskModel task, IReadOnlyCollection<Guid> sprints) =>
-        task.SprintId is { } id && sprints.Contains(id) || Data.Tasks.Any(c => c.ParentId == task.Id && InSprints(c, sprints));
 
     private static string? RowClass(TaskModel task) => GanttData.IsClosed(task) ? "alva-gantt-row--closed" : null;
 

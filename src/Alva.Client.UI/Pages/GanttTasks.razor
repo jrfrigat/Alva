@@ -49,7 +49,7 @@ else if (_data is not null)
     }
     else
     {
-        <FlareGantt Range="@_data.Range(Sprint, Today)" Scale="_scale" UnitWidth="_unit" FillWidth="true" RowHeight="36" SideWidth="@_side" ResizableSide="true" SideWidthChanged="SaveSide"
+        <FlareGantt Range="@_data.Range(Sprint, Today)" Scale="_scale" UnitWidth="_unit" FillWidth="true" Virtualize="true" RowHeight="36" SideWidth="@_side" ResizableSide="true" SideWidthChanged="SaveSide"
                     NonWorking="GanttData.IsWeekend" Markers="@GanttData.TodayMarkers" Regions="@_data.SprintRegions(Sprint)" @bind-SelectedKey="_selected"
                     AriaLabel="Гантт по задачам" Class="alva-gantt">
             <Corner><span>Задача · исполнитель · часы</span></Corner>

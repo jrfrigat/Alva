@@ -105,6 +105,8 @@ public static class Gantt
     public const string Drop = "flare-gantt__drop";
     /// <summary>The <c>flare-gantt__drop-unit</c> CSS class: the lit unit under the pointer inside a row drop zone.</summary>
     public const string DropUnit = "flare-gantt__drop-unit";
+    /// <summary>The <c>flare-gantt__spacer</c> CSS class: the height of the rows a virtualized panel skips above the drawn ones.</summary>
+    public const string Spacer = "flare-gantt__spacer";
 
     /// <summary>A bar slot that is a drop zone for payloads dropped onto the item.</summary>
     public const string ItemDrop = "flare-gantt__item-drop";

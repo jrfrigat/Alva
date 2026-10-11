@@ -3,7 +3,7 @@
 
 const MinSide = 120;
 
-export function attach(root, dotnet) {
+export function attach(root, dotnet, virtualize) {
     const scroll = root.querySelector('.flare-gantt__scroll');
     const corner = root.querySelector('.flare-gantt__corner');
     let resizing = null;
@@ -73,9 +73,37 @@ export function attach(root, dotnet) {
     const track = e => {
         pointer = { x: e.clientX, y: e.clientY };
         if (!frame && root.querySelector('.flare-drop-zone--candidate')) frame = requestAnimationFrame(light);
+        // A drag that scrolled the chart left the drawn rows behind; once it is over, report where it ended.
+        if (e.type === 'pointerup' && virtualize) setTimeout(() => visible(), 120);
     };
     document.addEventListener('pointermove', track, { capture: true, passive: true });
     document.addEventListener('pointerup', track, { capture: true, passive: true });
+
+    // Virtualized panels draw only the rows near what is on screen: report, per panel body, which part of it is
+    // visible — inside the chart's own scroll box and the window. Not while a drag is on: the drag knows the drop
+    // zones it started with, and rows drawn later would not be among them.
+    let windowTimer = 0;
+    const visible = () => {
+        windowTimer = 0;
+        if (root.querySelector('.flare-drop-zone--candidate')) return;
+        const box = scroll.getBoundingClientRect();
+        const top = Math.max(box.top, 0), bottom = Math.min(box.bottom, innerHeight);
+        const ids = [], from = [], to = [];
+        for (const body of root.querySelectorAll('.flare-gantt__body[data-panel]')) {
+            const r = body.getBoundingClientRect();
+            ids.push(body.dataset.panel);
+            from.push(top - r.top);
+            to.push(bottom - r.top);
+        }
+        if (ids.length) dotnet.invokeMethodAsync('Visible', ids, from, to).catch(() => { });
+    };
+    const onScroll = () => { if (!windowTimer) windowTimer = setTimeout(visible, 60); };
+    if (virtualize) {
+        scroll.addEventListener('scroll', onScroll, { passive: true });
+        window.addEventListener('scroll', onScroll, { passive: true });
+        window.addEventListener('resize', onScroll);
+        visible();
+    }
 
     root.addEventListener('pointerdown', down);
     root.addEventListener('pointermove', move);
@@ -92,6 +120,10 @@ export function attach(root, dotnet) {
         // Where the pointer was last seen, in pixels from the start of the time area; null before any movement.
         pointerX() { return pointer && scale ? pointer.x - scale.getBoundingClientRect().left : null; },
         dispose() {
+            clearTimeout(windowTimer);
+            scroll.removeEventListener('scroll', onScroll);
+            window.removeEventListener('scroll', onScroll);
+            window.removeEventListener('resize', onScroll);
             document.removeEventListener('pointermove', track, { capture: true });
             document.removeEventListener('pointerup', track, { capture: true });
             cancelAnimationFrame(frame);

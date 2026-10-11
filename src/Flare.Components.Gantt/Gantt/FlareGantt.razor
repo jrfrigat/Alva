@@ -75,6 +75,13 @@
     /// </summary>
     [Parameter] public bool FillWidth { get; set; }
 
+    /// <summary>
+    /// Renders only the rows near the visible part of each panel (plus a margin): a chart of hundreds of rows then
+    /// costs as much as one screen of them. Needs the browser to report what is visible; until it does, the first
+    /// screen is drawn.
+    /// </summary>
+    [Parameter] public bool Virtualize { get; set; }
+
     /// <summary>Width of the row-header column as a CSS length.</summary>
     [Parameter] public string SideWidth { get; set; } = "16rem";
 
@@ -133,6 +140,7 @@
     private double _available;
     private string? _side;
     private string? _sideParameter;
+    private readonly Dictionary<string, (double From, double To)> _visible = [];
 
     /// <summary>The axis built from <see cref="Range"/>, <see cref="Scale"/> and <see cref="Culture"/>.</summary>
     public GanttAxis Axis { get; private set; } = new(new GanttSpan(DateTime.Today, DateTime.Today.AddDays(1)), GanttScale.Day);
@@ -204,6 +212,24 @@
         Refresh();
     }
 
+    /// <summary>
+    /// What part of each panel's body is on screen, in pixels from the body's top, reported by the browser while it
+    /// scrolls; only panels whose drawn rows no longer cover it are redrawn.
+    /// </summary>
+    [JSInvokable]
+    public void Visible(string[] panels, double[] from, double[] to)
+    {
+        for (var i = 0; i < panels.Length && i < from.Length && i < to.Length; i++)
+        {
+            _visible[panels[i]] = (from[i], to[i]);
+            foreach (var panel in _panels.ToArray())
+                if (panel.Id == panels[i] && panel.Uncovered(from[i], to[i])) panel.Refresh();
+        }
+    }
+
+    /// <summary>The visible part of panel <paramref name="id"/>'s body, or null before the browser has told.</summary>
+    internal (double From, double To)? VisibleOf(string id) => _visible.TryGetValue(id, out var window) ? window : null;
+
     /// <summary>The row-header column after the user dragged its edge.</summary>
     [JSInvokable]
     public async Task SideResized(double width)
@@ -221,7 +247,7 @@
         {
             _self = DotNetObjectReference.Create(this);
             var module = await JS.InvokeAsync<IJSObjectReference>("import", "./_content/Flare.Components.Gantt/js/gantt.js");
-            _module = module is null ? null : await module.InvokeAsync<IJSObjectReference>("attach", _root, _self);
+            _module = module is null ? null : await module.InvokeAsync<IJSObjectReference>("attach", _root, _self, Virtualize);
             if (_module is not null && _pendingScroll is { } pending)
             {
                 _pendingScroll = null;

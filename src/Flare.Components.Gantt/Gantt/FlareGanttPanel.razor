@@ -9,7 +9,7 @@
     {
         <div class="@Css.Classes.Gantt.PanelHeader">@Header</div>
     }
-    <div class="@Css.Classes.Gantt.Body" role="@(_isTree ? "treegrid" : "grid")" aria-label="@AriaLabel" style="height:@GanttFormat.Px(_height)"
+    <div class="@Css.Classes.Gantt.Body" role="@(_isTree ? "treegrid" : "grid")" aria-label="@AriaLabel" data-panel="@_id" style="height:@GanttFormat.Px(_height)"
          @onpointermove="PointerMove" @onpointerup="PointerUp" @onpointerleave="PointerCancel" @onpointercancel="PointerCancel">
         @* Behind the rows: unit grid, non-working time and panel-wide regions. *@
         <div class="@Css.Classes.Gantt.Overlay" style="width:@width" aria-hidden="true">
@@ -32,7 +32,12 @@
             }
         </div>
 
-        @foreach (var row in _rows)
+        @{ var drawn = DrawnRows(); }
+        @if (_spacer > 0)
+        {
+            <div class="@Css.Classes.Gantt.Spacer" style="height:@GanttFormat.Px(_spacer)" aria-hidden="true"></div>
+        }
+        @foreach (var row in drawn)
         {
             var rowClass = string.Join(' ', new[] { Css.Classes.Gantt.Row, row.HasChildren ? Css.Classes.Gantt.RowParent : "", RowClass?.Invoke(row.Row) ?? "" }.Where(c => c.Length > 0));
             <div @key="row.Key" class="@rowClass" role="row" data-row="@row.Key" aria-level="@(_isTree ? (int?)(row.Depth + 1) : null)"

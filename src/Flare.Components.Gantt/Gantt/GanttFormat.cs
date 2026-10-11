@@ -17,4 +17,10 @@ internal interface IGanttPanel
 {
     /// <summary>Re-renders the panel, for example after the selection changed.</summary>
     void Refresh();
+
+    /// <summary>The panel's id, which its body carries as <c>data-panel</c> for the browser to report what is visible.</summary>
+    string Id { get; }
+
+    /// <summary>True when the drawn rows no longer cover the visible part <paramref name="from"/>–<paramref name="to"/> of the body.</summary>
+    bool Uncovered(double from, double to);
 }

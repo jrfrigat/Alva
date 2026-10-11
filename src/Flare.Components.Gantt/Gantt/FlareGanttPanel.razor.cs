@@ -133,6 +133,31 @@ public partial class FlareGanttPanel<TRow, TItem> : IGanttPanel
 
     void IGanttPanel.Refresh() => InvokeAsync(StateHasChanged);
 
+    string IGanttPanel.Id => _id;
+
+    bool IGanttPanel.Uncovered(double from, double to) => Gantt!.Virtualize && (from < _keepFrom || to > _keepTo);
+
+    // Before the browser has told what is visible, a virtualized panel draws its first screen.
+    private const double FirstScreen = 1200;
+    private double _spacer;
+    private double _keepFrom = double.MinValue;
+    private double _keepTo = double.MaxValue;
+
+    // The rows to draw: all of them, or with Virtualize those within a screen above and below the visible part; the
+    // rows skipped above are one spacer. Redrawn once the visible part has moved half a screen from where it was.
+    private List<GanttRowLayout<TRow, TItem>> DrawnRows()
+    {
+        _spacer = 0;
+        if (!Gantt!.Virtualize) return _rows;
+        var (from, to) = Gantt.VisibleOf(_id) ?? (0, FirstScreen);
+        var margin = Math.Max(600, to - from);
+        _keepFrom = from - margin / 2;
+        _keepTo = to + margin / 2;
+        var drawn = _rows.Where(r => r.Top + r.Height > from - margin && r.Top < to + margin).ToList();
+        _spacer = drawn.Count > 0 ? drawn[0].Top : 0;
+        return drawn;
+    }
+
     private bool IsExpanded(string key) => _expanded.TryGetValue(key, out var value) ? value : _expandAll ?? ExpandedByDefault;
 
     private void Toggle(string key) => _expanded[key] = !IsExpanded(key);
