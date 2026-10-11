@@ -26,6 +26,9 @@
     /// <summary>Спринт, задачи которого (и их предки) показываются; null — все задачи.</summary>
     [Parameter] public Guid? SprintId { get; set; }
 
+    /// <summary>Несколько спринтов вместо одного — доска планирования показывает все спринты своей оси.</summary>
+    [Parameter] public IReadOnlyCollection<Guid>? SprintIds { get; set; }
+
     [Parameter] public IReadOnlyCollection<GanttLinkType>? Types { get; set; }
     [Parameter] public bool Critical { get; set; }
     [Parameter] public RenderFragment? Header { get; set; }
@@ -66,16 +69,17 @@
 
     private IEnumerable<TaskModel>? Children(TaskModel task) => Visible(Data.Tasks.Where(t => t.ParentId == task.Id));
 
-    // В режиме спринта показываются задачи спринта и их предки, чтобы дерево не рвалось.
+    // В режиме спринтов показываются задачи этих спринтов и их предки, чтобы дерево не рвалось.
     private IEnumerable<TaskModel> Visible(IEnumerable<TaskModel> tasks)
     {
         var ordered = tasks.OrderBy(t => t.Order).ThenBy(t => t.Title);
-        if (SprintId is not { } sprint) return ordered;
-        return ordered.Where(t => InSprint(t, sprint));
+        IReadOnlyCollection<Guid>? sprints = SprintIds ?? (SprintId is { } one ? [one] : null);
+        if (sprints is null) return ordered;
+        return ordered.Where(t => InSprints(t, sprints));
     }
 
-    private bool InSprint(TaskModel task, Guid sprint) =>
-        task.SprintId == sprint || Data.Tasks.Any(c => c.ParentId == task.Id && InSprint(c, sprint));
+    private bool InSprints(TaskModel task, IReadOnlyCollection<Guid> sprints) =>
+        task.SprintId is { } id && sprints.Contains(id) || Data.Tasks.Any(c => c.ParentId == task.Id && InSprints(c, sprints));
 
     private static string? RowClass(TaskModel task) => GanttData.IsClosed(task) ? "alva-gantt-row--closed" : null;
 

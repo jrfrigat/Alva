@@ -1,6 +1,7 @@
 @page "/gantt/people"
 @page "/gantt/2d"
 @inject AlvaSession Session
+@inject GanttPreferences Preferences
 @inject NavigationManager Navigation
 @using Flare.Components.Gantt
 @* Гантт по людям (макет p6_2d, проекция 2): дорожки людей и ролей с часами ёмкости и задачами исполнителя.
@@ -22,6 +23,7 @@ else if (_data is not null && _people is not null)
             <FlareSelect TValue="Guid?" Items="@(_data.Sprints.OrderBy(s => s.StartDate).Select(s => (Guid?)s.Id))" ItemLabel="_data.SprintName" NullOption="Все задачи"
                          @bind-Value="_sprintId" @bind-Value:after="LoadCapacity" Size="FieldSize.Sm" InputAttributes="@(Aria("Спринт"))" />
             <FlareSelect TValue="GanttScale" Items="GanttData.Scales" ItemLabel="GanttData.ScaleName" @bind-Value="_scale" Size="FieldSize.Sm" InputAttributes="@(Aria("Масштаб"))" />
+            <GanttZoom View="people" Scale="_scale" @bind-Value="_unit" />
         </div>
         <FlareSwitch Value="_twoD" ValueChanged="SetTwoD" Label="Синхронно с задачами (2D)" />
     </div>
@@ -37,7 +39,7 @@ else if (_data is not null && _people is not null)
         @if (_notice is not null) { <span class="alva-gantt-legend__notice" role="status">@_notice</span> }
     </div>
 
-    <FlareGantt Range="@Range" Scale="_scale" UnitWidth="@GanttData.UnitWidth(_scale)" RowHeight="36" SideWidth="22rem"
+    <FlareGantt Range="@Range" Scale="_scale" UnitWidth="_unit" FillWidth="true" RowHeight="36" SideWidth="@_side" ResizableSide="true" SideWidthChanged="SaveSide"
                 NonWorking="GanttData.IsWeekend" Markers="@GanttData.TodayMarkers" Regions="@_data.SprintRegions(Sprint)" @bind-SelectedKey="_selected"
                 AriaLabel="@(_twoD ? "Синхронный Гантт 2D" : "Гантт по людям")" Class="alva-gantt">
         <Corner><span>Исполнитель · загрузка за период</span></Corner>
@@ -62,6 +64,8 @@ else if (_data is not null && _people is not null)
     private string? _notice;
     private Guid? _sprintId;
     private GanttScale _scale = GanttScale.Day;
+    private double _unit = GanttData.UnitWidth(GanttScale.Day);
+    private string _side = "22rem";
     private string? _selected;
     private bool _twoD;
 
@@ -73,10 +77,17 @@ else if (_data is not null && _people is not null)
 
     private static Dictionary<string, object> Aria(string label) => new() { ["aria-label"] = label };
 
+    private async Task SaveSide(string width)
+    {
+        _side = width;
+        await Preferences.SaveSide("people", width);
+    }
+
     protected override async Task OnInitializedAsync()
     {
         _twoD = Navigation.Uri.Contains("/gantt/2d", StringComparison.OrdinalIgnoreCase);
         await Session.Initialize();
+        _side = (await Preferences.Get("people")).Side ?? _side;
         await Reload(initial: true);
     }
 

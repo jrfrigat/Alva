@@ -177,7 +177,8 @@ public sealed class GanttData
             if (Span(task) == span) continue;
             var start = DateOnly.FromDateTime(span.Start);
             var end = DateOnly.FromDateTime(span.End).AddDays(-1);
-            await Put(session, task, task.SprintId, start, end < start ? start : end);
+            var sprint = task.SprintId is not null && SprintByDay?.Invoke(start) is { } moved ? moved : task.SprintId;
+            await Put(session, task, sprint, start, end < start ? start : end);
         }
     }
 
@@ -222,6 +223,34 @@ public sealed class GanttData
             .Append(sprint.EndDate.AddDays(1).ToDateTime(TimeOnly.MinValue)).Max();
         return new GanttSpan(sprint.StartDate.ToDateTime(TimeOnly.MinValue), end);
     }
+
+    /// <summary>Спринты оси доски планирования: незавершённые и выбранный, по дате начала.</summary>
+    public IReadOnlyList<SprintModel> PlanSprints(SprintModel selected) =>
+        [.. Sprints.Where(s => s.Status != "Completed" && s.Id != selected.Id).Append(selected).OrderBy(s => s.StartDate)];
+
+    /// <summary>Ось доски: от начала первого спринта до конца последнего или конца их работы, если она выходит дальше.</summary>
+    public GanttSpan PlanRange(SprintModel selected)
+    {
+        var sprints = PlanSprints(selected);
+        var ids = sprints.Select(s => s.Id).ToHashSet();
+        var end = Tasks.Where(t => t.SprintId is { } id && ids.Contains(id) && t.Status != "Cancelled").Select(Span).OfType<GanttSpan>().Select(s => s.End)
+            .Append(sprints.Max(s => s.EndDate).AddDays(1).ToDateTime(TimeOnly.MinValue)).Max();
+        return new GanttSpan(sprints.Min(s => s.StartDate).ToDateTime(TimeOnly.MinValue), end);
+    }
+
+    /// <summary>Подписанные окна спринтов оси: выбранный — «sprint», остальные — «sprint-other».</summary>
+    public IEnumerable<GanttRegion> PlanRegions(SprintModel selected) => PlanSprints(selected).Select(s =>
+        new GanttRegion(s.Id == selected.Id ? "sprint" : "sprint-other", GanttSpan.FromDays(s.StartDate, s.EndDate), Label: $"{s.Name}: {s.StartDate:dd.MM}–{s.EndDate:dd.MM}"));
+
+    /// <summary>Спринт из <paramref name="sprints"/>, в окно которого попадает день; при пересечении — <paramref name="preferred"/>.</summary>
+    public static SprintModel? SprintAt(DateOnly day, IEnumerable<SprintModel> sprints, Guid? preferred = null) =>
+        sprints.Where(s => day >= s.StartDate && day <= s.EndDate).OrderBy(s => s.Id == preferred ? 0 : 1).FirstOrDefault();
+
+    /// <summary>
+    /// Если задан, задача со спринтом при сохранении новых дат переходит в спринт дня своего начала (null — остаётся в своём).
+    /// Задаёт доска планирования, где на оси видны все спринты; страницы Гантта спринт по датам не меняют.
+    /// </summary>
+    public Func<DateOnly, Guid?>? SprintByDay { get; set; }
 
     public Task AddLink(AlvaSession session, GanttLink link)
     {

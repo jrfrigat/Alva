@@ -1,15 +1,19 @@
 @using Flare.Components.Gantt
-@* Гантт спринта на доске планирования (макет p6_2d): задачи спринта и дорожки людей на одной оси дней спринта.
-   Полосы правятся как на страницах Гантта; дни принимают задачи из бэклога, полосы — людей. *@
+@inject GanttPreferences Preferences
+@* Гантт спринтов на доске планирования (макет p6_2d): задачи всех незавершённых спринтов и дорожки людей на одной оси,
+   каждый спринт подписан, выбранный выделен. Полосы правятся как на страницах Гантта; день, на который бросили задачу или
+   передвинули полосу, решает, в какой спринт она попадёт. *@
 <section class="alva-panel alva-plan-gantt">
     <header class="alva-panel__header">
         <FlareIconView Value="@MaterialDesign3Icons.Regular.WaterfallChart" Size="20px" Class="alva-panel__icon" />
         <div>
-            <h2 class="alva-panel__title">Синхронный Гантт 2D: @Days @AlvaFormat.Plural(Days, "рабочий день", "рабочих дня", "рабочих дней") спринта</h2>
-            <p class="alva-panel__subtitle">Бросьте задачу на день — поставится срок; на строку человека — ещё и исполнитель. Человека — на полосу.</p>
+            <h2 class="alva-panel__title">Синхронный Гантт 2D: @SprintCount @AlvaFormat.Plural(SprintCount, "спринт", "спринта", "спринтов") на оси</h2>
+            <p class="alva-panel__subtitle">Бросьте задачу на день — она попадёт в спринт этого дня и получит срок; на строку человека — ещё и исполнителя. Человека — на полосу.</p>
         </div>
         <div class="alva-gantt-legend alva-plan-gantt__legend">
-            <span class="alva-gantt-legend__item alva-gantt-legend__item--work">В спринте</span>
+            <span class="alva-gantt-legend__item alva-gantt-legend__item--sprint">Выбранный спринт</span>
+            <span class="alva-gantt-legend__item alva-gantt-legend__item--sprint-other">Другие спринты</span>
+            <span class="alva-gantt-legend__item alva-gantt-legend__item--work">Работа</span>
             <span class="alva-gantt-legend__item alva-gantt-legend__item--risk-high">Риск</span>
             <span class="alva-gantt-legend__item alva-gantt-legend__item--overflow">Выход за спринт</span>
             <span class="alva-gantt-legend__item alva-gantt-legend__item--overload">Перегруз</span>
@@ -19,6 +23,7 @@
             }
             <a class="alva-plan-gantt__link" href="/gantt/2d">Открыть Гантт</a>
         </div>
+        <GanttZoom View="@View" Default="DefaultUnit" @bind-Value="_unit" />
     </header>
     @if (Data is null || People is null)
     {
@@ -26,14 +31,15 @@
     }
     else
     {
-        <FlareGantt Range="Range" Scale="GanttScale.Day" UnitWidth="30" RowHeight="34" SideWidth="12rem" NonWorking="GanttData.IsWeekend"
-                    Markers="@GanttData.TodayMarkers" Regions="@Data.SprintRegions(Sprint)" @bind-SelectedKey="_selected"
-                    AriaLabel="Гантт спринта" Class="alva-gantt alva-plan-gantt__chart">
+        <FlareGantt @ref="_chart" Range="Range" Scale="GanttScale.Day" UnitWidth="_unit" FillWidth="true" RowHeight="34"
+                    SideWidth="@_side" ResizableSide="true" SideWidthChanged="SaveSide" NonWorking="GanttData.IsWeekend"
+                    Markers="@GanttData.TodayMarkers" Regions="@Data.PlanRegions(Sprint)" @bind-SelectedKey="_selected"
+                    AriaLabel="Гантт спринтов" Class="alva-gantt alva-plan-gantt__chart">
             <Corner><span>Задача · исполнитель</span></Corner>
             <ChildContent>
-                <GanttTaskPanel Data="Data" SprintId="Sprint.Id" DragRows="true" OnChange="OnTaskChange" OnLinkCreate="OnLinkCreate" OnLinkRejected="OnLinkRejected"
+                <GanttTaskPanel Data="Data" SprintIds="SprintIds" DragRows="true" OnChange="OnTaskChange" OnLinkCreate="OnLinkCreate" OnLinkRejected="OnLinkRejected"
                                 DropGroup="plan" DropAccepts="IsTask" ItemDropGroup="plan" ItemDropAccepts="IsPerson" Suggested="TaskGhosts">
-                    <Header>Проекция 1: задачи спринта</Header>
+                    <Header>Проекция 1: задачи спринтов</Header>
                     <RowActions Context="task">
                         <FlareIconButton Icon="@MaterialDesign3Icons.Regular.Close" Size="ButtonSize.Sm" Tooltip="Вернуть в бэклог"
                                          AriaLabel="@($"Вернуть «{task.Title}» в бэклог")" OnClick="() => OnUnplan.InvokeAsync(task)" />
@@ -49,6 +55,9 @@
 </section>
 
 @code {
+    private const string View = "plan";
+    private const double DefaultUnit = 30;
+
     [Parameter, EditorRequired] public SprintModel Sprint { get; set; } = default!;
     [Parameter] public GanttData? Data { get; set; }
     [Parameter] public GanttPeopleData? People { get; set; }
@@ -69,10 +78,31 @@
     private IEnumerable<GanttChange> PeopleGhosts => Suggested
         .Select(c => new GanttChange(GanttData.Key(c.TaskId), GanttSpan.FromDays(c.ToStart, c.ToEnd), GanttPeopleData.PersonKey(c.ToPersonId)));
 
+    private FlareGantt? _chart;
     private string? _selected;
+    private double _unit = DefaultUnit;
+    private string _side = "14rem";
+    private Guid? _scrolledTo;
 
-    private int Days => AlvaFormat.WorkDays(Sprint.StartDate, Sprint.EndDate);
-    private GanttSpan Range => Data!.SprintRange(Sprint);
+    private int SprintCount => Data?.PlanSprints(Sprint).Count ?? 1;
+    private IReadOnlyCollection<Guid> SprintIds => [.. Data!.PlanSprints(Sprint).Select(s => s.Id)];
+    private GanttSpan Range => Data!.PlanRange(Sprint);
+
+    protected override async Task OnInitializedAsync() => _side = (await Preferences.Get(View)).Side ?? _side;
+
+    // Ось длиннее экрана: после загрузки и смены спринта она встаёт на начало выбранного.
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_chart is null || Data is null || _scrolledTo == Sprint.Id) return;
+        _scrolledTo = Sprint.Id;
+        await _chart.ScrollTo(Sprint.StartDate.AddDays(-1).ToDateTime(TimeOnly.MinValue));
+    }
+
+    private async Task SaveSide(string width)
+    {
+        _side = width;
+        await Preferences.SaveSide(View, width);
+    }
 
     private static bool IsTask(object? payload) => payload is TaskDrag;
     private static bool IsPerson(object? payload) => payload is PersonDrag;

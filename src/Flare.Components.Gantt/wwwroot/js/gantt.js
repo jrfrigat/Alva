@@ -15,14 +15,18 @@ export function attach(root, dotnet) {
     };
     const observer = new ResizeObserver(report);
     observer.observe(scroll);
+    // Первый замер может прийтись на ещё не устоявшуюся раскладку страницы — повторяем его, когда она доделана.
     report();
+    const settle = setTimeout(report, 300);
+    window.addEventListener('resize', report);
 
     // The column follows the pointer through the CSS variable alone; .NET hears only the final width.
     const down = e => {
         const handle = e.target.closest('.flare-gantt__side-handle');
         if (!handle || e.button !== 0) return;
         e.preventDefault();
-        handle.setPointerCapture(e.pointerId);
+        // Захват держит перетаскивание, даже если указатель ушёл с узкой ручки; без него хватает слушателей на корне.
+        try { handle.setPointerCapture(e.pointerId); } catch { }
         resizing = { handle, x: e.clientX, width: side(), current: side() };
     };
     const move = e => {
@@ -44,9 +48,16 @@ export function attach(root, dotnet) {
     root.addEventListener('pointercancel', up);
 
     return {
-        scrollTo(x) { scroll.scrollLeft = Math.max(0, x); },
+        // Пока панели дорисовываются, ось ещё узка и браузер обрежет прокрутку — повторяем, когда ширина готова.
+        scrollTo(x) {
+            const apply = () => { scroll.scrollLeft = Math.max(0, x); };
+            apply();
+            setTimeout(apply, 300);
+        },
         dispose() {
             observer.disconnect();
+            clearTimeout(settle);
+            window.removeEventListener('resize', report);
             root.removeEventListener('pointerdown', down);
             root.removeEventListener('pointermove', move);
             root.removeEventListener('pointerup', up);

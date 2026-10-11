@@ -1,0 +1,41 @@
+@using Flare.Components.Gantt
+@inject GanttPreferences Preferences
+@* Ползунок «Масштаб» диаграммы Ганта: ширина единицы оси для текущей шкалы. Запоминается на устройстве отдельно для
+   каждого вида и каждой шкалы; минимум — половина обычной ширины, максимум — две с половиной. *@
+<div class="alva-gantt-zoom">
+    <FlareSlider Value="Value" ValueChanged="Change" Min="Min" Max="Max" Step="Step" Label="Масштаб" AriaLabel="Ширина единицы оси" />
+</div>
+
+@code {
+    /// <summary>Вид, чьи настройки хранятся: «plan», «tasks», «people».</summary>
+    [Parameter, EditorRequired] public string View { get; set; } = "";
+    [Parameter] public GanttScale Scale { get; set; } = GanttScale.Day;
+
+    /// <summary>Ширина по умолчанию; без неё — обычная ширина шкалы.</summary>
+    [Parameter] public double? Default { get; set; }
+
+    [Parameter] public double Value { get; set; }
+    [Parameter] public EventCallback<double> ValueChanged { get; set; }
+
+    private GanttScale? _loaded;
+
+    private double Base => Default ?? GanttData.UnitWidth(Scale);
+    private double Min => Math.Round(Base * 0.5 / Step) * Step;
+    private double Max => Math.Round(Base * 2.5 / Step) * Step;
+    private double Step => Scale == GanttScale.Day ? 2 : 4;
+
+    // Своя ширина у каждой шкалы: при смене шкалы подставляется сохранённая для неё.
+    protected override async Task OnParametersSetAsync()
+    {
+        if (_loaded == Scale) return;
+        _loaded = Scale;
+        var width = Math.Clamp(await Preferences.Unit(View, Scale.ToString(), Base), Min, Max);
+        if (width != Value) await ValueChanged.InvokeAsync(width);
+    }
+
+    private async Task Change(double width)
+    {
+        await ValueChanged.InvokeAsync(width);
+        await Preferences.SaveUnit(View, Scale.ToString(), width);
+    }
+}

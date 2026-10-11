@@ -308,7 +308,10 @@
         _capacity = await Session.Get<CapacityDto[]>(Session.TeamPath($"capacity?from={Sprint.StartDate:yyyy-MM-dd}&to={Sprint.EndDate:yyyy-MM-dd}"));
         _load = _capacity.GroupBy(r => r.ActorId).ToDictionary(g => g.Key, g => (g.Sum(r => r.AvailableHours), g.Sum(r => r.AllocatedHours)));
         _gantt = await GanttData.Load(Session);
-        _people = await GanttPeopleData.Load(Session, _gantt, _gantt.SprintRange(Sprint));
+        _people = await GanttPeopleData.Load(Session, _gantt, _gantt.PlanRange(Sprint));
+        // На оси видны все спринты: перенесённая полоса уходит в спринт дня своего начала.
+        var gantt = _gantt;
+        _gantt.SprintByDay = day => GanttData.SprintAt(day, gantt.PlanSprints(Sprint), Sprint.Id)?.Id;
     }
 
     private void Pick(Guid id) => Navigation.NavigateTo($"/sprints/{id}/plan");
@@ -317,7 +320,7 @@
     private static bool IsPerson(object? payload) => payload is PersonDrag;
 
     /// <summary>
-    /// Сброс на доске. Задача: в бэклог — выходит из спринта; на день Гантта — входит в спринт с этим днём начала,
+    /// Сброс на доске. Задача: в бэклог — выходит из спринта; на день Гантта — входит в спринт этого дня с этим днём начала,
     /// а на строке человека или роли проекции 2 ещё и назначается. Человек: на полосу или карточку — исполнитель задачи.
     /// </summary>
     private Task Drop(FlareDropEventArgs<PlanDrag?> e) => Run(async () =>
@@ -334,7 +337,10 @@
                 {
                     var row = cell!.RowKey;
                     if (GanttPeopleData.IsGroup(row)) throw new InvalidOperationException(GanttPeopleData.GroupRefusal);
-                    await _gantt.Place(Session, task, Sprint.Id, DateOnly.FromDateTime(cell.Span.Start));
+                    var day = DateOnly.FromDateTime(cell.Span.Start);
+                    var sprint = GanttData.SprintAt(day, _gantt.PlanSprints(Sprint), Sprint.Id)
+                        ?? throw new InvalidOperationException($"{day:d MMMM} не входит ни в один спринт — бросьте задачу на день внутри спринта.");
+                    await _gantt.Place(Session, task, sprint.Id, day);
                     if (GanttPeopleData.IsRowKey(row)) await _people.Reassign(Session, task, row);
                 }
                 else return;

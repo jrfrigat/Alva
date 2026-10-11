@@ -639,3 +639,9 @@ a.alva-matrix__name:hover{text-decoration:underline}
 .alva-plan-gantt__link{color:var(--flare-color-primary);font-weight:600;text-decoration:none}
 .alva-plan-gantt__link:hover,.alva-plan-gantt__link:focus-visible{text-decoration:underline}
 .alva-plan-gantt__chart{--flare-gantt-max-height:38rem}
+.alva-gantt .flare-gantt__region.flare-gantt--kind-sprint-other{--flare-gantt-region-bg:color-mix(in srgb,var(--flare-color-outline) 6%,transparent);--flare-gantt-region-border:var(--flare-color-outline);--flare-gantt-region-fg:var(--flare-color-on-surface-variant)}
+.alva-gantt .flare-gantt__region.flare-gantt--kind-sprint-other .flare-gantt__region-label{top:auto;bottom:var(--flare-spacing-1,.125rem)}
+.alva-gantt-legend__item--sprint{--_swatch:color-mix(in srgb,var(--flare-color-primary) 14%,transparent);--_swatch-border:var(--flare-color-primary);--_swatch-style:dashed}
+.alva-gantt-legend__item--sprint-other{--_swatch:color-mix(in srgb,var(--flare-color-outline) 10%,transparent);--_swatch-border:var(--flare-color-outline);--_swatch-style:dashed}
+.alva-gantt-zoom{display:flex;align-items:center;min-width:10rem;max-width:14rem;flex:1 1 10rem}
+.alva-gantt-zoom .flare-slider{width:100%}
