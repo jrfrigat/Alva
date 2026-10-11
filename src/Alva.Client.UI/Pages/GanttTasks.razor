@@ -34,14 +34,7 @@ else if (_data is not null)
         <FlareSwitch @bind-Value="_critical" Label="Критический путь" />
     </div>
 
-    <div class="alva-gantt-legend" aria-label="Обозначения">
-        <span class="alva-gantt-legend__item alva-gantt-legend__item--work">Работа</span>
-        <span class="alva-gantt-legend__item alva-gantt-legend__item--risk-medium">Риск</span>
-        <span class="alva-gantt-legend__item alva-gantt-legend__item--risk-high">Высокий риск</span>
-        <span class="alva-gantt-legend__item alva-gantt-legend__item--overflow">Выход за спринт</span>
-        <span class="alva-gantt-legend__item alva-gantt-legend__item--done">Готово</span>
-        @if (_notice is not null) { <span class="alva-gantt-legend__notice" role="status">@_notice</span> }
-    </div>
+    <GanttLegend Notice="@_notice" />
 
     @if (_data.Tasks.Length == 0)
     {

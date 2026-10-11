@@ -143,6 +143,17 @@ public sealed class GanttRenderTests : GanttTestBase
     }
 
     [Fact]
+    public void Item_title_replaces_the_label_in_the_bar_tooltip()
+    {
+        var cut = Chart(p => p
+            .Add(x => x.Rows, new[] { new Node("anna") })
+            .Add(x => x.Items, new[] { new Work("w", "anna", Day(0), Day(3)) })
+            .Add(x => x.ItemTitle, (Func<Work, string?>)(w => $"{w.Key}\nРиск: нет исполнителя")));
+
+        Assert.Equal("w\nРиск: нет исполнителя", cut.Find(".flare-gantt__bar").GetAttribute("title"));
+    }
+
+    [Fact]
     public void Non_working_days_are_shaded_on_the_day_scale()
     {
         var cut = Chart(p => p.Add(x => x.Rows, new[] { new Node("r") }),

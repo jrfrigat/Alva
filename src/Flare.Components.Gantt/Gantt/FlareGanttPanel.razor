@@ -177,7 +177,7 @@
         <div class="@BarClass(bar)" data-kind="@bar.Kind" data-key="@bar.Key"
              role="@(bar.IsSuggested ? null : "button")" tabindex="@(bar.IsSuggested ? null : "0")"
              aria-label="@AriaFor(bar)" aria-pressed="@(bar.IsSuggested ? null : (Gantt!.Selected == bar.Key ? "true" : "false"))"
-             title="@(ItemTooltip is null ? bar.Label : null)" @onclick="() => Activate(bar)"
+             title="@(ItemTooltip is null ? TitleOf(bar) : null)" @onclick="() => Activate(bar)"
              @onpointerdown="e => PointerDown(e, bar, GanttEditAction.Move)" @onkeydown="e => KeyDown(e, bar)">
             @if (CanEdit && !bar.IsSummary && !bar.IsSuggested)
             {
@@ -211,6 +211,9 @@
             </div>
         </div>
     };
+
+    private string? TitleOf(GanttBarLayout<TItem> bar) =>
+        ItemTitle is not null && bar.Item is { } item && !bar.IsSummary ? ItemTitle(item) ?? bar.Label : bar.Label;
 
     private static string SlotKey(GanttBarLayout<TItem> bar) => (bar.IsSuggested ? "s:" : "b:") + bar.Key;
 

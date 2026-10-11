@@ -1,0 +1,27 @@
+@* Одна легенда для всех диаграмм Ганта: что значат цвета и штриховка полос. Свои пункты страницы (спринты, ячейки
+   ёмкости, предложение) идут перед видами полос, уведомление страницы — после. *@
+<div class="@($"alva-gantt-legend {Class}".Trim())" aria-label="Обозначения">
+    @ChildContent
+    <span class="alva-gantt-legend__item alva-gantt-legend__item--work" title="Задача без риска сорвать срок">Работа</span>
+    <span class="alva-gantt-legend__item alva-gantt-legend__item--risk-medium" title="Срок под угрозой: причины — в подсказке полосы">Средний риск</span>
+    <span class="alva-gantt-legend__item alva-gantt-legend__item--risk-high" title="Срок, скорее всего, будет сорван: причины — в подсказке полосы">Высокий риск</span>
+    <span class="alva-gantt-legend__item alva-gantt-legend__item--overflow" title="Часть работы после конца спринта задачи">Выход за спринт</span>
+    <span class="alva-gantt-legend__item alva-gantt-legend__item--waiting" title="Родительская задача ждёт окончания подзадач; сплошная часть — её собственная работа">Ожидание подзадач</span>
+    <span class="alva-gantt-legend__item alva-gantt-legend__item--done">Готово</span>
+    @Trailing
+    @if (Notice is not null)
+    {
+        <span class="alva-gantt-legend__notice" role="status">@Notice</span>
+    }
+</div>
+
+@code {
+    /// <summary>Пункты страницы перед видами полос.</summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>Пункты после видов полос, например ссылка.</summary>
+    [Parameter] public RenderFragment? Trailing { get; set; }
+
+    [Parameter] public string? Notice { get; set; }
+    [Parameter] public string? Class { get; set; }
+}

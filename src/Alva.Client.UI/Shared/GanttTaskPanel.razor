@@ -3,7 +3,7 @@
    отдельно на «Гантте по задачам» и над людьми в 2D-режиме. *@
 <FlareGanttPanel TRow="TaskModel" TItem="TaskModel" Rows="@Roots" RowKey="t => GanttData.Key(t.Id)" RowChildren="Children"
                  RowClass="RowClass" Items="@Data.Tasks" ItemKey="t => GanttData.Key(t.Id)" ItemRow="t => GanttData.Key(t.Id)"
-                 ItemSpan="Data.Span" ItemCover="Data.Cover" ItemKind="Data.Kind" ItemSegments="Data.Segments" ItemLabel="t => t.Title"
+                 ItemSpan="Data.Span" ItemCover="Data.Cover" ItemKind="Data.Kind" ItemSegments="Data.Segments" ItemLabel="t => t.Title" ItemTitle="Data.Title"
                  Links="@Data.Links().ToArray()" LinkTypes="@Types" ShowCriticalPath="Critical" RollupParents="true"
                  Markers="@DeadlineMarkers" Editable="true" AllowRowChange="false" OnChange="OnChange" OnLinkCreate="OnLinkCreate"
                  OnLinkRejected="OnLinkRejected" Header="Header" DropGroup="@DropGroup" DropAccepts="DropAccepts"

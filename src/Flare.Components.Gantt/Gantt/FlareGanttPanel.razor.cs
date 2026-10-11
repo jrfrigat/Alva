@@ -63,6 +63,12 @@ public partial class FlareGanttPanel<TRow, TItem> : IGanttPanel
     /// <summary>Rich tooltip of a bar, shown in a popover on hover and focus.</summary>
     [Parameter] public RenderFragment<TItem>? ItemTooltip { get; set; }
 
+    /// <summary>
+    /// Plain hover text of an item, such as its dates and why it is at risk: the bar's <c>title</c>, so it costs nothing on a
+    /// chart of hundreds of bars. The label when null; ignored when <see cref="ItemTooltip"/> is set.
+    /// </summary>
+    [Parameter] public Func<TItem, string?>? ItemTitle { get; set; }
+
     /// <summary>Raised when a bar is clicked.</summary>
     [Parameter] public EventCallback<TItem> OnItemClick { get; set; }
 

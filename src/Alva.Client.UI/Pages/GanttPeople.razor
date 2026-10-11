@@ -28,16 +28,13 @@ else if (_data is not null && _people is not null)
         <FlareSwitch Value="_twoD" ValueChanged="SetTwoD" Label="Синхронно с задачами (2D)" />
     </div>
 
-    <div class="alva-gantt-legend" aria-label="Обозначения">
+    <GanttLegend Notice="@_notice">
         <span class="alva-gantt-legend__item alva-gantt-legend__item--load">Загрузка, ч</span>
         <span class="alva-gantt-legend__item alva-gantt-legend__item--overload">Перегрузка</span>
         <span class="alva-gantt-legend__item alva-gantt-legend__item--free">Свободно</span>
         <span class="alva-gantt-legend__item alva-gantt-legend__item--absence">Отсутствие</span>
         <span class="alva-gantt-legend__item alva-gantt-legend__item--demand">Нужен человек</span>
-        <span class="alva-gantt-legend__item alva-gantt-legend__item--work">Задача</span>
-        <span class="alva-gantt-legend__item alva-gantt-legend__item--risk-high">Высокий риск</span>
-        @if (_notice is not null) { <span class="alva-gantt-legend__notice" role="status">@_notice</span> }
-    </div>
+    </GanttLegend>
 
     <FlareGantt Range="@Range" Scale="_scale" UnitWidth="_unit" FillWidth="true" Virtualize="true" RowHeight="36" SideWidth="@_side" ResizableSide="true" SideWidthChanged="SaveSide"
                 NonWorking="GanttData.IsWeekend" Markers="@GanttData.TodayMarkers" Regions="@_data.SprintRegions(Sprint)" @bind-SelectedKey="_selected"

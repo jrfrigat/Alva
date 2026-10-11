@@ -139,8 +139,44 @@ public sealed class GanttData
         _ => "work"
     };
 
-    /// <summary>Часть окна после конца спринта задачи — «выход за спринт».</summary>
-    public IEnumerable<GanttSegment> Segments(TaskModel task)
+    /// <summary>
+    /// Части полосы: «ожидание подзадач» у родителя и «выход за спринт». Ожидание — дни, когда идёт хотя бы одна
+    /// подзадача: родитель здесь только ждёт их окончания; дни без подзадач остаются сплошными — это его собственная работа.
+    /// </summary>
+    public IEnumerable<GanttSegment> Segments(TaskModel task) => Overflow(task).Concat(Waiting(task));
+
+    private IEnumerable<GanttSegment> Waiting(TaskModel task)
+    {
+        if (Span(task) is not { } bar) yield break;
+        var spans = ChildrenOf(task).Select(Span).OfType<GanttSpan>().OrderBy(s => s.Start).ToList();
+        GanttSpan? current = null;
+        foreach (var span in spans.Append(new GanttSpan(DateTime.MaxValue, DateTime.MaxValue)))
+        {
+            if (current is { } c && span.Start <= c.End) { current = c with { End = Max(c.End, span.End) }; continue; }
+            if (current is { } done && Clip(done, bar) is { } clipped) yield return new GanttSegment("waiting", clipped);
+            current = span;
+        }
+    }
+
+    private static GanttSpan? Clip(GanttSpan span, GanttSpan within)
+    {
+        var start = Max(span.Start, within.Start);
+        var end = Min(span.End, within.End);
+        return end > start ? new GanttSpan(start, end) : null;
+    }
+
+    /// <summary>Подсказка полосы: название, даты, кто делает и, если задача под угрозой, почему.</summary>
+    public string Title(TaskModel task)
+    {
+        var dates = Window(task) is { } w ? $"{w.Start:dd.MM}–{w.End:dd.MM}" : "без дат";
+        var title = $"{task.Title} · {dates} · {Assignee(task)}";
+        if (ChildrenOf(task).Any()) title += "\nШтриховка — ожидание подзадач";
+        return RiskOf(task) is { Severity: "High" or "Medium" } risk
+            ? $"{title}\n{(risk.Severity == "High" ? "Высокий" : "Средний")} риск: {string.Join("; ", risk.Reasons)}"
+            : title;
+    }
+
+    private IEnumerable<GanttSegment> Overflow(TaskModel task)
     {
         if (SprintOf(task) is not { } sprint || Window(task) is not { } w || w.End <= sprint.EndDate) yield break;
         if (w.Start <= sprint.EndDate) yield return new GanttSegment("in-sprint", GanttSpan.FromDays(w.Start, sprint.EndDate));

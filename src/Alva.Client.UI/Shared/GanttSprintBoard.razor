@@ -10,19 +10,18 @@
             <h2 class="alva-panel__title">Синхронный Гантт 2D: @SprintCount @AlvaFormat.Plural(SprintCount, "спринт", "спринта", "спринтов") на оси</h2>
             <p class="alva-panel__subtitle">Бросьте задачу на день — она попадёт в спринт этого дня и получит срок; на строку человека — ещё и исполнителя. Человека — на полосу.</p>
         </div>
-        <div class="alva-gantt-legend alva-plan-gantt__legend">
-            <span class="alva-gantt-legend__item alva-gantt-legend__item--sprint">Выбранный спринт</span>
-            <span class="alva-gantt-legend__item alva-gantt-legend__item--sprint-other">Другие спринты</span>
-            <span class="alva-gantt-legend__item alva-gantt-legend__item--work">Работа</span>
-            <span class="alva-gantt-legend__item alva-gantt-legend__item--risk-high">Риск</span>
-            <span class="alva-gantt-legend__item alva-gantt-legend__item--overflow">Выход за спринт</span>
-            <span class="alva-gantt-legend__item alva-gantt-legend__item--overload">Перегруз</span>
-            @if (Suggested.Count > 0)
-            {
-                <span class="alva-gantt-legend__item alva-gantt-legend__item--suggested">Предложение</span>
-            }
-            <a class="alva-plan-gantt__link" href="/gantt/2d">Открыть Гантт</a>
-        </div>
+        <GanttLegend Class="alva-plan-gantt__legend">
+            <ChildContent>
+                <span class="alva-gantt-legend__item alva-gantt-legend__item--sprint">Выбранный спринт</span>
+                <span class="alva-gantt-legend__item alva-gantt-legend__item--sprint-other">Другие спринты</span>
+                <span class="alva-gantt-legend__item alva-gantt-legend__item--overload">Перегруз</span>
+                @if (Suggested.Count > 0)
+                {
+                    <span class="alva-gantt-legend__item alva-gantt-legend__item--suggested">Предложение</span>
+                }
+            </ChildContent>
+            <Trailing><a class="alva-plan-gantt__link" href="/gantt/2d">Открыть Гантт</a></Trailing>
+        </GanttLegend>
         <GanttZoom View="@View" Default="DefaultUnit" @bind-Value="_unit" />
     </header>
     @if (Data is null || People is null)

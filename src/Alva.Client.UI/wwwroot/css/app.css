@@ -645,3 +645,5 @@ a.alva-matrix__name:hover{text-decoration:underline}
 .alva-gantt-legend__item--sprint-other{--_swatch:color-mix(in srgb,var(--flare-color-outline) 10%,transparent);--_swatch-border:var(--flare-color-outline);--_swatch-style:dashed}
 .alva-gantt-zoom{display:flex;align-items:center;min-width:10rem;max-width:14rem;flex:1 1 10rem}
 .alva-gantt-zoom .flare-slider{width:100%}
+.alva-gantt .flare-gantt__segment.flare-gantt--kind-waiting{--flare-gantt-segment-bg:repeating-linear-gradient(135deg,color-mix(in srgb,#fff 55%,transparent) 0 4px,transparent 4px 8px)}
+.alva-gantt-legend__item--waiting{--_swatch:repeating-linear-gradient(135deg,color-mix(in srgb,#fff 55%,transparent) 0 3px,transparent 3px 6px),var(--flare-color-primary)}
