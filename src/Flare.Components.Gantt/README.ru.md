@@ -43,7 +43,10 @@ roadmap — всё, что раскладывается во времени по
   - `Range`, `Scale`, `UnitWidth`, `RowHeight`, `BarInset`, `SideWidth`, `Culture`;
   - `NonWorking` (функция от дня);
   - глобальные `Markers` и `Regions`;
-  - `SelectedKey`/`SelectedKeyChanged`, `Compact`, `Corner`, `Texts`.
+  - `SelectedKey`/`SelectedKeyChanged`, `Compact`, `Corner`, `Texts`;
+  - `FillWidth` — ось тянется на видимую ширину, `UnitWidth` становится минимумом;
+  - `ResizableSide` + `SideWidthChanged` — колонку шапок тянут за правый край;
+  - `ScrollTo(момент)` — прокрутить ось к дате.
 - `FlareGanttPanel<TRow, TItem>` — одна проекция. Панелей внутри `FlareGantt` может быть сколько угодно: у
   всех одна шкала, одна прокрутка и общий выбор по ключу элемента.
   - **Строки:** `Rows`, `RowKey`, `RowChildren` (дерево), `RowHeader`, `RowClass`, `ExpandedByDefault`.
@@ -52,7 +55,7 @@ roadmap — всё, что раскладывается во времени по
   - **Слои:** `Cells` + `CellTemplate`, `Regions`, `Markers`, `Links` + `LinkTypes`, `ShowCriticalPath`,
     `Suggested`, `RollupParents` (сводная полоса по потомкам у строк без своих элементов).
   - **Взаимодействие:** `Editable`, `ScheduleMode`, `AllowRowChange`, `NewLinkType`, `OnChange`,
-    `OnLinkCreate`, `OnLinkRejected`, `DropGroup`.
+    `OnLinkCreate`, `OnLinkRejected`, `DropGroup`, `ItemCover` (что полоса должна покрывать: растяжение упирается в его края).
 
 ### Две проекции на одной оси
 ```razor

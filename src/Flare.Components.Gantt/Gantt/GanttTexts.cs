@@ -19,7 +19,7 @@ public sealed record GanttTexts(string SelfLink, string Cycle, string Duplicate,
         "This link already exists.",
         "Expand", "Collapse",
         "Linking from {0}. Choose the successor and press Enter.",
-        "{0} moved to {1}.");
+        "{0} moved to {1}.") { ResizeSide = "Drag to resize the column" };
 
     /// <summary>Russian texts.</summary>
     public static GanttTexts Russian { get; } = new(
@@ -28,7 +28,10 @@ public sealed record GanttTexts(string SelfLink, string Cycle, string Duplicate,
         "Такая связь уже есть.",
         "Развернуть", "Свернуть",
         "Связь от {0}. Выберите последователя и нажмите Enter.",
-        "{0} перенесён: {1}.");
+        "{0} перенесён: {1}.") { ResizeSide = "Потяните, чтобы изменить ширину колонки" };
+
+    /// <summary>Label of the handle that resizes the row-header column.</summary>
+    public string ResizeSide { get; init; } = "Drag to resize the column";
 
     /// <summary>The built-in texts for <paramref name="culture"/>: Russian for <c>ru</c>, English otherwise.</summary>
     public static GanttTexts For(CultureInfo culture) => culture.TwoLetterISOLanguageName == "ru" ? Russian : English;

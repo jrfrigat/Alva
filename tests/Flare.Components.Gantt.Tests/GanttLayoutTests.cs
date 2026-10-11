@@ -1,0 +1,81 @@
+using Bunit;
+using Flare.Components.Gantt;
+using Microsoft.AspNetCore.Components.Web;
+using Xunit;
+
+namespace Flare.Components.Gantt.Tests;
+
+/// <summary>Ширина оси, колонка шапок и упор покрытия при растяжении.</summary>
+public sealed class GanttLayoutTests : GanttTestBase
+{
+    private static readonly Node[] OneRow = [new Node("r1")];
+    private static readonly Work[] Parent = [new Work("p", "r1", Day(2), Day(5))];
+
+    [Fact]
+    public void Fill_width_stretches_units_to_the_visible_width()
+    {
+        var cut = Chart(p => p.Add(x => x.Rows, OneRow).Add(x => x.Items, Parent), g => g.Add(x => x.FillWidth, true));
+
+        // 14 дней по 40 px = 560 px; видно 1000 px, из них 160 px колонка шапок.
+        cut.InvokeAsync(() => cut.Instance.Viewport(1000, 160));
+
+        Assert.Equal(59.92, cut.Instance.EffectiveUnitWidth, 2);
+        Assert.StartsWith("left:119.84px;", cut.Find(".flare-gantt__bar-slot").GetAttribute("style"));
+    }
+
+    [Fact]
+    public void Unit_width_is_the_floor_and_fill_is_opt_in()
+    {
+        var narrow = Chart(p => p.Add(x => x.Rows, OneRow), g => g.Add(x => x.FillWidth, true));
+        narrow.InvokeAsync(() => narrow.Instance.Viewport(300, 160));
+        var plain = Chart(p => p.Add(x => x.Rows, OneRow));
+        plain.InvokeAsync(() => plain.Instance.Viewport(2000, 160));
+
+        Assert.Equal(40, narrow.Instance.EffectiveUnitWidth);
+        Assert.Equal(40, plain.Instance.EffectiveUnitWidth);
+    }
+
+    [Fact]
+    public void Dragged_side_width_is_kept_and_reported()
+    {
+        string? reported = null;
+        var cut = Chart(p => p.Add(x => x.Rows, OneRow), g => g
+            .Add(x => x.ResizableSide, true)
+            .Add(x => x.SideWidth, "12rem")
+            .Add(x => x.SideWidthChanged, (string w) => reported = w));
+
+        Assert.NotNull(cut.Find(".flare-gantt__side-handle[role=separator]"));
+        cut.InvokeAsync(() => cut.Instance.SideResized(287.6));
+
+        Assert.Equal("288px", reported);
+        Assert.Contains("--flare-gantt-side:288px", cut.Find(".flare-gantt").GetAttribute("style"));
+    }
+
+    [Fact]
+    public void No_handle_unless_asked()
+    {
+        var cut = Chart(p => p.Add(x => x.Rows, OneRow));
+
+        Assert.Empty(cut.FindAll(".flare-gantt__side-handle"));
+    }
+
+    [Fact]
+    public void Resizing_stops_at_the_span_the_item_must_cover()
+    {
+        var seen = new List<GanttChangeEventArgs>();
+        var cover = GanttSpan.FromDays(Day(1), Day(4)); // дети начинаются раньше родителя и кончаются на день раньше
+        var cut = Chart(p => p.Add(x => x.Rows, OneRow).Add(x => x.Items, Parent).Add(x => x.Editable, true)
+            .Add(x => x.ItemCover, (Func<Work, GanttSpan?>)(_ => cover))
+            .Add(x => x.OnChange, (GanttChangeEventArgs e) => seen.Add(e)));
+
+        var bar = cut.Find(".flare-gantt__bar[data-key='p']");
+        bar.KeyDown(new KeyboardEventArgs { Key = "ArrowLeft", CtrlKey = true, ShiftKey = true }); // конец 5 → 4: можно
+        cut.Find(".flare-gantt__bar[data-key='p'] .flare-gantt__handle--start").PointerDown(new PointerEventArgs { ClientX = 0, Button = 0 });
+        cut.Find(".flare-gantt__body").PointerMove(new PointerEventArgs { ClientX = 120 });
+        cut.Find(".flare-gantt__body").PointerUp(new PointerEventArgs { ClientX = 120 });
+
+        Assert.Equal(GanttSpan.FromDays(Day(2), Day(4)), seen[0].Changes[0].Span);
+        // Начало 2 и так позже начала детей (1) — тянуть вправо нельзя, полоса встаёт на начало покрытия.
+        Assert.Equal(GanttSpan.FromDays(Day(1), Day(5)), seen[1].Changes[0].Span);
+    }
+}

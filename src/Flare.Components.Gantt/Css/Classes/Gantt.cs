@@ -13,6 +13,8 @@ public static class Gantt
     public const string Header = "flare-gantt__header";
     /// <summary>The <c>flare-gantt__corner</c> CSS class.</summary>
     public const string Corner = "flare-gantt__corner";
+    /// <summary>The <c>flare-gantt__side-handle</c> CSS class.</summary>
+    public const string SideHandle = "flare-gantt__side-handle";
     /// <summary>The <c>flare-gantt__scale</c> CSS class.</summary>
     public const string Scale = "flare-gantt__scale";
     /// <summary>The <c>flare-gantt__scale-row</c> CSS class.</summary>

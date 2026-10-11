@@ -1,15 +1,25 @@
 @namespace Flare.Components
 @inherits FlareComponentBase
 @using System.Globalization
+@using Microsoft.JSInterop
+@implements IAsyncDisposable
+@inject IJSRuntime JS
 
 @* The shared time axis. Panels inside it are projections the consumer builds; they all use this axis, this
    scroll and this selection, which is what makes several panels one synchronised view. *@
-<div class="@RootClass" style="@RootStyle" role="group" aria-label="@AriaLabel" @attributes="AdditionalAttributes">
+<div @ref="_root" class="@RootClass" style="@RootStyle" role="group" aria-label="@AriaLabel" @attributes="AdditionalAttributes">
     <div class="@Css.Classes.Gantt.Scroll">
         <div class="@Css.Classes.Gantt.Header">
             @if (!Compact)
             {
-                <div class="@Css.Classes.Gantt.Corner">@Corner</div>
+                <div class="@Css.Classes.Gantt.Corner">
+                    @Corner
+                    @if (ResizableSide)
+                    {
+                        <div class="@Css.Classes.Gantt.SideHandle" role="separator" aria-orientation="vertical"
+                             aria-label="@EffectiveTexts.ResizeSide" title="@EffectiveTexts.ResizeSide"></div>
+                    }
+                </div>
             }
             <div class="@Css.Classes.Gantt.Scale" style="width:@GanttFormat.Px(Width)" aria-hidden="true">
                 @if (_major.Count > 0)
@@ -17,14 +27,14 @@
                     <div class="@($"{Css.Classes.Gantt.ScaleRow} {Css.Classes.Gantt.ScaleRowMajor}")">
                         @foreach (var tick in _major)
                         {
-                            <div class="@Css.Classes.Gantt.Tick" style="left:@GanttFormat.Px(tick.Offset * UnitWidth);width:@GanttFormat.Px(tick.Width * UnitWidth)">@tick.Label</div>
+                            <div class="@Css.Classes.Gantt.Tick" style="left:@GanttFormat.Px(tick.Offset * EffectiveUnitWidth);width:@GanttFormat.Px(tick.Width * EffectiveUnitWidth)">@tick.Label</div>
                         }
                     </div>
                 }
                 <div class="@Css.Classes.Gantt.ScaleRow">
                     @foreach (var tick in _ticks)
                     {
-                        <div class="@TickClass(tick)" style="left:@GanttFormat.Px(tick.Offset * UnitWidth);width:@GanttFormat.Px(tick.Width * UnitWidth)">
+                        <div class="@TickClass(tick)" style="left:@GanttFormat.Px(tick.Offset * EffectiveUnitWidth);width:@GanttFormat.Px(tick.Width * EffectiveUnitWidth)">
                             <span>@tick.Label</span>
                             @if (tick.Caption is not null)
                             {
@@ -60,8 +70,20 @@
     /// <summary>How far a connector steps out of a bar before turning, in pixels.</summary>
     [Parameter] public double LinkGap { get; set; } = 8;
 
+    /// <summary>
+    /// Stretches the axis to the visible width: <see cref="UnitWidth"/> becomes the narrowest a unit gets, and a short
+    /// range no longer leaves an empty strip on the right.
+    /// </summary>
+    [Parameter] public bool FillWidth { get; set; }
+
     /// <summary>Width of the row-header column as a CSS length.</summary>
     [Parameter] public string SideWidth { get; set; } = "16rem";
+
+    /// <summary>Lets the user drag the right edge of the row-header column.</summary>
+    [Parameter] public bool ResizableSide { get; set; }
+
+    /// <summary>Raised with the new row-header width as a CSS length in pixels when the user has dragged the edge.</summary>
+    [Parameter] public EventCallback<string> SideWidthChanged { get; set; }
 
     /// <summary>Culture for axis captions and the first day of week; the current culture when null.</summary>
     [Parameter] public CultureInfo? Culture { get; set; }
@@ -105,12 +127,24 @@
     private HashSet<DateOnly> _nonWorkingDays = [];
     private string? _selected;
     private string? _selectedParameter;
+    private ElementReference _root;
+    private IJSObjectReference? _module;
+    private DotNetObjectReference<FlareGantt>? _self;
+    private DateTime? _pendingScroll;
+    private double _available;
+    private string? _side;
+    private string? _sideParameter;
 
     /// <summary>The axis built from <see cref="Range"/>, <see cref="Scale"/> and <see cref="Culture"/>.</summary>
     public GanttAxis Axis { get; private set; } = new(new GanttSpan(DateTime.Today, DateTime.Today.AddDays(1)), GanttScale.Day);
 
+    /// <summary>Width of one axis unit as drawn: <see cref="UnitWidth"/>, or wider when <see cref="FillWidth"/> stretches the axis.</summary>
+    public double EffectiveUnitWidth => FillWidth && _available > 0 && Axis.Units > 0
+        ? Math.Max(UnitWidth, Math.Floor(_available / Axis.Units * 100) / 100)
+        : UnitWidth;
+
     /// <summary>Width of the time area in pixels.</summary>
-    public double Width => Axis.Units * UnitWidth;
+    public double Width => Axis.Units * EffectiveUnitWidth;
 
     /// <summary>The texts in use.</summary>
     public GanttTexts EffectiveTexts => Texts ?? GanttTexts.For(Axis.Culture);
@@ -122,10 +156,74 @@
     public IReadOnlyList<GanttSpan> NonWorkingSpans { get; private set; } = [];
 
     /// <summary>Horizontal position of <paramref name="moment"/> in pixels.</summary>
-    public double X(DateTime moment) => Axis.Offset(moment) * UnitWidth;
+    public double X(DateTime moment) => Axis.Offset(moment) * EffectiveUnitWidth;
 
     /// <summary>The moment at <paramref name="x"/> pixels.</summary>
-    public DateTime At(double x) => Axis.At(x / UnitWidth);
+    public DateTime At(double x) => Axis.At(x / EffectiveUnitWidth);
+
+    /// <summary>Scrolls the axis so that <paramref name="moment"/> sits at the left edge of the time area.</summary>
+    public async Task ScrollTo(DateTime moment)
+    {
+        if (_module is null) { _pendingScroll = moment; return; }
+        try { await _module.InvokeVoidAsync("scrollTo", X(moment)); }
+        catch (JSDisconnectedException) { }
+    }
+
+    /// <summary>Visible width of the time area reported by the browser.</summary>
+    [JSInvokable]
+    public void Viewport(double width, double side)
+    {
+        var available = Math.Max(0, width - side - 1);
+        if (Math.Abs(available - _available) < 0.5) return;
+        _available = available;
+        if (!FillWidth) return;
+        StateHasChanged();
+        Refresh();
+    }
+
+    /// <summary>The row-header column after the user dragged its edge.</summary>
+    [JSInvokable]
+    public async Task SideResized(double width)
+    {
+        _side = $"{Math.Round(width)}px";
+        await SideWidthChanged.InvokeAsync(_side);
+        StateHasChanged();
+    }
+
+    /// <inheritdoc />
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender || Compact) return;
+        try
+        {
+            _self = DotNetObjectReference.Create(this);
+            var module = await JS.InvokeAsync<IJSObjectReference>("import", "./_content/Flare.Components.Gantt/js/gantt.js");
+            _module = module is null ? null : await module.InvokeAsync<IJSObjectReference>("attach", _root, _self);
+            if (_module is not null && _pendingScroll is { } pending)
+            {
+                _pendingScroll = null;
+                await ScrollTo(pending);
+            }
+        }
+        catch (JSDisconnectedException) { }
+        catch (JSException) { }
+        catch (InvalidOperationException) { }
+    }
+
+    /// <inheritdoc />
+    public async ValueTask DisposeAsync()
+    {
+        if (_module is not null)
+        {
+            try
+            {
+                await _module.InvokeVoidAsync("dispose");
+                await _module.DisposeAsync();
+            }
+            catch (JSDisconnectedException) { }
+        }
+        _self?.Dispose();
+    }
 
     /// <summary>True when <paramref name="day"/> is shaded as non-working.</summary>
     public bool IsNonWorking(DateOnly day) => _nonWorkingDays.Contains(day);
@@ -138,6 +236,8 @@
         _major = Axis.MajorTicks();
         // The parameter wins only when it changes, so an uncontrolled chart keeps the selection made inside it.
         if (SelectedKey != _selectedParameter) _selected = _selectedParameter = SelectedKey;
+        // The same for the column width: a dragged width stays until the parameter itself changes.
+        if (SideWidth != _sideParameter) _side = _sideParameter = SideWidth;
         _nonWorkingDays = [];
         var spans = new List<GanttSpan>();
         if (NonWorking is not null && Scale is GanttScale.Hour or GanttScale.Day && Range.End > Range.Start)
@@ -174,7 +274,7 @@
 
     private string RootClass => Compact ? BuildCssClass(Css.Classes.Gantt.Compact) : BuildCssClass();
 
-    private string RootStyle => $"--flare-gantt-side:{(Compact ? "0px" : SideWidth)};{Style}";
+    private string RootStyle => $"--flare-gantt-side:{(Compact ? "0px" : _side ?? SideWidth)};{Style}";
 
     private string TickClass(GanttTick tick) =>
         Scale is GanttScale.Day && _nonWorkingDays.Contains(DateOnly.FromDateTime(tick.Span.Start))

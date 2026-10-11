@@ -15,6 +15,12 @@ public partial class FlareGanttPanel<TRow, TItem>
     /// <summary>Whether an item may be moved to another row.</summary>
     [Parameter] public bool AllowRowChange { get; set; } = true;
 
+    /// <summary>
+    /// The span an item must keep covering, such as the work of a parent's children: resizing stops at its edges.
+    /// Null, or a null result, leaves the item free.
+    /// </summary>
+    [Parameter] public Func<TItem, GanttSpan?>? ItemCover { get; set; }
+
     /// <summary>Type of links the user creates.</summary>
     [Parameter] public GanttLinkType NewLinkType { get; set; } = GanttLinkType.FinishToStart;
 
@@ -91,8 +97,8 @@ public partial class FlareGanttPanel<TRow, TItem>
     {
         if (_drag is null) { _skipRender = true; return; }
         var gantt = Gantt!;
-        var units = (int)Math.Round((e.ClientX - _drag.StartX) / gantt.UnitWidth);
-        var span = Apply(_drag.Original, _drag.Action, units);
+        var units = (int)Math.Round((e.ClientX - _drag.StartX) / gantt.EffectiveUnitWidth);
+        var span = Apply(_drag.Original, _drag.Action, units, CoverOf(_drag.Key));
         var row = _drag.Action == GanttEditAction.Move && AllowRowChange ? RowAt(_drag.CenterY + e.ClientY - _drag.StartY) ?? _drag.RowKey : _drag.RowKey;
         var preview = new GanttChange(_drag.Key, span, row);
         if (preview == _preview) { _skipRender = true; return; }
@@ -143,7 +149,7 @@ public partial class FlareGanttPanel<TRow, TItem>
             case "ArrowLeft" or "ArrowRight":
                 var step = e.Key == "ArrowRight" ? 1 : -1;
                 var action = e.ShiftKey ? GanttEditAction.ResizeEnd : GanttEditAction.Move;
-                await Commit(bar.Key, action, Apply(bar.Span, action, step), bar.RowKey, bar.RowKey);
+                await Commit(bar.Key, action, Apply(bar.Span, action, step, CoverOf(bar.Key)), bar.RowKey, bar.RowKey);
                 return;
             case "ArrowUp" or "ArrowDown" when AllowRowChange:
                 var index = _rows.FindIndex(r => r.Key == bar.RowKey) + (e.Key == "ArrowDown" ? 1 : -1);
@@ -181,17 +187,26 @@ public partial class FlareGanttPanel<TRow, TItem>
         await OnLinkCreate.InvokeAsync(new GanttLinkEventArgs(link));
     }
 
-    // The new span after moving or resizing by whole axis units; a resize never inverts the item.
-    private GanttSpan Apply(GanttSpan span, GanttEditAction action, int units)
+    // The new span after moving or resizing by whole axis units; a resize never inverts the item and never leaves
+    // the span it must cover.
+    private GanttSpan Apply(GanttSpan span, GanttEditAction action, int units, GanttSpan? cover = null)
     {
         var axis = Gantt!.Axis;
         DateTime Step(DateTime moment) => units == 0 ? moment : axis.At(axis.Offset(moment) + units);
         return action switch
         {
-            GanttEditAction.ResizeStart => new GanttSpan(Min(Step(span.Start), span.End), span.End),
-            GanttEditAction.ResizeEnd => new GanttSpan(span.Start, Max(Step(span.End), span.Start)),
+            GanttEditAction.ResizeStart => new GanttSpan(Min(Min(Step(span.Start), span.End), cover?.Start ?? DateTime.MaxValue), span.End),
+            GanttEditAction.ResizeEnd => new GanttSpan(span.Start, Max(Max(Step(span.End), span.Start), cover?.End ?? DateTime.MinValue)),
             _ => new GanttSpan(Step(span.Start), Step(span.End))
         };
+    }
+
+    private GanttSpan? CoverOf(string key)
+    {
+        if (ItemCover is null || ItemKey is null) return null;
+        foreach (var item in Items ?? [])
+            if (ItemKey(item) == key) return ItemCover(item);
+        return null;
     }
 
     private static DateTime Min(DateTime a, DateTime b) => a < b ? a : b;

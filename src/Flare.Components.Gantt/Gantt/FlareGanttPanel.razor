@@ -19,7 +19,7 @@
             }
             @foreach (var tick in gantt.Axis.Ticks())
             {
-                <div class="@Css.Classes.Gantt.GridLine" style="left:@GanttFormat.Px(tick.Offset * gantt.UnitWidth)"></div>
+                <div class="@Css.Classes.Gantt.GridLine" style="left:@GanttFormat.Px(tick.Offset * gantt.EffectiveUnitWidth)"></div>
             }
             @foreach (var region in _panelRegions)
             {

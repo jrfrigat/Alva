@@ -51,6 +51,23 @@
     font-weight: 600;
 }
 
+/* The draggable right edge of the row-header column. */
+.flare-gantt__side-handle {
+    position: absolute;
+    top: 0;
+    right: -4px;
+    bottom: 0;
+    width: 8px;
+    cursor: col-resize;
+    touch-action: none;
+    z-index: 2;
+}
+
+.flare-gantt__side-handle:hover,
+.flare-gantt__side-handle:active {
+    background: linear-gradient(to right, transparent 3px, var(--flare-color-primary) 3px, var(--flare-color-primary) 5px, transparent 5px);
+}
+
 .flare-gantt__scale {
     position: relative;
     flex: none;
