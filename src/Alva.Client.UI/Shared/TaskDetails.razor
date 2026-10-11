@@ -33,7 +33,7 @@
             <FlareGrid MinColumnWidth="min(100%,12rem)">
                 <FlareSelect TValue="string" Label="Статус" Items="Statuses" ItemLabel="Labels.Status" @bind-Value="_model.Status" />
                 <FlareSelect TValue="Guid?" Label="Проект" Items="Projects.Select(x => (Guid?)x.Id)" ItemLabel="ProjectName" NullOption="Текучка" @bind-Value="_model.ProjectId" />
-                <FlareSelect TValue="Guid?" Label="Спринт" Items="Sprints.Select(x => (Guid?)x.Id)" ItemLabel="SprintName" NullOption="Без спринта" @bind-Value="_model.SprintId" />
+                <FlareSelect TValue="Guid?" Label="Спринт (по датам)" Items="Sprints.OrderBy(x => x.StartDate).Select(x => (Guid?)x.Id)" ItemLabel="SprintName" NullOption="Бэклог — без дат" Value="SprintDates.First(_model, Sprints)" ValueChanged="id => SprintDates.Place(_model, Sprints.FirstOrDefault(s => s.Id == id))" HelperText="@SprintDates.Hint(_model, Sprints)" />
                 <FlareSelect TValue="Guid?" Label="Родительская задача" Items="Tasks.Where(x => x.Id != Item.Id).Select(x => (Guid?)x.Id)" ItemLabel="TaskName" NullOption="Корневая задача" @bind-Value="_model.ParentId" Searchable />
                 <FlareNumericField TValue="decimal?" Label="Оценка, часы" @bind-Value="_model.EstimateHours" Min="0" />
                 <FlareDatePicker Label="Дедлайн" @bind-Value="_model.Deadline" />
@@ -178,7 +178,7 @@
         {
             yield return new("Задачи", "/tasks");
             if (Projects.FirstOrDefault(p => p.Id == Item.ProjectId) is { } project) yield return new(project.Name, "/projects");
-            if (Sprints.FirstOrDefault(s => s.Id == Item.SprintId) is { } sprint) yield return new(sprint.Name, $"/sprints/{sprint.Id}");
+            if (Sprints.FirstOrDefault(s => Item.SprintIds.Contains(s.Id)) is { } sprint) yield return new(sprint.Name, $"/sprints/{sprint.Id}");
             yield return new(Code(Item));
         }
     }
@@ -267,7 +267,7 @@
         _assignTab = Math.Max(0, Array.IndexOf(Kinds, Actors.FirstOrDefault(a => a.Id == Item.AssignmentTargetId)?.Kind ?? "Person"));
         _assignOpen = true;
         if (_loadedFor == Item.Id) return;
-        var sprint = Sprints.FirstOrDefault(s => s.Id == Item.SprintId);
+        var sprint = Sprints.FirstOrDefault(s => Item.SprintIds.Contains(s.Id));
         var from = sprint?.StartDate ?? DateOnly.FromDateTime(DateTime.Today);
         var to = sprint?.EndDate ?? from.AddDays(13);
         await Run(async () =>
@@ -294,7 +294,7 @@
     {
         var m = _model;
         await Session.Save<TaskModel>(HttpMethod.Put, Session.TeamPath($"tasks/{m.Id}"),
-            new TaskRequest(m.Title, m.Description, m.Status, m.ProjectId, m.SprintId, m.ParentId, m.EstimateHours, m.Deadline, m.StartDate, m.EndDate, m.Order, m.Version));
+            new TaskRequest(m.Title, m.Description, m.Status, m.ProjectId, m.ParentId, m.EstimateHours, m.Deadline, m.StartDate, m.EndDate, m.Order, m.Version));
         await Changed.InvokeAsync();
     });
 
@@ -303,7 +303,7 @@
         if (e.Key == "Enter") await QuickAdd();
     }
 
-    /// <summary>Подзадача наследует проект и спринт родителя; порядок — в конец списка.</summary>
+    /// <summary>Подзадача наследует проект родителя и попадает в бэклог (без дат); порядок — в конец списка.</summary>
     private Task QuickAdd()
     {
         var title = _quickTitle?.Trim();
@@ -312,7 +312,7 @@
         {
             var order = Children.Select(c => c.Order).DefaultIfEmpty(-1).Max() + 1;
             await Session.Save<TaskModel>(HttpMethod.Post, Session.TeamPath("tasks"),
-                new TaskRequest(title, "", "Backlog", Item.ProjectId, Item.SprintId, Item.Id, null, null, null, null, order, null));
+                new TaskRequest(title, "", "Backlog", Item.ProjectId, Item.Id, null, null, null, null, order, null));
             _quickTitle = null;
             await Changed.InvokeAsync();
         });

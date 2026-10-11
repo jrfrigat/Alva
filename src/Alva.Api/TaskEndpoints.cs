@@ -204,7 +204,7 @@ public static class TaskEndpoints
         {
             assignments.TryGetValue(x.Id, out var assignment);
             Guid[] inSprints = [.. sprints[x.Id]];
-            return new TaskDto(x.Id, x.TeamId, x.ProjectId, inSprints.Length > 0 ? inSprints[0] : null, x.ParentId, x.Title, x.Description, x.Status.ToString(), x.EstimateHours, x.Deadline, x.StartDate, x.EndDate, x.Order, assignment?.TargetId, assignment?.ResolvedPersonId, x.Version, estimates.GetValueOrDefault(x.Id), deadlines.GetValueOrDefault(x.Id), inSprints);
+            return new TaskDto(x.Id, x.TeamId, x.ProjectId, x.ParentId, x.Title, x.Description, x.Status.ToString(), x.EstimateHours, x.Deadline, x.StartDate, x.EndDate, x.Order, assignment?.TargetId, assignment?.ResolvedPersonId, x.Version, estimates.GetValueOrDefault(x.Id), deadlines.GetValueOrDefault(x.Id), inSprints);
         }).ToArray();
     }
 

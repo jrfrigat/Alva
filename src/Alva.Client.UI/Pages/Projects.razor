@@ -103,13 +103,13 @@ else
                         {
                             @foreach (var sprint in sprints)
                             {
-                                var inSprint = tasks.Where(t => t.SprintId == sprint.Id).ToArray();
+                                var inSprint = tasks.Where(t => t.SprintIds.Contains(sprint.Id)).ToArray();
                                 <a class="alva-proj-sprint" href="@($"/sprints/{sprint.Id}")">
                                     <span class="alva-proj-sprint__head"><span><FlareIconView Value="@MaterialDesign3Icons.Regular.Flag" Size="15px" /> @sprint.Name</span><AlvaStatusChip Tone="AlvaTones.Status(sprint.Status)">@Labels.Status(sprint.Status)</AlvaStatusChip></span>
                                     <span class="alva-proj-sprint__row alva-num"><span>Взято задач проекта:</span><b>@inSprint.Length (@AlvaFormat.Hours(inSprint.Sum(t => t.EstimateHours ?? 0)) ч)</b></span>
                                 </a>
                             }
-                            <span class="alva-proj-sprint__row alva-num"><span>В бэклоге команды:</span><b>@tasks.Count(t => t.SprintId is null && t.Status is not ("Done" or "Cancelled")) задач (@AlvaFormat.Hours(tasks.Where(t => t.SprintId is null && t.Status is not ("Done" or "Cancelled")).Sum(t => t.EstimateHours ?? 0)) ч)</b></span>
+                            <span class="alva-proj-sprint__row alva-num"><span>В бэклоге команды:</span><b>@tasks.Count(t => !t.Planned && t.Status is not ("Done" or "Cancelled")) задач (@AlvaFormat.Hours(tasks.Where(t => !t.Planned && t.Status is not ("Done" or "Cancelled")).Sum(t => t.EstimateHours ?? 0)) ч)</b></span>
                         }
                         else
                         {
@@ -133,7 +133,7 @@ else
                                 <FlareIconView Value="@(tasks.Any(t => t.ParentId == task.Id) ? MaterialDesign3Icons.Regular.Folder : MaterialDesign3Icons.Regular.SubdirectoryArrowRight)" Size="16px" />
                                 <a href="@($"/tasks/{task.Id}")">@task.Title</a>
                             </span>
-                            <span role="cell" class="alva-wbs__muted">@(_sprints.FirstOrDefault(s => s.Id == task.SprintId)?.Name ?? "Бэклог команды")</span>
+                            <span role="cell" class="alva-wbs__muted">@(task.SprintIds.Length == 0 ? "Бэклог команды" : string.Join(", ", _sprints.Where(s => task.SprintIds.Contains(s.Id)).OrderBy(s => s.StartDate).Select(s => s.Name)))</span>
                             <span role="cell"><AlvaAssignee Task="task" Actors="_actors" /></span>
                             <span role="cell" class="alva-num">@(task.Deadline?.ToString("d MMM") ?? "—")</span>
                             <span role="cell"><AlvaStatusChip Tone="AlvaTones.Status(task.Status)">@Labels.Status(task.Status)</AlvaStatusChip></span>
@@ -171,7 +171,7 @@ else
         return (tasks.Where(t => t.Status == "Done").Sum(t => t.EstimateHours ?? 0), tasks.Sum(t => t.EstimateHours ?? 0));
     }
     private DateOnly? ReleaseOf(ProjectModel p) => TasksOf(p).Where(t => t.Deadline.HasValue).Select(t => t.Deadline).Max();
-    private SprintModel[] SprintsOf(ProjectModel p) => _sprints.Where(s => TasksOf(p).Any(t => t.SprintId == s.Id)).OrderBy(s => s.StartDate).ToArray();
+    private SprintModel[] SprintsOf(ProjectModel p) => _sprints.Where(s => TasksOf(p).Any(t => t.SprintIds.Contains(s.Id))).OrderBy(s => s.StartDate).ToArray();
     private static int Pct(decimal part, decimal whole) => whole <= 0 ? 0 : (int)Math.Round(part / whole * 100);
     private string TeamName(Guid id) => Session.Teams.FirstOrDefault(t => t.Id == id)?.Name ?? (id == Session.TeamId ? Session.TeamName : "Другая команда");
 
@@ -180,7 +180,7 @@ else
     {
         var tasks = TasksOf(p);
         if (tasks.Length > 0 && tasks.All(t => t.Status == "Done")) return "done";
-        return tasks.Any(t => t.Status is "InProgress" or "Done" || t.SprintId is not null) ? "active" : "new";
+        return tasks.Any(t => t.Status is "InProgress" or "Done" || t.SprintIds.Length > 0) ? "active" : "new";
     }
     private static string StatusLabel(string status) => status switch { "done" => "Завершён", "active" => "В работе", _ => "Не начат" };
     private static AlvaTone StatusTone(string status) => status switch { "done" => AlvaTone.Ok, "active" => AlvaTone.Info, _ => AlvaTone.Neutral };

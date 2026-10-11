@@ -234,8 +234,8 @@
     private IEnumerable<SprintModel> Visible(string status) => Sprints
         .Where(s => s.Status == status && (string.IsNullOrWhiteSpace(_search) || s.Name.Contains(_search, StringComparison.OrdinalIgnoreCase)))
         .OrderBy(s => status == "Completed" ? -s.EndDate.DayNumber : s.StartDate.DayNumber);
-    private TaskModel[] TasksOf(SprintModel sprint) => Tasks.Where(t => t.SprintId == sprint.Id && t.Status != "Cancelled").ToArray();
-    private RiskDto[] RisksOf(SprintModel sprint) => _risks.Where(r => Tasks.Any(t => t.Id == r.TaskId && t.SprintId == sprint.Id)).ToArray();
+    private TaskModel[] TasksOf(SprintModel sprint) => Tasks.Where(t => t.SprintIds.Contains(sprint.Id) && t.Status != "Cancelled").ToArray();
+    private RiskDto[] RisksOf(SprintModel sprint) => _risks.Where(r => TasksOf(sprint).Any(t => t.Id == r.TaskId)).ToArray();
 
     /// <summary>Закрытые и все оценённые часы спринта.</summary>
     private (decimal Done, decimal Total) Hours(SprintModel sprint)

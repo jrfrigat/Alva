@@ -26,7 +26,6 @@ public sealed class TaskModel
     public Guid Id { get; set; }
     public Guid TeamId { get; set; }
     public Guid? ProjectId { get; set; }
-    public Guid? SprintId { get; set; }
     public Guid? ParentId { get; set; }
     public string Title { get; set; } = "";
     public string Description { get; set; } = "";
@@ -43,6 +42,10 @@ public sealed class TaskModel
     public decimal EffectiveEstimateHours { get; set; }
     /// <summary>Срок с подъёмом по дереву: самый поздний из своего и сроков подзадач.</summary>
     public DateOnly? EffectiveDeadline { get; set; }
+    /// <summary>Спринты, с которыми пересекаются плановые даты задачи (по началу спринта); пусто — задача в бэклоге.</summary>
+    public Guid[] SprintIds { get; set; } = [];
+    /// <summary>У задачи есть плановые даты — она в плане, а не в бэклоге.</summary>
+    [System.Text.Json.Serialization.JsonIgnore] public bool Planned => StartDate is not null || EndDate is not null;
 }
 public sealed class SprintModel
 {

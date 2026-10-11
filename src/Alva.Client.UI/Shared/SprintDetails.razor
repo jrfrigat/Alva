@@ -153,7 +153,7 @@
     private Guid _loadedFor;
 
     private static DateOnly Today => DateOnly.FromDateTime(DateTime.Today);
-    private TaskModel[] SprintTasks => Tasks.Where(t => t.SprintId == Sprint.Id && t.Status != "Cancelled").OrderBy(t => t.Order).ToArray();
+    private TaskModel[] SprintTasks => Tasks.Where(t => t.SprintIds.Contains(Sprint.Id) && t.Status != "Cancelled").OrderBy(t => t.Order).ToArray();
     private RiskDto[] Risks => _risks.Where(r => SprintTasks.Any(t => t.Id == r.TaskId)).ToArray();
     private decimal Total => SprintTasks.Sum(t => t.EstimateHours ?? 0);
     private decimal Done => SprintTasks.Where(t => t.Status == "Done").Sum(t => t.EstimateHours ?? 0);

@@ -119,7 +119,7 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
             ["api", "teams", var t, "projects"] => store.Projects.Where(p => p.TeamIds.Contains(Id(t))).ToArray(),
             ["api", "teams", _, "actors"] => store.Actors.ToArray(),
             ["api", "teams", var t, "sprints"] => store.Sprints.Where(x => store.SprintTeam.GetValueOrDefault(x.Id) == Id(t)).ToArray(),
-            ["api", "teams", var t, "tasks"] => WithRollup(store.Tasks.Where(x => x.TeamId == Id(t)).ToArray()),
+            ["api", "teams", var t, "tasks"] => WithRollup(WithSprints(store, store.Tasks.Where(x => x.TeamId == Id(t)).ToArray())),
             ["api", "teams", var t, "tasks", "dependencies"] => TeamDependencies(store, Id(t)),
             ["api", "teams", _, "tasks", var id, "dependencies"] => store.Dependencies.Where(d => d.PredecessorId == Id(id) || d.SuccessorId == Id(id)).ToArray(),
             ["api", "teams", _, "tasks", var id, "history"] => History(store, Id(id)),
@@ -170,6 +170,15 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
     private static HistoryDto[] History(DemoStore store, Guid taskId) =>
         store.History.TryGetValue(taskId, out var entries) ? [.. entries] : [];
 
+    /// <summary>Спринты задач по их датам — тем же правилом, что кэш API; спринты команды берутся один раз.</summary>
+    private static TaskModel[] WithSprints(DemoStore store, TaskModel[] tasks)
+    {
+        var sprints = store.Sprints.ToLookup(s => store.SprintTeam.GetValueOrDefault(s.Id));
+        foreach (var task in tasks)
+            task.SprintIds = [.. SprintWindows.Of(task.StartDate, task.EndDate, sprints[task.TeamId], s => s.StartDate, s => s.EndDate).Select(s => s.Id)];
+        return tasks;
+    }
+
     /// <summary>Оценка и срок с подъёмом по дереву, как их отдаёт API.</summary>
     private static TaskModel[] WithRollup(TaskModel[] tasks)
     {
@@ -189,13 +198,9 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
     private static CalendarDto Calendar(DemoStore store, Guid actorId) =>
         store.Calendars.FirstOrDefault(c => c.ActorId == actorId) ?? CapacityMath.DefaultCalendar(actorId);
 
-    /// <summary>Открытые задачи команды с окном: свои даты, иначе даты спринта (как в API).</summary>
+    /// <summary>Открытые задачи команды с плановым окном — датами задачи (как в API).</summary>
     private static IEnumerable<(TaskModel Task, DateOnly? Start, DateOnly? End)> OpenTasks(DemoStore store, Guid teamId) =>
-        store.Tasks.Where(t => t.TeamId == teamId && t.Status is not ("Done" or "Cancelled")).Select(t =>
-        {
-            var sprint = store.Sprints.FirstOrDefault(s => s.Id == t.SprintId);
-            return (t, t.StartDate ?? sprint?.StartDate, t.EndDate ?? sprint?.EndDate);
-        });
+        store.Tasks.Where(t => t.TeamId == teamId && t.Status is not ("Done" or "Cancelled")).Select(t => (t, t.StartDate, t.EndDate));
 
     private static CapacityDemandDto[] Demand(DemoStore store, Guid teamId, DateOnly from, DateOnly to)
     {
@@ -414,18 +419,17 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
         {
             var created = new TaskModel
             {
-                Id = Guid.NewGuid(), TeamId = teamId, ProjectId = request.ProjectId, SprintId = request.SprintId, ParentId = request.ParentId,
+                Id = Guid.NewGuid(), TeamId = teamId, ProjectId = request.ProjectId, ParentId = request.ParentId,
                 Title = request.Title, Description = request.Description, Status = request.Status, EstimateHours = request.EstimateHours,
                 Deadline = request.Deadline, StartDate = request.StartDate, EndDate = request.EndDate, Order = request.Order, Version = 1
             };
             store.Tasks.Add(created);
             AddHistory(store, created.Id, "Задача создана");
             KeepParentsAroundChildren(store, created);
-            return created;
+            return WithSprints(store, [created])[0];
         }
         var task = store.Tasks.FirstOrDefault(t => t.Id == taskId) ?? throw new InvalidOperationException("Задача не найдена.");
         task.ProjectId = request.ProjectId;
-        task.SprintId = request.SprintId;
         task.ParentId = request.ParentId;
         task.Title = request.Title;
         task.Description = request.Description;
@@ -438,7 +442,7 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
         task.Version++;
         AddHistory(store, task.Id, $"Изменена (статус {Labels.Status(task.Status)})");
         KeepParentsAroundChildren(store, task);
-        return task;
+        return WithSprints(store, [task])[0];
     }
 
     private static SprintModel SaveSprint(DemoStore store, Guid teamId, Guid? id, object value)
@@ -533,8 +537,29 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
     {
         if (_store is not null) return _store;
         var raw = await js.InvokeAsync<string?>("localStorage.getItem", DataKey);
-        _store = string.IsNullOrWhiteSpace(raw) ? DemoSeed.Create() : JsonSerializer.Deserialize<DemoStore>(raw, Json) ?? DemoSeed.Create();
+        _store = string.IsNullOrWhiteSpace(raw) ? DemoSeed.Create() : JsonSerializer.Deserialize<DemoStore>(DatesFromSprints(raw), Json) ?? DemoSeed.Create();
         return _store;
+    }
+
+    /// <summary>
+    /// Данные демо, сохранённые до того, как спринт стал следствием дат: задаче со спринтом недостающие даты ставятся
+    /// по окну спринта (как в миграции API), чтобы она не выпала из плана.
+    /// </summary>
+    private static string DatesFromSprints(string raw)
+    {
+        if (!raw.Contains("\"sprintId\"", StringComparison.Ordinal) || System.Text.Json.Nodes.JsonNode.Parse(raw) is not System.Text.Json.Nodes.JsonObject root) return raw;
+        var sprints = (root["sprints"] as System.Text.Json.Nodes.JsonArray ?? []).OfType<System.Text.Json.Nodes.JsonObject>()
+            .Where(s => s["id"] is not null).ToDictionary(s => s["id"]!.GetValue<string>());
+        foreach (var task in (root["tasks"] as System.Text.Json.Nodes.JsonArray ?? []).OfType<System.Text.Json.Nodes.JsonObject>())
+        {
+            if (task["sprintId"]?.GetValue<string>() is { } sprintId && sprints.TryGetValue(sprintId, out var sprint))
+            {
+                task["startDate"] ??= task["endDate"]?.DeepClone() is { } end && string.CompareOrdinal(end.GetValue<string>(), sprint["startDate"]!.GetValue<string>()) < 0 ? end : sprint["startDate"]!.DeepClone();
+                task["endDate"] ??= string.CompareOrdinal(task["startDate"]!.GetValue<string>(), sprint["endDate"]!.GetValue<string>()) > 0 ? task["startDate"]!.DeepClone() : sprint["endDate"]!.DeepClone();
+            }
+            task.Remove("sprintId");
+        }
+        return root.ToJsonString();
     }
 
     private async Task Persist() => await js.InvokeVoidAsync("localStorage.setItem", DataKey, JsonSerializer.Serialize(_store, Json));
@@ -639,9 +664,9 @@ internal static class DemoSeed
             Tasks =
             [
                 new TaskModel { Id = DemoIds.ParentTask, TeamId = DemoIds.Team, ProjectId = DemoIds.Project, Title = "Планирование ресурсов", Description = "Иерархия работ и сроки", Status = "InProgress", StartDate = today.AddDays(-7), EndDate = today.AddDays(6), Deadline = today.AddDays(8), Order = 1, Version = 1 },
-                new TaskModel { Id = DemoIds.ApiTask, TeamId = DemoIds.Team, ProjectId = DemoIds.Project, SprintId = DemoIds.Sprint1, ParentId = DemoIds.ParentTask, Title = "API планирования", Description = "Проекты, задачи, спринты", Status = "InProgress", EstimateHours = 16m, StartDate = today.AddDays(-7), EndDate = today.AddDays(1), Deadline = today.AddDays(3), Order = 1, AssignmentTargetId = DemoIds.BackendRole, ResolvedPersonId = DemoIds.Anna, Version = 1 },
-                new TaskModel { Id = DemoIds.UiTask, TeamId = DemoIds.Team, ProjectId = DemoIds.MobileProject, SprintId = DemoIds.Sprint1, ParentId = DemoIds.ParentTask, Title = "Экраны планирования", Description = "Задачи и спринты на планшете", Status = "Planned", EstimateHours = 10m, StartDate = today.AddDays(-2), EndDate = today.AddDays(4), Deadline = today.AddDays(6), Order = 2, AssignmentTargetId = DemoIds.FrontendRole, ResolvedPersonId = DemoIds.Petr, Version = 1 },
-                new TaskModel { Id = DemoIds.LateTask, TeamId = DemoIds.Team, ProjectId = DemoIds.Project, SprintId = DemoIds.Sprint2, Title = "Отчёт по загрузке", Description = "Риск: срок уже прошёл", Status = "InProgress", EstimateHours = 8m, StartDate = today.AddDays(-5), EndDate = today.AddDays(3), Deadline = today.AddDays(-2), Order = 3, AssignmentTargetId = DemoIds.BackendRole, ResolvedPersonId = DemoIds.Olga, Version = 1 }
+                new TaskModel { Id = DemoIds.ApiTask, TeamId = DemoIds.Team, ProjectId = DemoIds.Project, ParentId = DemoIds.ParentTask, Title = "API планирования", Description = "Проекты, задачи, спринты", Status = "InProgress", EstimateHours = 16m, StartDate = today.AddDays(-7), EndDate = today.AddDays(1), Deadline = today.AddDays(3), Order = 1, AssignmentTargetId = DemoIds.BackendRole, ResolvedPersonId = DemoIds.Anna, Version = 1 },
+                new TaskModel { Id = DemoIds.UiTask, TeamId = DemoIds.Team, ProjectId = DemoIds.MobileProject, ParentId = DemoIds.ParentTask, Title = "Экраны планирования", Description = "Задачи и спринты на планшете", Status = "Planned", EstimateHours = 10m, StartDate = today.AddDays(-2), EndDate = today.AddDays(4), Deadline = today.AddDays(6), Order = 2, AssignmentTargetId = DemoIds.FrontendRole, ResolvedPersonId = DemoIds.Petr, Version = 1 },
+                new TaskModel { Id = DemoIds.LateTask, TeamId = DemoIds.Team, ProjectId = DemoIds.Project, Title = "Отчёт по загрузке", Description = "Риск: срок уже прошёл", Status = "InProgress", EstimateHours = 8m, StartDate = today.AddDays(-5), EndDate = today.AddDays(3), Deadline = today.AddDays(-2), Order = 3, AssignmentTargetId = DemoIds.BackendRole, ResolvedPersonId = DemoIds.Olga, Version = 1 }
             ],
             History =
             {

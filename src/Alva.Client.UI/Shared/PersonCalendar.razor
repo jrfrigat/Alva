@@ -132,12 +132,11 @@
 
     private TaskModel[] Mine => _tasks.Where(t => (t.ResolvedPersonId ?? t.AssignmentTargetId) == ActorId && t.Status is not ("Cancelled")).ToArray();
 
-    /// <summary>Окно задачи: даты задачи, иначе её спринт, иначе дедлайн.</summary>
-    private (DateOnly From, DateOnly To)? Window(TaskModel t)
+    /// <summary>Окно задачи: её плановые даты, иначе дедлайн.</summary>
+    private static (DateOnly From, DateOnly To)? Window(TaskModel t)
     {
-        var sprint = _sprints.FirstOrDefault(s => s.Id == t.SprintId);
-        var from = t.StartDate ?? sprint?.StartDate ?? t.Deadline;
-        var to = t.EndDate ?? sprint?.EndDate ?? t.Deadline ?? from;
+        var from = t.StartDate ?? t.EndDate ?? t.Deadline;
+        var to = t.EndDate ?? t.StartDate ?? t.Deadline ?? from;
         return from is null || to is null ? null : (from.Value, to.Value < from.Value ? from.Value : to.Value);
     }
     private TaskModel[] TasksOn(DateOnly d) => Nominal(d) == 0 ? [] : Mine.Where(t => t.Status != "Done" && Window(t) is { } w && d >= w.From && d <= w.To).ToArray();

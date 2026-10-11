@@ -46,7 +46,7 @@ else
     <FlareGrid MinColumnWidth="min(100%,12rem)">
         <FlareSelect TValue="string" Label="Статус" Items="_statuses" ItemLabel="Labels.Status" @bind-Value="_editing.Status" />
         <FlareSelect TValue="Guid?" Label="Проект" Items="_projects.Select(x => (Guid?)x.Id)" ItemLabel="ProjectName" NullOption="Текучка" @bind-Value="_editing.ProjectId" />
-        <FlareSelect TValue="Guid?" Label="Спринт" Items="_sprints.Select(x => (Guid?)x.Id)" ItemLabel="SprintName" NullOption="Без спринта" @bind-Value="_editing.SprintId" />
+        <FlareSelect TValue="Guid?" Label="Спринт (по датам)" Items="_sprints.OrderBy(x => x.StartDate).Select(x => (Guid?)x.Id)" ItemLabel="SprintName" NullOption="Бэклог — без дат" Value="SprintDates.First(_editing, _sprints)" ValueChanged="id => SprintDates.Place(_editing, _sprints.FirstOrDefault(s => s.Id == id))" HelperText="@SprintDates.Hint(_editing, _sprints)" />
         <FlareSelect TValue="Guid?" Label="Родительская задача" Items="_tasks.Where(x => x.Id != _editing.Id).Select(x => (Guid?)x.Id)" ItemLabel="TaskName" NullOption="Корневая задача" @bind-Value="_editing.ParentId" Searchable />
         <FlareNumericField TValue="decimal?" Label="Оценка, часы" @bind-Value="_editing.EstimateHours" Min="0" />
         <FlareDatePicker Label="Дедлайн" @bind-Value="_editing.Deadline" />
@@ -88,7 +88,7 @@ else
     private void NewChild(Guid id){NewTask();_editing!.ParentId=id;}
     private void Close(){_editing=null;_history=[];}
     private Task Save()=>Run(async()=>{
-        var model=_editing!;var request=new TaskRequest(model.Title,model.Description,model.Status,model.ProjectId,model.SprintId,model.ParentId,model.EstimateHours,model.Deadline,model.StartDate,model.EndDate,model.Order,model.Id==Guid.Empty?null:model.Version);
+        var model=_editing!;var request=new TaskRequest(model.Title,model.Description,model.Status,model.ProjectId,model.ParentId,model.EstimateHours,model.Deadline,model.StartDate,model.EndDate,model.Order,model.Id==Guid.Empty?null:model.Version);
         var saved=await Session.Save<TaskModel>(model.Id==Guid.Empty?HttpMethod.Post:HttpMethod.Put,Session.TeamPath("tasks"+(model.Id==Guid.Empty?"":$"/{model.Id}")),request);
         if(model.AssignmentTargetId.HasValue)await Session.Send(HttpMethod.Put,Session.TeamPath($"tasks/{saved.Id}/assignment"),new AssignmentRequest(model.AssignmentTargetId.Value,model.ResolvedPersonId));
         else if(model.Id!=Guid.Empty && _tasks.Any(t=>t.Id==model.Id && t.AssignmentTargetId.HasValue))await Session.Send(HttpMethod.Delete,Session.TeamPath($"tasks/{saved.Id}/assignment"),new{});

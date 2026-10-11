@@ -141,7 +141,7 @@
                         <div class="alva-plan-card__bottom">
                             <AlvaAssignee Task="task" Actors="_actors" />
                             <span class="alva-plan-card__deadline alva-num">@(task.Deadline.HasValue ? task.Deadline.Value.ToString("d MMM") : "Без дедлайна")</span>
-                            <FlareButton Size="ButtonSize.Sm" Variant="ButtonVariant.Tonal" Disabled="_busy" OnClick="() => Move(task, Sprint.Id)">В спринт</FlareButton>
+                            <FlareButton Size="ButtonSize.Sm" Variant="ButtonVariant.Tonal" Disabled="_busy" OnClick="() => Move(task, true)">В спринт</FlareButton>
                         </div>
                     </FlareDraggable>
                 </FlareDropZone>
@@ -152,7 +152,7 @@
     </section>
 
     <GanttSprintBoard @ref="_board" Sprint="Sprint" Data="_gantt" People="_people" Focus="_focus" OnTaskChange="TaskChange" OnPeopleChange="PeopleChange"
-                      OnLinkCreate="Link" OnLinkRejected="Rejected" OnUnplan="t => Move(t, null)" Suggested="Chosen" />
+                      OnLinkCreate="Link" OnLinkRejected="Rejected" OnUnplan="t => Move(t, false)" Suggested="Chosen" />
 
     <div class="alva-plan-side">
         <section class="alva-panel">
@@ -250,8 +250,12 @@
 
     private IEnumerable<SprintModel> Choices => Sprints.Where(s => s.Status != "Completed" || s.Id == Sprint.Id).OrderBy(s => s.StartDate);
     private string SprintLabel(Guid id) => Sprints.FirstOrDefault(s => s.Id == id) is { } s ? $"{s.Name} ({s.StartDate:d MMM}–{s.EndDate:d MMM})" : "";
-    private IEnumerable<TaskModel> Pool => Tasks.Where(t => t.SprintId is null && t.Status is not ("Done" or "Cancelled")).OrderBy(t => t.Deadline ?? DateOnly.MaxValue);
-    private TaskModel[] InSprint => Tasks.Where(t => t.SprintId == Sprint.Id && t.Status != "Cancelled").OrderBy(t => t.Order).ToArray();
+    // Пул — задачи без плановых дат: в спринт задачу ставят её даты.
+    private IEnumerable<TaskModel> Pool => Tasks.Where(t => !t.Planned && t.Status is not ("Done" or "Cancelled")).OrderBy(t => t.Deadline ?? DateOnly.MaxValue);
+    // Задачи спринта считаются один раз на набор задач и спринт: доска спрашивает о них в каждой строке баланса.
+    private TaskModel[] InSprint => _inSprint.Tasks == Tasks && _inSprint.Sprint == Sprint.Id ? _inSprint.Value
+        : (_inSprint = (Tasks, Sprint.Id, Tasks.Where(t => t.SprintIds.Contains(Sprint.Id) && t.Status != "Cancelled").OrderBy(t => t.Order).ToArray())).Value;
+    private (TaskModel[]? Tasks, Guid Sprint, TaskModel[] Value) _inSprint = (null, Guid.Empty, []);
     private decimal Planned => InSprint.Sum(t => t.EstimateHours ?? 0);
     private decimal Capacity => _load.Values.Sum(l => l.Available);
     private decimal Overtime => _load.Values.Sum(l => Math.Max(0, l.Allocated - l.Available));
@@ -310,14 +314,11 @@
         _load = _capacity.GroupBy(r => r.ActorId).ToDictionary(g => g.Key, g => (g.Sum(r => r.AvailableHours), g.Sum(r => r.AllocatedHours)));
         _gantt = await GanttData.Load(Session);
         _people = await GanttPeopleData.Load(Session, _gantt, _gantt.PlanRange(Sprint));
-        // На оси видны все спринты: перенесённая полоса уходит в спринт дня своего начала.
-        var gantt = _gantt;
-        _gantt.SprintByDay = day => GanttData.SprintAt(day, gantt.PlanSprints(Sprint), Sprint.Id)?.Id;
     }
 
     private void Pick(Guid id) => Navigation.NavigateTo($"/sprints/{id}/plan");
 
-    private bool FromSprint(object? payload) => payload is TaskDrag t && _gantt?.Tasks.FirstOrDefault(x => x.Id == t.TaskId)?.SprintId == Sprint.Id;
+    private bool FromSprint(object? payload) => payload is TaskDrag t && _gantt?.Tasks.FirstOrDefault(x => x.Id == t.TaskId)?.Planned == true;
     private static bool IsPerson(object? payload) => payload is PersonDrag;
 
     /// <summary>
@@ -339,9 +340,9 @@
                     var row = cell.RowKey;
                     if (GanttPeopleData.IsGroup(row)) throw new InvalidOperationException(GanttPeopleData.GroupRefusal);
                     var day = DateOnly.FromDateTime(cell.Span.Start);
-                    var sprint = GanttData.SprintAt(day, _gantt.PlanSprints(Sprint), Sprint.Id)
-                        ?? throw new InvalidOperationException($"{day:d MMMM} не входит ни в один спринт — бросьте задачу на день внутри спринта.");
-                    await _gantt.Place(Session, task, sprint.Id, day);
+                    if (GanttData.SprintAt(day, _gantt.PlanSprints(Sprint)) is null)
+                        throw new InvalidOperationException($"{day:d MMMM} не входит ни в один спринт — бросьте задачу на день внутри спринта.");
+                    await _gantt.Place(Session, task, day);
                     if (GanttPeopleData.IsRowKey(row)) await _people.Reassign(Session, task, row);
                 }
                 else return;
@@ -382,10 +383,16 @@
 
     private void Rejected(GanttLinkRejectedEventArgs args) => _error = args.Message;
 
-    /// <summary>Переносит задачу в спринт или в пул: то же изменение задачи, что и в её карточке.</summary>
-    private Task Move(TaskModel t, Guid? sprint) => Run(async () =>
+    /// <summary>
+    /// В спринт — задача получает даты с начала спринта (или с сегодняшнего дня, если спринт уже идёт); в пул — теряет
+    /// плановые даты. Спринт задачи следует из дат.
+    /// </summary>
+    private Task Move(TaskModel t, bool plan) => Run(async () =>
     {
-        await Session.Send(HttpMethod.Put, Session.TeamPath($"tasks/{t.Id}"), new TaskRequest(t.Title, t.Description, t.Status, t.ProjectId, sprint, t.ParentId, t.EstimateHours, t.Deadline, t.StartDate, t.EndDate, t.Order, t.Version));
+        if (_gantt is null) return;
+        var today = DateOnly.FromDateTime(DateTime.Today);
+        if (plan) await _gantt.Place(Session, t, Sprint.StartDate < today && today <= Sprint.EndDate ? today : Sprint.StartDate);
+        else await _gantt.Unplan(Session, t);
         await Refresh();
     });
 

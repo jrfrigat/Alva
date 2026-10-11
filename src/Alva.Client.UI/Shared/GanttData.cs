@@ -7,7 +7,7 @@ namespace Alva.Client.Shared;
 
 /// <summary>
 /// Данные команды для диаграмм Ганта и то, как Alva раскладывает их на примитивы библиотеки:
-/// окно задачи, вид полосы, выход за спринт, связи. Библиотека Flare.Components.Gantt о задачах не знает —
+/// окно задачи, вид полосы, ожидание подзадач, связи. Библиотека Flare.Components.Gantt о задачах не знает —
 /// проекции собираются здесь.
 /// </summary>
 public sealed class GanttData
@@ -23,6 +23,7 @@ public sealed class GanttData
     private Dictionary<Guid, ActorModel> _actors = [];
     private ILookup<Guid, TaskModel>? _children;
     private Dictionary<string, TaskModel>? _byKey;
+    private ILookup<Guid, TaskModel>? _bySprint;
     private readonly Dictionary<string, HashSet<Guid>> _shown = [];
 
     public static async Task<GanttData> Load(AlvaSession session)
@@ -46,18 +47,15 @@ public sealed class GanttData
 
     public TaskModel? Task(string key) => (_byKey ??= Tasks.ToDictionary(t => Key(t.Id))).GetValueOrDefault(key);
 
-    public SprintModel? SprintOf(TaskModel task) => task.SprintId is { } id ? _sprints.GetValueOrDefault(id) : null;
-
     public RiskDto? RiskOf(TaskModel task) => _risks.GetValueOrDefault(task.Id);
 
     public ActorModel? Actor(Guid? id) => id is { } value ? _actors.GetValueOrDefault(value) : null;
 
-    /// <summary>Окно задачи тем же правилом, что в ёмкости и рисках: свои даты, затем даты спринта, затем срок.</summary>
-    public (DateOnly Start, DateOnly End)? Window(TaskModel task)
-    {
-        var sprint = SprintOf(task);
-        return CapacityMath.Window(task.StartDate ?? sprint?.StartDate, task.EndDate ?? sprint?.EndDate, task.Deadline);
-    }
+    /// <summary>Окно задачи тем же правилом, что в ёмкости и рисках: свои даты, иначе срок.</summary>
+    public (DateOnly Start, DateOnly End)? Window(TaskModel task) => CapacityMath.Window(task.StartDate, task.EndDate, task.Deadline);
+
+    /// <summary>Задачи спринта (по их датам) — индекс строится один раз на загрузку.</summary>
+    public IEnumerable<TaskModel> InSprint(Guid sprintId) => (_bySprint ??= Tasks.SelectMany(t => t.SprintIds, (t, s) => (t, s)).ToLookup(x => x.s, x => x.t))[sprintId];
 
     /// <summary>Полоса задачи: её окно, а у родителя — не уже окон потомков (родитель охватывает детей).</summary>
     public GanttSpan? Span(TaskModel task)
@@ -113,7 +111,7 @@ public sealed class GanttData
         var key = string.Join(',', sprints.Order());
         if (_shown.TryGetValue(key, out var cached)) return cached;
         var shown = new HashSet<Guid>();
-        foreach (var task in Tasks.Where(t => t.SprintId is { } id && sprints.Contains(id)))
+        foreach (var task in sprints.SelectMany(InSprint))
             for (TaskModel? at = task; at is not null && shown.Add(at.Id); at = at.ParentId is { } parent ? Task(Key(parent)) : null) { }
         return _shown[key] = shown;
     }
@@ -140,12 +138,10 @@ public sealed class GanttData
     };
 
     /// <summary>
-    /// Части полосы: «ожидание подзадач» у родителя и «выход за спринт». Ожидание — дни, когда идёт хотя бы одна
+    /// Части полосы: «ожидание подзадач» у родителя. Ожидание — дни, когда идёт хотя бы одна
     /// подзадача: родитель здесь только ждёт их окончания; дни без подзадач остаются сплошными — это его собственная работа.
     /// </summary>
-    public IEnumerable<GanttSegment> Segments(TaskModel task) => Overflow(task).Concat(Waiting(task));
-
-    private IEnumerable<GanttSegment> Waiting(TaskModel task)
+    public IEnumerable<GanttSegment> Segments(TaskModel task)
     {
         if (Span(task) is not { } bar) yield break;
         var spans = ChildrenOf(task).Select(Span).OfType<GanttSpan>().OrderBy(s => s.Start).ToList();
@@ -174,14 +170,6 @@ public sealed class GanttData
         return RiskOf(task) is { Severity: "High" or "Medium" } risk
             ? $"{title}\n{(risk.Severity == "High" ? "Высокий" : "Средний")} риск: {string.Join("; ", risk.Reasons)}"
             : title;
-    }
-
-    private IEnumerable<GanttSegment> Overflow(TaskModel task)
-    {
-        if (SprintOf(task) is not { } sprint || Window(task) is not { } w || w.End <= sprint.EndDate) yield break;
-        if (w.Start <= sprint.EndDate) yield return new GanttSegment("in-sprint", GanttSpan.FromDays(w.Start, sprint.EndDate));
-        var from = w.Start > sprint.EndDate ? w.Start : sprint.EndDate.AddDays(1);
-        yield return new GanttSegment("overflow", GanttSpan.FromDays(from, w.End), $"+{w.End.DayNumber - sprint.EndDate.DayNumber}");
     }
 
     public IEnumerable<GanttLink> Links() => Dependencies.Select(d =>
@@ -237,8 +225,7 @@ public sealed class GanttData
             if (Span(task) == span) continue;
             var start = DateOnly.FromDateTime(span.Start);
             var end = DateOnly.FromDateTime(span.End).AddDays(-1);
-            var sprint = task.SprintId is not null && SprintByDay?.Invoke(start) is { } moved ? moved : task.SprintId;
-            await Put(session, task, sprint, start, end < start ? start : end);
+            await Put(session, task, start, end < start ? start : end);
         }
     }
 
@@ -250,10 +237,10 @@ public sealed class GanttData
     }
 
     /// <summary>
-    /// Ставит задачу в спринт с началом в указанный день. Длина — прежнее окно задачи, если у неё были свои даты,
+    /// Планирует задачу с началом в указанный день — она попадает в спринты, которые пересекают её новые даты. Длина — прежнее окно задачи, если у неё были свои даты,
     /// иначе по оценке: 8 часов на рабочий день, не меньше дня.
     /// </summary>
-    public Task Place(AlvaSession session, TaskModel task, Guid? sprintId, DateOnly start)
+    public Task Place(AlvaSession session, TaskModel task, DateOnly start)
     {
         DateOnly end;
         if (task is { StartDate: { } from, EndDate: { } to } && to >= from) end = start.AddDays(to.DayNumber - from.DayNumber);
@@ -266,20 +253,20 @@ public sealed class GanttData
                 if (!IsWeekend(end)) left--;
             }
         }
-        return Put(session, task, sprintId, start, end);
+        return Put(session, task, start, end);
     }
 
-    /// <summary>Возвращает задачу из спринта в бэклог; её даты остаются.</summary>
-    public Task Unplan(AlvaSession session, TaskModel task) => Put(session, task, null, task.StartDate, task.EndDate);
+    /// <summary>Возвращает задачу в бэклог: без плановых дат она не входит ни в один спринт.</summary>
+    public Task Unplan(AlvaSession session, TaskModel task) => Put(session, task, null, null);
 
-    private static Task Put(AlvaSession session, TaskModel task, Guid? sprintId, DateOnly? start, DateOnly? end) =>
+    private static Task Put(AlvaSession session, TaskModel task, DateOnly? start, DateOnly? end) =>
         session.Send(HttpMethod.Put, session.TeamPath($"tasks/{task.Id}"), new TaskRequest(task.Title, task.Description, task.Status,
-            task.ProjectId, sprintId, task.ParentId, task.EstimateHours, task.Deadline, start, end, task.Order, task.Version));
+            task.ProjectId, task.ParentId, task.EstimateHours, task.Deadline, start, end, task.Order, task.Version));
 
     /// <summary>Ось спринта: его дни, а если работа спринта выходит за конец — до конца этой работы.</summary>
     public GanttSpan SprintRange(SprintModel sprint)
     {
-        var end = Tasks.Where(t => t.SprintId == sprint.Id && t.Status != "Cancelled").Select(Span).OfType<GanttSpan>().Select(s => s.End)
+        var end = InSprint(sprint.Id).Where(t => t.Status != "Cancelled").Select(Span).OfType<GanttSpan>().Select(s => s.End)
             .Append(sprint.EndDate.AddDays(1).ToDateTime(TimeOnly.MinValue)).Max();
         return new GanttSpan(sprint.StartDate.ToDateTime(TimeOnly.MinValue), end);
     }
@@ -292,8 +279,7 @@ public sealed class GanttData
     public GanttSpan PlanRange(SprintModel selected)
     {
         var sprints = PlanSprints(selected);
-        var ids = sprints.Select(s => s.Id).ToHashSet();
-        var end = Tasks.Where(t => t.SprintId is { } id && ids.Contains(id) && t.Status != "Cancelled").Select(Span).OfType<GanttSpan>().Select(s => s.End)
+        var end = sprints.SelectMany(s => InSprint(s.Id)).Where(t => t.Status != "Cancelled").Select(Span).OfType<GanttSpan>().Select(s => s.End)
             .Append(sprints.Max(s => s.EndDate).AddDays(1).ToDateTime(TimeOnly.MinValue)).Max();
         return new GanttSpan(sprints.Min(s => s.StartDate).ToDateTime(TimeOnly.MinValue), end);
     }
@@ -305,12 +291,6 @@ public sealed class GanttData
     /// <summary>Спринт из <paramref name="sprints"/>, в окно которого попадает день; при пересечении — <paramref name="preferred"/>.</summary>
     public static SprintModel? SprintAt(DateOnly day, IEnumerable<SprintModel> sprints, Guid? preferred = null) =>
         sprints.Where(s => day >= s.StartDate && day <= s.EndDate).OrderBy(s => s.Id == preferred ? 0 : 1).FirstOrDefault();
-
-    /// <summary>
-    /// Если задан, задача со спринтом при сохранении новых дат переходит в спринт дня своего начала (null — остаётся в своём).
-    /// Задаёт доска планирования, где на оси видны все спринты; страницы Гантта спринт по датам не меняют.
-    /// </summary>
-    public Func<DateOnly, Guid?>? SprintByDay { get; set; }
 
     public Task AddLink(AlvaSession session, GanttLink link)
     {
