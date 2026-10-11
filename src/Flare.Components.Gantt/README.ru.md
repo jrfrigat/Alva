@@ -46,7 +46,8 @@ roadmap — всё, что раскладывается во времени по
   - `SelectedKey`/`SelectedKeyChanged`, `Compact`, `Corner`, `Texts`;
   - `FillWidth` — ось тянется на видимую ширину, `UnitWidth` становится минимумом;
   - `ResizableSide` + `SideWidthChanged` — колонку шапок тянут за правый край;
-  - `ScrollTo(момент)` — прокрутить ось к дате.
+  - `ScrollTo(момент)` — прокрутить ось к дате;
+  - `Virtualize` — рисовать только строки рядом с видимой частью (для сотен строк; окно сообщает браузер при прокрутке).
 - `FlareGanttPanel<TRow, TItem>` — одна проекция. Панелей внутри `FlareGantt` может быть сколько угодно: у
   всех одна шкала, одна прокрутка и общий выбор по ключу элемента.
   - **Строки:** `Rows`, `RowKey`, `RowChildren` (дерево), `RowHeader`, `RowClass`, `ExpandedByDefault`.

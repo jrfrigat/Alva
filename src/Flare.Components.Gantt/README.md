@@ -60,7 +60,8 @@ scroll and one selection.
   so a payload only units take still lands on a day under a bar.
 - **`ItemCover`** is the span an item must keep covering, such as its children's work: resizing stops at its edges.
 - **`FillWidth`** on `FlareGantt` stretches units to the visible width (`UnitWidth` is the floor); **`ResizableSide`**
-  with **`SideWidthChanged`** lets the user drag the row-header edge; **`ScrollTo`** scrolls the axis to a moment.
+  with **`SideWidthChanged`** lets the user drag the row-header edge; **`ScrollTo`** scrolls the axis to a moment;
+  **`Virtualize`** draws only the rows near what is on screen, for charts of hundreds of rows.
 
 ## Styling
 Every look is a `--flare-gantt-*` variable falling back to shared Flare tokens. Set the variables on a kind's
