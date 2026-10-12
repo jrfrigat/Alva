@@ -9,6 +9,7 @@ public sealed class FakeApi : IApiService
     private readonly List<(string Prefix, Func<string, object> Answer)> _gets = [];
 
     public Guid TeamGuid { get; } = Guid.NewGuid();
+    /// <summary>Все отправки, включая упавшие.</summary>
     public List<(HttpMethod Method, string Path, object Value)> Sent { get; } = [];
     public List<string> Reads { get; } = [];
 
@@ -46,11 +47,14 @@ public sealed class FakeApi : IApiService
         throw new InvalidOperationException($"Нет ответа для {path}");
     }
 
-    public Task Send(HttpMethod method, string path, object value)
+    /// <summary>Медленный сервер: отправка ждёт эту задачу, прежде чем ответить.</summary>
+    public Task? Gate { get; set; }
+
+    public async Task Send(HttpMethod method, string path, object value)
     {
-        if (OnSend(method, path, value) is { } error) return Task.FromException(error);
         Sent.Add((method, path, value));
-        return Task.CompletedTask;
+        if (Gate is not null) await Gate;
+        if (OnSend(method, path, value) is { } error) throw error;
     }
 
     public async Task<T> Save<T>(HttpMethod method, string path, object value)

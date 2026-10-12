@@ -89,7 +89,7 @@
                 <FlareTextField @bind-Value="_quickTitle" Immediate Placeholder="Быстрое добавление вложенной матрёшки (Enter)…" AriaLabel="Название новой подзадачи" OnKeyDown="QuickKey" Variant="InputVariant.Bare">
                     <AdornmentStart><FlareIconView Value="@MaterialDesign3Icons.Regular.AddCircle" Size="18px" /></AdornmentStart>
                 </FlareTextField>
-                <FlareButton Variant="ButtonVariant.Tonal" Size="ButtonSize.Sm" Disabled="@string.IsNullOrWhiteSpace(_quickTitle)" OnClick="QuickAdd">Добавить матрёшку</FlareButton>
+                <FlareButton Variant="ButtonVariant.Tonal" Size="ButtonSize.Sm" Loading="_adding" Disabled="@(_adding || string.IsNullOrWhiteSpace(_quickTitle))" OnClick="QuickAdd">Добавить матрёшку</FlareButton>
             </div>
         </div>
     </section>
@@ -167,7 +167,7 @@
     private Dictionary<Guid, (decimal Available, decimal Allocated)> _load = [];
     private Guid _loadedFor;
     private string? _error, _quickTitle, _assignSearch;
-    private bool _busy, _assignOpen;
+    private bool _busy, _assignOpen, _adding;
     private int _assignTab;
     private Guid? _assignTarget, _assignPerson;
 
@@ -327,19 +327,27 @@
         if (e.Key == "Enter") await QuickAdd();
     }
 
-    /// <summary>Подзадача наследует проект родителя и попадает в бэклог (без дат); порядок — в конец списка.</summary>
-    private Task QuickAdd()
+    /// <summary>
+    /// Подзадача наследует проект родителя и попадает в бэклог (без дат); порядок — в конец списка. Пока запрос идёт,
+    /// повторный Enter или клик ничего не отправляет; при ошибке введённое название остаётся для повтора.
+    /// </summary>
+    private async Task QuickAdd()
     {
         var title = _quickTitle?.Trim();
-        if (string.IsNullOrEmpty(title)) return Task.CompletedTask;
-        return Run(async () =>
+        if (_adding || string.IsNullOrEmpty(title)) return;
+        _adding = true;
+        try
         {
-            var order = Children.Select(c => c.Order).DefaultIfEmpty(-1).Max() + 1;
-            await Session.Save<TaskModel>(HttpMethod.Post, Session.TeamPath("tasks"),
-                new TaskRequest(title, "", "Backlog", Item.ProjectId, Item.Id, null, null, null, null, order, null));
-            _quickTitle = null;
-            await Changed.InvokeAsync();
-        });
+            await Run(async () =>
+            {
+                var order = Children.Select(c => c.Order).DefaultIfEmpty(-1).Max() + 1;
+                await Session.Save<TaskModel>(HttpMethod.Post, Session.TeamPath("tasks"),
+                    new TaskRequest(title, "", "Backlog", Item.ProjectId, Item.Id, null, null, null, null, order, null));
+                _quickTitle = null;
+                await Changed.InvokeAsync();
+            });
+        }
+        finally { _adding = false; }
     }
 
     private Task Archive() => Run(async () =>
