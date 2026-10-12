@@ -19,6 +19,28 @@
   --alva-heat-under: #F0F4FF;
   --alva-heat-balance: #DCE9FF;
   --alva-heat-tension: #B7C4FF;
+
+  /* Семантика риска, ёмкости и ролей: текст, подложка, рамка. Подложки и рамки — из DESIGN.md, тексты
+     затемнены до 4,5:1 на своей подложке и на белом: дизайновые #DC2626 и #D97706 давали 3,95 и 2,86:1. */
+  --alva-critical-text: #B91C1C;
+  --alva-critical-bg: #FEE2E2;
+  --alva-critical-subtle: #FEF2F2;
+  --alva-critical-border: #FCA5A5;
+  --alva-critical-solid: #B91C1C;
+  --alva-warning-text: #92400E;
+  --alva-warning-bg: #FEF3C7;
+  --alva-warning-border: #FCD34D;
+  --alva-ok-text: #065F46;
+  --alva-ok-bg: #D1FAE5;
+  --alva-ok-subtle: #ECFDF5;
+  --alva-ok-border: #6EE7B7;
+  --alva-role-text: #6D28D9;
+  --alva-role-bg: #EDE9FE;
+  --alva-role-subtle: #F5F3FF;
+  --alva-role-border: #C4B5FD;
+  --alva-info-text: #0039B5;
+  --alva-info-bg: #DCE1FF;
+  --alva-info-border: #B7C4FF;
 }
 
 .flare-theme-alva.flare-mode-dark,
@@ -30,6 +52,26 @@
   --alva-heat-under: var(--flare-color-surface-container-low);
   --alva-heat-balance: var(--flare-color-surface-container-high);
   --alva-heat-tension: var(--flare-color-secondary-container);
+
+  /* Тёмные подложки того же тона и светлые тексты; заливка под белым текстом остаётся тёмно-красной. */
+  --alva-critical-text: #FCA5A5;
+  --alva-critical-bg: #3B1114;
+  --alva-critical-subtle: #2A0F14;
+  --alva-critical-border: #7F1D1D;
+  --alva-warning-text: #FCD34D;
+  --alva-warning-bg: #3A2604;
+  --alva-warning-border: #78350F;
+  --alva-ok-text: #6EE7B7;
+  --alva-ok-bg: #052E22;
+  --alva-ok-subtle: #06241D;
+  --alva-ok-border: #065F46;
+  --alva-role-text: #C4B5FD;
+  --alva-role-bg: #2A1B4D;
+  --alva-role-subtle: #1F1838;
+  --alva-role-border: #5B21B6;
+  --alva-info-text: #B7C4FF;
+  --alva-info-bg: #12233A;
+  --alva-info-border: #2151DA;
 }
 
 /* DESIGN.md, Components: «Alternating row background on subtle hover (#F1F5F9)». Flare красит
@@ -121,13 +163,13 @@
    Права те же свойства, что ставит Flare (.flare-alert--warning/--error), плюс класс темы,
    поэтому специфичность выше и правило побеждает. */
 .flare-theme-alva .flare-alert--warning {
-  background: #FEF3C7;
-  color: #D97706;
+  background: var(--alva-warning-bg);
+  color: var(--alva-warning-text);
 }
 
 .flare-theme-alva .flare-alert--error {
-  background: #FEE2E2;
-  color: #DC2626;
+  background: var(--alva-critical-bg);
+  color: var(--alva-critical-text);
 }
 
 
