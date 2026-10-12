@@ -31,7 +31,10 @@ public sealed class FakeApi : IApiService
 
     public string TeamPath(string resource) => $"teams/{TeamGuid}/{resource}";
     public Task Initialize() => Task.CompletedTask;
-    public Task Authenticate(string endpoint, object input) => Task.CompletedTask;
+    /// <summary>Вход/регистрация: вернуть исключение, чтобы сервер отказал; запросы — в Authentications.</summary>
+    public Func<string, Exception?> OnAuthenticate { get; set; } = _ => null;
+    public List<string> Authentications { get; } = [];
+    public Task Authenticate(string endpoint, object input) { Authentications.Add(endpoint); return OnAuthenticate(endpoint) is { } error ? Task.FromException(error) : Task.CompletedTask; }
     public Task Logout() => Task.CompletedTask;
     public Task LoadWorkspaces() => Task.CompletedTask;
     public Task SelectWorkspace(Guid id) => Task.CompletedTask;

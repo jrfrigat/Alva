@@ -100,8 +100,9 @@ public sealed class ApiServiceHttp(HttpClient http, IJSRuntime js) : IApiService
     private static async Task Check(HttpResponseMessage response)
     {
         if (response.IsSuccessStatusCode) return;
-        if (response.StatusCode == HttpStatusCode.Unauthorized) throw new InvalidOperationException("Сеанс завершён. Войдите в Alva.");
-        var message = $"Запрос не выполнен ({(int)response.StatusCode}).";
+        // Код ответа идёт в исключении: страницы отличают отказ в доступе (403) и занятую почту (409) от прочих ошибок.
+        // 401 на входе — неверный пароль, а не завершённый сеанс, поэтому текст сервера важнее заготовки.
+        var message = response.StatusCode == HttpStatusCode.Unauthorized ? "Сеанс завершён. Войдите в Alva." : $"Запрос не выполнен ({(int)response.StatusCode}).";
         try
         {
             using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
@@ -109,6 +110,6 @@ public sealed class ApiServiceHttp(HttpClient http, IJSRuntime js) : IApiService
                 if (document.RootElement.TryGetProperty(key, out var text) && text.ValueKind == JsonValueKind.String) { message = text.GetString()!; break; }
         }
         catch (JsonException) { }
-        throw new InvalidOperationException(message);
+        throw new HttpRequestException(message, null, response.StatusCode);
     }
 }

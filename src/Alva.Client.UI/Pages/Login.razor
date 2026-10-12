@@ -6,12 +6,19 @@
 <FlareCard Variant="CardVariant.Outlined"><FlareCardContent><FlareStack Gap="FlareSpacing.Large">
     <FlareText Element="h1" Typo="TypographyScale.HeadlineLarge">@(_register ? "Создайте пространство для команды" : "Добро пожаловать в Alva")</FlareText>
     <FlareText>Планируйте спринты, распределяйте работу и замечайте перегрузки заранее.</FlareText>
+    @* Общая сводка — для ответов сервера, которые не относятся к одному полю (неверный пароль, сбой). *@
     <PageFeedback Error="@_error" />
-    <EditForm Model="this" OnSubmit="Submit">
+    @* novalidate: всплывающие подсказки браузера не связаны с полями и не читаются вместе с ними — проверяет сама форма. *@
+    <EditForm Model="this" OnSubmit="Submit" novalidate>
     <FlareStack Gap="FlareSpacing.Medium">
-        @if (_register) { <FlareTextField Label="Ваше имя" @bind-Value="_displayName" Required Autocomplete="name" /><FlareTextField Label="Название рабочего пространства" @bind-Value="_workspaceName" Required /> }
-        <FlareTextField Label="Электронная почта" @bind-Value="_email" Type="email" Required Autocomplete="email" />
-        <FlareTextField Label="Пароль" @bind-Value="_password" Type="password" Required Autocomplete="@(_register ? "new-password" : "current-password")" HelperText="@(_register ? "Не менее 12 символов" : null)" />
+        @* Ошибка поля выводится под ним (ErrorText Flare связывает её с полем через aria-describedby). *@
+        @if (_register)
+        {
+            <FlareTextField @ref="_nameField" Label="Ваше имя" Value="@_displayName" ValueChanged="v => Edit(ref _displayName, v, Field.Name)" ErrorText="@ErrorOf(Field.Name)" Required Autocomplete="name" />
+            <FlareTextField @ref="_workspaceField" Label="Название рабочего пространства" Value="@_workspaceName" ValueChanged="v => Edit(ref _workspaceName, v, Field.Workspace)" ErrorText="@ErrorOf(Field.Workspace)" Required />
+        }
+        <FlareTextField @ref="_emailField" Label="Электронная почта" Value="@_email" ValueChanged="v => Edit(ref _email, v, Field.Email)" ErrorText="@ErrorOf(Field.Email)" Type="email" Required Autocomplete="email" />
+        <FlareTextField @ref="_passwordField" Label="Пароль" Value="@_password" ValueChanged="v => Edit(ref _password, v, Field.Password)" ErrorText="@ErrorOf(Field.Password)" Type="password" Required Autocomplete="@(_register ? "new-password" : "current-password")" HelperText="@(_register ? $"Не менее {MinPassword} символов" : null)" />
         <FlareButton Type="ButtonType.Submit" Loading="_busy" FullWidth>@(_register ? "Создать пространство" : "Войти")</FlareButton>
         <FlareButton Variant="ButtonVariant.Text" OnClick="Toggle">@(_register ? "У меня уже есть аккаунт" : "Создать аккаунт")</FlareButton>
     </FlareStack>
@@ -19,18 +26,58 @@
 </FlareStack></FlareCardContent></FlareCard>
 </FlareContainer>
 @code {
+    // Пределы совпадают с проверками API регистрации (AuthEndpoints).
+    private const int MinPassword = 12, MaxPassword = 128;
+
+    private enum Field { Name, Workspace, Email, Password }
+
     private string? _email, _password, _displayName, _workspaceName, _error;
     private bool _register, _busy;
-    private void Toggle() { _register = !_register; _error = null; }
+    private readonly Dictionary<Field, string> _errors = [];
+    private FlareTextField? _nameField, _workspaceField, _emailField, _passwordField;
+
+    private string? ErrorOf(Field field) => _errors.GetValueOrDefault(field);
+
+    // Правка поля снимает его ошибку: сообщение больше не описывает то, что введено.
+    private void Edit(ref string? target, string? value, Field field) { target = value; _errors.Remove(field); }
+
+    private void Toggle() { _register = !_register; _error = null; _errors.Clear(); }
+
+    /// <summary>Проверки до запроса: неверная форма не уходит на сервер и не тратит лимит попыток входа.</summary>
+    private void Validate()
+    {
+        _errors.Clear();
+        if (_register && string.IsNullOrWhiteSpace(_displayName)) _errors[Field.Name] = "Укажите имя.";
+        if (_register && string.IsNullOrWhiteSpace(_workspaceName)) _errors[Field.Workspace] = "Укажите название пространства.";
+        var email = _email?.Trim();
+        if (string.IsNullOrEmpty(email)) _errors[Field.Email] = "Укажите электронную почту.";
+        else if (!System.Net.Mail.MailAddress.TryCreate(email, out var parsed) || parsed.Address != email) _errors[Field.Email] = "Почта указана в неверном формате, например: name@company.ru.";
+        if (string.IsNullOrEmpty(_password)) _errors[Field.Password] = "Введите пароль.";
+        else if (_register && _password.Length is < MinPassword or > MaxPassword) _errors[Field.Password] = $"Пароль должен содержать от {MinPassword} до {MaxPassword} символов.";
+    }
+
+    // Фокус — на первое поле с ошибкой в порядке формы.
+    private async Task FocusFirstError()
+    {
+        await Task.Yield();
+        FlareTextField? target = new[] { (Field.Name, _nameField), (Field.Workspace, _workspaceField), (Field.Email, _emailField), (Field.Password, _passwordField) }
+            .FirstOrDefault(f => _errors.ContainsKey(f.Item1) && f.Item2 is not null).Item2;
+        if (target is not null) await target.FocusAsync();
+    }
+
     private async Task Submit()
     {
-        _busy = true; _error = null;
+        _error = null;
+        Validate();
+        if (_errors.Count > 0) { await FocusFirstError(); return; }
+        _busy = true;
         try
         {
-            if (_register && (_password?.Length ?? 0) < 12) throw new InvalidOperationException("Пароль должен содержать не менее 12 символов.");
-            await Session.Authenticate(_register ? "register" : "login", new { email = _email, password = _password, displayName = _displayName, workspaceName = _workspaceName });
+            await Session.Authenticate(_register ? "register" : "login", new { email = _email?.Trim(), password = _password, displayName = _displayName, workspaceName = _workspaceName });
             Navigation.NavigateTo("/workspaces");
         }
+        // Занятая почта — ошибка конкретного поля; остальные ответы сервера — общая сводка.
+        catch (HttpRequestException error) when (_register && error.StatusCode == System.Net.HttpStatusCode.Conflict) { _errors[Field.Email] = error.Message; await FocusFirstError(); }
         catch (Exception error) when (error is HttpRequestException or InvalidOperationException) { _error = error.Message; }
         finally { _busy = false; }
     }
