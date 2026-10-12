@@ -29,22 +29,24 @@ else
 }
 @if(Planning)
 {
-    if(PlanSprint is not null){<SprintPlanning Sprint="PlanSprint" Sprints="_sprints" Tasks="_tasks" Changed="Reload" OnParams="()=>Edit(PlanSprint)" />}
-    else if(!_busy){<FlareEmptyState Title="Нечего планировать" Description="Создайте спринт, чтобы собрать в него задачи из пула."><FlareButton Size="ButtonSize.Sm" OnClick="New">Новый спринт</FlareButton></FlareEmptyState>}
+    if(SprintId.HasValue && Current is null){if(_loaded){<UnavailableState Title="Спринт не найден или недоступен" BackHref="/sprints" BackLabel="К спринтам" />}}
+    else if(PlanSprint is not null){<SprintPlanning Sprint="PlanSprint" Sprints="_sprints" Tasks="_tasks" Changed="Reload" OnParams="()=>Edit(PlanSprint)" />}
+    else if(_loaded){<FlareEmptyState Title="Нечего планировать" Description="Создайте спринт, чтобы собрать в него задачи из пула."><ActionContent><FlareButton Size="ButtonSize.Sm" OnClick="New">Новый спринт</FlareButton></ActionContent></FlareEmptyState>}
 }
 else if(SprintId is null){<SprintRegistry Sprints="_sprints" Tasks="_tasks" />}
 else if(Current is not null){<SprintDetails Sprint="Current" Tasks="_tasks" OnEdit="@(()=>Navigation.NavigateTo($"/sprints/{Current.Id}/plan"))" Changed="Load" />}
+else if(_loaded){<UnavailableState Title="Спринт не найден или недоступен" BackHref="/sprints" BackLabel="К спринтам" />}
 }
 @code {
     [Parameter]public Guid? SprintId{get;set;}
-    private SprintModel[] _sprints=[];private TaskModel[] _tasks=[];private SprintModel? _editing;private DateOnly? _start,_end;private bool _busy;private string? _error;private readonly string[] _statuses=["Planned","Active","Completed"];
+    private SprintModel[] _sprints=[];private TaskModel[] _tasks=[];private SprintModel? _editing;private DateOnly? _start,_end;private bool _busy,_loaded;private string? _error;private readonly string[] _statuses=["Planned","Active","Completed"];
     private bool Planning => new Uri(Navigation.Uri).AbsolutePath.EndsWith("/plan", StringComparison.Ordinal);
     private SprintModel? Current => SprintId.HasValue ? _sprints.FirstOrDefault(s=>s.Id==SprintId) : null;
-    /// <summary>Спринт доски: указанный, иначе активный, иначе ближайший запланированный.</summary>
-    private SprintModel? PlanSprint => Current ?? _sprints.FirstOrDefault(s=>s.Status=="Active") ?? _sprints.Where(s=>s.Status=="Planned").OrderBy(s=>s.StartDate).FirstOrDefault();
+    /// <summary>Спринт доски: указанный в адресе (без подмены, если его нет), иначе активный, иначе ближайший запланированный.</summary>
+    private SprintModel? PlanSprint => SprintId.HasValue ? Current : _sprints.FirstOrDefault(s=>s.Status=="Active") ?? _sprints.Where(s=>s.Status=="Planned").OrderBy(s=>s.StartDate).FirstOrDefault();
     protected override async Task OnParametersSetAsync(){_editing=null;await Load();}
-    private async Task Run(Func<Task> action){_busy=true;_error=null;try{await action();}catch(Exception e) when(e is HttpRequestException or InvalidOperationException){_error=e.Message;}finally{_busy=false;}}
-    private Task Load()=>Run(async()=>{await Session.Initialize();if(Session.TeamId is null)return;_sprints=await Session.Get<SprintModel[]>(Session.TeamPath("sprints"));_tasks=await Session.Get<TaskModel[]>(Session.TeamPath("tasks"));});
+    private async Task Run(Func<Task> action){_busy=true;_error=null;try{await action();}catch(Exception e) when(e is HttpRequestException or InvalidOperationException){_error=PageFeedback.Describe(e);}finally{_busy=false;}}
+    private Task Load()=>Run(async()=>{await Session.Initialize();if(Session.TeamId is null)return;_sprints=await Session.Get<SprintModel[]>(Session.TeamPath("sprints"));_tasks=await Session.Get<TaskModel[]>(Session.TeamPath("tasks"));_loaded=true;});
     private void New(){_editing=new SprintModel();_start=_editing.StartDate;_end=_editing.EndDate;}
     private void Edit(SprintModel sprint){_editing=new SprintModel{Id=sprint.Id,Name=sprint.Name,Goal=sprint.Goal,StartDate=sprint.StartDate,EndDate=sprint.EndDate,Status=sprint.Status};_start=sprint.StartDate;_end=sprint.EndDate;}
     private void Close()=>_editing=null;

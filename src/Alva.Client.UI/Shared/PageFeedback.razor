@@ -3,4 +3,12 @@
 @code {
     [Parameter] public string? Error { get; set; }
     [Parameter] public bool Loading { get; set; }
+
+    /// <summary>
+    /// Текст ошибки для страницы: отказ в доступе называется прямо, а не сырым ответом сервера — так он не путается
+    /// ни с «не найдено», ни с поломкой.
+    /// </summary>
+    public static string Describe(Exception error) => error is HttpRequestException { StatusCode: System.Net.HttpStatusCode.Forbidden }
+        ? "Нет доступа: у вашей роли нет прав на эти данные. Попросите владельца пространства выдать доступ."
+        : error.Message;
 }

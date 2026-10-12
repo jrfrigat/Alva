@@ -10,6 +10,13 @@
     <PageFeedback Error="@_error" Loading="_busy" />
     <TaskDetails Item="Current" Tasks="_tasks" Projects="_projects" Sprints="_sprints" Actors="_actors" Changed="Load" />
 }
+else if (TaskId.HasValue)
+{
+    @* Ссылка на конкретную задачу никогда не превращается в список: пока грузится — прогресс, ошибка — ошибка,
+       а если задачи нет — так и сказано. *@
+    <PageFeedback Error="@_error" Loading="_busy" />
+    @if (_loaded) { <UnavailableState Title="Задача не найдена или недоступна" BackHref="/tasks" BackLabel="К задачам" /> }
+}
 else
 {
 <AlvaPageHeader Category="Планирование · Задачи" Title="@PageHeading" Description="Пул задач команды: дерево, статусы и назначения.">
@@ -69,7 +76,7 @@ else
 @code {
     [Parameter] public Guid? TaskId { get; set; }
     private TaskModel[] _tasks=[]; private ProjectModel[] _projects=[]; private SprintModel[] _sprints=[]; private ActorModel[] _actors=[]; private HistoryDto[] _history=[];
-    private TaskModel? _editing; private string? _error,_search,_statusFilter; private Guid? _projectFilter; private bool _busy;
+    private TaskModel? _editing; private string? _error,_search,_statusFilter; private Guid? _projectFilter; private bool _busy,_loaded;
     private readonly string[] _statuses=["Backlog","Planned","InProgress","Done","Cancelled"];
     private string Route => new Uri(Navigation.Uri).AbsolutePath;
     private string PageHeading => Route == "/my-work" ? "Моя работа" : Route == "/unassigned" ? "Без исполнителя" : "Задачи команды";
@@ -84,8 +91,8 @@ else
     private TaskModel? Current => TaskId.HasValue ? _tasks.FirstOrDefault(t=>t.Id==TaskId) : null;
     protected override async Task OnParametersSetAsync() { _editing=null; await Load(); }
     private Task Open(TaskModel? task){ if(task is not null) Navigation.NavigateTo($"/tasks/{task.Id}"); return Task.CompletedTask; }
-    private async Task Run(Func<Task> action) { _busy=true; _error=null;try{await action();}catch(Exception e) when(e is HttpRequestException or InvalidOperationException){_error=e.Message;}finally{_busy=false;} }
-    private Task Load()=>Run(async()=>{await Session.Initialize();if(Session.TeamId is null)return;_tasks=await Session.Get<TaskModel[]>(Session.TeamPath("tasks"));_projects=await Session.Get<ProjectModel[]>(Session.TeamPath("projects"));_actors=await Session.Get<ActorModel[]>(Session.TeamPath("actors"));_sprints=await Session.Get<SprintModel[]>(Session.TeamPath("sprints"));});
+    private async Task Run(Func<Task> action) { _busy=true; _error=null;try{await action();}catch(Exception e) when(e is HttpRequestException or InvalidOperationException){_error=PageFeedback.Describe(e);}finally{_busy=false;} }
+    private Task Load()=>Run(async()=>{await Session.Initialize();if(Session.TeamId is null)return;_tasks=await Session.Get<TaskModel[]>(Session.TeamPath("tasks"));_projects=await Session.Get<ProjectModel[]>(Session.TeamPath("projects"));_actors=await Session.Get<ActorModel[]>(Session.TeamPath("actors"));_sprints=await Session.Get<SprintModel[]>(Session.TeamPath("sprints"));_loaded=true;});
     private void NewTask(){_editing=new TaskModel { TeamId=Session.TeamId!.Value };_history=[];}
     private void NewChild(Guid id){NewTask();_editing!.ParentId=id;}
     private void Close(){_editing=null;_history=[];}
