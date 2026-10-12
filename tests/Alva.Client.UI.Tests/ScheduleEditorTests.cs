@@ -40,11 +40,6 @@ public sealed class ScheduleEditorTests : UiTestBase
     private IRenderedComponent<ScheduleEditor> Editor() => Render<ScheduleEditor>(p => p.Add(x => x.ActorId, _person));
 
     private static IElement Monday(IRenderedComponent<ScheduleEditor> cut) => cut.Find("input[aria-label='Часы: Понедельник']");
-    private static IElement Field(IRenderedComponent<ScheduleEditor> cut, string label) =>
-        cut.FindAll("label").First(l => l.GetAttribute("for") is not null && l.TextContent.Trim() == label) is var l && l.GetAttribute("for") is { } id
-            ? cut.Find($"#{id}") : throw new InvalidOperationException(label);
-    private static IElement Button(IRenderedComponent<ScheduleEditor> cut, string text) =>
-        cut.FindAll("button").First(b => b.TextContent.Contains(text, StringComparison.Ordinal) || b.GetAttribute("aria-label") == text);
     private static IElement SaveButton(IRenderedComponent<ScheduleEditor> cut) => Button(cut, "Сохранить график");
 
     // Пользователь меняет часы понедельника и пояс, но не сохраняет.

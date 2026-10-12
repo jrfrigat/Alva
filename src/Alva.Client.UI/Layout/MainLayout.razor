@@ -4,6 +4,8 @@
 @inject NavigationManager Navigation
 @inject IBrowserViewportService Viewport
 <a class="skip-link" href="#main-content">К содержимому</a>
+@* Подтверждения (уход с несохранёнными правками и др.) — штатный диалог Flare, один на приложение. *@
+<FlareConfirmDialogProvider>
 <FlareLayout>
     <FlareLayoutAppBar DrawerToggle="true">
         @* Шапка макета: знак и название, переключатель команды, справа пользователь. *@
@@ -59,6 +61,7 @@
     </FlareLayoutDrawer>
     <FlareLayoutContent><main id="main-content"><FlareContainer MaxWidth="PageWidth"><FlareStack @key="PagePath" Gap="FlareSpacing.XLarge">@Body</FlareStack></FlareContainer></main></FlareLayoutContent>
 </FlareLayout>
+</FlareConfirmDialogProvider>
 @if (_mobile)
 {
     <FlareBottomNav Position="BottomNavPosition.Fixed" AriaLabel="Основные разделы">

@@ -2,6 +2,7 @@
    история и боковая панель назначения исполнителя с загрузкой кандидатов. *@
 @inject AlvaSession Session
 @inject NavigationManager Navigation
+<NavigationLock OnBeforeInternalNavigation="ConfirmLeave" ConfirmExternalNavigation="Dirty" />
 <div class="alva-task">
     <FlareBreadcrumb Items="Crumbs" Separator="›" AriaLabel="Путь к задаче" />
     <div class="alva-task__actions">
@@ -190,9 +191,32 @@
         : Item.AssignmentTargetId is null ? AlvaTone.Warning
         : AlvaTone.Info;
 
+    /// <summary>Подтверждение потери правок; приходит от FlareConfirmDialogProvider в MainLayout.</summary>
+    [CascadingParameter] public FlareConfirmDialogProvider? Confirm { get; set; }
+
+    private bool _leaving;
+
+    /// <summary>Черновик расходится с задачей: уход со страницы или перечитывание её потеряли бы правки.</summary>
+    private bool Dirty => _model.Id == Item.Id && (_model.Title != Item.Title || _model.Description != Item.Description
+        || _model.Status != Item.Status || _model.ProjectId != Item.ProjectId || _model.ParentId != Item.ParentId
+        || _model.EstimateHours != Item.EstimateHours || _model.Deadline != Item.Deadline
+        || _model.StartDate != Item.StartDate || _model.EndDate != Item.EndDate);
+
+    // Ссылки, меню и Back/Forward: несохранённые правки уходят только после явного согласия.
+    private async Task ConfirmLeave(LocationChangingContext context)
+    {
+        if (_leaving || !Dirty || Confirm is null) return;
+        var leave = await Confirm.ConfirmAsync("Несохранённые изменения",
+            "В карточке задачи есть несохранённые правки. Уйти и потерять их?", "Уйти без сохранения", "Остаться");
+        if (leave != true) context.PreventNavigation();
+    }
+
     protected override async Task OnParametersSetAsync()
     {
         if (_model.Id == Item.Id && _model.Version == Item.Version) return;
+        // Задачу перечитали (подзадача, назначение, чужая правка), а черновик ещё не сохранён — он остаётся;
+        // сохранение уйдёт со старой версией, и сервер сообщит о конфликте вместо тихой потери правок.
+        if (Dirty) return;
         _model = System.Text.Json.JsonSerializer.Deserialize<TaskModel>(System.Text.Json.JsonSerializer.Serialize(Item))!;
         _quickTitle = null;
         try { _history = await Session.Get<HistoryDto[]>(Session.TeamPath($"tasks/{Item.Id}/history")); }
@@ -322,6 +346,7 @@
     {
         await Session.Send(HttpMethod.Delete, Session.TeamPath($"tasks/{Item.Id}"), new { });
         await Changed.InvokeAsync();
+        _leaving = true;
         Navigation.NavigateTo("/tasks");
     });
 

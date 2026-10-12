@@ -21,6 +21,15 @@ public abstract class UiTestBase : BunitContext, IAsyncLifetime
         JSInterop.Mode = JSRuntimeMode.Loose;
     }
 
+    /// <summary>Поле ввода по тексту его подписи (Flare связывает label и input через for/id).</summary>
+    protected static AngleSharp.Dom.IElement Field<T>(IRenderedComponent<T> cut, string label) where T : Microsoft.AspNetCore.Components.IComponent =>
+        cut.FindAll("label").FirstOrDefault(l => l.GetAttribute("for") is not null && l.TextContent.Trim() == label) is { } found
+            ? cut.Find($"#{found.GetAttribute("for")}") : throw new InvalidOperationException($"Нет поля «{label}»");
+
+    /// <summary>Кнопка по тексту или aria-label.</summary>
+    protected static AngleSharp.Dom.IElement Button<T>(IRenderedComponent<T> cut, string text) where T : Microsoft.AspNetCore.Components.IComponent =>
+        cut.FindAll("button").First(b => b.TextContent.Contains(text, StringComparison.Ordinal) || b.GetAttribute("aria-label") == text);
+
     // Сервисы Flare освобождаются только асинхронно.
     Task IAsyncLifetime.InitializeAsync() => Task.CompletedTask;
     async Task IAsyncLifetime.DisposeAsync() => await base.DisposeAsync();
