@@ -191,7 +191,8 @@
             return _people.Where(p => p.DepartmentIds.Any(scope.Contains) || p.ParentId is { } parent && scope.Contains(parent));
         }
     }
-    private decimal[] Saved => _calendar is null ? new decimal[7] : [_calendar.Monday, _calendar.Tuesday, _calendar.Wednesday, _calendar.Thursday, _calendar.Friday, _calendar.Saturday, _calendar.Sunday];
+    // Сохранённые часы недели: снимаются при каждой загрузке календаря, а не собираются на каждом рендере.
+    private decimal[] Saved { get; set; } = new decimal[7];
     private bool Dirty => _calendar is not null && (!_hours.SequenceEqual(Saved) || _timeZone != _calendar.TimeZone);
 
     /// <summary>Вычеты блоков в день недели (0 — понедельник в порядке экрана).</summary>
@@ -215,17 +216,24 @@
         {
             _actors = await Session.Get<ActorModel[]>(Session.TeamPath("actors"));
             _people = _actors.Where(a => a.Kind == "Person").OrderBy(a => a.Name).ToArray();
-            await LoadCalendar();
+            await LoadCalendar(keepDraft: false);
             _loadedFor = ActorId;
         });
     }
 
-    private async Task LoadCalendar()
+    // Вычеты и периоды — свои ресурсы: после операции с ними обновляются списки и сохранённые часы, а несохранённые
+    // часы недели и часовой пояс остаются как их ввели (keepDraft). Черновик принимает сохранённое только при загрузке
+    // и после «Сохранить график».
+    private async Task LoadCalendar(bool keepDraft = true)
     {
         _calendar = await Session.Get<CalendarDto>(CalendarPath);
-        _timeZone = _calendar.TimeZone;
-        _hours = Saved.ToArray();
-        _lastHours = Saved.ToArray();
+        Saved = [_calendar.Monday, _calendar.Tuesday, _calendar.Wednesday, _calendar.Thursday, _calendar.Friday, _calendar.Saturday, _calendar.Sunday];
+        if (!keepDraft)
+        {
+            _timeZone = _calendar.TimeZone;
+            _hours = Saved.ToArray();
+            _lastHours = Saved.ToArray();
+        }
         _window = (await Session.Get<CapacityDto[]>(Session.TeamPath($"capacity?from={Today:yyyy-MM-dd}&to={Today.AddDays(13):yyyy-MM-dd}"))).Where(r => r.ActorId == ActorId).ToArray();
     }
 
@@ -233,7 +241,7 @@
     private void Toggle(Guid id, bool on) { if (on) _applyTo.Add(id); else _applyTo.Remove(id); }
     private CalendarRequest Request => new(_timeZone, _hours[0], _hours[1], _hours[2], _hours[3], _hours[4], _hours[5], _hours[6]);
 
-    private Task Save() => Run(async () => { await Session.Send(HttpMethod.Put, CalendarPath, Request); await LoadCalendar(); _saved = true; });
+    private Task Save() => Run(async () => { await Session.Send(HttpMethod.Put, CalendarPath, Request); await LoadCalendar(keepDraft: false); _saved = true; });
 
     private Task Apply() => Run(async () =>
     {

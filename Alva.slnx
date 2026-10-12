@@ -12,6 +12,7 @@
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Alva.Data.Tests/Alva.Data.Tests.csproj" />
+    <Project Path="tests/Alva.Client.UI.Tests/Alva.Client.UI.Tests.csproj" />
     <Project Path="tests/Flare.Components.Gantt.Tests/Flare.Components.Gantt.Tests.csproj" />
   </Folder>
 </Solution>
