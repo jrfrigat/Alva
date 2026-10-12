@@ -8,7 +8,7 @@
     </div>
     <div class="alva-sprint-head__row">
         <div class="alva-sprint-head__text">
-            <h1 class="alva-sprint-head__title">@Sprint.Name</h1>
+            <ReadyHeading Class="alva-sprint-head__title">@Sprint.Name</ReadyHeading>
             @if (!string.IsNullOrWhiteSpace(Sprint.Goal)) { <p class="alva-sprint-head__goal">@Sprint.Goal</p> }
             <span class="alva-sprint-head__meta alva-num">@AlvaFormat.Period(Sprint.StartDate, Sprint.EndDate)</span>
             <span class="alva-sprint-head__meta alva-num"><FlareIconView Value="@MaterialDesign3Icons.Regular.Timelapse" Size="16px" /> Закрыто: <b>@AlvaFormat.Hours(Done) ч</b> из @AlvaFormat.Hours(Total) ч (@Percent(Done, Total)%)</span>

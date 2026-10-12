@@ -8,7 +8,7 @@
 @if(SprintId is null && !Planning)
 {
 <AlvaPageHeader Category="Планирование · Спринты" Title="Спринты команды" Description="Цели, сроки и состав спринтов команды.">
-    <Actions><FlareButton Size="ButtonSize.Sm" OnClick="New" Disabled="@(Session.TeamId is null)">Новый спринт</FlareButton></Actions>
+    <Actions><FlareButton @ref="_newButton" Size="ButtonSize.Sm" OnClick="New" Disabled="@(Session.TeamId is null)">Новый спринт</FlareButton></Actions>
 </AlvaPageHeader>
 }
 <PageFeedback Loading="_busy" Error="@_error" />
@@ -20,7 +20,7 @@ else
 <FlareCard Variant="CardVariant.Outlined"><FlareCardContent><FlareStack Gap="FlareSpacing.Large">
     <FlareStack Row StretchFirst><FlareText Element="h2" Typo="TypographyScale.TitleLarge">@(_editing.Id==Guid.Empty?"Новый спринт":"Параметры спринта")</FlareText><FlareButton OnClick="Close" Variant="ButtonVariant.Text" Size="ButtonSize.Sm">Закрыть</FlareButton></FlareStack>
     <FlareGrid MinColumnWidth="min(100%,15rem)">
-        <FlareTextField Label="Название" @bind-Value="_editing.Name" Required /><FlareTextField Label="Цель" @bind-Value="_editing.Goal" />
+        <FlareTextField Label="Название" @bind-Value="_editing.Name" Required Autofocus /><FlareTextField Label="Цель" @bind-Value="_editing.Goal" />
         <FlareDatePicker Label="Начало" @bind-Value="_start" /><FlareDatePicker Label="Окончание" @bind-Value="_end" Min="_start" />
         <FlareSelect TValue="string" Label="Статус" Items="_statuses" ItemLabel="Labels.Status" @bind-Value="_editing.Status" />
     </FlareGrid>
@@ -30,8 +30,8 @@ else
 @if(Planning)
 {
     if(SprintId.HasValue && Current is null){if(_loaded){<UnavailableState Title="Спринт не найден или недоступен" BackHref="/sprints" BackLabel="К спринтам" />}}
-    else if(PlanSprint is not null){<SprintPlanning Sprint="PlanSprint" Sprints="_sprints" Tasks="_tasks" Changed="Reload" OnParams="()=>Edit(PlanSprint)" />}
-    else if(_loaded){<FlareEmptyState Title="Нечего планировать" Description="Создайте спринт, чтобы собрать в него задачи из пула."><ActionContent><FlareButton Size="ButtonSize.Sm" OnClick="New">Новый спринт</FlareButton></ActionContent></FlareEmptyState>}
+    else if(PlanSprint is not null){<SprintPlanning @ref="_planning" Sprint="PlanSprint" Sprints="_sprints" Tasks="_tasks" Changed="Reload" OnParams="()=>Edit(PlanSprint)" />}
+    else if(_loaded){<FlareEmptyState Title="Нечего планировать" Description="Создайте спринт, чтобы собрать в него задачи из пула."><ActionContent><FlareButton @ref="_emptyNewButton" Size="ButtonSize.Sm" OnClick="New">Новый спринт</FlareButton></ActionContent></FlareEmptyState>}
 }
 else if(SprintId is null){<SprintRegistry Sprints="_sprints" Tasks="_tasks" />}
 else if(Current is not null){<SprintDetails Sprint="Current" Tasks="_tasks" OnEdit="@(()=>Navigation.NavigateTo($"/sprints/{Current.Id}/plan"))" Changed="Load" />}
@@ -49,7 +49,15 @@ else if(_loaded){<UnavailableState Title="Спринт не найден или 
     private Task Load()=>Run(async()=>{await Session.Initialize();if(Session.TeamId is null)return;_sprints=await Session.Get<SprintModel[]>(Session.TeamPath("sprints"));_tasks=await Session.Get<TaskModel[]>(Session.TeamPath("tasks"));_loaded=true;});
     private void New(){_editing=new SprintModel();_start=_editing.StartDate;_end=_editing.EndDate;}
     private void Edit(SprintModel sprint){_editing=new SprintModel{Id=sprint.Id,Name=sprint.Name,Goal=sprint.Goal,StartDate=sprint.StartDate,EndDate=sprint.EndDate,Status=sprint.Status};_start=sprint.StartDate;_end=sprint.EndDate;}
-    private void Close()=>_editing=null;
+    private FlareButton? _newButton,_emptyNewButton;private SprintPlanning? _planning;
+    // Закрытие редактора возвращает фокус на кнопку, которой его открыли: «Параметры спринта» на доске или «Новый спринт».
+    private async Task Close()
+    {
+        var existing=_editing?.Id is { } id && id!=Guid.Empty;_editing=null;StateHasChanged();
+        if(existing && _planning is not null) await _planning.FocusParams();
+        // Ссылки @ref не обнуляются при смене маршрута, поэтому кнопку выбирает то, что сейчас на экране.
+        else if((Planning ? PlanSprint is null ? _emptyNewButton : null : SprintId is null ? _newButton : null) is { } button) await button.FocusAsync();
+    }
     /// <summary>Доска изменила спринт или задачи: открытая форма параметров устарела.</summary>
     private Task Reload(){_editing=null;return Load();}
     private Task Save()=>Run(async()=>{var s=_editing!;var saved=await Session.Save<SprintModel>(s.Id==Guid.Empty?HttpMethod.Post:HttpMethod.Put,Session.TeamPath("sprints"+(s.Id==Guid.Empty?"":$"/{s.Id}")),new SprintRequest(s.Name,s.Goal,_start!.Value,_end!.Value,s.Status));_sprints=await Session.Get<SprintModel[]>(Session.TeamPath("sprints"));_editing=null;Navigation.NavigateTo($"/sprints/{saved.Id}/plan");});

@@ -18,7 +18,7 @@
     </div>
     <div class="alva-task__heading">
         <span class="alva-task__bar alva-task__bar--@RiskTone.ToString().ToLowerInvariant()" aria-hidden="true"></span>
-        <h1 class="alva-task__title"><span class="alva-task__code">@Code(Item)</span> @Item.Title</h1>
+        <ReadyHeading Class="alva-task__title"><span class="alva-task__code">@Code(Item)</span> @Item.Title</ReadyHeading>
         <AlvaStatusChip Tone="AlvaTones.Status(Item.Status)">@Labels.Status(Item.Status)</AlvaStatusChip>
     </div>
     <PageFeedback Error="@_error" />

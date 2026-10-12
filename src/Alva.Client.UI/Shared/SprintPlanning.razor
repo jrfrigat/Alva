@@ -30,7 +30,7 @@
                 }
             </ChildContent>
         </FlareMenu>
-        <FlareButton Variant="ButtonVariant.Tonal" Size="ButtonSize.Sm" OnClick="() => OnParams.InvokeAsync()">
+        <FlareButton @ref="_paramsButton" Variant="ButtonVariant.Tonal" Size="ButtonSize.Sm" OnClick="() => OnParams.InvokeAsync()">
             <LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.Tune" Size="18px" /></LeadingIcon>
             <ChildContent>Параметры спринта</ChildContent>
         </FlareButton>
@@ -185,6 +185,10 @@
     [Parameter] public TaskModel[] Tasks { get; set; } = [];
     [Parameter] public EventCallback Changed { get; set; }
     [Parameter] public EventCallback OnParams { get; set; }
+
+    private FlareButton? _paramsButton;
+    /// <summary>Возвращает фокус на «Параметры спринта», когда закрыт открытый ею редактор.</summary>
+    public ValueTask FocusParams() => _paramsButton?.FocusAsync() ?? ValueTask.CompletedTask;
 
     private ActorModel[] _actors = [];
     private ProjectModel[] _projects = [];

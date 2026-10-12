@@ -6,6 +6,9 @@
 /.clinerules/
 /.codex/
 /.agents/
+/.claude/
+/AGENTS.md
+/CLAUDE.md
 
 # Local configuration and credentials
 .env

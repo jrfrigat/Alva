@@ -20,7 +20,7 @@ else if (TaskId.HasValue)
 else
 {
 <AlvaPageHeader Category="Планирование · Задачи" Title="@PageHeading" Description="Пул задач команды: дерево, статусы и назначения.">
-    <Actions><FlareButton OnClick="NewTask" Disabled="@(Session.TeamId is null)" Size="ButtonSize.Sm">Новая задача</FlareButton></Actions>
+    <Actions><FlareButton @ref="_newButton" OnClick="NewTask" Disabled="@(Session.TeamId is null)" Size="ButtonSize.Sm">Новая задача</FlareButton></Actions>
 </AlvaPageHeader>
 <PageFeedback Error="@_error" Loading="_busy" />
 @if(Session.TeamId is null) { <TeamRequired /> }
@@ -50,7 +50,7 @@ else
 {
 <FlareCard Variant="CardVariant.Outlined"><FlareCardContent><FlareStack Gap="FlareSpacing.Medium">
     <FlareStack Row StretchFirst><FlareText Element="h2" Typo="TypographyScale.TitleLarge">@(_editing.Id == Guid.Empty ? "Новая задача" : "Карточка задачи")</FlareText><FlareButton OnClick="Close" Variant="ButtonVariant.Text" Size="ButtonSize.Sm">Закрыть</FlareButton></FlareStack>
-    <FlareTextField Label="Название" @bind-Value="_editing.Title" Required MaxLength="500" />
+    <FlareTextField Label="Название" @bind-Value="_editing.Title" Required MaxLength="500" Autofocus />
     <FlareTextArea Label="Описание" @bind-Value="_editing.Description" AutoGrow />
     <FlareGrid MinColumnWidth="min(100%,12rem)">
         <FlareSelect TValue="string" Label="Статус" Items="_statuses" ItemLabel="Labels.Status" @bind-Value="_editing.Status" />
@@ -95,13 +95,16 @@ else
     private Task Load()=>Run(async()=>{await Session.Initialize();if(Session.TeamId is null)return;_tasks=await Session.Get<TaskModel[]>(Session.TeamPath("tasks"));_projects=await Session.Get<ProjectModel[]>(Session.TeamPath("projects"));_actors=await Session.Get<ActorModel[]>(Session.TeamPath("actors"));_sprints=await Session.Get<SprintModel[]>(Session.TeamPath("sprints"));_loaded=true;});
     private void NewTask(){_editing=new TaskModel { TeamId=Session.TeamId!.Value };_history=[];}
     private void NewChild(Guid id){NewTask();_editing!.ParentId=id;}
-    private void Close(){_editing=null;_history=[];}
+    private FlareButton? _newButton;
+    private void Hide(){_editing=null;_history=[];}
+    // Закрытие редактора возвращает фокус на кнопку, которой его открыли, а не роняет его на body.
+    private async Task Close(){Hide();StateHasChanged();if(_newButton is not null) await _newButton.FocusAsync();}
     private Task Save()=>Run(async()=>{
         var model=_editing!;var request=new TaskRequest(model.Title,model.Description,model.Status,model.ProjectId,model.ParentId,model.EstimateHours,model.Deadline,model.StartDate,model.EndDate,model.Order,model.Id==Guid.Empty?null:model.Version);
         var saved=await Session.Save<TaskModel>(model.Id==Guid.Empty?HttpMethod.Post:HttpMethod.Put,Session.TeamPath("tasks"+(model.Id==Guid.Empty?"":$"/{model.Id}")),request);
         if(model.AssignmentTargetId.HasValue)await Session.Send(HttpMethod.Put,Session.TeamPath($"tasks/{saved.Id}/assignment"),new AssignmentRequest(model.AssignmentTargetId.Value,model.ResolvedPersonId));
         else if(model.Id!=Guid.Empty && _tasks.Any(t=>t.Id==model.Id && t.AssignmentTargetId.HasValue))await Session.Send(HttpMethod.Delete,Session.TeamPath($"tasks/{saved.Id}/assignment"),new{});
-        Close();Navigation.NavigateTo($"/tasks/{saved.Id}");
+        Hide();Navigation.NavigateTo($"/tasks/{saved.Id}");
     });
-    private Task Archive()=>Run(async()=>{await Session.Send(HttpMethod.Delete,Session.TeamPath($"tasks/{_editing!.Id}"),new{});Close();_tasks=await Session.Get<TaskModel[]>(Session.TeamPath("tasks"));});
+    private Task Archive()=>Run(async()=>{await Session.Send(HttpMethod.Delete,Session.TeamPath($"tasks/{_editing!.Id}"),new{});Hide();_tasks=await Session.Get<TaskModel[]>(Session.TeamPath("tasks"));});
 }

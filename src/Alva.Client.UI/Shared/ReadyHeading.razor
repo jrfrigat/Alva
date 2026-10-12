@@ -1,0 +1,15 @@
+@* Заголовок страницы, которая рисуется после загрузки данных. FocusOnNavigate ищет h1 сразу после перехода, когда
+   его ещё нет, поэтому заголовок сам принимает фокус при первом появлении. Обычные обновления страницы его не трогают. *@
+<h1 @ref="_heading" class="@Class" tabindex="-1">@ChildContent</h1>
+
+@code {
+    [Parameter] public string? Class { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    private ElementReference _heading;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender) await _heading.FocusAsync(preventScroll: true);
+    }
+}
