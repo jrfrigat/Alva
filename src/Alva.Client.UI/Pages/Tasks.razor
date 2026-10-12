@@ -31,7 +31,9 @@ else
     else {
     <FlareDataTree TItem="TaskModel" Items="Roots" KeySelector="t => t!.Id" ChildrenProvider="Children" HasChildren="HasChildren" ItemClick="Open" Height="34rem">
         <ItemTemplate Context="task"><FlareStack Row Align="FlareAlignItems.Center" Gap="FlareSpacing.Small" Wrap>
-            <FlareText>@task!.Title</FlareText><AlvaStatusChip Tone="AlvaTones.Status(task.Status)">@Labels.Status(task.Status)</AlvaStatusChip>
+            @* Ссылка делает задачу доступной с клавиатуры (Tab, Enter), пока у FlareDataTree нет паттерна дерева
+               (Flare TASK-236). Клик по ней не всплывает к ItemClick строки, чтобы навигация была одна. *@
+            <span @onclick:stopPropagation="true"><FlareLink Href="@($"/tasks/{task!.Id}")">@task.Title</FlareLink></span><AlvaStatusChip Tone="AlvaTones.Status(task.Status)">@Labels.Status(task.Status)</AlvaStatusChip>
             @if(task.EstimateHours.HasValue) { <FlareText Typo="TypographyScale.LabelSmall">@task.EstimateHours ч</FlareText> }
         </FlareStack></ItemTemplate>
     </FlareDataTree>
