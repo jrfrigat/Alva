@@ -126,7 +126,7 @@ public static class AlvaTheme
             PaddingInlineXl = "20px",
             IconSizeSm = "18px",
             IconSizeMd = "18px",
-            OutlinedBorderColor = "#CBD5E1",
+            OutlinedBorderColor = BorderStrong,
         },
 
         // «Standard Inputs: 30px compact height, #FFFFFF background, 1px border #CBD5E1».
@@ -137,8 +137,8 @@ public static class AlvaTheme
             OutlinedRadius = Radius,
             FilledVariantRadius = Radius,
             OutlinedVariantRadius = Radius,
-            BorderColor = "#CBD5E1",
-            OutlinedVariantBorderColor = "#CBD5E1",
+            BorderColor = BorderStrong,
+            OutlinedVariantBorderColor = BorderStrong,
         },
 
         // Пункт меню макета: строка ~30px, радиус 4px; активный залит primary-container,
@@ -159,19 +159,19 @@ public static class AlvaTheme
         Layout = d.Layout with
         {
             AppBarHeight = "56px",
-            AppBarBg = "#FFFFFF",
+            AppBarBg = Plane,
             AppBarShadow = "0 1px 8px rgba(0, 0, 0, 0.04)",
-            DrawerBg = "#FFFFFF",
-            RailBg = "#FFFFFF",
-            ShellBg = "#F8F9FF",
+            DrawerBg = Plane,
+            RailBg = Plane,
+            ShellBg = "var(--flare-color-surface)",
             ContentPadding = "1rem 1.25rem",
         },
 
         // «Level 1: Pure #FFFFFF cards ... bounded by an explicit 1px outline of #E2E8F0».
         Card = d.Card with
         {
-            OutlinedBg = "#FFFFFF",
-            OutlinedBorder = "1px solid #E2E8F0",
+            OutlinedBg = Plane,
+            OutlinedBorder = "1px solid var(--alva-border)",
             Radius = Radius,
         },
 
@@ -183,6 +183,15 @@ public static class AlvaTheme
 
     /// <summary>Единый радиус дизайна для кнопок, полей, карточек и бейджей.</summary>
     private const string Radius = "6px";
+
+    // Цвета плоскостей и рамок — роли палитры и переменные темы (alva.css), а не hex: так у каждого режима
+    // свои значения, а светлый совпадает с дизайном (#FFFFFF, #CBD5E1, #E2E8F0).
+
+    /// <summary>Плоскость шапки, меню и карточек: белая в светлой схеме, самая тёмная в тёмной.</summary>
+    private const string Plane = "var(--flare-color-surface-container-lowest)";
+
+    /// <summary>Рамка полей и контурных кнопок.</summary>
+    private const string BorderStrong = "var(--alva-border-strong)";
 
     /// <summary>Одна ступень шкалы: гарнитура, насыщенность, размер, интерлиньяж, трекинг.</summary>
     private static TypeStyle Type(string weight, string size, string lineHeight, string spacing) => new()

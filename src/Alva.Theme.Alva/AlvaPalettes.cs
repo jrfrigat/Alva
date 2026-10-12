@@ -184,6 +184,31 @@ public static class AlvaPalettes
         OnTertiaryFixedVariant = "#5516BE",
     };
 
+    /// <summary>
+    /// Высокая контрастность — тёмная схема с усиленными текстом, рамками и плоскостями. Без неё Flare
+    /// ставит корню приложения класс <c>flare-mode-high-contrast</c>, для которого у палитры нет правила,
+    /// и внутри приложения действует светлая схема поверх тёмной страницы.
+    /// </summary>
+    private static readonly ColorScheme HighContrast = Dark with
+    {
+        Primary = "#DCE1FF",
+        OnPrimary = "#000B33",
+        Surface = "#000A16",
+        Background = "#000A16",
+        SurfaceDim = "#000000",
+        SurfaceContainerLowest = "#000000",
+        SurfaceContainerLow = "#06121F",
+        SurfaceContainer = "#0B1C30",
+        SurfaceContainerHigh = "#12233A",
+        SurfaceContainerHighest = "#182A42",
+        OnSurface = "#FFFFFF",
+        OnBackground = "#FFFFFF",
+        OnSurfaceVariant = "#EAF1FF",
+        OnSurfaceVariant2 = "#C4C5D7",
+        Outline = "#C4C5D7",
+        OutlineVariant = "#8B93A5",
+    };
+
     /// <summary>Единственная палитра Alva: дизайн-источник не описывает альтернативных.</summary>
     public static readonly Palette Sapphire = new()
     {
@@ -192,6 +217,7 @@ public static class AlvaPalettes
         Source = SourceName,
         Light = Light,
         Dark = Dark,
+        HighContrast = HighContrast,
     };
 
     /// <summary>Все палитры темы.</summary>

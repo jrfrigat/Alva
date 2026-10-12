@@ -2,15 +2,42 @@
    ограничено её же классом: тема может быть активна и для поддерева (FlareThemeScope). */
 
 /* Размеры и цвета компонентов (кнопки, поля, меню, оболочка, карточки) заданы токенами в
-   AlvaTheme.cs. Здесь — только то, для чего у Flare 0.43.0 токена нет. Переменные на
+   AlvaTheme.cs. Здесь — только то, для чего у Flare 0.43.0 токена нет. Переменные Flare на
    .flare-theme-alva отсюда не задаются: стиль темы идёт позже с тем же селектором и побеждает. */
+
+/* Нейтрали дизайна, которых нет среди ролей палитры: рамки, подложки шапок таблиц, hover и
+   тепловая шкала загрузки. Светлые значения — из DESIGN.md; у тёмного режима и высокой контрастности
+   свои, из ролей их схем палитры. Высокую контрастность Flare 0.43 отмечает на <html> классом
+   flare-mode-dark, а на корне приложения — flare-mode-high-contrast, поэтому правило перечисляет оба.
+   Всё приложение (тема, app.css) берёт эти цвета отсюда, а не из литералов, — иначе тёмный режим даёт
+   светлый текст на белом. */
+.flare-theme-alva {
+  --alva-border: #E2E8F0;
+  --alva-border-strong: #CBD5E1;
+  --alva-subtle: #F8FAFC;
+  --alva-hover: #F1F5F9;
+  --alva-heat-under: #F0F4FF;
+  --alva-heat-balance: #DCE9FF;
+  --alva-heat-tension: #B7C4FF;
+}
+
+.flare-theme-alva.flare-mode-dark,
+.flare-theme-alva.flare-mode-high-contrast {
+  --alva-border: var(--flare-color-outline-variant);
+  --alva-border-strong: var(--flare-color-outline);
+  --alva-subtle: var(--flare-color-surface-container-low);
+  --alva-hover: var(--flare-color-surface-container);
+  --alva-heat-under: var(--flare-color-surface-container-low);
+  --alva-heat-balance: var(--flare-color-surface-container-high);
+  --alva-heat-tension: var(--flare-color-secondary-container);
+}
 
 /* DESIGN.md, Components: «Alternating row background on subtle hover (#F1F5F9)». Flare красит
    зебру и hover сетки этими переменными, а в DataGridTokens их нет; на элементе сетки они
    перекрывают значение корня темы и не трогают hover остальных компонентов. */
 .flare-theme-alva .flare-datagrid {
-  --flare-state-hover-layer: #F1F5F9;
-  --flare-stripe-bg: #F8FAFC;
+  --flare-state-hover-layer: var(--alva-hover);
+  --flare-stripe-bg: var(--alva-subtle);
 }
 
 /* DESIGN.md, Typography: «Tabular figures (tnum) ... strictly mandated for all workload
@@ -36,15 +63,15 @@
 .flare-theme-alva .flare-datagrid__th {
   height: 34px;
   padding: 0 8px;
-  background: #F8FAFC;
-  color: #434655;
+  background: var(--alva-subtle);
+  color: var(--flare-color-on-surface-variant);
   font-size: 11px;
   font-weight: 600;
   line-height: 14px;
   letter-spacing: 0.03em;
   text-transform: uppercase;
   /* Дизайн разделяет плоскости рамкой, а не тенью и не тональной высотой. */
-  border-bottom: 1px solid #E2E8F0;
+  border-bottom: 1px solid var(--alva-border);
 }
 
 /* Ячейки дизайна: внутренние отступы 4px по вертикали и 8px по горизонтали. */
@@ -58,7 +85,7 @@
 .flare-theme-alva .alva-nav-group-label {
   margin-top: 8px;
   padding: 4px 12px;
-  color: #434655;
+  color: var(--flare-color-on-surface-variant);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.05em;
@@ -69,7 +96,7 @@
    Отступ задан токеном Tree.Indent; токена направляющей у Flare нет — это рамка вложенного списка. */
 .flare-theme-alva .flare-tree-item__children {
   margin-left: 11px;
-  border-left: 1px dashed #CBD5E1;
+  border-left: 1px dashed var(--alva-border-strong);
 }
 
 /* Дорожка линейного прогресса в макете — surface-container (#E5EEFF). Flare 0.43.0 красит её
@@ -82,7 +109,7 @@
 /* Линия перед нижним блоком меню (Моя работа / Данные / Настройки). */
 .flare-theme-alva .alva-nav-sep {
   margin: 4px 12px 8px;
-  border-top: 1px solid #E2E8F0;
+  border-top: 1px solid var(--alva-border);
 }
 
 /* ------------------------------------------------------ Семантика риска и ёмкости -------------
