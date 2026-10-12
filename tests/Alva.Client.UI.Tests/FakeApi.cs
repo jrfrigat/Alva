@@ -26,6 +26,7 @@ public sealed class FakeApi : IApiService
     public Guid? TeamId => TeamGuid;
     public string TeamName => "Команда";
     public bool Initialized => true;
+    public bool SupportsDataTransfer { get; set; } = true;
     public event Action? Changed { add { } remove { } }
 
     public string TeamPath(string resource) => $"teams/{TeamGuid}/{resource}";
@@ -36,7 +37,10 @@ public sealed class FakeApi : IApiService
     public Task SelectWorkspace(Guid id) => Task.CompletedTask;
     public Task SelectTeam(Guid id) => Task.CompletedTask;
     public Task RefreshUser() => Task.CompletedTask;
-    public Task Import(string format, Stream stream) => Task.CompletedTask;
+    /// <summary>Импорт: вернуть исключение, чтобы он упал; число успешных импортов — в Imports.</summary>
+    public Func<Exception?> OnImport { get; set; } = () => null;
+    public int Imports { get; private set; }
+    public Task Import(string format, Stream stream) { if (OnImport() is { } error) return Task.FromException(error); Imports++; return Task.CompletedTask; }
 
     public Task<T> Get<T>(string path)
     {

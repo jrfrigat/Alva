@@ -15,6 +15,7 @@ public sealed class AlvaSession(IApiService api)
     public Guid? TeamId => api.TeamId;
     public string TeamName => api.TeamName;
     public bool Initialized => api.Initialized;
+    public bool SupportsDataTransfer => api.SupportsDataTransfer;
     public event Action? Changed { add => api.Changed += value; remove => api.Changed -= value; }
     public string TeamPath(string resource) => api.TeamPath(resource);
     public Task Initialize() => api.Initialize();

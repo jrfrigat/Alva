@@ -27,6 +27,9 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
     public Guid? TeamId { get; private set; }
     public string TeamName => Teams.FirstOrDefault(t => t.Id == TeamId)?.Name ?? "Выбрать команду";
     public bool Initialized { get; private set; }
+
+    /// <summary>Разбор JSON/CSV/XLSX и выгрузка живут на сервере; демо хранит данные только в этом браузере.</summary>
+    public bool SupportsDataTransfer => false;
     public event Action? Changed;
 
     public string TeamPath(string resource) => $"api/teams/{TeamId}/{resource}";
@@ -96,13 +99,11 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
         await Task.CompletedTask;
     }
 
-    public async Task Import(string format, Stream stream)
-    {
-        // Демо не имеет серверного хранилища: файл читается, чтобы проверить поток, и не применяется.
-        using var reader = new StreamReader(stream);
-        await reader.ReadToEndAsync();
-        await Load();
-    }
+    // Раньше файл читался и молча отбрасывался, а страница сообщала об успешном импорте.
+    public Task Import(string format, Stream stream) => throw new NotSupportedException(DemoTransferNote);
+
+    /// <summary>Почему в демо нет импорта и экспорта — показывается на странице «Данные» до выбора файла.</summary>
+    internal const string DemoTransferNote = "В демо данные хранятся только в этом браузере: импорт и экспорт файлов работают в версии Alva с сервером.";
 
     public async Task<T> Get<T>(string path)
     {

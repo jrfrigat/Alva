@@ -16,6 +16,7 @@ public sealed class ApiServiceHttp(HttpClient http, IJSRuntime js) : IApiService
     public Guid? TeamId { get; private set; }
     public string TeamName => Teams.FirstOrDefault(t => t.Id == TeamId)?.Name ?? "Выбрать команду";
     public bool Initialized { get; private set; }
+    public bool SupportsDataTransfer => true;
     public event Action? Changed;
     public string TeamPath(string resource) => $"api/teams/{TeamId}/{resource}";
     public async Task Initialize()

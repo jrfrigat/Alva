@@ -15,6 +15,9 @@ public interface IApiService
     Guid? TeamId { get; }
     string TeamName { get; }
     bool Initialized { get; }
+
+    /// <summary>Импорт и экспорт файлов доступны (их выполняет сервер; демо без сервера их не поддерживает).</summary>
+    bool SupportsDataTransfer { get; }
     event Action? Changed;
 
     string TeamPath(string resource);
