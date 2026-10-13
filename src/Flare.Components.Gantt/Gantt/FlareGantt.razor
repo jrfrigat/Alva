@@ -126,6 +126,9 @@
     /// <summary>Widest fallback while the browser has not reported a viewport yet.</summary>
     private const double DefaultMaxSidePixels = 1200;
 
+    /// <summary>Largest share of the chart the row-header column may take; the drag in gantt.js uses the same share.</summary>
+    private const double SideShareOfChart = 0.7;
+
     /// <summary>Culture for axis captions and the first day of week; the current culture when null.</summary>
     [Parameter] public CultureInfo? Culture { get; set; }
 
@@ -179,6 +182,8 @@
     private readonly Dictionary<string, (double From, double To)> _visible = [];
     private (double Left, double Width)? _view;
     private (double From, double To)? _drawn;
+    // Ширина графика, сообщённая браузером: предел для заголовочной колонки. Ноль, пока замеров не было.
+    private double _box;
     private GanttSpan? _requested;
     private GanttSpan? _lastRange;
     private double _pendingShift;
@@ -255,13 +260,30 @@
     [JSInvokable]
     public void Viewport(double width, double side)
     {
+        // Заголовочная колонка не может занять больше графика: страницы просят 22rem (352px), а на телефоне
+        // весь график — около 284px, поэтому ось начиналась за пределами экрана. Предел тот же, что у
+        // перетаскивания в gantt.js (70% ширины и не меньше MinSidePixels), — оба пути ведут себя одинаково.
+        var before = SideEffectivePixels;
+        _box = width;
+        // Смена размеров графика меняет предел колонки и тогда, когда ширина единицы не изменилась:
+        // без перерисовки новый предел дошёл бы до разметки только со следующим пересчётом. Сравниваем
+        // действующую ширину, а не строку стиля, — иначе перерисовка случалась бы там, где ничего не видно.
+        var resized = SideEffectivePixels != before;
         var available = Math.Max(0, width - side - 1);
-        if (Math.Abs(available - _available) < 0.5) return;
-        var before = EffectiveUnitWidth;
+        if (Math.Abs(available - _available) < 0.5)
+        {
+            if (resized) StateHasChanged();
+            return;
+        }
+        var beforeUnit = EffectiveUnitWidth;
         _available = available;
         if (Endless) _ = Grow(_view?.Left ?? 0, available);
         // Перерисовка всей оси и панелей дорогая: только когда ширина единицы действительно изменилась.
-        if (EffectiveUnitWidth == before) return;
+        if (EffectiveUnitWidth == beforeUnit)
+        {
+            if (resized) StateHasChanged();
+            return;
+        }
         StateHasChanged();
         Refresh();
     }
@@ -515,7 +537,29 @@
 
     private string RootClass => Compact ? BuildCssClass(Css.Classes.Gantt.Compact) : BuildCssClass();
 
-    private string RootStyle => $"--flare-gantt-side:{(Compact ? "0px" : _side ?? SideWidth)};{Style}";
+    private string RootStyle => $"--flare-gantt-side:{(Compact ? "0px" : SideLength)};{Style}";
+
+    /// <summary>Widest the row-header column may get, so the axis stays on screen beside it; endless until the
+    /// browser reports the chart box, where nothing is capped.</summary>
+    private double SideCap => _box <= 0 ? double.PositiveInfinity : Math.Max(MinSidePixels, _box * SideShareOfChart);
+
+    /// <summary>Row-header width that takes effect: the requested length until the chart is narrower than it,
+    /// and the cap after that.</summary>
+    private double SideEffectivePixels => Math.Min(SidePixels, SideCap);
+
+    /// <summary>
+    /// Width of the row-header column as it goes into the style. A length that fits the chart is passed through
+    /// untouched (so nothing changes on a wide screen); a wider one is capped with <c>min()</c>, which every
+    /// consumer of <c>--flare-gantt-side</c> sees at once — the column and the offset of the axis alike.
+    /// </summary>
+    private string SideLength
+    {
+        get
+        {
+            var side = _side ?? SideWidth;
+            return ParseLength(side) is { } pixels && pixels <= SideCap ? side : $"min({side}, {Math.Round(SideCap)}px)";
+        }
+    }
 
     private string TickClass(GanttTick tick) =>
         Scale is GanttScale.Day && _nonWorkingDays.Contains(DateOnly.FromDateTime(tick.Span.Start))

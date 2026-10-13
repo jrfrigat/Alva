@@ -15,6 +15,24 @@ public sealed class GanttSideWidthTests : GanttTestBase
                   .Add(x => x.DefaultSideWidth, "22rem")
                   .Add(x => x.SideWidthChanged, (string width) => seen.Add(width)));
 
+    // На узком экране запрошенные 22rem (352px) шире самого графика (около 284px), и ось начиналась за
+    // пределами экрана. Колонка уступает оси: не больше семи десятых графика — тот же предел, что у
+    // перетаскивания в gantt.js, поэтому значение из параметра и после перетаскивания ведут себя одинаково.
+    [Fact]
+    public void The_column_yields_to_the_axis_when_the_chart_is_narrow()
+    {
+        var cut = Chart(p => p.Add(x => x.Rows, new[] { new Node("r") }),
+            g => g.Add(x => x.SideWidth, "22rem"));
+
+        // Пока браузер не сообщил размеров, ширину берут как есть: на широком экране ничего не меняется.
+        Assert.Contains("--flare-gantt-side:22rem", cut.Find(".flare-gantt").GetAttribute("style"));
+
+        cut.InvokeAsync(() => cut.Instance.Viewport(284, 0));
+
+        // 284 × 0.7 = 198,8: колонка шире не станет, и оси остаётся около 85px.
+        cut.WaitForAssertion(() => Assert.Contains("--flare-gantt-side:min(22rem, 199px)", cut.Find(".flare-gantt").GetAttribute("style")));
+    }
+
     [Fact]
     public void The_separator_is_focusable_and_reports_the_width()
     {
