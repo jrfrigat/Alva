@@ -15,8 +15,19 @@
                     @Corner
                     @if (ResizableSide)
                     {
-                        <div class="@Css.Classes.Gantt.SideHandle" role="separator" aria-orientation="vertical"
-                             aria-label="@EffectiveTexts.ResizeSide" title="@EffectiveTexts.ResizeSide"></div>
+                        @* Клавиатура и один указатель: ширину меняют стрелками на разделителе и кнопками, не только перетаскиванием. *@
+                        <div class="@Css.Classes.Gantt.SideControls">
+                            <button type="button" class="@Css.Classes.Gantt.SideButton" aria-label="@EffectiveTexts.Narrower" title="@EffectiveTexts.Narrower"
+                                    @onclick="() => StepSide(-SideStep)">−</button>
+                            <button type="button" class="@Css.Classes.Gantt.SideButton" aria-label="@EffectiveTexts.Wider" title="@EffectiveTexts.Wider"
+                                    @onclick="() => StepSide(SideStep)">+</button>
+                            <button type="button" class="@Css.Classes.Gantt.SideButton" aria-label="@EffectiveTexts.ResetSide" title="@EffectiveTexts.ResetSide"
+                                    @onclick="ResetSide">⟲</button>
+                        </div>
+                        <div class="@Css.Classes.Gantt.SideHandle" role="separator" aria-orientation="vertical" tabindex="0"
+                             aria-label="@EffectiveTexts.ResizeSide" title="@EffectiveTexts.ResizeSide"
+                             aria-valuenow="@SideValueText(SidePixels)" aria-valuemin="@SideValueText(MinSidePixels)" aria-valuemax="@SideValueText(MaxSidePixels)"
+                             @onkeydown="SideKeyDown"></div>
                     }
                 </div>
             }
@@ -98,8 +109,22 @@
     /// <summary>Lets the user drag the right edge of the row-header column.</summary>
     [Parameter] public bool ResizableSide { get; set; }
 
+    /// <summary>
+    /// Width the row-header column returns to on reset (keyboard Home or the reset button); <see cref="SideWidth"/> when null.
+    /// </summary>
+    [Parameter] public string? DefaultSideWidth { get; set; }
+
     /// <summary>Raised with the new row-header width as a CSS length in pixels when the user has dragged the edge.</summary>
     [Parameter] public EventCallback<string> SideWidthChanged { get; set; }
+
+    /// <summary>Step of one keyboard or button change of the row-header width, in pixels. The drag in gantt.js uses the same floor.</summary>
+    private const double SideStep = 16;
+
+    /// <summary>Narrowest the row-header column may get, in pixels.</summary>
+    private const double MinSidePixels = 120;
+
+    /// <summary>Widest fallback while the browser has not reported a viewport yet.</summary>
+    private const double DefaultMaxSidePixels = 1200;
 
     /// <summary>Culture for axis captions and the first day of week; the current culture when null.</summary>
     [Parameter] public CultureInfo? Culture { get; set; }
@@ -150,6 +175,7 @@
     private double _available;
     private string? _side;
     private string? _sideParameter;
+    private string? _sideDefault;
     private readonly Dictionary<string, (double From, double To)> _visible = [];
     private (double Left, double Width)? _view;
     private (double From, double To)? _drawn;
@@ -314,6 +340,57 @@
         StateHasChanged();
     }
 
+    /// <summary>Current row-header width in pixels: the value the user set, or <see cref="SideWidth"/>.</summary>
+    private double SidePixels => ParseLength(_side) ?? ParseLength(SideWidth) ?? 256;
+
+    /// <summary>Widest the row-header column may get: the drag caps at 70% of the scroll width, the keyboard follows it.</summary>
+    private double MaxSidePixels => _available > 0 ? Math.Max(MinSidePixels, Math.Round(0.7 * (SidePixels + _available))) : DefaultMaxSidePixels;
+
+    private static string SideValueText(double value) => ((int)Math.Round(value)).ToString(CultureInfo.InvariantCulture);
+
+    // px и rem — то, что приходит из настройки устройства; для aria и шага ширина нужна в пикселях.
+    private static double? ParseLength(string? length)
+    {
+        if (string.IsNullOrWhiteSpace(length)) return null;
+        var value = length.Trim();
+        if (value.EndsWith("rem", StringComparison.OrdinalIgnoreCase))
+            return double.TryParse(value[..^3], NumberStyles.Float, CultureInfo.InvariantCulture, out var rem) ? rem * 16 : null;
+        if (value.EndsWith("px", StringComparison.OrdinalIgnoreCase))
+            return double.TryParse(value[..^2], NumberStyles.Float, CultureInfo.InvariantCulture, out var px) ? px : null;
+        return double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var plain) ? plain : null;
+    }
+
+    /// <summary>Changes the row-header width by <paramref name="delta"/> pixels, keeping it between the floor and the cap.</summary>
+    private Task StepSide(double delta) => ApplySide(SidePixels + delta);
+
+    // Разделитель — focusable separator: стрелки меняют ширину, Home возвращает ширину по умолчанию.
+    private async Task SideKeyDown(KeyboardEventArgs e)
+    {
+        switch (e.Key)
+        {
+            case "ArrowLeft": await StepSide(-SideStep); break;
+            case "ArrowRight": await StepSide(SideStep); break;
+            case "Home": await ResetSide(); break;
+        }
+    }
+
+    // Тот же путь, что и у перетаскивания: ширина сообщается через SideWidthChanged, поэтому настройка сохраняется.
+    private async Task ApplySide(double width)
+    {
+        var clamped = Math.Min(MaxSidePixels, Math.Max(MinSidePixels, Math.Round(width)));
+        _side = $"{clamped.ToString(CultureInfo.InvariantCulture)}px";
+        await SideWidthChanged.InvokeAsync(_side);
+        StateHasChanged();
+    }
+
+    /// <summary>Returns the row-header width to <see cref="DefaultSideWidth"/> (or the first width the chart received).</summary>
+    private async Task ResetSide()
+    {
+        _side = _sideDefault ?? DefaultSideWidth ?? SideWidth;
+        await SideWidthChanged.InvokeAsync(_side);
+        StateHasChanged();
+    }
+
     /// <inheritdoc />
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -379,6 +456,8 @@
     /// <inheritdoc />
     protected override void OnParametersSet()
     {
+        // Ширина, к которой возвращает сброс: дефолт страницы, иначе первая полученная ширина.
+        _sideDefault ??= DefaultSideWidth ?? SideWidth;
         var before = Axis;
         Axis = new GanttAxis(Range, Scale, Culture);
         if (_lastRange is { } last && last != Range)

@@ -19,7 +19,7 @@ public sealed record GanttTexts(string SelfLink, string Cycle, string Duplicate,
         "This link already exists.",
         "Expand", "Collapse",
         "Linking from {0}. Choose the successor and press Enter.",
-        "{0} moved to {1}.") { ResizeSide = "Drag to resize the column" };
+        "{0} moved to {1}.") { ResizeSide = "Resize the column: drag, arrow keys, Home to reset", Narrower = "Narrower column", Wider = "Wider column", ResetSide = "Reset column width" };
 
     /// <summary>Russian texts.</summary>
     public static GanttTexts Russian { get; } = new(
@@ -28,10 +28,19 @@ public sealed record GanttTexts(string SelfLink, string Cycle, string Duplicate,
         "Такая связь уже есть.",
         "Развернуть", "Свернуть",
         "Связь от {0}. Выберите последователя и нажмите Enter.",
-        "{0} перенесён: {1}.") { ResizeSide = "Потяните, чтобы изменить ширину колонки" };
+        "{0} перенесён: {1}.") { ResizeSide = "Измените ширину колонки: тяните мышью, стрелки, Home — сброс", Narrower = "Уже колонка", Wider = "Шире колонка", ResetSide = "Сбросить ширину колонки" };
 
     /// <summary>Label of the handle that resizes the row-header column.</summary>
     public string ResizeSide { get; init; } = "Drag to resize the column";
+
+    /// <summary>Label of the button that narrows the row-header column.</summary>
+    public string Narrower { get; init; } = "Narrower column";
+
+    /// <summary>Label of the button that widens the row-header column.</summary>
+    public string Wider { get; init; } = "Wider column";
+
+    /// <summary>Label of the button that resets the row-header column width.</summary>
+    public string ResetSide { get; init; } = "Reset column width";
 
     /// <summary>The built-in texts for <paramref name="culture"/>: Russian for <c>ru</c>, English otherwise.</summary>
     public static GanttTexts For(CultureInfo culture) => culture.TwoLetterISOLanguageName == "ru" ? Russian : English;

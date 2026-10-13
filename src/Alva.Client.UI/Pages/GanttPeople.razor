@@ -31,7 +31,7 @@ else if (_data is not null && _people is not null)
 
     <GanttLegend Notice="@_notice" Items="PeopleKey" />
 
-    <FlareGantt @ref="_chart" Range="@_range" RangeChanged="Grow" Endless="true" Scale="_scale" UnitWidth="_unit" FillWidth="true" Virtualize="true" RowHeight="36" SideWidth="@_side" ResizableSide="true" SideWidthChanged="SaveSide"
+    <FlareGantt @ref="_chart" Range="@_range" RangeChanged="Grow" Endless="true" Scale="_scale" UnitWidth="_unit" FillWidth="true" Virtualize="true" RowHeight="36" SideWidth="@_side" DefaultSideWidth="22rem" ResizableSide="true" SideWidthChanged="SaveSide"
                 NonWorking="GanttData.IsWeekend" Markers="@GanttData.TodayMarkers" Regions="@_data.SprintRegions(Sprint)" @bind-SelectedKey="_selected"
                 AriaLabel="@(_twoD ? "Синхронный Гантт 2D" : "Гантт по людям")" Class="alva-gantt">
         <Corner><span>Исполнитель · загрузка за период</span></Corner>
