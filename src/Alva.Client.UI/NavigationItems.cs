@@ -1,7 +1,8 @@
 namespace Alva.Client;
 
-/// <summary>Пункт навигации: адрес, подпись и иконка.</summary>
-public sealed record NavigationEntry(string Path, string Label, Flare.Icons.FlareIcon Icon, bool Primary);
+/// <summary>Пункт навигации: адрес, подпись и иконка. Короткая подпись — для нижней навигации телефона,
+/// где полное название не помещается; пустая означает «та же, что и полная».</summary>
+public sealed record NavigationEntry(string Path, string Label, Flare.Icons.FlareIcon Icon, bool Primary, string? ShortLabel = null);
 
 /// <summary>Раздел меню: заголовок и пункты под ним.</summary>
 public sealed record NavigationGroup(string Title, NavigationEntry[] Entries);
@@ -12,7 +13,7 @@ public sealed record NavigationGroup(string Title, NavigationEntry[] Entries);
 public static class NavigationItems
 {
     public static readonly NavigationEntry Overview =
-        new(AppRoutes.Home, Strings.T("Обзор (Дашборд)"), Flare.Icons.MaterialDesign3Icons.Regular.Dashboard, true);
+        new(AppRoutes.Home, Strings.T("Обзор (Дашборд)"), Flare.Icons.MaterialDesign3Icons.Regular.Dashboard, true, Strings.T("Обзор"));
 
     public static readonly NavigationGroup[] Groups =
     [
@@ -21,9 +22,9 @@ public static class NavigationItems
             new("sprints", Strings.T("Список"), Flare.Icons.MaterialDesign3Icons.Regular.ViewTimeline, false),
             new("sprints/plan", Strings.T("Планирование"), Flare.Icons.MaterialDesign3Icons.Regular.EventAvailable, false)
         ]),
-        new("Задачи",
+        new(Strings.T("Задачи"),
         [
-            new("tasks", Strings.T("Дерево задач"), Flare.Icons.MaterialDesign3Icons.Regular.Layers, true),
+            new("tasks", Strings.T("Дерево задач"), Flare.Icons.MaterialDesign3Icons.Regular.Layers, true, Strings.T("Задачи")),
             new("unassigned", Strings.T("Пул неназначенных"), Flare.Icons.MaterialDesign3Icons.Regular.Inbox, false)
         ]),
         new(Strings.T("Диаграммы"),
@@ -34,12 +35,12 @@ public static class NavigationItems
         ]),
         new(Strings.T("Ёмкость"),
         [
-            new("capacity", Strings.T("Обзор ёмкости"), Flare.Icons.MaterialDesign3Icons.Regular.Speed, true),
+            new("capacity", Strings.T("Обзор ёмкости"), Flare.Icons.MaterialDesign3Icons.Regular.Speed, true, Strings.T("Ёмкость")),
             new("capacity/people", Strings.T("Графики людей"), Flare.Icons.MaterialDesign3Icons.Regular.QueryStats, false)
         ]),
-        new("Команда",
+        new(Strings.T("Команда"),
         [
-            new("team", Strings.T("Люди"), Flare.Icons.MaterialDesign3Icons.Regular.Badge, true),
+            new("team", Strings.T("Люди"), Flare.Icons.MaterialDesign3Icons.Regular.Badge, true, Strings.T("Люди")),
             new("team/departments", Strings.T("Подкоманды"), Flare.Icons.MaterialDesign3Icons.Regular.Hub, false),
             new("team/roles", Strings.T("Роли"), Flare.Icons.MaterialDesign3Icons.Regular.ManageAccounts, false)
         ]),

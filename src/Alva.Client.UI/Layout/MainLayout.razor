@@ -72,9 +72,10 @@
     <FlareBottomNav Position="BottomNavPosition.Fixed" AriaLabel="@(Strings.T("Основные разделы"))">
         @foreach (var item in NavigationItems.Primary)
         {
-            <FlareBottomNavItem Href="@item.Path" Match="NavMatchMode.Exact" Tooltip="@item.Label">
+            @* Короткая подпись помещается на телефоне; полное название остаётся подсказкой и доступным именем. *@
+            <FlareBottomNavItem Href="@item.Path" Match="NavMatchMode.Exact" Tooltip="@item.Label" aria-label="@item.Label">
                 <IconContent><FlareIconView Value="@item.Icon" Size="1.35rem" /></IconContent>
-                <ChildContent>@item.Label</ChildContent>
+                <ChildContent>@(item.ShortLabel ?? item.Label)</ChildContent>
             </FlareBottomNavItem>
         }
     </FlareBottomNav>

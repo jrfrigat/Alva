@@ -200,7 +200,7 @@
   <data name="Задача не найдена или недоступна" xml:space="preserve"><value>Задача не найдена или недоступна</value></data>
   <data name="Задача не найдена." xml:space="preserve"><value>Задача не найдена.</value></data>
   <data name="Задача переназначена" xml:space="preserve"><value>Задача переназначена</value></data>
-  <data name="задачи" xml:space="preserve"><value>задачи</value></data>
+  <data name="задачи" xml:space="preserve"><value>Задачи</value></data>
   <data name="Задачи без исполнителя" xml:space="preserve"><value>Задачи без исполнителя</value></data>
   <data name="Задачи в итерации" xml:space="preserve"><value>Задачи в итерации</value></data>
   <data name="Задачи в плане" xml:space="preserve"><value>Задачи в плане</value></data>
@@ -257,7 +257,7 @@
   <data name="Карточка задачи" xml:space="preserve"><value>Карточка задачи</value></data>
   <data name="Колокольчик в шапке показывает риски команды и отмечает новые. Настройка хранится на этом устройстве." xml:space="preserve"><value>Колокольчик в шапке показывает риски команды и отмечает новые. Настройка хранится на этом устройстве.</value></data>
   <data name="команд" xml:space="preserve"><value>команд</value></data>
-  <data name="команда" xml:space="preserve"><value>команда</value></data>
+  <data name="команда" xml:space="preserve"><value>Команда</value></data>
   <data name="Команда · Обзор" xml:space="preserve"><value>Команда · Обзор</value></data>
   <data name="Команды" xml:space="preserve"><value>Команды</value></data>
   <data name="Команды (M:N):" xml:space="preserve"><value>Команды (M:N):</value></data>
@@ -702,4 +702,5 @@
   <data name="Ближайшее:" xml:space="preserve"><value>Ближайшее:</value></data>
   <data name="Не менее" xml:space="preserve"><value>Не менее</value></data>
   <data name="символов" xml:space="preserve"><value>символов</value></data>
+  <data name="Обзор" xml:space="preserve"><value>Обзор</value></data>
 </root>
