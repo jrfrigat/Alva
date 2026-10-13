@@ -63,10 +63,10 @@
                     var blocks = BlocksOn(day);
                     <div class="alva-week__row @(_hours[day] == 0 ? "alva-week__row--off" : "")" role="row" @key="day">
                         <span role="cell" class="alva-week__day"><span class="alva-week__abbr">@Abbr[day]</span>@DayNames[day]</span>
-                        <span role="cell"><FlareSwitch Value="@(_hours[day] > 0)" ValueChanged="(bool on) => _hours[day] = on ? (_lastHours[day] > 0 ? _lastHours[day] : 8) : Remember(day)" Label="@($"{DayNames[day]}: рабочий день")" /></span>
-                        <span role="cell">@if (_hours[day] > 0) { <FlareNumericField TValue="decimal" Value="_hours[day]" ValueChanged="(decimal v) => _hours[day] = v" Min="0" Max="24" Step="0.5" Suffix="@(Strings.T("ч"))" InputAttributes="@(new Dictionary<string, object> { ["aria-label"] = $"Часы: {DayNames[day]}" })" Size="FieldSize.Sm" /> } else { <span class="alva-week__muted">@(Strings.T("Выходной день"))</span> }</span>
-                        <span role="cell" class="alva-num alva-week__muted">@(blocks > 0 ? $"−{AlvaFormat.Hours(blocks)} ч" : "—")</span>
-                        <span role="cell" class="alva-num alva-week__net">@AlvaFormat.Hours(Math.Max(0, _hours[day] - blocks)) ч</span>
+                        <span role="cell" class="alva-week__cell"><span class="alva-week__label">@(Strings.T("Рабочий"))</span><FlareSwitch Value="@(_hours[day] > 0)" ValueChanged="(bool on) => _hours[day] = on ? (_lastHours[day] > 0 ? _lastHours[day] : 8) : Remember(day)" Label="@($"{DayNames[day]}: рабочий день")" /></span>
+                        <span role="cell" class="alva-week__cell"><span class="alva-week__label">@(Strings.T("Часов в день"))</span>@if (_hours[day] > 0) { <FlareNumericField TValue="decimal" Value="_hours[day]" ValueChanged="(decimal v) => _hours[day] = v" Min="0" Max="24" Step="0.5" Suffix="@(Strings.T("ч"))" InputAttributes="@(new Dictionary<string, object> { ["aria-label"] = $"Часы: {DayNames[day]}" })" Size="FieldSize.Sm" /> } else { <span class="alva-week__muted">@(Strings.T("Выходной день"))</span> }</span>
+                        <span role="cell" class="alva-week__cell alva-num alva-week__muted"><span class="alva-week__label">@(Strings.T("Вычеты"))</span>@(blocks > 0 ? $"−{AlvaFormat.Hours(blocks)} ч" : "—")</span>
+                        <span role="cell" class="alva-week__cell alva-num alva-week__net"><span class="alva-week__label">@(Strings.T("Чистые часы"))</span>@AlvaFormat.Hours(Math.Max(0, _hours[day] - blocks)) ч</span>
                     </div>
                 }
             </div>
