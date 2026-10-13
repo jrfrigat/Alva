@@ -30,7 +30,7 @@ public sealed class QuickAddTests : UiTestBase
 
         Input(cut).KeyDown(new KeyboardEventArgs { Key = "Enter" });
         Input(cut).KeyDown(new KeyboardEventArgs { Key = "Enter" });
-        Assert.True(Button(cut, "Добавить матрёшку").HasAttribute("disabled"));
+        Assert.True(Button(cut, "Добавить вложенную задачу").HasAttribute("disabled"));
         reply.SetResult();
 
         cut.WaitForAssertion(() => Assert.True(string.IsNullOrEmpty(Input(cut).GetAttribute("value"))));
@@ -49,7 +49,7 @@ public sealed class QuickAddTests : UiTestBase
         Assert.Equal("Вёрстка", Input(cut).GetAttribute("value"));
 
         Api.OnSend = (_, _, _) => null;
-        Button(cut, "Добавить матрёшку").Click();
+        Button(cut, "Добавить вложенную задачу").Click();
         cut.WaitForAssertion(() => Assert.Equal(2, Posts));
     }
 }

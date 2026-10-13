@@ -57,6 +57,20 @@ public sealed class LocalizationTests : UiTestBase
     }
 
     [Fact]
+    public void The_task_tree_section_is_named_in_both_languages()
+    {
+        var before = CultureInfo.CurrentUICulture;
+        try
+        {
+            CultureInfo.CurrentUICulture = new CultureInfo("en");
+            Assert.Equal("Task tree", Strings.T("Дерево задач"));
+            CultureInfo.CurrentUICulture = new CultureInfo("ru");
+            Assert.Equal("Дерево задач", Strings.T("Дерево задач"));
+        }
+        finally { CultureInfo.CurrentUICulture = before; }
+    }
+
+    [Fact]
     public void An_unknown_key_falls_back_to_itself()
     {
         var localizer = Services.GetRequiredService<IStringLocalizer<AppStrings>>();

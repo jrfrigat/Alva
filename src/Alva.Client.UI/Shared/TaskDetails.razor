@@ -1,4 +1,4 @@
-@* Страница задачи по макету p9: крошки, действия, описание и параметры, «Матрёшка» подзадач,
+@* Страница задачи по макету p9: крошки, действия, описание и параметры, дерево задач подзадач,
    история и боковая панель назначения исполнителя с загрузкой кандидатов. *@
 @inject AlvaSession Session
 @inject NavigationManager Navigation
@@ -52,7 +52,7 @@
         <header class="alva-panel__header">
             <FlareIconView Value="@MaterialDesign3Icons.Regular.Layers" Size="20px" Class="alva-panel__icon" />
             <div>
-                <h2 class="alva-panel__title">@(Strings.T("Бесконечная декомпозиция (Матрёшка)"))</h2>
+                <h2 class="alva-panel__title">@(Strings.T("Бесконечная декомпозиция (дерево задач)"))</h2>
                 <p class="alva-panel__subtitle">@(Strings.T("Рекурсивное каскадирование оценок и исполнителей"))</p>
             </div>
         </header>
@@ -86,10 +86,10 @@
                 </div>
             }
             <div class="alva-subtasks__add">
-                <FlareTextField @bind-Value="_quickTitle" Immediate Placeholder="@(Strings.T("Быстрое добавление вложенной матрёшки (Enter)…"))" AriaLabel="@(Strings.T("Название новой подзадачи"))" OnKeyDown="QuickKey" Variant="InputVariant.Bare">
+                <FlareTextField @bind-Value="_quickTitle" Immediate Placeholder="@(Strings.T("Быстрое добавление вложенной задачи (Enter)…"))" AriaLabel="@(Strings.T("Название новой подзадачи"))" OnKeyDown="QuickKey" Variant="InputVariant.Bare">
                     <AdornmentStart><FlareIconView Value="@MaterialDesign3Icons.Regular.AddCircle" Size="18px" /></AdornmentStart>
                 </FlareTextField>
-                <FlareButton Variant="ButtonVariant.Tonal" Size="ButtonSize.Sm" Loading="_adding" Disabled="@(_adding || string.IsNullOrWhiteSpace(_quickTitle))" OnClick="QuickAdd">@(Strings.T("Добавить матрёшку"))</FlareButton>
+                <FlareButton Variant="ButtonVariant.Tonal" Size="ButtonSize.Sm" Loading="_adding" Disabled="@(_adding || string.IsNullOrWhiteSpace(_quickTitle))" OnClick="QuickAdd">@(Strings.T("Добавить вложенную задачу"))</FlareButton>
             </div>
         </div>
     </section>

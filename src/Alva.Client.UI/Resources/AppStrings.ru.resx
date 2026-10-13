@@ -7,7 +7,7 @@
   <data name="&amp;gt;115% Критичный перегруз" xml:space="preserve"><value>&amp;gt;115% Критичный перегруз</value></data>
   <data name="&amp;lt;70% Недогруз" xml:space="preserve"><value>&amp;lt;70% Недогруз</value></data>
   <data name="+ Отсутствие / отпуск" xml:space="preserve"><value>+ Отсутствие / отпуск</value></data>
-  <data name="«Матрёшка»" xml:space="preserve"><value>«Матрёшка»</value></data>
+  <data name="Дерево задач" xml:space="preserve"><value>Дерево задач</value></data>
   <data name="→ не рассчитан" xml:space="preserve"><value>→ не рассчитан</value></data>
   <data name="· владелец" xml:space="preserve"><value>· владелец</value></data>
   <data name="· Задач с рисками:" xml:space="preserve"><value>· Задач с рисками:</value></data>
@@ -44,12 +44,12 @@
   <data name="без срока" xml:space="preserve"><value>без срока</value></data>
   <data name="Без человека" xml:space="preserve"><value>Без человека</value></data>
   <data name="Бережно" xml:space="preserve"><value>Бережно</value></data>
-  <data name="Бесконечная декомпозиция (Матрёшка)" xml:space="preserve"><value>Бесконечная декомпозиция (Матрёшка)</value></data>
+  <data name="Бесконечная декомпозиция (дерево задач)" xml:space="preserve"><value>Бесконечная декомпозиция (дерево задач)</value></data>
   <data name="Ближайшие дедлайны" xml:space="preserve"><value>Ближайшие дедлайны</value></data>
   <data name="Ближайший срыв" xml:space="preserve"><value>Ближайший срыв</value></data>
   <data name="Браузер запретил уведомления для Alva — разрешите их в настройках сайта." xml:space="preserve"><value>Браузер запретил уведомления для Alva — разрешите их в настройках сайта.</value></data>
   <data name="Бросьте задачу на день — она попадёт в спринт этого дня и получит срок; на строку человека — ещё и исполнителя. Человека — на полосу." xml:space="preserve"><value>Бросьте задачу на день — она попадёт в спринт этого дня и получит срок; на строку человека — ещё и исполнителя. Человека — на полосу.</value></data>
-  <data name="Быстрое добавление вложенной матрёшки (Enter)…" xml:space="preserve"><value>Быстрое добавление вложенной матрёшки (Enter)…</value></data>
+  <data name="Быстрое добавление вложенной задачи (Enter)…" xml:space="preserve"><value>Быстрое добавление вложенной задачи (Enter)…</value></data>
   <data name="Быстрый фильтр" xml:space="preserve"><value>Быстрый фильтр</value></data>
   <data name="Быстрый фильтр:" xml:space="preserve"><value>Быстрый фильтр:</value></data>
   <data name="Бэклог — без дат" xml:space="preserve"><value>Бэклог — без дат</value></data>
@@ -149,7 +149,7 @@
   <data name="дня" xml:space="preserve"><value>дня</value></data>
   <data name="Добавить" xml:space="preserve"><value>Добавить</value></data>
   <data name="Добавить задачу в спринт" xml:space="preserve"><value>Добавить задачу в спринт</value></data>
-  <data name="Добавить матрёшку" xml:space="preserve"><value>Добавить матрёшку</value></data>
+  <data name="Добавить вложенную задачу" xml:space="preserve"><value>Добавить вложенную задачу</value></data>
   <data name="Добавить нерабочий интервал" xml:space="preserve"><value>Добавить нерабочий интервал</value></data>
   <data name="Добавить период" xml:space="preserve"><value>Добавить период</value></data>
   <data name="Добавить роль" xml:space="preserve"><value>Добавить роль</value></data>
@@ -567,7 +567,7 @@
   <data name="Смените вкладку или условие поиска." xml:space="preserve"><value>Смените вкладку или условие поиска.</value></data>
   <data name="Смените фильтр статуса." xml:space="preserve"><value>Смените фильтр статуса.</value></data>
   <data name="Сменить команду" xml:space="preserve"><value>Сменить команду</value></data>
-  <data name="Создайте задачи в «Матрёшке», и они появятся на диаграмме." xml:space="preserve"><value>Создайте задачи в «Матрёшке», и они появятся на диаграмме.</value></data>
+  <data name="Создайте задачи в разделе «Дерево задач», и они появятся на диаграмме." xml:space="preserve"><value>Создайте задачи в разделе «Дерево задач», и они появятся на диаграмме.</value></data>
   <data name="Создайте или выберите команду в рабочем пространстве." xml:space="preserve"><value>Создайте или выберите команду в рабочем пространстве.</value></data>
   <data name="Создайте первую команду в пространстве." xml:space="preserve"><value>Создайте первую команду в пространстве.</value></data>
   <data name="Создайте пространство для команды" xml:space="preserve"><value>Создайте пространство для команды</value></data>
