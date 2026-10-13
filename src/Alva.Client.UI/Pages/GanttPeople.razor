@@ -31,6 +31,8 @@ else if (_data is not null && _people is not null)
 
     <GanttLegend Notice="@_notice" Items="PeopleKey" />
 
+    @* Обёртка ловит Enter с полосы и держит фокус после закрытия панели: события полосы всплывают сюда. *@
+    <div class="alva-gantt__host" @ref="_host" tabindex="-1" @onkeydown="OnChartKey">
     <FlareGantt @ref="_chart" Range="@_range" RangeChanged="Grow" Endless="true" Scale="_scale" UnitWidth="_unit" FillWidth="true" Virtualize="true" RowHeight="36" SideWidth="@_side" DefaultSideWidth="22rem" ResizableSide="true" SideWidthChanged="SaveSide"
                 NonWorking="GanttData.IsWeekend" Markers="@GanttData.TodayMarkers" Regions="@_data.SprintRegions(Sprint)" @bind-SelectedKey="_selected"
                 AriaLabel="@(_twoD ? Strings.T("Синхронный Гантт 2D") : Strings.T("Гантт по людям"))" Class="alva-gantt">
@@ -38,14 +40,22 @@ else if (_data is not null && _people is not null)
         <ChildContent>
             @if (_twoD)
             {
-                <GanttTaskPanel Data="_data" SprintId="_sprintId" OnChange="Change" OnLinkCreate="Link" OnLinkRejected="Rejected">
+                <GanttTaskPanel Data="_data" SprintId="_sprintId" OnChange="Change" OnLinkCreate="Link" OnLinkRejected="Rejected" OnItemClick="OpenTask">
                     <Header>@(Strings.T("Проекция 1: иерархия работ и фазы во времени"))</Header>
                 </GanttTaskPanel>
             }
             <GanttPeoplePanel People="_people" Scale="_scale" Range="_range" Header="@(_twoD ? PeopleHeader : null)"
-                              OnChange="Change" OnLinkCreate="Link" OnLinkRejected="Rejected" />
+                              OnChange="Change" OnLinkCreate="Link" OnLinkRejected="Rejected" OnItemClick="OpenTask" />
         </ChildContent>
     </FlareGantt>
+    </div>
+    @* Панель задачи — та же, что на «Гантте по задачам»: карточка задачи целиком, без ухода со страницы. *@
+    <FlareDrawer Anchor="DrawerAnchor.Right" Open="_panelOpen" OpenChanged="OnPanelOpen" Width="34rem" ContentPadding="FlareSpacing.Large" AriaLabel="@(Strings.T("Задача"))">
+        @if (_open is not null)
+        {
+            <TaskDetails Item="_open" Tasks="_data!.Tasks" Projects="_projects" Sprints="_data.Sprints" Actors="_data.Actors" Changed="@(() => Reload())" />
+        }
+    </FlareDrawer>
 }
 
 @code {
@@ -60,6 +70,12 @@ else if (_data is not null && _people is not null)
     private string _side = "22rem";
     private string? _selected;
     private bool _twoD;
+
+    // Панель задачи: та же, что на «Гантте по задачам».
+    private TaskModel? _open;
+    private bool _panelOpen;
+    private ElementReference _host;
+    private ProjectModel[] _projects = [];
 
     private GanttLegendItem[] PeopleKey =>
     [
@@ -111,6 +127,27 @@ else if (_data is not null && _people is not null)
         Navigation.NavigateTo(value ? "gantt/2d" : "gantt/people", replace: true);
     }
 
+    /// <summary>Клик по полосе открывает панель задачи, не уводя со страницы.</summary>
+    private void OpenTask(TaskModel task) { _open = task; _panelOpen = true; }
+
+    /// <summary>Enter на выбранной полосе делает то же, что клик: полоса фокусируема, но Enter у неё ничего не
+    /// делает, поэтому его ловит обёртка доски.</summary>
+    private void OnChartKey(KeyboardEventArgs e)
+    {
+        if (e.Key != "Enter" || _selected is null || _panelOpen) return;
+        if (_data?.Tasks.FirstOrDefault(t => GanttData.Key(t.Id) == _selected) is { } task) OpenTask(task);
+    }
+
+    /// <summary>Панель закрылась (Esc, фон или кнопка): задача отпускается, фокус возвращается к доске.</summary>
+    private async Task OnPanelOpen(bool open)
+    {
+        _panelOpen = open;
+        if (open) return;
+        _open = null;
+        try { await _host.FocusAsync(); }
+        catch (JSDisconnectedException) { }
+    }
+
     private async Task Reload(bool initial = false)
     {
         _busy = true;
@@ -118,6 +155,8 @@ else if (_data is not null && _people is not null)
         {
             if (Session.TeamId is null) return;
             _data = await GanttData.Load(Session);
+            // Проект есть в карточке задачи, поэтому панель получает и справочник проектов.
+            _projects = await Session.Get<ProjectModel[]>(Session.TeamPath("projects"));
             if (initial)
             {
                 _sprintId = _data.Sprints.FirstOrDefault(s => s.Status == "Active")?.Id;

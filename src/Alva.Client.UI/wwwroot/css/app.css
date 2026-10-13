@@ -544,9 +544,14 @@ a.alva-matrix__name:hover{text-decoration:underline}
 .alva-week__abbr{display:grid;place-items:center;width:28px;height:24px;border-radius:4px;background:var(--flare-color-surface-container,#e5eeff);color:var(--flare-color-primary,var(--alva-primary));font-size:11px;font-weight:700}
 .alva-week__muted{font-size:12px;color:var(--flare-color-on-surface-variant,var(--alva-on-surface-variant))}
 .alva-week__net{font-size:14px;font-weight:700;text-align:right;color:var(--flare-color-primary,var(--alva-primary))}
+/* Обёртка доски: ловит Enter с полосы и держит фокус после закрытия панели задачи. Кольцо фокуса у неё
+   видно только при клавиатурном фокусе — программный возврат фокуса рамку вокруг всей доски не рисует. */
+.alva-gantt__host{display:block;min-width:0}
+.alva-gantt__host:focus:not(:focus-visible){outline:none}
 /* Сетка строки недели имеет минимум 568px (9+4.5+8+5+6rem и четыре промежутка), а телефонам достаётся
    около 280px: с overflow:hidden правые величины не прокручивались, а обрезались. На узком экране строка
    становится карточкой дня, и каждая величина читается со своей подписью, как заголовок колонки. */
+
 .alva-week__cell{min-width:0}
 .alva-week__label{display:none}
 @media(max-width:900px){

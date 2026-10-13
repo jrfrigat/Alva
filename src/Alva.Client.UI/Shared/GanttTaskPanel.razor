@@ -6,7 +6,7 @@
                  ItemSpan="Data.Span" ItemCover="Data.Cover" ItemKind="Data.Kind" ItemSegments="Data.Segments" ItemLabel="t => t.Title" ItemTitle="Data.Title"
                  Links="@Data.Links().ToArray()" LinkTypes="@Types" ShowCriticalPath="Critical" RollupParents="true"
                  Markers="@DeadlineMarkers" Editable="true" AllowRowChange="false" OnChange="OnChange" OnLinkCreate="OnLinkCreate"
-                 OnLinkRejected="OnLinkRejected" Header="Header" DropGroup="@DropGroup" DropAccepts="DropAccepts"
+                 OnLinkRejected="OnLinkRejected" OnItemClick="OnItemClick" Header="Header" DropGroup="@DropGroup" DropAccepts="DropAccepts"
                  ItemDropGroup="@ItemDropGroup" ItemDropAccepts="ItemDropAccepts" Suggested="Suggested" AriaLabel="@(Strings.T("Задачи во времени"))">
     <RowHeader Context="task">
         @if (DragRows)
@@ -35,6 +35,10 @@
     [Parameter] public EventCallback<GanttChangeEventArgs> OnChange { get; set; }
     [Parameter] public EventCallback<GanttLinkEventArgs> OnLinkCreate { get; set; }
     [Parameter] public EventCallback<GanttLinkRejectedEventArgs> OnLinkRejected { get; set; }
+
+    /// <summary>Клик по полосе задачи — страница открывает панель задачи. Клик после перетаскивания пакет
+    /// не считает кликом, поэтому сюда он не попадает.</summary>
+    [Parameter] public EventCallback<TaskModel> OnItemClick { get; set; }
     [Parameter] public string? DropGroup { get; set; }
     [Parameter] public Func<object?, bool>? DropAccepts { get; set; }
     [Parameter] public string? ItemDropGroup { get; set; }

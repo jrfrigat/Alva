@@ -5,7 +5,7 @@
                  RowClass="RowClass" Items="@People.Items" ItemKey="t => GanttData.Key(t.Id)" ItemRow="People.RowOf"
                  ItemSpan="People.Data.Span" ItemCover="People.Data.Cover" ItemKind="People.Data.Kind" ItemSegments="People.Data.Segments" ItemLabel="t => t.Title" ItemTitle="People.Data.Title"
                  Links="@People.Data.Links().ToArray()" Cells="@People.Cells(Scale, Range)" Editable="true"
-                 OnChange="OnChange" OnLinkCreate="OnLinkCreate" OnLinkRejected="OnLinkRejected" Header="Header"
+                 OnChange="OnChange" OnLinkCreate="OnLinkCreate" OnLinkRejected="OnLinkRejected" OnItemClick="OnItemClick" Header="Header"
                  DropGroup="@DropGroup" DropAccepts="DropAccepts" ItemDropGroup="@ItemDropGroup" ItemDropAccepts="ItemDropAccepts" Suggested="Suggested"
                  AriaLabel="@(Strings.T("Люди и роли во времени"))">
     <RowHeader Context="row">
@@ -35,6 +35,9 @@
     [Parameter] public EventCallback<GanttChangeEventArgs> OnChange { get; set; }
     [Parameter] public EventCallback<GanttLinkEventArgs> OnLinkCreate { get; set; }
     [Parameter] public EventCallback<GanttLinkRejectedEventArgs> OnLinkRejected { get; set; }
+
+    /// <summary>Клик по полосе задачи — страница открывает панель задачи.</summary>
+    [Parameter] public EventCallback<TaskModel> OnItemClick { get; set; }
     [Parameter] public string? DropGroup { get; set; }
     [Parameter] public Func<object?, bool>? DropAccepts { get; set; }
     [Parameter] public string? ItemDropGroup { get; set; }

@@ -43,14 +43,27 @@ else if (_data is not null)
     }
     else
     {
+        @* Обёртка ловит Enter с полосы (полоса фокусируема и сама помечена role="button") и держит фокус
+           после закрытия панели: события полосы всплывают сюда. *@
+        <div class="alva-gantt__host" @ref="_host" tabindex="-1" @onkeydown="OnChartKey">
         <FlareGantt @ref="_chart" Range="@Axis()" RangeChanged="r => _range = r" Endless="true" Scale="_scale" UnitWidth="_unit" FillWidth="true" Virtualize="true" RowHeight="36" SideWidth="@_side" DefaultSideWidth="22rem" ResizableSide="true" SideWidthChanged="SaveSide"
                     NonWorking="GanttData.IsWeekend" Markers="@GanttData.TodayMarkers" Regions="@_data.SprintRegions(Sprint)" @bind-SelectedKey="_selected"
                     AriaLabel="@(Strings.T("Гантт по задачам"))" Class="alva-gantt">
             <Corner><span>@(Strings.T("Задача · исполнитель · часы"))</span></Corner>
             <ChildContent>
-                <GanttTaskPanel Data="_data" SprintId="_sprintId" Types="_types" Critical="_critical" OnChange="Change" OnLinkCreate="Link" OnLinkRejected="Rejected" />
+                <GanttTaskPanel Data="_data" SprintId="_sprintId" Types="_types" Critical="_critical" OnChange="Change" OnLinkCreate="Link" OnLinkRejected="Rejected" OnItemClick="OpenTask" />
             </ChildContent>
         </FlareGantt>
+        </div>
+        @* Панель задачи: клик по полосе или Enter открывают, Esc и щелчок по фону закрывают (CloseOnEsc
+           у FlareDrawer включён по умолчанию), после закрытия фокус возвращается к доске. Правки и
+           сохранение — те же, что на странице задачи: карточка переиспользуется целиком. *@
+        <FlareDrawer Anchor="DrawerAnchor.Right" Open="_panelOpen" OpenChanged="OnPanelOpen" Width="34rem" ContentPadding="FlareSpacing.Large" AriaLabel="@(Strings.T("Задача"))">
+            @if (_open is not null)
+            {
+                <TaskDetails Item="_open" Tasks="_data.Tasks" Projects="_projects" Sprints="_data.Sprints" Actors="_data.Actors" Changed="Reload" />
+            }
+        </FlareDrawer>
     }
 }
 
@@ -67,6 +80,13 @@ else if (_data is not null)
     private bool _critical;
     private string? _selected;
     private HashSet<GanttLinkType> _types = [.. AllTypes];
+
+    // Панель задачи: открытая задача, признак открытой панели, ссылка на доску (для возврата фокуса) и
+    // справочник проектов для карточки задачи.
+    private TaskModel? _open;
+    private bool _panelOpen;
+    private ElementReference _host;
+    private ProjectModel[] _projects = [];
 
     private static DateOnly Today => DateOnly.FromDateTime(DateTime.Today);
     private SprintModel? Sprint => _data?.Sprint(_sprintId);
@@ -110,10 +130,36 @@ else if (_data is not null)
         _busy = true;
         try
         {
-            if (Session.TeamId is not null) _data = await GanttData.Load(Session);
+            if (Session.TeamId is not null)
+            {
+                _data = await GanttData.Load(Session);
+                // Проект есть в карточке задачи, поэтому панель получает и справочник проектов — как страница списка.
+                _projects = await Session.Get<ProjectModel[]>(Session.TeamPath("projects"));
+            }
         }
         catch (Exception e) when (e is HttpRequestException or InvalidOperationException) { _error = e.Message; }
         finally { _busy = false; }
+    }
+
+    /// <summary>Клик по полосе открывает панель задачи, не уводя со страницы.</summary>
+    private void OpenTask(TaskModel task) { _open = task; _panelOpen = true; }
+
+    /// <summary>Enter на выбранной полосе делает то же, что клик: полоса фокусируема, но Enter у неё ничего не
+    /// делает, поэтому его ловит обёртка доски.</summary>
+    private void OnChartKey(KeyboardEventArgs e)
+    {
+        if (e.Key != "Enter" || _selected is null || _panelOpen) return;
+        if (_data?.Tasks.FirstOrDefault(t => GanttData.Key(t.Id) == _selected) is { } task) OpenTask(task);
+    }
+
+    /// <summary>Панель закрылась (Esc, фон или кнопка): задача отпускается, фокус возвращается к доске.</summary>
+    private async Task OnPanelOpen(bool open)
+    {
+        _panelOpen = open;
+        if (open) return;
+        _open = null;
+        try { await _host.FocusAsync(); }
+        catch (JSDisconnectedException) { }
     }
 
     private async Task Change(GanttChangeEventArgs args)
