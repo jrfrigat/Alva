@@ -1,6 +1,18 @@
-# Документация Alva
+# Alva Documentation
 
-Полное руководство по установке, настройке и разработке.
+> [English](#english) - [Русский](#русский)
+
+## English
+
+| Doc | Description |
+| :-- | :-- |
+| [Getting Started](en/getting-started.md) | Running Alva (Docker, locally, demo), first sign-in |
+| [Configuration](en/configuration.md) | Every setting and environment variable |
+| [Architecture](en/architecture.md) | Projects, layers, data flow, authentication |
+| [Deployment](en/deployment.md) | Docker, compose, HTTPS, backups |
+| [Development](en/development.md) | Build, tests, conventions |
+
+## Русский
 
 | Документ | Описание |
 | :-- | :-- |
@@ -10,4 +22,5 @@
 | [Развёртывание](ru/deployment.md) | Docker, compose, reverse proxy, HTTPS, резервные копии |
 | [Разработка](ru/development.md) | Сборка, тесты, структура решения, конвенции |
 
-Краткий обзор проекта — в [README](../README.md).
+A short overview lives in the [README](../README.md).
+

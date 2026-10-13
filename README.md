@@ -7,54 +7,49 @@
 
 # Alva
 
-**Alva** — веб-приложение (PWA) для стратегического планирования задач и балансировки
-ресурсов команды. Оно помогает максимально качественно, но без лишней бюрократии
-распределить нагрузку по сотрудникам, наглядно подсветить риски сдвига дедлайнов и сразу
-показать причины, почему команда не успевает.
+**Alva** is a web application (PWA) for strategic task planning and team resource balancing. It helps you
+distribute the workload across people as well as possible — without busywork — highlight the risks of
+slipping deadlines and show at once why the team is falling behind.
 
-Ключевые компоненты: гибкое распределение задач (люди, отделы и роли), двухмерный Гантт
-(по задачам и по исполнителям), расчёт ёмкости и рисков, автобаланс спринта и полный
-справочник участников.
+Core pieces: flexible task assignment (people, sub-teams and roles), a two-dimensional Gantt (by task and
+by assignee), capacity and risk analysis, sprint auto-balancing and a full directory of participants.
 
-**Демо:** <https://jrfrigat.github.io/Alva/> — работает целиком в браузере, без сервера.
+**Demo:** <https://jrfrigat.github.io/Alva/> — runs entirely in the browser, no server required.
 
-## Возможности
+## Features
 
-- **Планирование** — проекты (M:N с командами), спринты, дерево задач с неограниченной
-  декомпозицией, история изменений, зависимости FS/SS/FF/SF, назначение на человека,
-  подкоманду или роль.
-- **Гантт** — ось на всю ширину, дорожки, свёртка, критический путь, связи,
-  перетаскивание, масштаб и виртуализация; один компонент для трёх страниц.
-- **Ёмкость** — рабочие графики с исключениями и повторяющимися блоками, распределение
-  оценки по доступным часам, нераспределённая потребность по ролям и подразделениям.
-- **Риски** — нет исполнителя, просрочка, прогноз позже срока, перегрузка, незавершённая
-  зависимость; сводка, фильтры и чипы причин, колокольчик с уведомлениями.
-- **Автобаланс** — оптимизация назначений и сроков (OR-Tools) в нескольких режимах с
-  предложением прямо на Гантте.
-- **Аутентификация** — вход, регистрация и выход; пространства и команды, участники и
-  владельцы, opt-in матрица прав.
-- **Данные** — экспорт и импорт snapshot команды в JSON/CSV/XLSX, атомарно и со свежими
-  идентификаторами.
-- **Интерфейс** — PWA на Flare (тема MaterialDesign3Expressive, палитра Sapphire),
-  адаптивная оболочка и доступность на десктопе.
+- **Planning** — projects (M:N with teams), sprints, an unlimited task tree, change history, FS/SS/FF/SF
+  dependencies, assignment to a person, a sub-team or a role.
+- **Gantt** — full-width axis, lanes, rollup, critical path, links, drag and drop, zoom and virtualization;
+  one component behind three pages.
+- **Capacity** — work schedules with exceptions and recurring blocks, spreading an estimate over available
+  hours, unmet demand by role and sub-team.
+- **Risk** — no assignee, overdue, forecast past the due date, overload, unfinished dependency; a summary,
+  filters and reason chips, plus a notification bell.
+- **Auto-balance** — assignment and date optimization (OR-Tools) in several modes, with the proposal shown
+  right on the Gantt.
+- **Authentication** — sign in, sign up and sign out; workspaces and teams, members and owners, an opt-in
+  permission matrix.
+- **Data** — export and import of a team snapshot in JSON/CSV/XLSX, atomic and with fresh identifiers.
+- **Interface** — a PWA built on Flare (MaterialDesign3Expressive theme, Sapphire palette), with an
+  adaptive shell and desktop accessibility. English and Russian, chosen per browser and switchable.
 
-## Быстрый старт
+## Quick start
 
-### Демо в браузере
+### Demo in the browser
 
-Откройте <https://jrfrigat.github.io/Alva/> — данные живут в `localStorage`, сервер не нужен.
+Open <https://jrfrigat.github.io/Alva/> — the data lives in `localStorage`, no server is needed.
 
-### Docker (прод-версия: приложение + PostgreSQL)
+### Docker (production: application + PostgreSQL)
 
 ```powershell
 ./run-docker-compose.bat
 ```
 
-Скрипт создаст `.env` со сгенерированным паролем, соберёт образ и поднимет стек.
-Приложение: <http://localhost:8080>. Подробности — в
-[Начале работы](docs/ru/getting-started.md).
+The script creates `.env` with a generated password, builds the image and starts the stack.
+Application: <http://localhost:8080>. See [Getting started](docs/en/getting-started.md) for details.
 
-### Локально без Docker
+### Locally, without Docker
 
 ```powershell
 dotnet restore Alva.slnx
@@ -62,58 +57,58 @@ $env:Database__Provider = "Sqlite"
 dotnet run --project src/Alva.Api --urls http://localhost:8080
 ```
 
-## Установка из релиза
+## Install from a release
 
-Релиз (тег `v*`) публикует образ в Docker Hub:
+A release (a pushed `v*` tag) publishes the image to Docker Hub:
 
 ```sh
-docker pull <ваш-dockerhub>/alva:latest
+docker pull <your-dockerhub>/alva:latest
 docker run -p 8080:8080 \
-  -e ConnectionStrings__Alva="Host=<host>;Port=5432;Database=alva;Username=alva;Password=<пароль>" \
-  <ваш-dockerhub>/alva:latest
+  -e ConnectionStrings__Alva="Host=<host>;Port=5432;Database=alva;Username=alva;Password=<password>" \
+  <your-dockerhub>/alva:latest
 # Alva: http://localhost:8080
 ```
 
-Полная конфигурация — в [Конфигурации](docs/ru/configuration.md).
+Full configuration is in [Configuration](docs/en/configuration.md).
 
-## Структура решения
+## Solution layout
 
-| Проект | Назначение |
+| Project | Purpose |
 | :-- | :-- |
-| `Alva.Domain`, `Alva.Contracts`, `Alva.Infrastructure` | Домен, контракты, доступ к данным (EF Core) |
-| `Alva.Api` | Minimal API, аутентификация, права, раздача WASM |
-| `Alva.Client.UI` | Общая библиотека интерфейса и `IApiService` |
-| `Alva.Client`, `Alva.Client.Demo` | Прод- и демо-оболочки |
-| `Alva.Theme.Alva`, `Flare.Components.Gantt` | Тема и компонент Ганта |
+| `Alva.Domain`, `Alva.Contracts`, `Alva.Infrastructure` | Domain, contracts, data access (EF Core) |
+| `Alva.Api` | Minimal API, authentication, permissions, serves the WASM client |
+| `Alva.Client.UI` | Shared interface library and `IApiService` |
+| `Alva.Client`, `Alva.Client.Demo` | Production and demo shells |
+| `Alva.Theme.Alva`, `Flare.Components.Gantt` | Theme and Gantt component |
 
-## Документация
+## Documentation
 
-Полная документация — в **[docs/](docs/README.md)**:
+Full documentation lives in **[docs/](docs/README.md)** (English and Russian):
 
-| Документ | Описание |
+| Doc | Description |
 | :-- | :-- |
-| [Начало работы](docs/ru/getting-started.md) | Запуск (Docker, локально, демо), первый вход |
-| [Конфигурация](docs/ru/configuration.md) | Все ключи и переменные `.env` |
-| [Архитектура](docs/ru/architecture.md) | Проекты, слои, поток данных, аутентификация |
-| [Развёртывание](docs/ru/deployment.md) | Docker, compose, HTTPS, резервные копии |
-| [Разработка](docs/ru/development.md) | Сборка, тесты, конвенции |
+| [Getting Started](docs/en/getting-started.md) | Running Alva (Docker, locally, demo), first sign-in |
+| [Configuration](docs/en/configuration.md) | Every setting and environment variable |
+| [Architecture](docs/en/architecture.md) | Projects, layers, data flow, authentication |
+| [Deployment](docs/en/deployment.md) | Docker, compose, HTTPS, backups |
+| [Development](docs/en/development.md) | Build, tests, conventions |
 
-## Сборка и тесты
+## Build and test
 
 ```sh
 dotnet build Alva.slnx -c Release
 dotnet test Alva.slnx -c Release
 ```
 
-Требуется .NET 10 (SDK 10.0.401, см. `global.json`).
+Requires **.NET 10** (SDK 10.0.401, see `global.json`).
 
-## Участие и лицензия
+## Contributing and licence
 
-- [CONTRIBUTING.md](CONTRIBUTING.md) — как внести изменения.
-- [CHANGELOG.md](CHANGELOG.md) — история версий.
+- [CONTRIBUTING.md](CONTRIBUTING.md) — how to contribute.
+- [CHANGELOG.md](CHANGELOG.md) — release notes.
 
-Интерфейс построен на [Flare](https://github.com/jrfrigat/Flare).
+The interface is built on [Flare](https://github.com/jrfrigat/Flare).
 
-## Лицензия
+## License
 
 [MIT](LICENSE) © 2026 FrigaT
