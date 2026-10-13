@@ -3,7 +3,10 @@ When Aiko MCP is available, use it as the durable project workflow and task memo
 asks for starts with a card: create it in Aiko first (aiko_create_card, or /aiko-create), and stop
 there - the card is the answer to the request. An order is still a request: "поправь ...", "исправь ..."
 and "нужно ..." earn a card and nothing more, and the work begins only when the user asks for it
-(aiko-run <cardId>, or "выполни <cardId>"). A card in its backlog stage has no work in it yet, so never
+(aiko-run <cardId>, or "выполни <cardId>"). The one exception is a request that asked for the card and
+its work together - "создай и выполни", /aiko-create --run, or words to that effect: there the card is
+not the whole answer, and you take it into its first stage as /aiko-run does; without those words you
+stop at the card. A card in its backlog stage has no work in it yet, so never
 create or change files for a
 card before you have started the stage you are working in with aiko_start_stage - the start moves the
 card into that stage and is what records the work. A card may wait for another one: aiko_get_card lists
