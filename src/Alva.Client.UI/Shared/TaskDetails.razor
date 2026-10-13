@@ -200,7 +200,9 @@
     private bool _adoptFresh;
 
     /// <summary>Черновик расходится с задачей: уход со страницы или перечитывание её потеряли бы правки.</summary>
-    private bool Dirty => _model.Id == Item.Id && (_model.Title != Item.Title || _model.Description != Item.Description
+    /// <summary>Есть ли в черновике несохранённые правки: страница по этому признаку решает, можно ли уйти по
+    /// Esc, не теряя работу.</summary>
+    public bool Dirty => _model.Id == Item.Id && (_model.Title != Item.Title || _model.Description != Item.Description
         || _model.Status != Item.Status || _model.ProjectId != Item.ProjectId || _model.ParentId != Item.ParentId
         || _model.EstimateHours != Item.EstimateHours || _model.Deadline != Item.Deadline
         || _model.StartDate != Item.StartDate || _model.EndDate != Item.EndDate);

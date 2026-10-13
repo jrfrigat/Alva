@@ -8,7 +8,12 @@
 @if (Current is not null)
 {
     <PageFeedback Error="@_error" Loading="_busy" />
-    <TaskDetails Item="Current" Tasks="_tasks" Projects="_projects" Sprints="_sprints" Actors="_actors" Changed="Load" />
+    @* Esc закрывает карточку и возвращает к списку с прежними фильтрами; несохранённые правки не
+       выбрасываются — их держит сама карточка, и тогда Esc не делает ничего. Обёртка принимает фокус при
+       открытии задачи, в том числе по Enter из списка, чтобы фокус не падал на body. *@
+    <div class="alva-task-card" @ref="_card" tabindex="-1" aria-label="@Current.Title" @onkeydown="OnCardKey">
+        <TaskDetails @ref="_details" Item="Current" Tasks="_tasks" Projects="_projects" Sprints="_sprints" Actors="_actors" Changed="Load" />
+    </div>
 }
 else if (TaskId.HasValue)
 {
@@ -103,20 +108,57 @@ else
     }
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
+        // Открытая задача принимает фокус: Enter по ссылке в списке не оставляет человека без точки на
+        // странице. Возврат из карточки, наоборот, возвращает фокус на страницу списка.
+        if (_focusCard)
+        {
+            _focusCard = false;
+            try { await _card.FocusAsync(); }
+            catch (JSDisconnectedException) { }
+        }
+        if (_returnFocus)
+        {
+            _returnFocus = false;
+            if (_newButton is not null) await _newButton.FocusAsync();
+        }
         if (!firstRender || _pendingScroll <= 0) return;
         var scroll = _pendingScroll;
         _pendingScroll = 0;
         await Session.TaskList.RestoreScroll(scroll);
     }
+    // Esc в открытой карточке возвращает к списку; несохранённый черновик держит карточка, поэтому Esc при
+    // нём не срабатывает — правки уходят только после явного согласия.
+    private void OnCardKey(KeyboardEventArgs e)
+    {
+        if (e.Key != "Escape" || _details?.Dirty == true) return;
+        _returnFocus = true;
+        Navigation.NavigateTo("tasks");
+    }
     // Фильтры сохраняются при каждом изменении (@bind-Value:after), чтобы контекст был готов к переходу.
     private Task SaveListContext() => Session.TaskList.SaveFilters(_search, _projectFilter, _statusFilter);
-    protected override async Task OnParametersSetAsync() { _editing=null; await Load(); }
+    protected override async Task OnParametersSetAsync() { _editing=null; FocusOpened(); await Load(); }
+
+    // Открытие задачи (клик по строке или Enter по ссылке) помечает карточку как цель фокуса.
+    private void FocusOpened()
+    {
+        if (Current is null) { _opened = null; return; }
+        if (_opened == Current.Id) return;
+        _opened = Current.Id;
+        _focusCard = true;
+    }
     private async Task Open(TaskModel? task){ if(task is null) return; await Session.TaskList.SaveFilters(_search, _projectFilter, _statusFilter); await Session.TaskList.SaveScroll(await Session.TaskList.Scroll()); Navigation.NavigateTo($"tasks/{task.Id}"); }
     private async Task Run(Func<Task> action) { _busy=true; _error=null;try{await action();}catch(Exception e) when(e is HttpRequestException or InvalidOperationException){_error=PageFeedback.Describe(e);}finally{_busy=false;} }
     private Task Load()=>Run(async()=>{await Session.Initialize();if(Session.TeamId is null)return;_tasks=await Session.Get<TaskModel[]>(Session.TeamPath("tasks"));_projects=await Session.Get<ProjectModel[]>(Session.TeamPath("projects"));_actors=await Session.Get<ActorModel[]>(Session.TeamPath("actors"));_sprints=await Session.Get<SprintModel[]>(Session.TeamPath("sprints"));_loaded=true;});
     private void NewTask(){_editing=new TaskModel { TeamId=Session.TeamId!.Value };_history=[];}
     private void NewChild(Guid id){NewTask();_editing!.ParentId=id;}
     private FlareButton? _newButton;
+    // Открытая карточка задачи: её обёртка (фокус при открытии), сама карточка (несохранённые правки) и
+    // признаки, что после перерисовки нужно вернуть фокус.
+    private ElementReference _card;
+    private TaskDetails? _details;
+    private Guid? _opened;
+    private bool _focusCard;
+    private bool _returnFocus;
     private void Hide(){_editing=null;_history=[];}
     // Закрытие редактора возвращает фокус на кнопку, которой его открыли, а не роняет его на body.
     private async Task Close(){Hide();StateHasChanged();if(_newButton is not null) await _newButton.FocusAsync();}
