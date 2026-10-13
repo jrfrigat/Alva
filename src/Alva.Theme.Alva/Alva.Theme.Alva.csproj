@@ -16,7 +16,7 @@
       Expressive, а всё, что Alva действительно переопределяет, высказано в AlvaTheme. Пакет темы нужен
       только ради базовых токенов (см. docs/ru/theme-creation-guide.md, «Деривация от встроенной темы»).
     -->
-    <PackageReference Include="Flare.Theme.MaterialDesign3Expressive" Version="0.43.0" />
+    <PackageReference Include="Flare.Theme.MaterialDesign3Expressive" Version="0.44.0" />
   </ItemGroup>
 
 </Project>

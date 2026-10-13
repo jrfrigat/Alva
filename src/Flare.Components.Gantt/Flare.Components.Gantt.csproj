@@ -15,7 +15,7 @@
 
   <ItemGroup>
     <!-- Только Flare: пакет не знает о приложении, которое его использует. -->
-    <PackageReference Include="Flare.Blazor" Version="0.43.0" />
+    <PackageReference Include="Flare.Blazor" Version="0.44.0" />
   </ItemGroup>
 
   <ItemGroup>
