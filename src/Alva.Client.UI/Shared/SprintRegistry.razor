@@ -140,16 +140,16 @@
                 {
                     <div class="alva-iteration__risks">
                         <span class="alva-iteration__risks-title"><FlareIconView Value="@MaterialDesign3Icons.Regular.Error" Size="16px" /> @risks.Length @AlvaFormat.Plural(risks.Length, "задача", Strings.T("задачи"), Strings.T("задач")) под риском срыва срока:</span>
-                        <ul>@foreach (var risk in risks.Take(3)) { <li><a href="@($"/tasks/{risk.TaskId}")">@risk.Title</a> — @string.Join(", ", risk.Reasons)</li> }</ul>
+                        <ul>@foreach (var risk in risks.Take(3)) { <li><a href="@($"tasks/{risk.TaskId}")">@risk.Title</a> — @string.Join(", ", risk.Reasons)</li> }</ul>
                     </div>
                 }
             </div>
             <div class="alva-iteration__footer">
-                <FlareButton Href="@($"/sprints/{sprint.Id}")" Size="ButtonSize.Sm">
+                <FlareButton Href="@($"sprints/{sprint.Id}")" Size="ButtonSize.Sm">
                     <ChildContent>@(Strings.T("Перейти в спринт"))</ChildContent>
                     <TrailingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.ArrowForward" Size="16px" /></TrailingIcon>
                 </FlareButton>
-                <FlareButton Href="@($"/sprints/{sprint.Id}/plan")" Variant="ButtonVariant.Outlined" Size="ButtonSize.Sm">
+                <FlareButton Href="@($"sprints/{sprint.Id}/plan")" Variant="ButtonVariant.Outlined" Size="ButtonSize.Sm">
                     <LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.Balance" Size="16px" /></LeadingIcon>
                     <ChildContent>@(Strings.T("Сбалансировать"))</ChildContent>
                 </FlareButton>
@@ -181,7 +181,7 @@
                 </div>
                 <div class="alva-sprint-card__footer">
                     <span class="alva-num">Старт через @Math.Max(0, sprint.StartDate.DayNumber - Today.DayNumber) дн.</span>
-                    <FlareButton Href="@($"/sprints/{sprint.Id}/plan")" Size="ButtonSize.Sm">
+                    <FlareButton Href="@($"sprints/{sprint.Id}/plan")" Size="ButtonSize.Sm">
                         <ChildContent>@(Strings.T("Открыть планирование"))</ChildContent>
                         <TrailingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.ArrowForward" Size="16px" /></TrailingIcon>
                     </FlareButton>
@@ -202,7 +202,7 @@
             var (done, total) = Hours(sprint);
             var open = tasks.Count(t => t.Status is not ("Done" or "Cancelled"));
             <div class="alva-archive__row" role="row" @key="sprint.Id">
-                <span role="cell"><a class="alva-archive__name" href="@($"/sprints/{sprint.Id}")">@sprint.Name</a><span class="alva-archive__meta alva-num">@AlvaFormat.Period(sprint.StartDate, sprint.EndDate)</span>@if (!string.IsNullOrWhiteSpace(sprint.Goal)) { <span class="alva-archive__goal">@sprint.Goal</span> }</span>
+                <span role="cell"><a class="alva-archive__name" href="@($"sprints/{sprint.Id}")">@sprint.Name</a><span class="alva-archive__meta alva-num">@AlvaFormat.Period(sprint.StartDate, sprint.EndDate)</span>@if (!string.IsNullOrWhiteSpace(sprint.Goal)) { <span class="alva-archive__goal">@sprint.Goal</span> }</span>
                 <span role="cell">
                     @if (open == 0) { <AlvaStatusChip Tone="AlvaTone.Ok">@(Strings.T("Завершён"))</AlvaStatusChip> }
                     else { <AlvaStatusChip Tone="AlvaTone.Warning">Не закрыто @open</AlvaStatusChip> }

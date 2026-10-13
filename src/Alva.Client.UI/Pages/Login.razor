@@ -40,7 +40,7 @@
     private string? ErrorOf(Field field) => _errors.GetValueOrDefault(field);
 
     // У входа и регистрации свои адреса: /register открывает форму регистрации.
-    protected override void OnInitialized() => _register = new Uri(Navigation.Uri).AbsolutePath.Equals("/register", StringComparison.OrdinalIgnoreCase);
+    protected override void OnInitialized() => _register = AppRoutes.Current(Navigation).Equals("register", StringComparison.OrdinalIgnoreCase);
 
     // Правка поля снимает его ошибку: сообщение больше не описывает то, что введено.
     private void Edit(ref string? target, string? value, Field field) { target = value; _errors.Remove(field); }
@@ -51,7 +51,7 @@
         _register = !_register;
         _error = null;
         _errors.Clear();
-        Navigation.NavigateTo(_register ? "/register" : "/login");
+        Navigation.NavigateTo(_register ? "register" : "login");
     }
 
     /// <summary>Проверки до запроса: неверная форма не уходит на сервер и не тратит лимит попыток входа.</summary>
@@ -85,7 +85,7 @@
         try
         {
             await Session.Authenticate(_register ? "register" : "login", new { email = _email?.Trim(), password = _password, displayName = _displayName, workspaceName = _workspaceName });
-            Navigation.NavigateTo("/workspaces");
+            Navigation.NavigateTo("workspaces");
         }
         // Занятая почта — ошибка конкретного поля; остальные ответы сервера — общая сводка.
         catch (HttpRequestException error) when (_register && error.StatusCode == System.Net.HttpStatusCode.Conflict) { _errors[Field.Email] = error.Message; await FocusFirstError(); }

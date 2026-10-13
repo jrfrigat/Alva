@@ -28,11 +28,11 @@ public sealed class TaskListContextTests : UiTestBase
     {
         Navigation.NavigateTo("/tasks");
         var cut = Render<Tasks>();
-        cut.WaitForAssertion(() => Assert.Equal(2, cut.FindAll(".flare-vtree a[href^='/tasks/']").Count));
+        cut.WaitForAssertion(() => Assert.Equal(2, cut.FindAll(".flare-vtree a[href^='tasks/']").Count));
 
         // Поиск сужает список до одной задачи.
         Field(cut, "Поиск задач").Input("Релиз");
-        cut.WaitForAssertion(() => Assert.Single(cut.FindAll(".flare-vtree a[href^='/tasks/']")));
+        cut.WaitForAssertion(() => Assert.Single(cut.FindAll(".flare-vtree a[href^='tasks/']")));
 
         // Открытие задачи уходит на её маршрут.
         cut.FindAll("[role='treeitem']").First(n => n.TextContent.Contains("Релиз")).Click();
@@ -41,7 +41,7 @@ public sealed class TaskListContextTests : UiTestBase
         // Back: страница списка создаётся заново, но контекст возвращается из состояния списка.
         Navigation.NavigateTo("/tasks");
         var back = Render<Tasks>();
-        back.WaitForAssertion(() => Assert.Single(back.FindAll(".flare-vtree a[href^='/tasks/']")));
+        back.WaitForAssertion(() => Assert.Single(back.FindAll(".flare-vtree a[href^='tasks/']")));
         Assert.Equal("Релиз", Field(back, "Поиск задач").GetAttribute("value"));
     }
 }

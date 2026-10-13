@@ -2,7 +2,7 @@
    сотрудника, вычеты и предстоящие отсутствия. *@
 @inject AlvaSession Session
 <section class="alva-person-head">
-    <FlareBreadcrumb Items="@(new BreadcrumbItem[] { new(Strings.T("Ёмкость"), "/capacity"), new(Strings.T("Графики людей"), "/capacity/people"), new(Person?.Name ?? Strings.T("Сотрудник")) })" Separator="›" AriaLabel="@(Strings.T("Путь к календарю сотрудника"))" />
+    <FlareBreadcrumb Items="@(new BreadcrumbItem[] { new(Strings.T("Ёмкость"), "capacity"), new(Strings.T("Графики людей"), "capacity/people"), new(Person?.Name ?? Strings.T("Сотрудник")) })" Separator="›" AriaLabel="@(Strings.T("Путь к календарю сотрудника"))" />
     <div class="alva-person-head__row">
         <div class="alva-person-head__who">
             <span class="alva-slot__mark alva-person-head__avatar" aria-hidden="true">@AlvaFormat.Initials(Person?.Name ?? "?")</span>
@@ -20,7 +20,7 @@
             <span class="alva-person-head__week alva-num"><b>@_monday.ToString("d") – @_monday.AddDays(6).ToString("d MMMM yyyy")</b>@if (SprintOfWeek is { } s) { <small>@s.Name</small> }</span>
             <FlareIconButton Icon="@MaterialDesign3Icons.Regular.ChevronRight" Size="ButtonSize.Sm" AriaLabel="@(Strings.T("Следующая неделя"))" OnClick="() => Shift(7)" />
             <FlareButton Variant="ButtonVariant.Text" Size="ButtonSize.Sm" OnClick="ThisWeek">@(Strings.T("Сегодня"))</FlareButton>
-            <FlareButton Href="@($"/capacity/{ActorId}/schedule")" Size="ButtonSize.Sm"><LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.EditCalendar" Size="18px" /></LeadingIcon><ChildContent>@(Strings.T("Редактор графика"))</ChildContent></FlareButton>
+            <FlareButton Href="@($"capacity/{ActorId}/schedule")" Size="ButtonSize.Sm"><LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.EditCalendar" Size="18px" /></LeadingIcon><ChildContent>@(Strings.T("Редактор графика"))</ChildContent></FlareButton>
         </div>
     </div>
 </section>
@@ -60,7 +60,7 @@
                 </div>
                 @if (avail > 0) { <span class="alva-loadbar__track"><span class="alva-loadbar__fill alva-loadbar__fill--@(alloc > avail ? "critical" : "info")" style="width:@Math.Min(100, Pct(alloc, avail))%"></span></span> }
                 @foreach (var block in Blocks(date)) { <span class="alva-weekday__item alva-weekday__item--meeting"><FlareIconView Value="@MaterialDesign3Icons.Regular.Groups" Size="14px" /> @block.Name · @AlvaFormat.Hours(block.Hours) ч</span> }
-                @foreach (var task in tasks) { <a class="alva-weekday__item" href="@($"/tasks/{task.Id}")"><span class="alva-plan-card__code">@AlvaFormat.Code(task.Id)</span> @task.Title</a> }
+                @foreach (var task in tasks) { <a class="alva-weekday__item" href="@($"tasks/{task.Id}")"><span class="alva-plan-card__code">@AlvaFormat.Code(task.Id)</span> @task.Title</a> }
             </div>
         }
     </section>
@@ -69,7 +69,7 @@
             <header class="alva-panel__header"><FlareIconView Value="@MaterialDesign3Icons.Regular.Assignment" Size="20px" Class="alva-panel__icon" /><h2 class="alva-panel__title">Задачи на неделе (@WeekTasks.Length)</h2></header>
             @foreach (var task in WeekTasks)
             {
-                <a class="alva-person-task" href="@($"/tasks/{task.Id}")" @key="task.Id">
+                <a class="alva-person-task" href="@($"tasks/{task.Id}")" @key="task.Id">
                     <span class="alva-person-task__top"><span class="alva-plan-card__code">@AlvaFormat.Code(task.Id)</span><AlvaStatusChip Tone="AlvaTones.Status(task.Status)">@Labels.Status(task.Status)</AlvaStatusChip></span>
                     <span class="alva-person-task__title">@task.Title</span>
                     <span class="alva-person-task__meta alva-num">Оценка: @(task.EstimateHours.HasValue ? $"{AlvaFormat.Hours(task.EstimateHours.Value)} ч" : "—")@(task.Deadline.HasValue ? $" · до {task.Deadline:d MMM}" : "")</span>
@@ -81,7 +81,7 @@
             <header class="alva-panel__header"><FlareIconView Value="@MaterialDesign3Icons.Regular.EventBusy" Size="20px" Class="alva-panel__icon" /><h2 class="alva-panel__title">@(Strings.T("Предстоящие отсутствия"))</h2></header>
             @foreach (var ex in Upcoming) { <div class="alva-exception alva-exception--off"><span class="alva-exception__kind">@ex.Reason</span><b class="alva-num">@ex.From.ToString("d MMM") — @ex.To.ToString("d MMM yyyy")</b><span>@AlvaFormat.Hours(ex.AvailableHours) ч/день</span></div> }
             @if (!Upcoming.Any()) { <p class="alva-kpi__note">@(Strings.T("Отпусков не запланировано."))</p> }
-            <FlareButton Href="@($"/capacity/{ActorId}/schedule")" Variant="ButtonVariant.Tonal" Size="ButtonSize.Sm"><LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.Add" Size="18px" /></LeadingIcon><ChildContent>@(Strings.T("Отгул / отпуск"))</ChildContent></FlareButton>
+            <FlareButton Href="@($"capacity/{ActorId}/schedule")" Variant="ButtonVariant.Tonal" Size="ButtonSize.Sm"><LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.Add" Size="18px" /></LeadingIcon><ChildContent>@(Strings.T("Отгул / отпуск"))</ChildContent></FlareButton>
         </section>
     </aside>
 </div>

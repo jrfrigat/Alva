@@ -7,7 +7,7 @@
         <NotFound>
             <LayoutView Layout="typeof(MainLayout)">
                 <FlareEmptyState Title="@(Strings.T("Страница не найдена"))" Description="@(Strings.T("Проверьте адрес или вернитесь к обзору."))">
-                    <ActionContent><FlareButton Href="/">@(Strings.T("Обзор команды"))</FlareButton></ActionContent>
+                    <ActionContent><FlareButton Href="@AppRoutes.Home">@(Strings.T("Обзор команды"))</FlareButton></ActionContent>
                 </FlareEmptyState>
             </LayoutView>
         </NotFound>

@@ -112,7 +112,7 @@
             <div class="alva-sprint-table__row @(task.Status == "Done" ? "alva-sprint-table__row--done" : "")" role="row" @key="task.Id">
                 <span role="cell" class="alva-num alva-sprint-table__index">@index</span>
                 <span role="cell" class="alva-sprint-table__task">
-                    <a href="@($"/tasks/{task.Id}")" class="alva-sprint-table__title">@task.Title</a>
+                    <a href="@($"tasks/{task.Id}")" class="alva-sprint-table__title">@task.Title</a>
                     <span class="alva-sprint-table__meta alva-num">@AlvaFormat.Code(task.Id)@(task.Deadline.HasValue ? $" · Дедлайн: {task.Deadline:d MMM}" : "")@(Risks.Any(r => r.TaskId == task.Id) ? " · под риском" : "")</span>
                 </span>
                 <span role="cell"><span class="alva-project-chip">@ProjectName(task.ProjectId)</span></span>
@@ -165,7 +165,7 @@
     private int LoadOf(Guid id) => Percent(_load[id].Allocated, _load[id].Available);
     private string ProjectName(Guid? id) => _projects.FirstOrDefault(p => p.Id == id)?.Name ?? Strings.T("Текучка");
 
-    private IEnumerable<BreadcrumbItem> Crumbs => [new(Strings.T("Спринты"), "/sprints"), new(Sprint.Name)];
+    private IEnumerable<BreadcrumbItem> Crumbs => [new(Strings.T("Спринты"), "sprints"), new(Sprint.Name)];
 
     /// <summary>Люди спринта (исполнители его задач) по убыванию загрузки за окно спринта.</summary>
     private (ActorModel Actor, int Pct)[] People => _actors

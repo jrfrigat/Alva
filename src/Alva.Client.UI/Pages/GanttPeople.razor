@@ -108,7 +108,7 @@ else if (_data is not null && _people is not null)
     private void SetTwoD(bool value)
     {
         _twoD = value;
-        Navigation.NavigateTo(value ? "/gantt/2d" : "/gantt/people", replace: true);
+        Navigation.NavigateTo(value ? "gantt/2d" : "gantt/people", replace: true);
     }
 
     private async Task Reload(bool initial = false)

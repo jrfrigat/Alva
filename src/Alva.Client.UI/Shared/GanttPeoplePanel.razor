@@ -12,7 +12,7 @@
         <div class="alva-gantt-row">
             @if (row.Kind == "person")
             {
-                <a class="alva-gantt-row__title" href="/capacity/@row.Actor!.Id" title="@row.Name">@row.Name</a>
+                <a class="alva-gantt-row__title" href="capacity/@row.Actor!.Id" title="@row.Name">@row.Name</a>
             }
             else
             {

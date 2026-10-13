@@ -29,18 +29,18 @@ else
 }
 @if(Planning)
 {
-    if(SprintId.HasValue && Current is null){if(_loaded){<UnavailableState Title="@(Strings.T("Спринт не найден или недоступен"))" BackHref="/sprints" BackLabel="@(Strings.T("К спринтам"))" />}}
+    if(SprintId.HasValue && Current is null){if(_loaded){<UnavailableState Title="@(Strings.T("Спринт не найден или недоступен"))" BackHref="sprints" BackLabel="@(Strings.T("К спринтам"))" />}}
     else if(PlanSprint is not null){<SprintPlanning @ref="_planning" Sprint="PlanSprint" Sprints="_sprints" Tasks="_tasks" Changed="Reload" OnParams="()=>Edit(PlanSprint)" />}
     else if(_loaded){<FlareEmptyState Title="@(Strings.T("Нечего планировать"))" Description="@(Strings.T("Создайте спринт, чтобы собрать в него задачи из пула."))"><ActionContent><FlareButton @ref="_emptyNewButton" Size="ButtonSize.Sm" OnClick="New">@(Strings.T("Новый спринт"))</FlareButton></ActionContent></FlareEmptyState>}
 }
 else if(SprintId is null){<SprintRegistry Sprints="_sprints" Tasks="_tasks" />}
-else if(Current is not null){<SprintDetails Sprint="Current" Tasks="_tasks" OnEdit="@(()=>Navigation.NavigateTo($"/sprints/{Current.Id}/plan"))" Changed="Load" />}
-else if(_loaded){<UnavailableState Title="@(Strings.T("Спринт не найден или недоступен"))" BackHref="/sprints" BackLabel="@(Strings.T("К спринтам"))" />}
+else if(Current is not null){<SprintDetails Sprint="Current" Tasks="_tasks" OnEdit="@(()=>Navigation.NavigateTo($"sprints/{Current.Id}/plan"))" Changed="Load" />}
+else if(_loaded){<UnavailableState Title="@(Strings.T("Спринт не найден или недоступен"))" BackHref="sprints" BackLabel="@(Strings.T("К спринтам"))" />}
 }
 @code {
     [Parameter]public Guid? SprintId{get;set;}
     private SprintModel[] _sprints=[];private TaskModel[] _tasks=[];private SprintModel? _editing;private DateOnly? _start,_end;private bool _busy,_loaded;private string? _error;private readonly string[] _statuses=["Planned","Active","Completed"];
-    private bool Planning => new Uri(Navigation.Uri).AbsolutePath.EndsWith("/plan", StringComparison.Ordinal);
+    private bool Planning => AppRoutes.Current(Navigation).EndsWith("/plan", StringComparison.Ordinal);
     private SprintModel? Current => SprintId.HasValue ? _sprints.FirstOrDefault(s=>s.Id==SprintId) : null;
     /// <summary>Спринт доски: указанный в адресе (без подмены, если его нет), иначе активный, иначе ближайший запланированный.</summary>
     private SprintModel? PlanSprint => SprintId.HasValue ? Current : _sprints.FirstOrDefault(s=>s.Status=="Active") ?? _sprints.Where(s=>s.Status=="Planned").OrderBy(s=>s.StartDate).FirstOrDefault();
@@ -60,5 +60,5 @@ else if(_loaded){<UnavailableState Title="@(Strings.T("Спринт не най�
     }
     /// <summary>Доска изменила спринт или задачи: открытая форма параметров устарела.</summary>
     private Task Reload(){_editing=null;return Load();}
-    private Task Save()=>Run(async()=>{var s=_editing!;var saved=await Session.Save<SprintModel>(s.Id==Guid.Empty?HttpMethod.Post:HttpMethod.Put,Session.TeamPath("sprints"+(s.Id==Guid.Empty?"":$"/{s.Id}")),new SprintRequest(s.Name,s.Goal,_start!.Value,_end!.Value,s.Status));_sprints=await Session.Get<SprintModel[]>(Session.TeamPath("sprints"));_editing=null;Navigation.NavigateTo($"/sprints/{saved.Id}/plan");});
+    private Task Save()=>Run(async()=>{var s=_editing!;var saved=await Session.Save<SprintModel>(s.Id==Guid.Empty?HttpMethod.Post:HttpMethod.Put,Session.TeamPath("sprints"+(s.Id==Guid.Empty?"":$"/{s.Id}")),new SprintRequest(s.Name,s.Goal,_start!.Value,_end!.Value,s.Status));_sprints=await Session.Get<SprintModel[]>(Session.TeamPath("sprints"));_editing=null;Navigation.NavigateTo($"sprints/{saved.Id}/plan");});
 }

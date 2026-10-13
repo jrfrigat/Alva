@@ -7,6 +7,6 @@
 @code {
     [Parameter, EditorRequired] public string Title { get; set; } = "";
     [Parameter] public string? Description { get; set; }
-    [Parameter, EditorRequired] public string BackHref { get; set; } = "/";
+    [Parameter, EditorRequired] public string BackHref { get; set; } = AppRoutes.Home;
     [Parameter, EditorRequired] public string BackLabel { get; set; } = "";
 }

@@ -52,7 +52,7 @@
     private RenderFragment RowContent(TaskModel task) => __builder =>
     {
         <span class="alva-gantt-row__body">
-            <a class="alva-gantt-row__title" href="/tasks/@task.Id" title="@task.Title">@task.Title</a>
+            <a class="alva-gantt-row__title" href="tasks/@task.Id" title="@task.Title">@task.Title</a>
             <span class="alva-gantt-row__meta">@Data.Assignee(task) · @AlvaFormat.Hours(task.EffectiveEstimateHours) ч</span>
         </span>
         @if (RowActions is not null) { @RowActions(task) }

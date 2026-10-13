@@ -39,7 +39,7 @@ else if (_data is not null)
 
     @if (_data.Tasks.Length == 0)
     {
-        <FlareEmptyState Title="@(Strings.T("Задач пока нет"))" Description="@(Strings.T("Создайте задачи в «Матрёшке», и они появятся на диаграмме."))"><ActionContent><FlareButton Href="/tasks">@(Strings.T("К задачам"))</FlareButton></ActionContent></FlareEmptyState>
+        <FlareEmptyState Title="@(Strings.T("Задач пока нет"))" Description="@(Strings.T("Создайте задачи в «Матрёшке», и они появятся на диаграмме."))"><ActionContent><FlareButton Href="tasks">@(Strings.T("К задачам"))</FlareButton></ActionContent></FlareEmptyState>
     }
     else
     {

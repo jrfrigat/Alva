@@ -26,7 +26,7 @@
                         <li class="alva-bell__item @(item.New ? "alva-bell__item--new" : "")">
                             <div class="alva-bell__title">
                                 <AlvaStatusChip Tone="AlvaTones.Severity(item.Risk.Severity)">@(item.Risk.Severity == "High" ? Strings.T("Высокий") : Strings.T("Средний"))</AlvaStatusChip>
-                                <a href="/tasks/@item.Risk.TaskId" @onclick="Close">@item.Risk.Title</a>
+                                <a href="tasks/@item.Risk.TaskId" @onclick="Close">@item.Risk.Title</a>
                                 @if (item.New) { <span class="alva-bell__new">@(Strings.T("новый"))</span> }
                             </div>
                             <FlareText Typo="TypographyScale.BodySmall" Class="alva-bell__reasons">@string.Join(" · ", item.Risk.Reasons)</FlareText>
@@ -59,6 +59,6 @@
     }
     private void Refresh() => InvokeAsync(StateHasChanged);
     private void Close() => _open = false;
-    private void OpenAll() { _open = false; Navigation.NavigateTo("/analytics"); }
+    private void OpenAll() { _open = false; Navigation.NavigateTo("analytics"); }
     public void Dispose() => Notifications.Changed -= Refresh;
 }

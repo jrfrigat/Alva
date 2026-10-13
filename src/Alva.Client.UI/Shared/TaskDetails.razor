@@ -78,8 +78,8 @@
                 <div class="alva-subtasks__row" role="row" @key="child.Id">
                     <span class="alva-subtasks__name" role="cell">
                         <FlareIconView Value="@MaterialDesign3Icons.Regular.SubdirectoryArrowRight" Size="16px" Class="alva-subtasks__arrow" />
-                        <a class="alva-subtasks__code" href="@($"/tasks/{child.Id}")">@Code(Item).@(i + 1)</a>
-                        <a class="alva-subtasks__title" href="@($"/tasks/{child.Id}")" title="@child.Title">@child.Title</a>
+                        <a class="alva-subtasks__code" href="@($"tasks/{child.Id}")">@Code(Item).@(i + 1)</a>
+                        <a class="alva-subtasks__title" href="@($"tasks/{child.Id}")" title="@child.Title">@child.Title</a>
                     </span>
                     <span role="cell"><AlvaAssignee Task="child" Actors="Actors" /></span>
                     <span class="alva-subtasks__est alva-num" role="cell">@(child.EstimateHours.HasValue ? $"{AlvaFormat.Hours(child.EstimateHours.Value)} ч" : "—")</span>
@@ -177,9 +177,9 @@
     {
         get
         {
-            yield return new("Задачи", "/tasks");
-            if (Projects.FirstOrDefault(p => p.Id == Item.ProjectId) is { } project) yield return new(project.Name, "/projects");
-            if (Sprints.FirstOrDefault(s => Item.SprintIds.Contains(s.Id)) is { } sprint) yield return new(sprint.Name, $"/sprints/{sprint.Id}");
+            yield return new("Задачи", "tasks");
+            if (Projects.FirstOrDefault(p => p.Id == Item.ProjectId) is { } project) yield return new(project.Name, "projects");
+            if (Sprints.FirstOrDefault(s => Item.SprintIds.Contains(s.Id)) is { } sprint) yield return new(sprint.Name, $"sprints/{sprint.Id}");
             yield return new(Code(Item));
         }
     }
@@ -355,7 +355,7 @@
         await Session.Send(HttpMethod.Delete, Session.TeamPath($"tasks/{Item.Id}"), new { });
         await Changed.InvokeAsync();
         _leaving = true;
-        Navigation.NavigateTo("/tasks");
+        Navigation.NavigateTo("tasks");
     });
 
     private async Task Run(Func<Task> action)

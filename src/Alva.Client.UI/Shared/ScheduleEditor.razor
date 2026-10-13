@@ -6,13 +6,13 @@
     <div class="alva-page-header__text">
         @if (IsDepartment)
         {
-            <FlareBreadcrumb Items="@(new BreadcrumbItem[] { new("Команда", "/team"), new(Strings.T("Подкоманды"), "/team/departments"), new(Actor!.Name), new("График подкоманды") })" Separator="›" AriaLabel="@(Strings.T("Путь к редактору"))" />
+            <FlareBreadcrumb Items="@(new BreadcrumbItem[] { new("Команда", "team"), new(Strings.T("Подкоманды"), "team/departments"), new(Actor!.Name), new("График подкоманды") })" Separator="›" AriaLabel="@(Strings.T("Путь к редактору"))" />
             <h1 class="alva-page-header__title">График подкоманды «@Actor.Name»</h1>
             <p class="alva-page-header__desc">@(Strings.T("Общие нерабочие дни и повторяющиеся встречи подкоманды. Они вычитаются из ёмкости всех её участников и вложенных подкоманд поверх их личных графиков."))</p>
         }
         else
         {
-            <FlareBreadcrumb Items="@(new BreadcrumbItem[] { new(Strings.T("Ёмкость"), "/capacity"), new(Strings.T("Графики людей"), "/capacity/people"), new(Person?.Name ?? Strings.T("Сотрудник"), $"/capacity/{ActorId}"), new(Strings.T("Редактор графика")) })" Separator="›" AriaLabel="@(Strings.T("Путь к редактору"))" />
+            <FlareBreadcrumb Items="@(new BreadcrumbItem[] { new(Strings.T("Ёмкость"), "capacity"), new(Strings.T("Графики людей"), "capacity/people"), new(Person?.Name ?? Strings.T("Сотрудник"), $"capacity/{ActorId}"), new(Strings.T("Редактор графика")) })" Separator="›" AriaLabel="@(Strings.T("Путь к редактору"))" />
             <h1 class="alva-page-header__title">@(Strings.T("Редактор рабочего графика"))</h1>
             <p class="alva-page-header__desc">Рабочие часы, выходные, отпуска и повторяющиеся нерабочие интервалы @(Person is null ? "" : $"для {Person.Name}") — с проекцией на ёмкость спринтов.</p>
         }
@@ -126,7 +126,7 @@
             <header class="alva-panel__header"><FlareIconView Value="@MaterialDesign3Icons.Regular.Groups" Size="20px" Class="alva-panel__icon" /><div><h2 class="alva-panel__title">@(Strings.T("Участники"))</h2><p class="alva-panel__subtitle">@(Strings.T("На них действует этот график"))</p></div></header>
             @foreach (var person in Members)
             {
-                <a class="alva-person-link" href="@($"/capacity/{person.Id}/schedule")" @key="person.Id"><span class="alva-slot__mark" aria-hidden="true">@AlvaFormat.Initials(person.Name)</span><span>@person.Name</span></a>
+                <a class="alva-person-link" href="@($"capacity/{person.Id}/schedule")" @key="person.Id"><span class="alva-slot__mark" aria-hidden="true">@AlvaFormat.Initials(person.Name)</span><span>@person.Name</span></a>
             }
             @if (!Members.Any()) { <p class="alva-kpi__note">@(Strings.T("В подкоманде пока нет участников."))</p> }
         </section>
@@ -150,7 +150,7 @@
             <header class="alva-panel__header"><FlareIconView Value="@MaterialDesign3Icons.Regular.Person" Size="20px" Class="alva-panel__icon" /><h2 class="alva-panel__title">@(Strings.T("Сотрудники команды"))</h2></header>
             @foreach (var person in _people)
             {
-                <a class="alva-person-link @(person.Id == ActorId ? "alva-person-link--active" : "")" href="@($"/capacity/{person.Id}/schedule")" @key="person.Id"><span class="alva-slot__mark" aria-hidden="true">@AlvaFormat.Initials(person.Name)</span><span>@person.Name</span></a>
+                <a class="alva-person-link @(person.Id == ActorId ? "alva-person-link--active" : "")" href="@($"capacity/{person.Id}/schedule")" @key="person.Id"><span class="alva-slot__mark" aria-hidden="true">@AlvaFormat.Initials(person.Name)</span><span>@person.Name</span></a>
             }
         </section>
         }

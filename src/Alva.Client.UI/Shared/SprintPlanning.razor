@@ -34,7 +34,7 @@
             <LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.Tune" Size="18px" /></LeadingIcon>
             <ChildContent>@(Strings.T("Параметры спринта"))</ChildContent>
         </FlareButton>
-        <FlareButton Href="@($"/sprints/{Sprint.Id}")" Variant="ButtonVariant.Outlined" Size="ButtonSize.Sm">@(Strings.T("Страница спринта"))</FlareButton>
+        <FlareButton Href="@($"sprints/{Sprint.Id}")" Variant="ButtonVariant.Outlined" Size="ButtonSize.Sm">@(Strings.T("Страница спринта"))</FlareButton>
         @if (Sprint.Status == "Planned")
         {
             <FlareButton Size="ButtonSize.Sm" Loading="_busy" OnClick="Commit">
@@ -91,7 +91,7 @@
                         <FlareCheckbox TValue="bool" Value="_chosen.Contains(change.TaskId)" ValueChanged="(bool on) => Choose(change.TaskId, on)"
                                        AriaLabel="@($"Применить изменение «{change.Title}»")" />
                         <div class="alva-plan-change__body">
-                            <a class="alva-plan-change__title" href="/tasks/@change.TaskId">@change.Title</a>
+                            <a class="alva-plan-change__title" href="tasks/@change.TaskId">@change.Title</a>
                             <span class="alva-plan-change__what alva-num">
                                 @if (change.FromPersonId != change.ToPersonId)
                                 {
@@ -133,7 +133,7 @@
                 <FlareDropZone Target="@($"task:{task.Id}")" Accepts="IsPerson" Class="alva-plan-card-zone" @key="task.Id">
                     <FlareDraggable Payload="@(new TaskDrag(task.Id))" Class="alva-plan-card">
                         <div class="alva-plan-card__top">
-                            <a class="alva-plan-card__code" href="@($"/tasks/{task.Id}")">@AlvaFormat.Code(task.Id)</a>
+                            <a class="alva-plan-card__code" href="@($"tasks/{task.Id}")">@AlvaFormat.Code(task.Id)</a>
                             <span class="alva-project-chip">@ProjectName(task.ProjectId)</span>
                             <span class="alva-plan-card__est alva-num"><FlareIconView Value="@MaterialDesign3Icons.Regular.Schedule" Size="15px" /> @(task.EstimateHours.HasValue ? $"{AlvaFormat.Hours(task.EstimateHours.Value)} ч" : "—")</span>
                         </div>
@@ -338,7 +338,7 @@
 
     private static DateTime Max(DateTime a, DateTime b) => a > b ? a : b;
 
-    private void Pick(Guid id) => Navigation.NavigateTo($"/sprints/{id}/plan");
+    private void Pick(Guid id) => Navigation.NavigateTo($"sprints/{id}/plan");
 
     private bool FromSprint(object? payload) => payload is TaskDrag t && _gantt?.Tasks.FirstOrDefault(x => x.Id == t.TaskId)?.Planned == true;
     private static bool IsPerson(object? payload) => payload is PersonDrag;

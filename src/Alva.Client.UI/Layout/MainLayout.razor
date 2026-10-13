@@ -11,12 +11,12 @@
     <FlareLayoutAppBar DrawerToggle="true">
         @* Шапка макета: знак и название, переключатель команды, справа пользователь. *@
         <div class="alva-appbar">
-            <a href="/" class="alva-brand" aria-label="@(Strings.T("Alva — на главную"))">
+            <a href="@AppRoutes.Home" class="alva-brand" aria-label="@(Strings.T("Alva — на главную"))">
                 <span class="alva-brand__mark" aria-hidden="true">A</span>
                 <span class="alva-brand__text"><span class="alva-brand__name">ALVA</span><span class="alva-brand__caption">@(Strings.T("Планирование ресурсов"))</span></span>
             </a>
             <span class="alva-appbar__sep" aria-hidden="true"></span>
-            <a href="/workspaces" class="alva-team-chip" title="@(Strings.T("Сменить команду"))">
+            <a href="workspaces" class="alva-team-chip" title="@(Strings.T("Сменить команду"))">
                 <FlareIconView Value="@MaterialDesign3Icons.Regular.Groups" Size="18px" Class="alva-team-chip__icon" />
                 <span class="alva-team-chip__name">@Session.TeamName</span>
                 <FlareIconView Value="@MaterialDesign3Icons.Regular.KeyboardArrowDown" Size="16px" Class="alva-team-chip__chevron" />
@@ -26,13 +26,13 @@
             @if (Session.User is not null)
             {
                 <RiskBell />
-                <a href="/settings" class="alva-user" title="@(Strings.T("Профиль и настройки"))">
+                <a href="settings" class="alva-user" title="@(Strings.T("Профиль и настройки"))">
                     <span class="alva-user__avatar" aria-hidden="true"><FlareIconView Value="@MaterialDesign3Icons.Regular.Person" Size="18px" /></span>
                     <span class="alva-user__name">@Session.User.DisplayName</span>
                 </a>
                 <FlareButton OnClick="Logout" Variant="ButtonVariant.Text" Size="ButtonSize.Sm">@(Strings.T("Выйти"))</FlareButton>
             }
-            else { <FlareButton Href="/login" Size="ButtonSize.Sm">@(Strings.T("Войти"))</FlareButton> }
+            else { <FlareButton Href="login" Size="ButtonSize.Sm">@(Strings.T("Войти"))</FlareButton> }
         </div>
     </FlareLayoutAppBar>
     <FlareLayoutDrawer @bind-Open="_open" Variant="DrawerVariant.Responsive" Width="18rem" AriaLabel="@(Strings.T("Навигация"))">
@@ -85,10 +85,10 @@
     private IAsyncDisposable? _viewportSubscription;
     // Страницы с несколькими маршрутами (/team и /team/roles, /capacity и /capacity/people) получают одинаковые
     // параметры, и Blazor не перерисовывает их при переходе из меню; ключ по пути создаёт страницу заново.
-    private string PagePath => new Uri(Navigation.Uri).AbsolutePath;
+    private string PagePath => AppRoutes.Current(Navigation);
 
     // Доски на оси времени (Гантты и планирование спринта) занимают всю ширину; остальные страницы читаются в колонке.
-    private ContainerMaxWidth PageWidth => PagePath.StartsWith("/gantt", StringComparison.OrdinalIgnoreCase) || PagePath.EndsWith("/plan", StringComparison.OrdinalIgnoreCase) ? ContainerMaxWidth.Full : ContainerMaxWidth.Xl;
+    private ContainerMaxWidth PageWidth => PagePath.StartsWith("gantt", StringComparison.OrdinalIgnoreCase) || PagePath.EndsWith("/plan", StringComparison.OrdinalIgnoreCase) ? ContainerMaxWidth.Full : ContainerMaxWidth.Xl;
     protected override void OnInitialized() => Session.Changed += Refresh;
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -105,7 +105,7 @@
     private async Task Logout()
     {
         await Session.Logout();
-        Navigation.NavigateTo("/login");
+        Navigation.NavigateTo("login");
     }
     public async ValueTask DisposeAsync() { Session.Changed -= Refresh; if (_viewportSubscription is not null) await _viewportSubscription.DisposeAsync(); }
 }

@@ -10,14 +10,14 @@
     <div class="alva-page-header__actions">
         @if (_actors.FirstOrDefault(a => a.Kind == "Person") is { } first)
         {
-            <FlareButton Href="@($"/capacity/{first.Id}")" Variant="ButtonVariant.Tonal" Size="ButtonSize.Sm">
+            <FlareButton Href="@($"capacity/{first.Id}")" Variant="ButtonVariant.Tonal" Size="ButtonSize.Sm">
                 <LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.EditCalendar" Size="18px" /></LeadingIcon>
                 <ChildContent>@(Strings.T("Редактор графиков"))</ChildContent>
             </FlareButton>
         }
         @if (_sprints.FirstOrDefault(s => s.Status == "Active") is { } active)
         {
-            <FlareButton Href="@($"/sprints/{active.Id}")" Size="ButtonSize.Sm">
+            <FlareButton Href="@($"sprints/{active.Id}")" Size="ButtonSize.Sm">
                 <LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.Balance" Size="18px" /></LeadingIcon>
                 <ChildContent>@(Strings.T("Балансировать спринт"))</ChildContent>
             </FlareButton>
@@ -97,7 +97,7 @@
             @foreach (var person in people)
             {
                 <div class="alva-matrix__row" role="row" @key="person.Id">
-                    <span role="cell" class="alva-matrix__who"><span class="alva-slot__mark" aria-hidden="true">@AlvaFormat.Initials(person.Name)</span><span><a href="@($"/capacity/{person.Id}")" class="alva-matrix__name">@person.Name</a><small>@RolesOf(person)</small></span></span>
+                    <span role="cell" class="alva-matrix__who"><span class="alva-slot__mark" aria-hidden="true">@AlvaFormat.Initials(person.Name)</span><span><a href="@($"capacity/{person.Id}")" class="alva-matrix__name">@person.Name</a><small>@RolesOf(person)</small></span></span>
                     <span role="cell"><AlvaStatusChip Tone="AlvaTone.Info">@(Strings.T("Штат"))</AlvaStatusChip></span>
                     <span role="cell" class="alva-num alva-matrix__fund">@AlvaFormat.Hours(Available(person.Id)) ч</span>
                     @foreach (var period in _periods)

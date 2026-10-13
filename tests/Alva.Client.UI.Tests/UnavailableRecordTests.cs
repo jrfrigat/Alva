@@ -33,7 +33,7 @@ public sealed class UnavailableRecordTests : UiTestBase
 
         cut.WaitForAssertion(() => Assert.Contains("Задача не найдена или недоступна", cut.Markup));
         Assert.Empty(cut.FindAll(".flare-vtree"));
-        Assert.NotNull(cut.Find("a[href='/tasks']"));
+        Assert.NotNull(cut.Find("a[href='tasks']"));
     }
 
     [Fact]
@@ -44,7 +44,7 @@ public sealed class UnavailableRecordTests : UiTestBase
         var cut = Render<Sprints>(p => p.Add(x => x.SprintId, missing));
 
         cut.WaitForAssertion(() => Assert.Contains("Спринт не найден или недоступен", cut.Markup));
-        Assert.NotNull(cut.Find("a[href='/sprints']"));
+        Assert.NotNull(cut.Find("a[href='sprints']"));
     }
 
     [Fact]

@@ -27,15 +27,30 @@ jobs:
       - uses: actions/setup-dotnet@v6
         with:
           global-json-file: global.json
+      # A project Pages site is served from /<repo>/, not from the origin root, so the app has to know
+      # its base path. This MUST happen BEFORE publish, not after: index.html is listed in
+      # service-worker-assets.js with a sha256 integrity hash, and the service worker installs with
+      # cache.addAll(...integrity...) — rewriting index.html in the published output would stop the hash
+      # matching, the install would throw, and the offline layer would silently die. Rewriting the
+      # source first means the manifest is generated from the file we actually ship.
+      # The repository keeps "/" so `dotnet run` and the container at a site root are unaffected; only
+      # this Pages build rewrites it. Same rule as the Flare gallery (Flare/.github/workflows/pages.yml).
+      - name: Point the demo at the Pages sub-path
+        run: |
+          base="/${GITHUB_REPOSITORY#*/}/"
+          sed -i "s#<base href=\"/\" />#<base href=\"${base}\" />#" src/Alva.Client.Demo/wwwroot/index.html
+          grep -q "<base href=\"${base}\" />" src/Alva.Client.Demo/wwwroot/index.html
       - name: Publish demo client
         run: dotnet publish src/Alva.Client.Demo/Alva.Client.Demo.csproj -c Release -o dist
-      - name: Prepare Pages site
+      - name: Add the static-host shims
         run: |
           site="dist/wwwroot"
-          base="/${GITHUB_REPOSITORY#*/}/"
-          sed -i "s#<base href=\"/\" />#<base href=\"${base}\" />#" "$site/index.html"
-          grep -q "<base href=\"${base}\" />" "$site/index.html"
+          # Pages has no SPA fallback: a cold deep link (/Alva/tasks/...) is a 404 for the static host,
+          # so it serves 404.html — which is the app, which then routes on the URL. Copied after publish
+          # on purpose: 404.html must not enter the service worker's asset manifest.
           cp "$site/index.html" "$site/404.html"
+          # Belt and braces: the Actions deploy path serves the artifact as-is and never runs Jekyll,
+          # but if Pages is ever pointed back at a branch, Jekyll would drop _framework/ and _content/.
           touch "$site/.nojekyll"
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3

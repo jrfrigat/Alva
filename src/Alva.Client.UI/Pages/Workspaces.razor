@@ -28,7 +28,7 @@ else
     protected override async Task OnInitializedAsync() => await Run(Session.Initialize);
     private async Task Run(Func<Task> action) { _busy=true; _error=null; try { await action(); } catch(Exception e) when(e is HttpRequestException or InvalidOperationException) { _error=e.Message; } finally { _busy=false; } }
     private Task SelectWorkspace(Guid id) => Run(() => Session.SelectWorkspace(id));
-    private Task SelectTeam(Guid id) => Run(async () => { await Session.SelectTeam(id); Navigation.NavigateTo("/"); });
+    private Task SelectTeam(Guid id) => Run(async () => { await Session.SelectTeam(id); Navigation.NavigateTo(AppRoutes.Home); });
     private Task CreateSpace() => Run(async () => { await Session.Send(HttpMethod.Post,"api/workspaces",new { name=_spaceName }); _spaceName=null; await Session.LoadWorkspaces(); });
     private Task CreateTeam() => Run(async () => { await Session.Send(HttpMethod.Post,$"api/workspaces/{Session.WorkspaceId}/teams",new { name=_teamName }); _teamName=null; await Session.SelectWorkspace(Session.WorkspaceId!.Value); });
 }

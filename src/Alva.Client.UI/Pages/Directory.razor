@@ -11,7 +11,7 @@
 @if(Session.TeamId is null) { <TeamRequired /> }
 else
 {
-<FlareStack Row Wrap><FlareButton Href="/team" Size="ButtonSize.Sm" Variant="ButtonVariant.Text">@(Strings.T("Люди"))</FlareButton><FlareButton Href="/team/departments" Size="ButtonSize.Sm" Variant="ButtonVariant.Text">@(Strings.T("Подкоманды"))</FlareButton><FlareButton Href="/team/roles" Size="ButtonSize.Sm" Variant="ButtonVariant.Text">@(Strings.T("Роли"))</FlareButton></FlareStack>
+<FlareStack Row Wrap><FlareButton Href="team" Size="ButtonSize.Sm" Variant="ButtonVariant.Text">@(Strings.T("Люди"))</FlareButton><FlareButton Href="team/departments" Size="ButtonSize.Sm" Variant="ButtonVariant.Text">@(Strings.T("Подкоманды"))</FlareButton><FlareButton Href="team/roles" Size="ButtonSize.Sm" Variant="ButtonVariant.Text">@(Strings.T("Роли"))</FlareButton></FlareStack>
 <FlareGrid MinColumnWidth="min(100%,24rem)" Gap="FlareSpacing.Large">
 <FlareCard Variant="CardVariant.Outlined"><FlareCardContent>
     <FlareDataGrid TItem="ActorModel" Items="_actors.Where(a=>a.Kind==Kind)" Height="auto" Hoverable Dense="true">
@@ -35,14 +35,14 @@ else
     <FlareStack Row Wrap>@foreach(var role in _actor.RoleIds) { <FlareButton Variant="ButtonVariant.Tonal" Size="ButtonSize.Sm" OnClick="()=>RemoveRole(role)">@ActorName(role) ×</FlareButton> }</FlareStack>
     }
     <FlareStack Row Wrap><FlareButton Loading="_busy" OnClick="SaveActor" Disabled="@(string.IsNullOrWhiteSpace(_actor.Name))">@(Strings.T("Сохранить"))</FlareButton><FlareButton Variant="ButtonVariant.Text" OnClick="Close">@(Strings.T("Закрыть"))</FlareButton>
-    @if(_actor.Id!=Guid.Empty) { @if(_actor.Kind!="Role") { <FlareButton Href="@(_actor.Kind=="Department"?$"/capacity/{_actor.Id}/schedule":$"/capacity/{_actor.Id}")" Variant="ButtonVariant.Text">@(Strings.T("Рабочий график"))</FlareButton> }<FlareButton Variant="ButtonVariant.Text" Color="FlareColor.Error" OnClick="ArchiveActor">@(Strings.T("Архивировать"))</FlareButton> }</FlareStack>
+    @if(_actor.Id!=Guid.Empty) { @if(_actor.Kind!="Role") { <FlareButton Href="@(_actor.Kind=="Department"?$"capacity/{_actor.Id}/schedule":$"capacity/{_actor.Id}")" Variant="ButtonVariant.Text">@(Strings.T("Рабочий график"))</FlareButton> }<FlareButton Variant="ButtonVariant.Text" Color="FlareColor.Error" OnClick="ArchiveActor">@(Strings.T("Архивировать"))</FlareButton> }</FlareStack>
 </FlareStack></FlareCardContent></FlareCard>
 }
 </FlareGrid>
 }
 @code {
     private ActorModel[] _actors=[];private ActorModel? _actor;private Guid? _role;private bool _busy;private string? _error;
-    private string Route=>new Uri(Navigation.Uri).AbsolutePath;
+    private string Route=>AppRoutes.Current(Navigation);
     private string Kind=>Route.EndsWith("departments")?"Department":Route.EndsWith("roles")?"Role":"Person";
     private string Title=>Kind=="Role"?Strings.T("Роли команды"):Kind=="Department"?Strings.T("Подкоманды"):Strings.T("Люди команды");
     private string Category=>Kind=="Role"?Strings.T("Реестр · Роли"):Kind=="Department"?Strings.T("Реестр · Подкоманды"):Strings.T("Реестр · Люди");

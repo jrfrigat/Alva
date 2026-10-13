@@ -16,7 +16,7 @@ else { <CapacityOverview /> }
 @code {
     [Parameter] public Guid? ActorId { get; set; }
 
-    private string Path => new Uri(Navigation.Uri).AbsolutePath;
+    private string Path => AppRoutes.Current(Navigation);
     private bool Schedule => Path.EndsWith("/schedule", StringComparison.Ordinal);
     private bool People => Path.EndsWith("/people", StringComparison.Ordinal);
     private string Title => ActorId is null ? People ? Strings.T("Графики людей") : Strings.T("Ёмкость") : Schedule ? Strings.T("Редактор графика") : Strings.T("Календарь сотрудника");

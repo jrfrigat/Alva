@@ -12,7 +12,7 @@
         <span class="alva-month alva-num"><FlareIconView Value="@MaterialDesign3Icons.Regular.CalendarMonth" Size="18px" /> @_month.ToString("MMMM yyyy")</span>
         <FlareIconButton Icon="@MaterialDesign3Icons.Regular.ChevronRight" Size="ButtonSize.Sm" AriaLabel="@(Strings.T("Следующий месяц"))" OnClick="() => Shift(1)" />
         <FlareButton Variant="ButtonVariant.Text" Size="ButtonSize.Sm" OnClick="ThisMonth">@(Strings.T("Сегодня"))</FlareButton>
-        @if (Focus is { } f) { <FlareButton Href="@($"/capacity/{f.Id}/schedule")" Size="ButtonSize.Sm"><LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.EventBusy" Size="18px" /></LeadingIcon><ChildContent>@(Strings.T("+ Отсутствие / отпуск"))</ChildContent></FlareButton> }
+        @if (Focus is { } f) { <FlareButton Href="@($"capacity/{f.Id}/schedule")" Size="ButtonSize.Sm"><LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.EventBusy" Size="18px" /></LeadingIcon><ChildContent>@(Strings.T("+ Отсутствие / отпуск"))</ChildContent></FlareButton> }
     </div>
 </section>
 <PageFeedback Error="@_error" Loading="_busy" />
@@ -83,8 +83,8 @@
                     <div><span>@(Strings.T("Запланировано задач"))</span><b class="alva-num @(mine.Sum(r => r.AllocatedHours) > mine.Sum(r => r.AvailableHours) ? "alva-kpi__alert" : "")">@AlvaFormat.Hours(mine.Sum(r => r.AllocatedHours)) ч</b></div>
                 </div>
                 <FlareStack Row Wrap>
-                    <FlareButton Href="@($"/capacity/{focused.Id}")" Size="ButtonSize.Sm">@(Strings.T("Персональный календарь"))</FlareButton>
-                    <FlareButton Href="@($"/capacity/{focused.Id}/schedule")" Variant="ButtonVariant.Tonal" Size="ButtonSize.Sm">@(Strings.T("Редактор графика"))</FlareButton>
+                    <FlareButton Href="@($"capacity/{focused.Id}")" Size="ButtonSize.Sm">@(Strings.T("Персональный календарь"))</FlareButton>
+                    <FlareButton Href="@($"capacity/{focused.Id}/schedule")" Variant="ButtonVariant.Tonal" Size="ButtonSize.Sm">@(Strings.T("Редактор графика"))</FlareButton>
                 </FlareStack>
             </section>
         }
@@ -94,7 +94,7 @@
             {
                 var rows = _rows.Where(r => r.ActorId == p.Id && r.Date.Month == _month.Month).ToArray();
                 var pct = Pct(rows.Sum(r => r.AllocatedHours), rows.Sum(r => r.AvailableHours));
-                <a class="alva-person-link" href="@($"/capacity/{p.Id}")" @key="p.Id">
+                <a class="alva-person-link" href="@($"capacity/{p.Id}")" @key="p.Id">
                     <span class="alva-slot__mark" aria-hidden="true">@AlvaFormat.Initials(p.Name)</span>
                     <span class="alva-person-link__text"><span>@p.Name</span><span class="alva-loadbar__track"><span class="alva-loadbar__fill alva-loadbar__fill--@(pct > 100 ? "critical" : pct > 80 ? "info" : "ok")" style="width:@Math.Min(100, pct)%"></span></span></span>
                     <span class="alva-num alva-person-link__pct">@pct%</span>

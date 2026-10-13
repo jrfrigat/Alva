@@ -29,7 +29,7 @@ else if (!_busy)
     </section>
     <section class="alva-kpi">
         <div class="alva-kpi__head"><div><span class="alva-kpi__label">@(Strings.T("Без человека"))</span><span class="alva-num"><span class="alva-kpi__value">@Count(RiskKind.Unassigned)</span> <span class="alva-kpi__unit">@AlvaFormat.Plural(Count(RiskKind.Unassigned), "задача", Strings.T("задачи"), Strings.T("задач"))</span></span></div><span class="alva-kpi__icon"><FlareIconView Value="@MaterialDesign3Icons.Regular.PersonSearch" Size="18px" /></span></div>
-        <p class="alva-kpi__note"><a href="/unassigned">@(Strings.T("Пул неназначенных задач"))</a></p>
+        <p class="alva-kpi__note"><a href="unassigned">@(Strings.T("Пул неназначенных задач"))</a></p>
     </section>
 </div>
 
@@ -70,13 +70,13 @@ else
             var task = TaskOf(risk.TaskId);
             var slip = Slip(risk);
             <div class="alva-risk-table__row" role="row" @key="risk.TaskId">
-                <span role="cell" class="alva-risk-table__task"><a href="@($"/tasks/{risk.TaskId}")">@risk.Title</a><span class="alva-num">@AlvaFormat.Code(risk.TaskId)</span></span>
+                <span role="cell" class="alva-risk-table__task"><a href="@($"tasks/{risk.TaskId}")">@risk.Title</a><span class="alva-num">@AlvaFormat.Code(risk.TaskId)</span></span>
                 <span role="cell"><AlvaStatusChip Tone="AlvaTones.Severity(risk.Severity)">@(risk.Severity == "High" ? Strings.T("Высокий") : Strings.T("Средний"))</AlvaStatusChip></span>
                 <span role="cell" class="alva-risk-table__reasons">@foreach (var reason in risk.Reasons) { <span class="alva-chip alva-chip--@Tone(KindOf(reason))">@reason</span> }</span>
                 <span role="cell" class="alva-risk-table__person">
                     @if (task?.ResolvedPersonId is { } personId && Actor(personId) is { } person)
                     {
-                        <a href="@($"/capacity/{person.Id}")" class="alva-person-link"><span class="alva-slot__mark" aria-hidden="true">@AlvaFormat.Initials(person.Name)</span><span>@person.Name</span></a>
+                        <a href="@($"capacity/{person.Id}")" class="alva-person-link"><span class="alva-slot__mark" aria-hidden="true">@AlvaFormat.Initials(person.Name)</span><span>@person.Name</span></a>
                     }
                     else { <span class="alva-week__muted">@(task?.AssignmentTargetId is { } target ? Actor(target)?.Name ?? "—" : Strings.T("Не назначена"))</span> }
                 </span>

@@ -11,7 +11,7 @@
             <p class="alva-panel__subtitle">@(Strings.T("Бросьте задачу на день — она попадёт в спринт этого дня и получит срок; на строку человека — ещё и исполнителя. Человека — на полосу."))</p>
         </div>
         <GanttLegend Class="alva-plan-gantt__legend" Items="BoardKey">
-            <Trailing><a class="alva-plan-gantt__link" href="/gantt/2d">@(Strings.T("Открыть Гантт"))</a></Trailing>
+            <Trailing><a class="alva-plan-gantt__link" href="gantt/2d">@(Strings.T("Открыть Гантт"))</a></Trailing>
         </GanttLegend>
         <GanttZoom View="@View" Default="DefaultUnit" @bind-Value="_unit" />
         <FlareButton Size="ButtonSize.Sm" Variant="ButtonVariant.Text" OnClick="ToToday" Tooltip="@(Strings.T("К сегодняшнему дню (Alt + колесо — прокрутка по времени)"))">@(Strings.T("Сегодня"))</FlareButton>

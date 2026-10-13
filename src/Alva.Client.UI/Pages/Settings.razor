@@ -38,7 +38,7 @@
     private async Task Run(Func<Task> action){_busy=true;_error=null;try{await action();}catch(Exception e) when(e is HttpRequestException or InvalidOperationException){_error=e.Message;}finally{_busy=false;}}
     private Task SaveProfile()=>Run(async()=>{await Session.Send(HttpMethod.Put,"api/auth/profile",new ProfileRequest(_displayName!));await Session.RefreshUser();});
     private Task SaveSpace()=>Run(async()=>{await Session.Send(HttpMethod.Put,$"api/workspaces/{Session.WorkspaceId}",new WorkspaceSettingsRequest(_spaceName!,_permissions));await Session.LoadWorkspaces();});
-    private Task Logout()=>Run(async()=>{await Session.Logout();Navigation.NavigateTo("/login");});
+    private Task Logout()=>Run(async()=>{await Session.Logout();Navigation.NavigateTo("login");});
     private void ToggleMemberTeam(Guid id,bool value)=>_memberTeams=value?_memberTeams.Append(id).Distinct().ToArray():_memberTeams.Where(x=>x!=id).ToArray();
     private Task SaveMember()=>Run(async()=>{await Session.Send(HttpMethod.Post,$"api/workspaces/{Session.WorkspaceId}/members",new MembershipRequest(_memberEmail!,_memberTeams,_owner));_members=await Session.Get<MemberDto[]>($"api/workspaces/{Session.WorkspaceId}/members");});
 }

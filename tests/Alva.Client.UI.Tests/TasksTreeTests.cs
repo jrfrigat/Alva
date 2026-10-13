@@ -28,19 +28,19 @@ public sealed class TasksTreeTests : UiTestBase
     public void Every_task_title_is_a_link_to_the_task()
     {
         var cut = Render<Tasks>();
-        cut.WaitForAssertion(() => Assert.Equal(2, cut.FindAll(".flare-vtree a[href^='/tasks/']").Count));
-        var hrefs = cut.FindAll(".flare-vtree a[href^='/tasks/']").Select(a => a.GetAttribute("href")).ToArray();
-        Assert.Contains($"/tasks/{_parent.Id}", hrefs);
-        Assert.Contains($"/tasks/{_leaf.Id}", hrefs);
+        cut.WaitForAssertion(() => Assert.Equal(2, cut.FindAll(".flare-vtree a[href^='tasks/']").Count));
+        var hrefs = cut.FindAll(".flare-vtree a[href^='tasks/']").Select(a => a.GetAttribute("href")).ToArray();
+        Assert.Contains($"tasks/{_parent.Id}", hrefs);
+        Assert.Contains($"tasks/{_leaf.Id}", hrefs);
     }
 
     [Fact]
     public void Clicking_the_link_does_not_also_run_the_row_click()
     {
         var cut = Render<Tasks>();
-        cut.WaitForAssertion(() => Assert.NotEmpty(cut.FindAll(".flare-vtree a[href^='/tasks/']")));
+        cut.WaitForAssertion(() => Assert.NotEmpty(cut.FindAll(".flare-vtree a[href^='tasks/']")));
         // Переход по ссылке делает браузер; обёртка останавливает всплытие клика, и строка не добавляет вторую навигацию.
-        var link = cut.Find($".flare-vtree a[href='/tasks/{_leaf.Id}']");
+        var link = cut.Find($".flare-vtree a[href='tasks/{_leaf.Id}']");
         Assert.True(link.ParentElement!.HasAttribute("blazor:onclick:stopPropagation"));
     }
 

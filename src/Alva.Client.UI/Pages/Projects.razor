@@ -82,7 +82,7 @@ else
                     </div>
                     <div class="alva-proj-detail__actions">
                         <FlareButton Variant="ButtonVariant.Tonal" Size="ButtonSize.Sm" OnClick="() => Edit(p)"><LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.Edit" Size="18px" /></LeadingIcon><ChildContent>@(Strings.T("Изменить рамку"))</ChildContent></FlareButton>
-                        <FlareButton Href="/tasks" Size="ButtonSize.Sm"><LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.AddTask" Size="18px" /></LeadingIcon><ChildContent>@(Strings.T("Создать задачу"))</ChildContent></FlareButton>
+                        <FlareButton Href="tasks" Size="ButtonSize.Sm"><LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.AddTask" Size="18px" /></LeadingIcon><ChildContent>@(Strings.T("Создать задачу"))</ChildContent></FlareButton>
                     </div>
                 </div>
                 <div class="alva-proj-kpis">
@@ -104,7 +104,7 @@ else
                             @foreach (var sprint in sprints)
                             {
                                 var inSprint = tasks.Where(t => t.SprintIds.Contains(sprint.Id)).ToArray();
-                                <a class="alva-proj-sprint" href="@($"/sprints/{sprint.Id}")">
+                                <a class="alva-proj-sprint" href="@($"sprints/{sprint.Id}")">
                                     <span class="alva-proj-sprint__head"><span><FlareIconView Value="@MaterialDesign3Icons.Regular.Flag" Size="15px" /> @sprint.Name</span><AlvaStatusChip Tone="AlvaTones.Status(sprint.Status)">@Labels.Status(sprint.Status)</AlvaStatusChip></span>
                                     <span class="alva-proj-sprint__row alva-num"><span>@(Strings.T("Взято задач проекта:"))</span><b>@inSprint.Length (@AlvaFormat.Hours(inSprint.Sum(t => t.EstimateHours ?? 0)) ч)</b></span>
                                 </a>
@@ -131,7 +131,7 @@ else
                         <div class="alva-wbs__row @(depth == 0 ? "alva-wbs__row--root" : "")" role="row" @key="task.Id">
                             <span role="cell" class="alva-wbs__name" style="padding-left:@(depth * 20)px">
                                 <FlareIconView Value="@(tasks.Any(t => t.ParentId == task.Id) ? MaterialDesign3Icons.Regular.Folder : MaterialDesign3Icons.Regular.SubdirectoryArrowRight)" Size="16px" />
-                                <a href="@($"/tasks/{task.Id}")">@task.Title</a>
+                                <a href="@($"tasks/{task.Id}")">@task.Title</a>
                             </span>
                             <span role="cell" class="alva-wbs__muted">@(task.SprintIds.Length == 0 ? Strings.T("Бэклог команды") : string.Join(", ", _sprints.Where(s => task.SprintIds.Contains(s.Id)).OrderBy(s => s.StartDate).Select(s => s.Name)))</span>
                             <span role="cell"><AlvaAssignee Task="task" Actors="_actors" /></span>

@@ -15,7 +15,7 @@ else if (TaskId.HasValue)
     @* Ссылка на конкретную задачу никогда не превращается в список: пока грузится — прогресс, ошибка — ошибка,
        а если задачи нет — так и сказано. *@
     <PageFeedback Error="@_error" Loading="_busy" />
-    @if (_loaded) { <UnavailableState Title="@(Strings.T("Задача не найдена или недоступна"))" BackHref="/tasks" BackLabel="@(Strings.T("К задачам"))" /> }
+    @if (_loaded) { <UnavailableState Title="@(Strings.T("Задача не найдена или недоступна"))" BackHref="tasks" BackLabel="@(Strings.T("К задачам"))" /> }
 }
 else
 {
@@ -31,7 +31,7 @@ else
     <FlareSelect TValue="Guid?" Label="@(Strings.T("Проект"))" Items="_projects.Select(x => (Guid?)x.Id)" ItemLabel="ProjectName" NullOption="@(Strings.T("Все проекты"))" @bind-Value="_projectFilter" @bind-Value:after="SaveListContext" Style="flex:1;min-width:12rem" />
     <FlareSelect TValue="string" Label="@(Strings.T("Статус"))" Items="_statuses" ItemLabel="Labels.Status" NullOption="@(Strings.T("Все статусы"))" @bind-Value="_statusFilter" @bind-Value:after="SaveListContext" Style="flex:1;min-width:12rem" />
 </FlareStack>
-<FlareStack Row Wrap Gap="FlareSpacing.Small"><FlareButton Href="/tasks" Variant="ButtonVariant.Text" Size="ButtonSize.Sm">@(Strings.T("Все задачи"))</FlareButton><FlareButton Href="/unassigned" Variant="ButtonVariant.Text" Size="ButtonSize.Sm">@(Strings.T("Без исполнителя"))</FlareButton><FlareButton Href="/my-work" Variant="ButtonVariant.Text" Size="ButtonSize.Sm">@(Strings.T("Моя работа"))</FlareButton><FlareButton OnClick="Load" Variant="ButtonVariant.Text" Size="ButtonSize.Sm">@(Strings.T("Обновить"))</FlareButton></FlareStack>
+<FlareStack Row Wrap Gap="FlareSpacing.Small"><FlareButton Href="tasks" Variant="ButtonVariant.Text" Size="ButtonSize.Sm">@(Strings.T("Все задачи"))</FlareButton><FlareButton Href="unassigned" Variant="ButtonVariant.Text" Size="ButtonSize.Sm">@(Strings.T("Без исполнителя"))</FlareButton><FlareButton Href="my-work" Variant="ButtonVariant.Text" Size="ButtonSize.Sm">@(Strings.T("Моя работа"))</FlareButton><FlareButton OnClick="Load" Variant="ButtonVariant.Text" Size="ButtonSize.Sm">@(Strings.T("Обновить"))</FlareButton></FlareStack>
 <FlareGrid MinColumnWidth="min(100%, 26rem)" Gap="FlareSpacing.Large">
 <FlareCard Variant="CardVariant.Outlined"><FlareCardContent>
     @if (!Filtered.Any()) { <FlareEmptyState Compact Title="@(Strings.T("Задач пока нет"))" Description="@(Strings.T("Добавьте первую задачу или измените фильтры."))" /> }
@@ -41,7 +41,7 @@ else
             @* Ссылка делает задачу доступной с клавиатуры (Tab, Enter), а клик по ней идёт тем же путём Open,
                что и строка: так перед переходом запоминаются фильтры и позиция списка. Обёртка гасит всплытие
                и отменяет собственную навигацию ссылки, чтобы не было второй. *@
-            <span @onclick:stopPropagation="true" @onclick="() => Open(task)" @onclick:preventDefault="true"><FlareLink Href="@($"/tasks/{task!.Id}")">@task.Title</FlareLink></span><AlvaStatusChip Tone="AlvaTones.Status(task.Status)">@Labels.Status(task.Status)</AlvaStatusChip>
+            <span @onclick:stopPropagation="true" @onclick="() => Open(task)" @onclick:preventDefault="true"><FlareLink Href="@($"tasks/{task!.Id}")">@task.Title</FlareLink></span><AlvaStatusChip Tone="AlvaTones.Status(task.Status)">@Labels.Status(task.Status)</AlvaStatusChip>
             @if(task.EstimateHours.HasValue) { <FlareText Typo="TypographyScale.LabelSmall">@task.EstimateHours ч</FlareText> }
         </FlareStack></ItemTemplate>
     </FlareDataTree>
@@ -80,9 +80,9 @@ else
     private TaskModel? _editing; private string? _error,_search,_statusFilter; private Guid? _projectFilter; private bool _busy,_loaded;
     private double _pendingScroll;
     private readonly string[] _statuses=["Backlog","Planned","InProgress","Done","Cancelled"];
-    private string Route => new Uri(Navigation.Uri).AbsolutePath;
-    private string PageHeading => Route == "/my-work" ? Strings.T("Моя работа") : Route == "/unassigned" ? Strings.T("Без исполнителя") : Strings.T("Задачи команды");
-    private IEnumerable<TaskModel> Filtered => _tasks.Where(t => (string.IsNullOrWhiteSpace(_search) || t.Title.Contains(_search,StringComparison.OrdinalIgnoreCase)) && (!_projectFilter.HasValue || t.ProjectId==_projectFilter) && (_statusFilter is null || t.Status==_statusFilter) && (Route != "/unassigned" || t.AssignmentTargetId is null || _actors.FirstOrDefault(a=>a.Id==t.AssignmentTargetId)?.Kind=="Role") && (Route != "/my-work" || _actors.Any(a=>a.Id==t.AssignmentTargetId && a.Email==Session.User?.Email)));
+    private string Route => AppRoutes.Current(Navigation);
+    private string PageHeading => Route == "my-work" ? Strings.T("Моя работа") : Route == "unassigned" ? Strings.T("Без исполнителя") : Strings.T("Задачи команды");
+    private IEnumerable<TaskModel> Filtered => _tasks.Where(t => (string.IsNullOrWhiteSpace(_search) || t.Title.Contains(_search,StringComparison.OrdinalIgnoreCase)) && (!_projectFilter.HasValue || t.ProjectId==_projectFilter) && (_statusFilter is null || t.Status==_statusFilter) && (Route != "unassigned" || t.AssignmentTargetId is null || _actors.FirstOrDefault(a=>a.Id==t.AssignmentTargetId)?.Kind=="Role") && (Route != "my-work" || _actors.Any(a=>a.Id==t.AssignmentTargetId && a.Email==Session.User?.Email)));
     private IEnumerable<TaskModel> Roots => Filtered.Where(t=>t.ParentId is null || !Filtered.Any(p=>p.Id==t.ParentId)).OrderBy(t=>t.Order);
     private Task<IEnumerable<TaskModel?>> Children(TaskModel? task) => Task.FromResult(Filtered.Where(t=>t.ParentId==task!.Id).OrderBy(t=>t.Order).Cast<TaskModel?>());
     private bool HasChildren(TaskModel? task) => Filtered.Any(t=>t.ParentId==task!.Id);
@@ -111,7 +111,7 @@ else
     // Фильтры сохраняются при каждом изменении (@bind-Value:after), чтобы контекст был готов к переходу.
     private Task SaveListContext() => Session.TaskList.SaveFilters(_search, _projectFilter, _statusFilter);
     protected override async Task OnParametersSetAsync() { _editing=null; await Load(); }
-    private async Task Open(TaskModel? task){ if(task is null) return; await Session.TaskList.SaveFilters(_search, _projectFilter, _statusFilter); await Session.TaskList.SaveScroll(await Session.TaskList.Scroll()); Navigation.NavigateTo($"/tasks/{task.Id}"); }
+    private async Task Open(TaskModel? task){ if(task is null) return; await Session.TaskList.SaveFilters(_search, _projectFilter, _statusFilter); await Session.TaskList.SaveScroll(await Session.TaskList.Scroll()); Navigation.NavigateTo($"tasks/{task.Id}"); }
     private async Task Run(Func<Task> action) { _busy=true; _error=null;try{await action();}catch(Exception e) when(e is HttpRequestException or InvalidOperationException){_error=PageFeedback.Describe(e);}finally{_busy=false;} }
     private Task Load()=>Run(async()=>{await Session.Initialize();if(Session.TeamId is null)return;_tasks=await Session.Get<TaskModel[]>(Session.TeamPath("tasks"));_projects=await Session.Get<ProjectModel[]>(Session.TeamPath("projects"));_actors=await Session.Get<ActorModel[]>(Session.TeamPath("actors"));_sprints=await Session.Get<SprintModel[]>(Session.TeamPath("sprints"));_loaded=true;});
     private void NewTask(){_editing=new TaskModel { TeamId=Session.TeamId!.Value };_history=[];}
@@ -125,7 +125,7 @@ else
         var saved=await Session.Save<TaskModel>(model.Id==Guid.Empty?HttpMethod.Post:HttpMethod.Put,Session.TeamPath("tasks"+(model.Id==Guid.Empty?"":$"/{model.Id}")),request);
         if(model.AssignmentTargetId.HasValue)await Session.Send(HttpMethod.Put,Session.TeamPath($"tasks/{saved.Id}/assignment"),new AssignmentRequest(model.AssignmentTargetId.Value,model.ResolvedPersonId));
         else if(model.Id!=Guid.Empty && _tasks.Any(t=>t.Id==model.Id && t.AssignmentTargetId.HasValue))await Session.Send(HttpMethod.Delete,Session.TeamPath($"tasks/{saved.Id}/assignment"),new{});
-        Hide();Navigation.NavigateTo($"/tasks/{saved.Id}");
+        Hide();Navigation.NavigateTo($"tasks/{saved.Id}");
     });
     private Task Archive()=>Run(async()=>{await Session.Send(HttpMethod.Delete,Session.TeamPath($"tasks/{_editing!.Id}"),new{});Hide();_tasks=await Session.Get<TaskModel[]>(Session.TeamPath("tasks"));});
 }
