@@ -72,7 +72,8 @@ public sealed class LoginFormTests : UiTestBase
 
         Field(cut, "Электронная почта").Change("anna@company.ru");
 
-        Assert.Null(ErrorOf(cut, "Электронная почта"));
+        // The field re-renders through the change handler; wait for it before reading the error back.
+        cut.WaitForAssertion(() => Assert.Null(ErrorOf(cut, "Электронная почта")));
         Assert.NotNull(ErrorOf(cut, "Пароль"));
     }
 

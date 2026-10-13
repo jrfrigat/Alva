@@ -700,4 +700,6 @@
   <data name="ч номинала" xml:space="preserve"><value>ч номинала</value></data>
   <data name="из" xml:space="preserve"><value>из</value></data>
   <data name="Ближайшее:" xml:space="preserve"><value>Ближайшее:</value></data>
+  <data name="Не менее" xml:space="preserve"><value>Не менее</value></data>
+  <data name="символов" xml:space="preserve"><value>символов</value></data>
 </root>

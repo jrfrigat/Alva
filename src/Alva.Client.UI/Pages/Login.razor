@@ -19,7 +19,7 @@
             <FlareTextField @ref="_workspaceField" Label="@(Strings.T("Название рабочего пространства"))" Value="@_workspaceName" ValueChanged="v => Edit(ref _workspaceName, v, Field.Workspace)" ErrorText="@ErrorOf(Field.Workspace)" Required />
         }
         <FlareTextField @ref="_emailField" Label="@(Strings.T("Электронная почта"))" Value="@_email" ValueChanged="v => Edit(ref _email, v, Field.Email)" ErrorText="@ErrorOf(Field.Email)" Type="email" Required Autocomplete="email" />
-        <FlareTextField @ref="_passwordField" Label="@(Strings.T("Пароль"))" Value="@_password" ValueChanged="v => Edit(ref _password, v, Field.Password)" ErrorText="@ErrorOf(Field.Password)" Type="password" Required Autocomplete="@(_register ? "new-password" : "current-password")" HelperText="@(_register ? $"Не менее {MinPassword} символов" : null)" />
+        <FlareTextField @ref="_passwordField" Label="@(Strings.T("Пароль"))" Value="@_password" ValueChanged="v => Edit(ref _password, v, Field.Password)" ErrorText="@ErrorOf(Field.Password)" Type="password" Required Autocomplete="@(_register ? "new-password" : "current-password")" HelperText="@(_register ? $"{Strings.T("Не менее")} {MinPassword} {Strings.T("символов")}" : null)" />
         <FlareButton Type="ButtonType.Submit" Loading="_busy" FullWidth>@(_register ? Strings.T("Создать пространство") : Strings.T("Войти"))</FlareButton>
         <FlareButton Variant="ButtonVariant.Text" OnClick="Toggle">@(_register ? Strings.T("У меня уже есть аккаунт") : Strings.T("Создать аккаунт"))</FlareButton>
     </FlareStack>
