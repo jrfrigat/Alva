@@ -14,7 +14,10 @@ public abstract class UiTestBase : BunitContext, IAsyncLifetime
 
     protected UiTestBase()
     {
+        // Both the current thread and new threads must see the app's language: components render on
+        // pool threads, and the resources follow CultureInfo.CurrentUICulture.
         CultureInfo.CurrentCulture = CultureInfo.CurrentUICulture = new CultureInfo("ru-RU");
+        CultureInfo.DefaultThreadCurrentCulture = CultureInfo.DefaultThreadCurrentUICulture = new CultureInfo("ru-RU");
         Services.AddFlare();
         Services.AddLocalization();
         Services.AddScoped<CultureService>();
