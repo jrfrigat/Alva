@@ -19,7 +19,7 @@ public sealed class FakeApi : IApiService
     /// <summary>Ответ на GET ресурса команды; позже заданный обработчик проверяется раньше.</summary>
     public FakeApi Answer(string prefix, Func<string, object> answer) { _gets.Insert(0, (prefix, answer)); return this; }
 
-    public UserInfo? User => null;
+    public UserInfo? User { get; set; }
     public SpaceInfo[] Workspaces => [];
     public TeamInfo[] Teams => [];
     public Guid? WorkspaceId => Guid.Empty;

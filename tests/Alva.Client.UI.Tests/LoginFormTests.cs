@@ -2,6 +2,8 @@ using System.Net;
 using Alva.Client.Pages;
 using AngleSharp.Dom;
 using Bunit;
+using Bunit.TestDoubles;
+using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
 namespace Alva.Client.UI.Tests;
@@ -9,6 +11,8 @@ namespace Alva.Client.UI.Tests;
 /// <summary>TASK-71: ошибки входа и регистрации стоят у своих полей, связаны с ними и уводят на них фокус.</summary>
 public sealed class LoginFormTests : UiTestBase
 {
+    private BunitNavigationManager Navigation => Services.GetRequiredService<BunitNavigationManager>();
+
     private IRenderedComponent<Login> Page(bool register = false)
     {
         var cut = Render<Login>();
@@ -87,6 +91,18 @@ public sealed class LoginFormTests : UiTestBase
         cut.WaitForAssertion(() => Assert.Equal("Аккаунт с этим email уже существует.", ErrorOf(cut, "Электронная почта")));
         Assert.DoesNotContain("Не удалось выполнить действие", cut.Markup);
     }
+
+    [Fact]
+    public void The_register_route_opens_the_registration_form()
+    {
+        Navigation.NavigateTo("/register");
+        var cut = Render<Login>();
+
+        // Маршрут /register показывает форму регистрации, без переключения кнопкой.
+        Assert.NotNull(Field(cut, "Ваше имя"));
+        Assert.NotNull(Field(cut, "Название рабочего пространства"));
+    }
+
 
     [Theory]
     [InlineData(HttpStatusCode.Unauthorized, "Неверный email или пароль, либо вход временно заблокирован.")]

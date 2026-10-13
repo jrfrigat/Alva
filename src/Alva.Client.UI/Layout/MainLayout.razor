@@ -28,6 +28,7 @@
                     <span class="alva-user__avatar" aria-hidden="true"><FlareIconView Value="@MaterialDesign3Icons.Regular.Person" Size="18px" /></span>
                     <span class="alva-user__name">@Session.User.DisplayName</span>
                 </a>
+                <FlareButton OnClick="Logout" Variant="ButtonVariant.Text" Size="ButtonSize.Sm">Выйти</FlareButton>
             }
             else { <FlareButton Href="/login" Size="ButtonSize.Sm">Войти</FlareButton> }
         </div>
@@ -59,7 +60,9 @@
             }
         </FlareNavMenu>
     </FlareLayoutDrawer>
-    <FlareLayoutContent><main id="main-content"><FlareContainer MaxWidth="PageWidth"><FlareStack @key="PagePath" Gap="FlareSpacing.XLarge">@Body</FlareStack></FlareContainer></main></FlareLayoutContent>
+    @* FlareLayoutContent уже рендерит единственный <main>; id и tabindex уходят на него через AdditionalAttributes,
+       поэтому своя обёртка <main> не нужна, а skip-link «К содержимому» попадает прямо в основной landmark. *@
+    <FlareLayoutContent id="main-content" tabindex="-1"><FlareContainer MaxWidth="PageWidth"><FlareStack @key="PagePath" Gap="FlareSpacing.XLarge">@Body</FlareStack></FlareContainer></FlareLayoutContent>
 </FlareLayout>
 </FlareConfirmDialogProvider>
 @if (_mobile)
@@ -90,6 +93,12 @@
         if (firstRender) _viewportSubscription = await Viewport.SubscribeBreakpointAsync((Breakpoint bp) => InvokeAsync(() => { _mobile = bp.IsAtMost(Breakpoint.Sm); _open = !_mobile; StateHasChanged(); }));
     }
     private void Refresh() => InvokeAsync(StateHasChanged);
+    // Выход доступен прямо из шапки, а не только в настройках.
+    private async Task Logout()
+    {
+        await Session.Logout();
+        Navigation.NavigateTo("/login");
+    }
     public async ValueTask DisposeAsync() { Session.Changed -= Refresh; if (_viewportSubscription is not null) await _viewportSubscription.DisposeAsync(); }
 }
 

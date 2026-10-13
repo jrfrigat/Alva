@@ -18,6 +18,8 @@ public abstract class UiTestBase : BunitContext, IAsyncLifetime
         Services.AddFlare();
         Services.AddSingleton<IApiService>(Api);
         Services.AddScoped<AlvaSession>();
+        // Колокольчик рисков в шапке зависит от этого сервиса; для тестов шапки он должен быть в контейнере.
+        Services.AddScoped<RiskNotifications>();
         JSInterop.Mode = JSRuntimeMode.Loose;
     }
 

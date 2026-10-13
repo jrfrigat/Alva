@@ -1,4 +1,5 @@
 @page "/login"
+@page "/register"
 @inject AlvaSession Session
 @inject NavigationManager Navigation
 <PageTitle>Вход · Alva</PageTitle>
@@ -38,10 +39,20 @@
 
     private string? ErrorOf(Field field) => _errors.GetValueOrDefault(field);
 
+    // У входа и регистрации свои адреса: /register открывает форму регистрации.
+    protected override void OnInitialized() => _register = new Uri(Navigation.Uri).AbsolutePath.Equals("/register", StringComparison.OrdinalIgnoreCase);
+
     // Правка поля снимает его ошибку: сообщение больше не описывает то, что введено.
     private void Edit(ref string? target, string? value, Field field) { target = value; _errors.Remove(field); }
 
-    private void Toggle() { _register = !_register; _error = null; _errors.Clear(); }
+    // Переключение меняет и адрес: у каждой формы свой URL, который можно сохранить в закладки.
+    private void Toggle()
+    {
+        _register = !_register;
+        _error = null;
+        _errors.Clear();
+        Navigation.NavigateTo(_register ? "/register" : "/login");
+    }
 
     /// <summary>Проверки до запроса: неверная форма не уходит на сервер и не тратит лимит попыток входа.</summary>
     private void Validate()
