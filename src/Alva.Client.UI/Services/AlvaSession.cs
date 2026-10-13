@@ -1,4 +1,5 @@
 using Alva.Client.Models;
+using Microsoft.JSInterop;
 
 namespace Alva.Client.Services;
 
@@ -6,8 +7,11 @@ namespace Alva.Client.Services;
 /// Фасад над <see cref="IApiService"/>. Страницы продолжают зависеть от <c>AlvaSession</c>,
 /// а реализация доступа к данным (HTTP или demo) выбирается при сборке.
 /// </summary>
-public sealed class AlvaSession(IApiService api)
+public sealed class AlvaSession(IApiService api, IJSRuntime js)
 {
+    /// <summary>Контекст списка задач: поиск, фильтры и позиция прокрутки, переживающие переход в карточку.</summary>
+    public TaskListState TaskList { get; } = new(js);
+
     public UserInfo? User => api.User;
     public SpaceInfo[] Workspaces => api.Workspaces;
     public TeamInfo[] Teams => api.Teams;
