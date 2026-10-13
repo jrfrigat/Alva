@@ -16,6 +16,8 @@ public abstract class UiTestBase : BunitContext, IAsyncLifetime
     {
         CultureInfo.CurrentCulture = CultureInfo.CurrentUICulture = new CultureInfo("ru-RU");
         Services.AddFlare();
+        Services.AddLocalization();
+        Services.AddScoped<CultureService>();
         Services.AddSingleton<IApiService>(Api);
         Services.AddScoped<AlvaSession>();
         // Колокольчик рисков в шапке зависит от этого сервиса; для тестов шапки он должен быть в контейнере.

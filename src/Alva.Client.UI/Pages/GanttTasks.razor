@@ -5,12 +5,12 @@
 @using Flare.Components.Gantt
 @* Гантт по задачам (макет p6_2d, проекция 1): дерево работ, окна задач, сроки, спринт и связи.
    Проекцию собирает Alva из примитивов Flare.Components.Gantt; сама библиотека о задачах не знает. *@
-<PageTitle>Гантт по задачам · Alva</PageTitle>
+<PageTitle>@(Strings.T("Гантт по задачам · Alva"))</PageTitle>
 <section class="alva-page-header">
     <div class="alva-page-header__text">
-        <div class="alva-micro-label"><span>Диаграммы · Гантт</span></div>
-        <h1 class="alva-page-header__title">Гантт по задачам</h1>
-        <p class="alva-page-header__desc">Иерархия работ во времени: окна задач и спринтов, сроки, зависимости и риск. Перетащите полосу или нажмите Ctrl+стрелку, чтобы перенести даты; L — связать с другой задачей.</p>
+        <div class="alva-micro-label"><span>@(Strings.T("Диаграммы · Гантт"))</span></div>
+        <h1 class="alva-page-header__title">@(Strings.T("Гантт по задачам"))</h1>
+        <p class="alva-page-header__desc">@(Strings.T("Иерархия работ во времени: окна задач и спринтов, сроки, зависимости и риск. Перетащите полосу или нажмите Ctrl+стрелку, чтобы перенести даты; L — связать с другой задачей."))</p>
     </div>
 </section>
 <PageFeedback Loading="_busy" Error="@_error" />
@@ -19,34 +19,34 @@ else if (_data is not null)
 {
     <div class="alva-filterbar alva-gantt-bar">
         <div class="alva-gantt-bar__fields">
-            <FlareSelect TValue="Guid?" Items="@(_data.Sprints.OrderBy(s => s.StartDate).Select(s => (Guid?)s.Id))" ItemLabel="_data.SprintName" NullOption="Все задачи"
-                         @bind-Value="_sprintId" Size="FieldSize.Sm" InputAttributes="@(Aria("Спринт"))" />
-            <FlareSelect TValue="GanttScale" Items="GanttData.Scales" ItemLabel="GanttData.ScaleName" @bind-Value="_scale" Size="FieldSize.Sm" InputAttributes="@(Aria("Масштаб"))" />
+            <FlareSelect TValue="Guid?" Items="@(_data.Sprints.OrderBy(s => s.StartDate).Select(s => (Guid?)s.Id))" ItemLabel="_data.SprintName" NullOption="@(Strings.T("Все задачи"))"
+                         @bind-Value="_sprintId" Size="FieldSize.Sm" InputAttributes="@(Aria(Strings.T("Спринт")))" />
+            <FlareSelect TValue="GanttScale" Items="GanttData.Scales" ItemLabel="GanttData.ScaleName" @bind-Value="_scale" Size="FieldSize.Sm" InputAttributes="@(Aria(Strings.T("Масштаб")))" />
             <GanttZoom View="tasks" Scale="_scale" @bind-Value="_unit" />
-            <FlareButton Size="ButtonSize.Sm" Variant="ButtonVariant.Text" OnClick="ToToday" Tooltip="К сегодняшнему дню (Alt + колесо — прокрутка по времени)">Сегодня</FlareButton>
+            <FlareButton Size="ButtonSize.Sm" Variant="ButtonVariant.Text" OnClick="ToToday" Tooltip="@(Strings.T("К сегодняшнему дню (Alt + колесо — прокрутка по времени)"))">@(Strings.T("Сегодня"))</FlareButton>
         </div>
-        <div class="alva-quickfilter" role="group" aria-label="Типы связей">
+        <div class="alva-quickfilter" role="group" aria-label="@(Strings.T("Типы связей"))">
             @foreach (var type in AllTypes)
             {
                 var t = type;
                 <button type="button" class="alva-quickfilter__item @(_types.Contains(t) ? "alva-quickfilter__item--active" : "")" aria-pressed="@_types.Contains(t)" @onclick="() => ToggleType(t)">@GanttData.Code(t)</button>
             }
         </div>
-        <FlareSwitch @bind-Value="_critical" Label="Критический путь" />
+        <FlareSwitch @bind-Value="_critical" Label="@(Strings.T("Критический путь"))" />
     </div>
 
     <GanttLegend Notice="@_notice" />
 
     @if (_data.Tasks.Length == 0)
     {
-        <FlareEmptyState Title="Задач пока нет" Description="Создайте задачи в «Матрёшке», и они появятся на диаграмме."><ActionContent><FlareButton Href="/tasks">К задачам</FlareButton></ActionContent></FlareEmptyState>
+        <FlareEmptyState Title="@(Strings.T("Задач пока нет"))" Description="@(Strings.T("Создайте задачи в «Матрёшке», и они появятся на диаграмме."))"><ActionContent><FlareButton Href="/tasks">@(Strings.T("К задачам"))</FlareButton></ActionContent></FlareEmptyState>
     }
     else
     {
         <FlareGantt @ref="_chart" Range="@Axis()" RangeChanged="r => _range = r" Endless="true" Scale="_scale" UnitWidth="_unit" FillWidth="true" Virtualize="true" RowHeight="36" SideWidth="@_side" DefaultSideWidth="22rem" ResizableSide="true" SideWidthChanged="SaveSide"
                     NonWorking="GanttData.IsWeekend" Markers="@GanttData.TodayMarkers" Regions="@_data.SprintRegions(Sprint)" @bind-SelectedKey="_selected"
-                    AriaLabel="Гантт по задачам" Class="alva-gantt">
-            <Corner><span>Задача · исполнитель · часы</span></Corner>
+                    AriaLabel="@(Strings.T("Гантт по задачам"))" Class="alva-gantt">
+            <Corner><span>@(Strings.T("Задача · исполнитель · часы"))</span></Corner>
             <ChildContent>
                 <GanttTaskPanel Data="_data" SprintId="_sprintId" Types="_types" Critical="_critical" OnChange="Change" OnLinkCreate="Link" OnLinkRejected="Rejected" />
             </ChildContent>
@@ -133,7 +133,7 @@ else if (_data is not null)
         try
         {
             await _data!.AddLink(Session, args.Link);
-            _notice = "Связь добавлена";
+            _notice = Strings.T("Связь добавлена");
         }
         catch (Exception e) when (e is HttpRequestException or InvalidOperationException) { args.Cancel = true; _error = e.Message; }
         await Reload();

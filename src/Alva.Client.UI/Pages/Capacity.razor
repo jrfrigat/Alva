@@ -19,7 +19,7 @@ else { <CapacityOverview /> }
     private string Path => new Uri(Navigation.Uri).AbsolutePath;
     private bool Schedule => Path.EndsWith("/schedule", StringComparison.Ordinal);
     private bool People => Path.EndsWith("/people", StringComparison.Ordinal);
-    private string Title => ActorId is null ? People ? "Графики людей" : "Ёмкость" : Schedule ? "Редактор графика" : "Календарь сотрудника";
+    private string Title => ActorId is null ? People ? Strings.T("Графики людей") : Strings.T("Ёмкость") : Schedule ? Strings.T("Редактор графика") : Strings.T("Календарь сотрудника");
 
     private bool _ready;
     private string? _error;

@@ -60,6 +60,6 @@ public record CapacityDay(Guid ActorId, string ActorName, DateOnly Date, decimal
 public record RiskInfo(Guid TaskId, string Title, string Severity, string[] Reasons, DateOnly? ForecastDate);
 public static class Labels
 {
-    public static string Status(string value) => value switch { "Backlog" => "В пуле", "Planned" => "Запланирована", "InProgress" => "В работе", "Done" => "Готова", "Cancelled" => "Отменена", "Active" => "Активный", "Completed" => "Завершён", _ => value };
-    public static string Kind(string value) => value switch { "Person" => "Человек", "Department" => "Подкоманда", "Role" => "Роль", _ => value };
+    public static string Status(string value) => value switch { "Backlog" => Strings.T(Strings.T("В пуле")), "Planned" => Strings.T(Strings.T("Запланирована")), "InProgress" => Strings.T(Strings.T("В работе")), "Done" => Strings.T(Strings.T("Готова")), "Cancelled" => Strings.T(Strings.T("Отменена")), "Active" => Strings.T(Strings.T("Активный")), "Completed" => Strings.T(Strings.T("Завершён")), _ => value };
+    public static string Kind(string value) => value switch { "Person" => Strings.T(Strings.T("Человек")), "Department" => Strings.T(Strings.T("Подкоманда")), "Role" => Strings.T(Strings.T("Роль")), _ => value };
 }

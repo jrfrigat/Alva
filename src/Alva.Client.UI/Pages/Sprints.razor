@@ -4,11 +4,11 @@
 @page "/sprints/{SprintId:guid}/plan"
 @inject AlvaSession Session
 @inject NavigationManager Navigation
-<PageTitle>@(Planning ? "Планирование" : Current?.Name ?? "Спринты") · Alva</PageTitle>
+<PageTitle>@(Planning ? Strings.T("Планирование") : Current?.Name ?? Strings.T("Спринты")) · Alva</PageTitle>
 @if(SprintId is null && !Planning)
 {
-<AlvaPageHeader Category="Планирование · Спринты" Title="Спринты команды" Description="Цели, сроки и состав спринтов команды.">
-    <Actions><FlareButton @ref="_newButton" Size="ButtonSize.Sm" OnClick="New" Disabled="@(Session.TeamId is null)">Новый спринт</FlareButton></Actions>
+<AlvaPageHeader Category="@(Strings.T("Планирование · Спринты"))" Title="@(Strings.T("Спринты команды"))" Description="@(Strings.T("Цели, сроки и состав спринтов команды."))">
+    <Actions><FlareButton @ref="_newButton" Size="ButtonSize.Sm" OnClick="New" Disabled="@(Session.TeamId is null)">@(Strings.T("Новый спринт"))</FlareButton></Actions>
 </AlvaPageHeader>
 }
 <PageFeedback Loading="_busy" Error="@_error" />
@@ -18,24 +18,24 @@ else
 @if(_editing is not null)
 {
 <FlareCard Variant="CardVariant.Outlined"><FlareCardContent><FlareStack Gap="FlareSpacing.Large">
-    <FlareStack Row StretchFirst><FlareText Element="h2" Typo="TypographyScale.TitleLarge">@(_editing.Id==Guid.Empty?"Новый спринт":"Параметры спринта")</FlareText><FlareButton OnClick="Close" Variant="ButtonVariant.Text" Size="ButtonSize.Sm">Закрыть</FlareButton></FlareStack>
+    <FlareStack Row StretchFirst><FlareText Element="h2" Typo="TypographyScale.TitleLarge">@(_editing.Id==Guid.Empty?Strings.T("Новый спринт"):Strings.T("Параметры спринта"))</FlareText><FlareButton OnClick="Close" Variant="ButtonVariant.Text" Size="ButtonSize.Sm">@(Strings.T("Закрыть"))</FlareButton></FlareStack>
     <FlareGrid MinColumnWidth="min(100%,15rem)">
-        <FlareTextField Label="Название" @bind-Value="_editing.Name" Required Autofocus /><FlareTextField Label="Цель" @bind-Value="_editing.Goal" />
-        <FlareDatePicker Label="Начало" @bind-Value="_start" /><FlareDatePicker Label="Окончание" @bind-Value="_end" Min="_start" />
-        <FlareSelect TValue="string" Label="Статус" Items="_statuses" ItemLabel="Labels.Status" @bind-Value="_editing.Status" />
+        <FlareTextField Label="@(Strings.T("Название"))" @bind-Value="_editing.Name" Required Autofocus /><FlareTextField Label="@(Strings.T("Цель"))" @bind-Value="_editing.Goal" />
+        <FlareDatePicker Label="@(Strings.T("Начало"))" @bind-Value="_start" /><FlareDatePicker Label="@(Strings.T("Окончание"))" @bind-Value="_end" Min="_start" />
+        <FlareSelect TValue="string" Label="@(Strings.T("Статус"))" Items="_statuses" ItemLabel="Labels.Status" @bind-Value="_editing.Status" />
     </FlareGrid>
-    <FlareStack Row><FlareButton OnClick="Save" Loading="_busy" Disabled="@(string.IsNullOrWhiteSpace(_editing.Name) || !_start.HasValue || !_end.HasValue)">Сохранить спринт</FlareButton></FlareStack>
+    <FlareStack Row><FlareButton OnClick="Save" Loading="_busy" Disabled="@(string.IsNullOrWhiteSpace(_editing.Name) || !_start.HasValue || !_end.HasValue)">@(Strings.T("Сохранить спринт"))</FlareButton></FlareStack>
 </FlareStack></FlareCardContent></FlareCard>
 }
 @if(Planning)
 {
-    if(SprintId.HasValue && Current is null){if(_loaded){<UnavailableState Title="Спринт не найден или недоступен" BackHref="/sprints" BackLabel="К спринтам" />}}
+    if(SprintId.HasValue && Current is null){if(_loaded){<UnavailableState Title="@(Strings.T("Спринт не найден или недоступен"))" BackHref="/sprints" BackLabel="@(Strings.T("К спринтам"))" />}}
     else if(PlanSprint is not null){<SprintPlanning @ref="_planning" Sprint="PlanSprint" Sprints="_sprints" Tasks="_tasks" Changed="Reload" OnParams="()=>Edit(PlanSprint)" />}
-    else if(_loaded){<FlareEmptyState Title="Нечего планировать" Description="Создайте спринт, чтобы собрать в него задачи из пула."><ActionContent><FlareButton @ref="_emptyNewButton" Size="ButtonSize.Sm" OnClick="New">Новый спринт</FlareButton></ActionContent></FlareEmptyState>}
+    else if(_loaded){<FlareEmptyState Title="@(Strings.T("Нечего планировать"))" Description="@(Strings.T("Создайте спринт, чтобы собрать в него задачи из пула."))"><ActionContent><FlareButton @ref="_emptyNewButton" Size="ButtonSize.Sm" OnClick="New">@(Strings.T("Новый спринт"))</FlareButton></ActionContent></FlareEmptyState>}
 }
 else if(SprintId is null){<SprintRegistry Sprints="_sprints" Tasks="_tasks" />}
 else if(Current is not null){<SprintDetails Sprint="Current" Tasks="_tasks" OnEdit="@(()=>Navigation.NavigateTo($"/sprints/{Current.Id}/plan"))" Changed="Load" />}
-else if(_loaded){<UnavailableState Title="Спринт не найден или недоступен" BackHref="/sprints" BackLabel="К спринтам" />}
+else if(_loaded){<UnavailableState Title="@(Strings.T("Спринт не найден или недоступен"))" BackHref="/sprints" BackLabel="@(Strings.T("К спринтам"))" />}
 }
 @code {
     [Parameter]public Guid? SprintId{get;set;}

@@ -6,12 +6,12 @@
 @using Flare.Components.Gantt
 @* Гантт по людям (макет p6_2d, проекция 2): дорожки людей и ролей с часами ёмкости и задачами исполнителя.
    В 2D-режиме над ними — проекция 1 на той же оси. Проекции собирает Alva из примитивов Flare.Components.Gantt. *@
-<PageTitle>@(_twoD ? "Синхронный Гантт 2D" : "Гантт по людям") · Alva</PageTitle>
+<PageTitle>@(_twoD ? Strings.T("Синхронный Гантт 2D") : Strings.T("Гантт по людям")) · Alva</PageTitle>
 <section class="alva-page-header">
     <div class="alva-page-header__text">
-        <div class="alva-micro-label"><span>Диаграммы · Гантт</span></div>
-        <h1 class="alva-page-header__title">@(_twoD ? "Синхронный Гантт 2D" : "Гантт по людям")</h1>
-        <p class="alva-page-header__desc">Кто чем занят во времени: часы назначенной работы против доступных, перегрузки и отсутствия. Перетащите задачу на другую строку или нажмите Ctrl+↑/↓, чтобы переназначить; Ctrl+стрелка влево/вправо переносит даты.</p>
+        <div class="alva-micro-label"><span>@(Strings.T("Диаграммы · Гантт"))</span></div>
+        <h1 class="alva-page-header__title">@(_twoD ? Strings.T("Синхронный Гантт 2D") : Strings.T("Гантт по людям"))</h1>
+        <p class="alva-page-header__desc">@(Strings.T("Кто чем занят во времени: часы назначенной работы против доступных, перегрузки и отсутствия. Перетащите задачу на другую строку или нажмите Ctrl+↑/↓, чтобы переназначить; Ctrl+стрелка влево/вправо переносит даты."))</p>
     </div>
 </section>
 <PageFeedback Loading="_busy" Error="@_error" />
@@ -20,26 +20,26 @@ else if (_data is not null && _people is not null)
 {
     <div class="alva-filterbar alva-gantt-bar">
         <div class="alva-gantt-bar__fields">
-            <FlareSelect TValue="Guid?" Items="@(_data.Sprints.OrderBy(s => s.StartDate).Select(s => (Guid?)s.Id))" ItemLabel="_data.SprintName" NullOption="Все задачи"
-                         @bind-Value="_sprintId" @bind-Value:after="LoadCapacity" Size="FieldSize.Sm" InputAttributes="@(Aria("Спринт"))" />
-            <FlareSelect TValue="GanttScale" Items="GanttData.Scales" ItemLabel="GanttData.ScaleName" @bind-Value="_scale" Size="FieldSize.Sm" InputAttributes="@(Aria("Масштаб"))" />
+            <FlareSelect TValue="Guid?" Items="@(_data.Sprints.OrderBy(s => s.StartDate).Select(s => (Guid?)s.Id))" ItemLabel="_data.SprintName" NullOption="@(Strings.T("Все задачи"))"
+                         @bind-Value="_sprintId" @bind-Value:after="LoadCapacity" Size="FieldSize.Sm" InputAttributes="@(Aria(Strings.T("Спринт")))" />
+            <FlareSelect TValue="GanttScale" Items="GanttData.Scales" ItemLabel="GanttData.ScaleName" @bind-Value="_scale" Size="FieldSize.Sm" InputAttributes="@(Aria(Strings.T("Масштаб")))" />
             <GanttZoom View="people" Scale="_scale" @bind-Value="_unit" />
-            <FlareButton Size="ButtonSize.Sm" Variant="ButtonVariant.Text" OnClick="ToToday" Tooltip="К сегодняшнему дню (Alt + колесо — прокрутка по времени)">Сегодня</FlareButton>
+            <FlareButton Size="ButtonSize.Sm" Variant="ButtonVariant.Text" OnClick="ToToday" Tooltip="@(Strings.T("К сегодняшнему дню (Alt + колесо — прокрутка по времени)"))">@(Strings.T("Сегодня"))</FlareButton>
         </div>
-        <FlareSwitch Value="_twoD" ValueChanged="SetTwoD" Label="Синхронно с задачами (2D)" />
+        <FlareSwitch Value="_twoD" ValueChanged="SetTwoD" Label="@(Strings.T("Синхронно с задачами (2D)"))" />
     </div>
 
     <GanttLegend Notice="@_notice" Items="PeopleKey" />
 
     <FlareGantt @ref="_chart" Range="@_range" RangeChanged="Grow" Endless="true" Scale="_scale" UnitWidth="_unit" FillWidth="true" Virtualize="true" RowHeight="36" SideWidth="@_side" DefaultSideWidth="22rem" ResizableSide="true" SideWidthChanged="SaveSide"
                 NonWorking="GanttData.IsWeekend" Markers="@GanttData.TodayMarkers" Regions="@_data.SprintRegions(Sprint)" @bind-SelectedKey="_selected"
-                AriaLabel="@(_twoD ? "Синхронный Гантт 2D" : "Гантт по людям")" Class="alva-gantt">
-        <Corner><span>Исполнитель · загрузка за период</span></Corner>
+                AriaLabel="@(_twoD ? Strings.T("Синхронный Гантт 2D") : Strings.T("Гантт по людям"))" Class="alva-gantt">
+        <Corner><span>@(Strings.T("Исполнитель · загрузка за период"))</span></Corner>
         <ChildContent>
             @if (_twoD)
             {
                 <GanttTaskPanel Data="_data" SprintId="_sprintId" OnChange="Change" OnLinkCreate="Link" OnLinkRejected="Rejected">
-                    <Header>Проекция 1: иерархия работ и фазы во времени</Header>
+                    <Header>@(Strings.T("Проекция 1: иерархия работ и фазы во времени"))</Header>
                 </GanttTaskPanel>
             }
             <GanttPeoplePanel People="_people" Scale="_scale" Range="_range" Header="@(_twoD ? PeopleHeader : null)"
@@ -61,13 +61,13 @@ else if (_data is not null && _people is not null)
     private string? _selected;
     private bool _twoD;
 
-    private static readonly GanttLegendItem[] PeopleKey =
+    private GanttLegendItem[] PeopleKey =>
     [
-        new("load", "Загрузка, ч", GanttLegendShape.Cell),
-        new("overload", "Перегрузка", GanttLegendShape.Cell),
-        new("free", "Свободно", GanttLegendShape.Cell),
-        new("absence", "Отсутствие", GanttLegendShape.Cell),
-        new("demand", "Нужен человек", GanttLegendShape.Cell)
+        new("load", Strings.T("Загрузка, ч"), GanttLegendShape.Cell),
+        new("overload", Strings.T("Перегрузка"), GanttLegendShape.Cell),
+        new("free", Strings.T("Свободно"), GanttLegendShape.Cell),
+        new("absence", Strings.T("Отсутствие"), GanttLegendShape.Cell),
+        new("demand", Strings.T("Нужен человек"), GanttLegendShape.Cell)
     ];
 
     private static readonly RenderFragment PeopleHeader = @<span>Проекция 2: дорожки ресурсов и ёмкость (часы)</span>;
@@ -153,7 +153,7 @@ else if (_data is not null && _people is not null)
         try
         {
             await _data!.AddLink(Session, args.Link);
-            _notice = "Связь добавлена";
+            _notice = Strings.T("Связь добавлена");
         }
         catch (Exception e) when (e is HttpRequestException or InvalidOperationException) { args.Cancel = true; _error = e.Message; }
         await Reload();

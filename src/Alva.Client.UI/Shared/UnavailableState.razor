@@ -1,12 +1,12 @@
 @* Ссылка указывает на запись, которой нет (удалена, в другой команде или опечатка): страница говорит об этом прямо и
    ведёт к списку, а не рисует пустоту или подставляет другую запись. *@
-<FlareEmptyState Title="@Title" Description="@Description">
+<FlareEmptyState Title="@Title" Description="@(Description ?? Strings.T("Возможно, запись удалили, она принадлежит другой команде или в адресе опечатка."))">
     <ActionContent><FlareButton Href="@BackHref" Size="ButtonSize.Sm" Variant="ButtonVariant.Tonal">@BackLabel</FlareButton></ActionContent>
 </FlareEmptyState>
 
 @code {
     [Parameter, EditorRequired] public string Title { get; set; } = "";
-    [Parameter] public string Description { get; set; } = "Возможно, запись удалили, она принадлежит другой команде или в адресе опечатка.";
+    [Parameter] public string? Description { get; set; }
     [Parameter, EditorRequired] public string BackHref { get; set; } = "/";
     [Parameter, EditorRequired] public string BackLabel { get; set; } = "";
 }

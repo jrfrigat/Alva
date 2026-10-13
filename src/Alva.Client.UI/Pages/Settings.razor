@@ -4,25 +4,25 @@
 @inject NavigationManager Navigation
 @inject RiskNotifications Notifications
 @implements IDisposable
-<PageTitle>Настройки · Alva</PageTitle>
-<FlareText Element="h1" Typo="TypographyScale.HeadlineLarge">Настройки</FlareText>
+<PageTitle>@(Strings.T("Настройки · Alva"))</PageTitle>
+<FlareText Element="h1" Typo="TypographyScale.HeadlineLarge">@(Strings.T("Настройки"))</FlareText>
 <PageFeedback Error="@_error" Loading="_busy" />
 <FlareGrid MinColumnWidth="min(100%,24rem)">
-<FlareCard Variant="CardVariant.Outlined"><FlareCardContent><FlareStack Gap="FlareSpacing.Large"><FlareText Element="h2" Typo="TypographyScale.TitleLarge">Внешний вид</FlareText><FlareSelect TValue="ThemeMode" Label="Режим" Items="Modes" ItemLabel="ModeLabel" Value="Theme.Mode" ValueChanged="Theme.SetModeAsync" /></FlareStack></FlareCardContent></FlareCard>
+<FlareCard Variant="CardVariant.Outlined"><FlareCardContent><FlareStack Gap="FlareSpacing.Large"><FlareText Element="h2" Typo="TypographyScale.TitleLarge">@(Strings.T("Внешний вид"))</FlareText><FlareSelect TValue="ThemeMode" Label="@(Strings.T("Режим"))" Items="Modes" ItemLabel="ModeLabel" Value="Theme.Mode" ValueChanged="Theme.SetModeAsync" /></FlareStack></FlareCardContent></FlareCard>
 @if(Session.User is not null)
 {
 <FlareCard Variant="CardVariant.Outlined"><FlareCardContent><FlareStack Gap="FlareSpacing.Large">
-    <FlareText Element="h2" Typo="TypographyScale.TitleLarge">Уведомления о рисках</FlareText>
-    <FlareText>Колокольчик в шапке показывает риски команды и отмечает новые. Настройка хранится на этом устройстве.</FlareText>
-    <FlareSelect TValue="RiskScope" Label="Показывать" Items="Scopes" ItemLabel="RiskBell.ScopeLabel" Value="Notifications.Scope" ValueChanged="Notifications.SetScope" />
-    <FlareSwitch Value="Notifications.BrowserNotifications" ValueChanged="ToggleBrowser" Label="Уведомления браузера о новых рисках" />
+    <FlareText Element="h2" Typo="TypographyScale.TitleLarge">@(Strings.T("Уведомления о рисках"))</FlareText>
+    <FlareText>@(Strings.T("Колокольчик в шапке показывает риски команды и отмечает новые. Настройка хранится на этом устройстве."))</FlareText>
+    <FlareSelect TValue="RiskScope" Label="@(Strings.T("Показывать"))" Items="Scopes" ItemLabel="RiskBell.ScopeLabel" Value="Notifications.Scope" ValueChanged="Notifications.SetScope" />
+    <FlareSwitch Value="Notifications.BrowserNotifications" ValueChanged="ToggleBrowser" Label="@(Strings.T("Уведомления браузера о новых рисках"))" />
     @if(_permissionNote is not null){<FlareText Typo="TypographyScale.BodySmall">@_permissionNote</FlareText>}
 </FlareStack></FlareCardContent></FlareCard>
-<FlareCard Variant="CardVariant.Outlined"><FlareCardContent><FlareStack Gap="FlareSpacing.Large"><FlareText Element="h2" Typo="TypographyScale.TitleLarge">Профиль</FlareText><FlareText>@Session.User.Email</FlareText><FlareTextField Label="Ваше имя" @bind-Value="_displayName" /><FlareButton OnClick="SaveProfile" Loading="_busy" Disabled="@(string.IsNullOrWhiteSpace(_displayName))">Сохранить профиль</FlareButton><FlareButton Variant="ButtonVariant.Text" OnClick="Logout">Выйти из Alva</FlareButton></FlareStack></FlareCardContent></FlareCard>
+<FlareCard Variant="CardVariant.Outlined"><FlareCardContent><FlareStack Gap="FlareSpacing.Large"><FlareText Element="h2" Typo="TypographyScale.TitleLarge">@(Strings.T("Профиль"))</FlareText><FlareText>@Session.User.Email</FlareText><FlareTextField Label="@(Strings.T("Ваше имя"))" @bind-Value="_displayName" /><FlareButton OnClick="SaveProfile" Loading="_busy" Disabled="@(string.IsNullOrWhiteSpace(_displayName))">@(Strings.T("Сохранить профиль"))</FlareButton><FlareButton Variant="ButtonVariant.Text" OnClick="Logout">@(Strings.T("Выйти из Alva"))</FlareButton></FlareStack></FlareCardContent></FlareCard>
 @if(Session.WorkspaceId.HasValue)
 {
-<FlareCard Variant="CardVariant.Outlined"><FlareCardContent><FlareStack Gap="FlareSpacing.Large"><FlareText Element="h2" Typo="TypographyScale.TitleLarge">Пространство и доступ</FlareText><FlareTextField Label="Название пространства" @bind-Value="_spaceName" /><FlareCheckbox @bind-Value="_permissions">Ограничивать доступ по разрешениям</FlareCheckbox><FlareText>По умолчанию все участники команды видят её данные. Изменение доступно владельцу пространства.</FlareText><FlareButton OnClick="SaveSpace" Loading="_busy">Сохранить пространство</FlareButton></FlareStack></FlareCardContent></FlareCard>
-<FlareCard Variant="CardVariant.Outlined"><FlareCardContent><FlareStack Gap="FlareSpacing.Large"><FlareText Element="h2" Typo="TypographyScale.TitleLarge">Участники пространства</FlareText><FlareText>Добавьте зарегистрированного пользователя по почте и выберите команды.</FlareText><FlareTextField Label="Почта участника" Type="email" @bind-Value="_memberEmail" />@foreach(var team in Session.Teams){<FlareCheckbox Value="_memberTeams.Contains(team.Id)" ValueChanged="(bool value)=>ToggleMemberTeam(team.Id,value)">@team.Name</FlareCheckbox>}<FlareCheckbox @bind-Value="_owner">Владелец пространства</FlareCheckbox><FlareButton OnClick="SaveMember" Disabled="@(string.IsNullOrWhiteSpace(_memberEmail) || _busy)">Сохранить участника</FlareButton>@foreach(var member in _members){<FlareText>@member.DisplayName · @member.Email @(member.IsOwner?"· владелец":"")</FlareText>}</FlareStack></FlareCardContent></FlareCard>
+<FlareCard Variant="CardVariant.Outlined"><FlareCardContent><FlareStack Gap="FlareSpacing.Large"><FlareText Element="h2" Typo="TypographyScale.TitleLarge">@(Strings.T("Пространство и доступ"))</FlareText><FlareTextField Label="@(Strings.T("Название пространства"))" @bind-Value="_spaceName" /><FlareCheckbox @bind-Value="_permissions">@(Strings.T("Ограничивать доступ по разрешениям"))</FlareCheckbox><FlareText>@(Strings.T("По умолчанию все участники команды видят её данные. Изменение доступно владельцу пространства."))</FlareText><FlareButton OnClick="SaveSpace" Loading="_busy">@(Strings.T("Сохранить пространство"))</FlareButton></FlareStack></FlareCardContent></FlareCard>
+<FlareCard Variant="CardVariant.Outlined"><FlareCardContent><FlareStack Gap="FlareSpacing.Large"><FlareText Element="h2" Typo="TypographyScale.TitleLarge">@(Strings.T("Участники пространства"))</FlareText><FlareText>@(Strings.T("Добавьте зарегистрированного пользователя по почте и выберите команды."))</FlareText><FlareTextField Label="@(Strings.T("Почта участника"))" Type="email" @bind-Value="_memberEmail" />@foreach(var team in Session.Teams){<FlareCheckbox Value="_memberTeams.Contains(team.Id)" ValueChanged="(bool value)=>ToggleMemberTeam(team.Id,value)">@team.Name</FlareCheckbox>}<FlareCheckbox @bind-Value="_owner">@(Strings.T("Владелец пространства"))</FlareCheckbox><FlareButton OnClick="SaveMember" Disabled="@(string.IsNullOrWhiteSpace(_memberEmail) || _busy)">@(Strings.T("Сохранить участника"))</FlareButton>@foreach(var member in _members){<FlareText>@member.DisplayName · @member.Email @(member.IsOwner?Strings.T("· владелец"):"")</FlareText>}</FlareStack></FlareCardContent></FlareCard>
 }
 }
 </FlareGrid>
@@ -32,8 +32,8 @@
     protected override void OnInitialized()=>Notifications.Changed+=OnNotificationsChanged;
     private void OnNotificationsChanged()=>InvokeAsync(StateHasChanged);
     public void Dispose()=>Notifications.Changed-=OnNotificationsChanged;
-    private async Task ToggleBrowser(bool value){var permission=await Notifications.SetBrowserNotifications(value);_permissionNote=value&&!Notifications.BrowserNotifications?permission switch{"denied"=>"Браузер запретил уведомления для Alva — разрешите их в настройках сайта.","unsupported"=>"Этот браузер не поддерживает уведомления.",_=>"Разрешение не выдано."}:null;}
-    private static string ModeLabel(ThemeMode mode)=>mode switch{ThemeMode.Auto=>"Как на устройстве",ThemeMode.Light=>"Светлый",ThemeMode.Dark=>"Тёмный",_=>"Высокая контрастность"};
+    private async Task ToggleBrowser(bool value){var permission=await Notifications.SetBrowserNotifications(value);_permissionNote=value&&!Notifications.BrowserNotifications?permission switch{"denied"=>Strings.T("Браузер запретил уведомления для Alva — разрешите их в настройках сайта."),"unsupported"=>Strings.T("Этот браузер не поддерживает уведомления."),_=>Strings.T("Разрешение не выдано.")}:null;}
+    private static string ModeLabel(ThemeMode mode)=>mode switch{ThemeMode.Auto=>Strings.T("Как на устройстве"),ThemeMode.Light=>Strings.T("Светлый"),ThemeMode.Dark=>Strings.T("Тёмный"),_=>Strings.T("Высокая контрастность")};
     protected override async Task OnInitializedAsync(){await Run(async()=>{await Session.Initialize();_displayName=Session.User?.DisplayName;if(Session.WorkspaceId.HasValue){var spaces=await Session.Get<WorkspaceDto[]>("api/workspaces");var space=spaces.First(x=>x.Id==Session.WorkspaceId);_spaceName=space.Name;_permissions=space.EnforcePermissions;_members=await Session.Get<MemberDto[]>($"api/workspaces/{Session.WorkspaceId}/members");}});}
     private async Task Run(Func<Task> action){_busy=true;_error=null;try{await action();}catch(Exception e) when(e is HttpRequestException or InvalidOperationException){_error=e.Message;}finally{_busy=false;}}
     private Task SaveProfile()=>Run(async()=>{await Session.Send(HttpMethod.Put,"api/auth/profile",new ProfileRequest(_displayName!));await Session.RefreshUser();});

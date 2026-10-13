@@ -5,37 +5,37 @@
 @inject NavigationManager Navigation
 <PageTitle>@Title · Alva</PageTitle>
 <AlvaPageHeader Category="@Category" Title="@Title">
-    <Actions><FlareButton Size="ButtonSize.Sm" OnClick="New" Disabled="@(Session.TeamId is null)">Добавить</FlareButton></Actions>
+    <Actions><FlareButton Size="ButtonSize.Sm" OnClick="New" Disabled="@(Session.TeamId is null)">@(Strings.T("Добавить"))</FlareButton></Actions>
 </AlvaPageHeader>
 <PageFeedback Loading="_busy" Error="@_error" />
 @if(Session.TeamId is null) { <TeamRequired /> }
 else
 {
-<FlareStack Row Wrap><FlareButton Href="/team" Size="ButtonSize.Sm" Variant="ButtonVariant.Text">Люди</FlareButton><FlareButton Href="/team/departments" Size="ButtonSize.Sm" Variant="ButtonVariant.Text">Подкоманды</FlareButton><FlareButton Href="/team/roles" Size="ButtonSize.Sm" Variant="ButtonVariant.Text">Роли</FlareButton></FlareStack>
+<FlareStack Row Wrap><FlareButton Href="/team" Size="ButtonSize.Sm" Variant="ButtonVariant.Text">@(Strings.T("Люди"))</FlareButton><FlareButton Href="/team/departments" Size="ButtonSize.Sm" Variant="ButtonVariant.Text">@(Strings.T("Подкоманды"))</FlareButton><FlareButton Href="/team/roles" Size="ButtonSize.Sm" Variant="ButtonVariant.Text">@(Strings.T("Роли"))</FlareButton></FlareStack>
 <FlareGrid MinColumnWidth="min(100%,24rem)" Gap="FlareSpacing.Large">
 <FlareCard Variant="CardVariant.Outlined"><FlareCardContent>
     <FlareDataGrid TItem="ActorModel" Items="_actors.Where(a=>a.Kind==Kind)" Height="auto" Hoverable Dense="true">
     <Columns>
-        <FlareColumn TItem="ActorModel" Title="Имя" Field="a=>a!.Name" Sortable Filterable><Template Context="a"><FlareButton Variant="ButtonVariant.Text" Size="ButtonSize.Sm" OnClick="()=>EditActor(a!)">@a!.Name</FlareButton></Template></FlareColumn>
-        <FlareColumn TItem="ActorModel" Title="Почта" Field="a=>a!.Email" />
-    </Columns><EmptyStateContent><FlareEmptyState Compact Title="Список пока пуст" Description="Добавьте участников, подкоманды и роли для назначения задач." /></EmptyStateContent>
+        <FlareColumn TItem="ActorModel" Title="@(Strings.T("Имя"))" Field="a=>a!.Name" Sortable Filterable><Template Context="a"><FlareButton Variant="ButtonVariant.Text" Size="ButtonSize.Sm" OnClick="()=>EditActor(a!)">@a!.Name</FlareButton></Template></FlareColumn>
+        <FlareColumn TItem="ActorModel" Title="@(Strings.T("Почта"))" Field="a=>a!.Email" />
+    </Columns><EmptyStateContent><FlareEmptyState Compact Title="@(Strings.T("Список пока пуст"))" Description="@(Strings.T("Добавьте участников, подкоманды и роли для назначения задач."))" /></EmptyStateContent>
     </FlareDataGrid>
 </FlareCardContent></FlareCard>
 @if(_actor is not null)
 {
 <FlareCard Variant="CardVariant.Outlined"><FlareCardContent><FlareStack>
     <FlareText Element="h2" Typo="TypographyScale.TitleLarge">@Labels.Kind(_actor.Kind)</FlareText>
-    <FlareTextField Label="Имя или название" @bind-Value="_actor.Name" Required />
-    @if(_actor.Kind=="Person") { <FlareTextField Label="Электронная почта" @bind-Value="_actor.Email" Type="email" /> }
-    <FlareSelect TValue="Guid?" Label="Подкоманда" Items="@(_actors.Where(a=>a.Kind=="Department" && a.Id!=_actor.Id).Select(a=>(Guid?)a.Id))" ItemLabel="ActorName" NullOption="Без подкоманды" @bind-Value="_actor.ParentId" />
+    <FlareTextField Label="@(Strings.T("Имя или название"))" @bind-Value="_actor.Name" Required />
+    @if(_actor.Kind=="Person") { <FlareTextField Label="@(Strings.T("Электронная почта"))" @bind-Value="_actor.Email" Type="email" /> }
+    <FlareSelect TValue="Guid?" Label="@(Strings.T("Подкоманда"))" Items="@(_actors.Where(a=>a.Kind=="Department" && a.Id!=_actor.Id).Select(a=>(Guid?)a.Id))" ItemLabel="ActorName" NullOption="@(Strings.T("Без подкоманды"))" @bind-Value="_actor.ParentId" />
     @if(_actor.Kind=="Person") { @foreach(var department in _actors.Where(a=>a.Kind=="Department")){<FlareCheckbox Value="_actor.DepartmentIds.Contains(department.Id)" ValueChanged="(bool value)=>ToggleDepartment(department.Id,value)">@department.Name</FlareCheckbox>} }
     @if(_actor.Kind!="Role") {
-    <FlareSelect TValue="Guid?" Label="Добавить роль" Items="@(_actors.Where(a=>a.Kind=="Role").Select(a=>(Guid?)a.Id))" ItemLabel="ActorName" NullOption="Выберите роль" @bind-Value="_role" />
-    <FlareButton Variant="ButtonVariant.Text" Size="ButtonSize.Sm" OnClick="AddRole" Disabled="@(!_role.HasValue)">Добавить роль</FlareButton>
+    <FlareSelect TValue="Guid?" Label="@(Strings.T("Добавить роль"))" Items="@(_actors.Where(a=>a.Kind=="Role").Select(a=>(Guid?)a.Id))" ItemLabel="ActorName" NullOption="@(Strings.T("Выберите роль"))" @bind-Value="_role" />
+    <FlareButton Variant="ButtonVariant.Text" Size="ButtonSize.Sm" OnClick="AddRole" Disabled="@(!_role.HasValue)">@(Strings.T("Добавить роль"))</FlareButton>
     <FlareStack Row Wrap>@foreach(var role in _actor.RoleIds) { <FlareButton Variant="ButtonVariant.Tonal" Size="ButtonSize.Sm" OnClick="()=>RemoveRole(role)">@ActorName(role) ×</FlareButton> }</FlareStack>
     }
-    <FlareStack Row Wrap><FlareButton Loading="_busy" OnClick="SaveActor" Disabled="@(string.IsNullOrWhiteSpace(_actor.Name))">Сохранить</FlareButton><FlareButton Variant="ButtonVariant.Text" OnClick="Close">Закрыть</FlareButton>
-    @if(_actor.Id!=Guid.Empty) { @if(_actor.Kind!="Role") { <FlareButton Href="@(_actor.Kind=="Department"?$"/capacity/{_actor.Id}/schedule":$"/capacity/{_actor.Id}")" Variant="ButtonVariant.Text">Рабочий график</FlareButton> }<FlareButton Variant="ButtonVariant.Text" Color="FlareColor.Error" OnClick="ArchiveActor">Архивировать</FlareButton> }</FlareStack>
+    <FlareStack Row Wrap><FlareButton Loading="_busy" OnClick="SaveActor" Disabled="@(string.IsNullOrWhiteSpace(_actor.Name))">@(Strings.T("Сохранить"))</FlareButton><FlareButton Variant="ButtonVariant.Text" OnClick="Close">@(Strings.T("Закрыть"))</FlareButton>
+    @if(_actor.Id!=Guid.Empty) { @if(_actor.Kind!="Role") { <FlareButton Href="@(_actor.Kind=="Department"?$"/capacity/{_actor.Id}/schedule":$"/capacity/{_actor.Id}")" Variant="ButtonVariant.Text">@(Strings.T("Рабочий график"))</FlareButton> }<FlareButton Variant="ButtonVariant.Text" Color="FlareColor.Error" OnClick="ArchiveActor">@(Strings.T("Архивировать"))</FlareButton> }</FlareStack>
 </FlareStack></FlareCardContent></FlareCard>
 }
 </FlareGrid>
@@ -44,8 +44,8 @@ else
     private ActorModel[] _actors=[];private ActorModel? _actor;private Guid? _role;private bool _busy;private string? _error;
     private string Route=>new Uri(Navigation.Uri).AbsolutePath;
     private string Kind=>Route.EndsWith("departments")?"Department":Route.EndsWith("roles")?"Role":"Person";
-    private string Title=>Kind=="Role"?"Роли команды":Kind=="Department"?"Подкоманды":"Люди команды";
-    private string Category=>Kind=="Role"?"Реестр · Роли":Kind=="Department"?"Реестр · Подкоманды":"Реестр · Люди";
+    private string Title=>Kind=="Role"?Strings.T("Роли команды"):Kind=="Department"?Strings.T("Подкоманды"):Strings.T("Люди команды");
+    private string Category=>Kind=="Role"?Strings.T("Реестр · Роли"):Kind=="Department"?Strings.T("Реестр · Подкоманды"):Strings.T("Реестр · Люди");
     protected override async Task OnParametersSetAsync(){Close();await Load();}
     private async Task Run(Func<Task> action){_busy=true;_error=null;try{await action();}catch(Exception e) when(e is HttpRequestException or InvalidOperationException){_error=e.Message;}finally{_busy=false;}}
     private Task Load()=>Run(async()=>{await Session.Initialize();if(Session.TeamId is null)return;_actors=await Session.Get<ActorModel[]>(Session.TeamPath("actors"));});
@@ -53,7 +53,7 @@ else
     private void Close(){_actor=null;_role=null;}
     private void EditActor(ActorModel model){Close();_actor=new ActorModel{Id=model.Id,Name=model.Name,Kind=model.Kind,Email=model.Email,ParentId=model.ParentId,RoleIds=[..model.RoleIds],DepartmentIds=[..model.DepartmentIds],UserId=model.UserId};}
     private void ToggleDepartment(Guid id,bool value)=>_actor!.DepartmentIds=value?_actor.DepartmentIds.Append(id).Distinct().ToArray():_actor.DepartmentIds.Where(x=>x!=id).ToArray();
-    private string ActorName(Guid? id)=>_actors.FirstOrDefault(a=>a.Id==id)?.Name??"Без подкоманды";
+    private string ActorName(Guid? id)=>_actors.FirstOrDefault(a=>a.Id==id)?.Name??Strings.T("Без подкоманды");
     private void AddRole(){if(_role.HasValue)_actor!.RoleIds=_actor.RoleIds.Append(_role.Value).Distinct().ToArray();_role=null;}
     private void RemoveRole(Guid id)=>_actor!.RoleIds=_actor.RoleIds.Where(x=>x!=id).ToArray();
     private Task SaveActor()=>Run(async()=>{var a=_actor!;await Session.Send(a.Id==Guid.Empty?HttpMethod.Post:HttpMethod.Put,Session.TeamPath("actors"+(a.Id==Guid.Empty?"":$"/{a.Id}")),new ActorRequest(a.Name,a.Kind,a.Email,a.ParentId,a.UserId,a.RoleIds,a.DepartmentIds));Close();_actors=await Session.Get<ActorModel[]>(Session.TeamPath("actors"));});

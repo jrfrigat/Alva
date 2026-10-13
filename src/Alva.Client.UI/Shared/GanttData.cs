@@ -164,11 +164,11 @@ public sealed class GanttData
     /// <summary>Подсказка полосы: название, даты, кто делает и, если задача под угрозой, почему.</summary>
     public string Title(TaskModel task)
     {
-        var dates = Window(task) is { } w ? $"{w.Start:dd.MM}–{w.End:dd.MM}" : "без дат";
+        var dates = Window(task) is { } w ? $"{w.Start:dd.MM}–{w.End:dd.MM}" : Strings.T(Strings.T("без дат"));
         var title = $"{task.Title} · {dates} · {Assignee(task)}";
         if (ChildrenOf(task).Any()) title += "\nШтриховка — ожидание подзадач";
         return RiskOf(task) is { Severity: "High" or "Medium" } risk
-            ? $"{title}\n{(risk.Severity == "High" ? "Высокий" : "Средний")} риск: {string.Join("; ", risk.Reasons)}"
+            ? $"{title}\n{(risk.Severity == "High" ? Strings.T(Strings.T("Высокий")) : Strings.T(Strings.T("Средний")))} риск: {string.Join("; ", risk.Reasons)}"
             : title;
     }
 
@@ -196,7 +196,7 @@ public sealed class GanttData
     {
         { Kind: "Person" } person => person.Name,
         { } target => $"Требуется: {target.Name}",
-        null => "Без исполнителя"
+        null => Strings.T(Strings.T("Без исполнителя"))
     };
 
     /// <summary>
@@ -233,7 +233,7 @@ public sealed class GanttData
     public async Task<string> Apply(AlvaSession session, GanttChangeEventArgs args)
     {
         await Save(session, args.Changes);
-        return args.Changes.Count > 1 ? $"Даты сохранены, сдвинуто последователей: {args.Changes.Count - 1}" : "Даты сохранены";
+        return args.Changes.Count > 1 ? $"Даты сохранены, сдвинуто последователей: {args.Changes.Count - 1}" : Strings.T(Strings.T("Даты сохранены"));
     }
 
     /// <summary>
@@ -301,8 +301,8 @@ public sealed class GanttData
 
     public Task AddLink(AlvaSession session, GanttLink link)
     {
-        var successor = Task(link.ToKey) ?? throw new InvalidOperationException("Задача не найдена.");
-        var predecessor = Task(link.FromKey) ?? throw new InvalidOperationException("Задача не найдена.");
+        var successor = Task(link.ToKey) ?? throw new InvalidOperationException(Strings.T(Strings.T("Задача не найдена.")));
+        var predecessor = Task(link.FromKey) ?? throw new InvalidOperationException(Strings.T(Strings.T("Задача не найдена.")));
         return session.Send(HttpMethod.Post, session.TeamPath($"tasks/{successor.Id}/dependencies"),
             new DependencyRequest(predecessor.Id, successor.Id, Code(link.Type)));
     }
@@ -319,18 +319,18 @@ public sealed class GanttData
 
     public static readonly GanttScale[] Scales = [GanttScale.Day, GanttScale.Week, GanttScale.Month];
 
-    public static string ScaleName(GanttScale scale) => scale switch { GanttScale.Week => "Недели", GanttScale.Month => "Месяцы", _ => "Дни" };
+    public static string ScaleName(GanttScale scale) => scale switch { GanttScale.Week => "Недели", GanttScale.Month => Strings.T(Strings.T("Месяцы")), _ => Strings.T(Strings.T("Дни")) };
 
     /// <summary>Ширина единицы оси: дню хватает места на часы, неделе и месяцу — на подпись.</summary>
     public static double UnitWidth(GanttScale scale) => scale switch { GanttScale.Week => 96, GanttScale.Month => 140, _ => 40 };
 
     public static bool IsWeekend(DateOnly day) => day.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday;
 
-    public static GanttMarker[] TodayMarkers => [new GanttMarker("today", DateTime.Today.AddHours(12), Label: "Сегодня")];
+    public static GanttMarker[] TodayMarkers => [new GanttMarker("today", DateTime.Today.AddHours(12), Label: Strings.T(Strings.T("Сегодня")))];
 
     public SprintModel? Sprint(Guid? id) => id is { } value ? _sprints.GetValueOrDefault(value) : null;
 
-    public string SprintName(Guid? id) => Sprint(id) is { } s ? $"{s.Name} ({s.StartDate:dd.MM}–{s.EndDate:dd.MM})" : "Все задачи";
+    public string SprintName(Guid? id) => Sprint(id) is { } s ? $"{s.Name} ({s.StartDate:dd.MM}–{s.EndDate:dd.MM})" : Strings.T(Strings.T("Все задачи"));
 
     /// <summary>Окно выбранного спринта, а без выбора — окна активных спринтов.</summary>
     public IEnumerable<GanttRegion> SprintRegions(SprintModel? sprint) => sprint is { } s

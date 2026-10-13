@@ -1,5 +1,5 @@
-@if (!string.IsNullOrEmpty(Error)) { <FlareAlert Severity="AlertSeverity.Error" Title="Не удалось выполнить действие">@Error</FlareAlert> }
-@if (Loading) { <FlareProgressLinear Value="null" aria-label="Загрузка данных" /> }
+@if (!string.IsNullOrEmpty(Error)) { <FlareAlert Severity="AlertSeverity.Error" Title="@(Strings.T("Не удалось выполнить действие"))">@Error</FlareAlert> }
+@if (Loading) { <FlareProgressLinear Value="null" aria-label="@(Strings.T("Загрузка данных"))" /> }
 @code {
     [Parameter] public string? Error { get; set; }
     [Parameter] public bool Loading { get; set; }
@@ -9,6 +9,6 @@
     /// ни с «не найдено», ни с поломкой.
     /// </summary>
     public static string Describe(Exception error) => error is HttpRequestException { StatusCode: System.Net.HttpStatusCode.Forbidden }
-        ? "Нет доступа: у вашей роли нет прав на эти данные. Попросите владельца пространства выдать доступ."
+        ? Strings.T("Нет доступа: у вашей роли нет прав на эти данные. Попросите владельца пространства выдать доступ.")
         : error.Message;
 }

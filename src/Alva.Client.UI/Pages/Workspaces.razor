@@ -1,25 +1,25 @@
 @page "/workspaces"
 @inject AlvaSession Session
 @inject NavigationManager Navigation
-<PageTitle>Команды · Alva</PageTitle>
-<FlareText Element="h1" Typo="TypographyScale.HeadlineLarge">Рабочее пространство</FlareText>
+<PageTitle>@(Strings.T("Команды · Alva"))</PageTitle>
+<FlareText Element="h1" Typo="TypographyScale.HeadlineLarge">@(Strings.T("Рабочее пространство"))</FlareText>
 <PageFeedback Loading="_busy" Error="@_error" />
 @if (Session.User is null) { <TeamRequired /> }
 else
 {
 <FlareGrid MinColumnWidth="min(100%, 20rem)">
     <FlareCard Variant="CardVariant.Outlined"><FlareCardContent><FlareStack>
-        <FlareText Element="h2" Typo="TypographyScale.TitleLarge">Пространства</FlareText>
+        <FlareText Element="h2" Typo="TypographyScale.TitleLarge">@(Strings.T("Пространства"))</FlareText>
         @foreach(var item in Session.Workspaces) { <FlareButton Variant="@(Session.WorkspaceId == item.Id ? ButtonVariant.Tonal : ButtonVariant.Text)" OnClick="() => SelectWorkspace(item.Id)">@item.Name</FlareButton> }
-        <FlareTextField Label="Новое пространство" @bind-Value="_spaceName" />
-        <FlareButton Disabled="@(string.IsNullOrWhiteSpace(_spaceName) || _busy)" OnClick="CreateSpace">Создать пространство</FlareButton>
+        <FlareTextField Label="@(Strings.T("Новое пространство"))" @bind-Value="_spaceName" />
+        <FlareButton Disabled="@(string.IsNullOrWhiteSpace(_spaceName) || _busy)" OnClick="CreateSpace">@(Strings.T("Создать пространство"))</FlareButton>
     </FlareStack></FlareCardContent></FlareCard>
     <FlareCard Variant="CardVariant.Outlined"><FlareCardContent><FlareStack>
-        <FlareText Element="h2" Typo="TypographyScale.TitleLarge">Команды</FlareText>
+        <FlareText Element="h2" Typo="TypographyScale.TitleLarge">@(Strings.T("Команды"))</FlareText>
         @foreach(var item in Session.Teams) { <FlareButton Variant="@(Session.TeamId == item.Id ? ButtonVariant.Tonal : ButtonVariant.Text)" OnClick="() => SelectTeam(item.Id)">@item.Name</FlareButton> }
-        @if (Session.Teams.Length == 0) { <FlareText>Создайте первую команду в пространстве.</FlareText> }
-        <FlareTextField Label="Новая команда" @bind-Value="_teamName" />
-        <FlareButton Disabled="@(Session.WorkspaceId is null || string.IsNullOrWhiteSpace(_teamName) || _busy)" OnClick="CreateTeam">Создать команду</FlareButton>
+        @if (Session.Teams.Length == 0) { <FlareText>@(Strings.T("Создайте первую команду в пространстве."))</FlareText> }
+        <FlareTextField Label="@(Strings.T("Новая команда"))" @bind-Value="_teamName" />
+        <FlareButton Disabled="@(Session.WorkspaceId is null || string.IsNullOrWhiteSpace(_teamName) || _busy)" OnClick="CreateTeam">@(Strings.T("Создать команду"))</FlareButton>
     </FlareStack></FlareCardContent></FlareCard>
 </FlareGrid>
 }

@@ -3,7 +3,7 @@
 @* Ползунок «Масштаб» диаграммы Ганта: ширина единицы оси для текущей шкалы. Запоминается на устройстве отдельно для
    каждого вида и каждой шкалы; минимум — половина обычной ширины, максимум — две с половиной. *@
 <div class="alva-gantt-zoom">
-    <FlareSlider Value="Value" ValueChanged="Change" Min="Min" Max="Max" Step="Step" Label="Масштаб" AriaLabel="Ширина единицы оси" />
+    <FlareSlider Value="Value" ValueChanged="Change" Min="Min" Max="Max" Step="Step" Label="@(Strings.T("Масштаб"))" AriaLabel="@(Strings.T("Ширина единицы оси"))" />
 </div>
 
 @code {

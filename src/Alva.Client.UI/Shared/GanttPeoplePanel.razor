@@ -7,7 +7,7 @@
                  Links="@People.Data.Links().ToArray()" Cells="@People.Cells(Scale, Range)" Editable="true"
                  OnChange="OnChange" OnLinkCreate="OnLinkCreate" OnLinkRejected="OnLinkRejected" Header="Header"
                  DropGroup="@DropGroup" DropAccepts="DropAccepts" ItemDropGroup="@ItemDropGroup" ItemDropAccepts="ItemDropAccepts" Suggested="Suggested"
-                 AriaLabel="Люди и роли во времени">
+                 AriaLabel="@(Strings.T("Люди и роли во времени"))">
     <RowHeader Context="row">
         <div class="alva-gantt-row">
             @if (row.Kind == "person")

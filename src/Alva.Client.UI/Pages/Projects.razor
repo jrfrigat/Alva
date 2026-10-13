@@ -2,49 +2,49 @@
 @inject AlvaSession Session
 @* Реестр проектов по макету p13: карточки проектов слева, выбранный проект справа — KPI,
    команды и их спринты, дерево задач (WBS). Статус проекта выводится из его задач. *@
-<PageTitle>Проекты · Alva</PageTitle>
-<AlvaPageHeader Category="Корпоративный реестр · M:N архитектура" Title="Проекты" Description="Реестр проектов и вовлечённость команд. Проекты объединяют задачи, исполняемые спринтами разных команд.">
-    <Actions><FlareButton Size="ButtonSize.Sm" OnClick="New" Disabled="@(Session.TeamId is null)"><LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.AddCircle" Size="18px" /></LeadingIcon><ChildContent>Новый проект</ChildContent></FlareButton></Actions>
+<PageTitle>@(Strings.T("Проекты · Alva"))</PageTitle>
+<AlvaPageHeader Category="@(Strings.T("Корпоративный реестр · M:N архитектура"))" Title="@(Strings.T("Проекты"))" Description="@(Strings.T("Реестр проектов и вовлечённость команд. Проекты объединяют задачи, исполняемые спринтами разных команд."))">
+    <Actions><FlareButton Size="ButtonSize.Sm" OnClick="New" Disabled="@(Session.TeamId is null)"><LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.AddCircle" Size="18px" /></LeadingIcon><ChildContent>@(Strings.T("Новый проект"))</ChildContent></FlareButton></Actions>
 </AlvaPageHeader>
 <PageFeedback Loading="_busy" Error="@_error" />
 @if (Session.TeamId is null) { <TeamRequired /> }
 else
 {
 <div class="alva-proj-filter">
-    <div class="alva-quickfilter" role="group" aria-label="Статус проекта">
+    <div class="alva-quickfilter" role="group" aria-label="@(Strings.T("Статус проекта"))">
         @foreach (var (key, label) in Filters)
         {
             <button type="button" class="alva-quickfilter__item @(_filter == key ? "alva-quickfilter__item--active" : "")" aria-pressed="@(_filter == key)" @onclick="() => _filter = key">@label (@_projects.Count(p => key == "all" || Status(p) == key))</button>
         }
     </div>
-    <span class="alva-proj-filter__hint"><FlareIconView Value="@MaterialDesign3Icons.Regular.Info" Size="16px" /> Проект не имеет собственных спринтов — исполнение через спринты команд</span>
+    <span class="alva-proj-filter__hint"><FlareIconView Value="@MaterialDesign3Icons.Regular.Info" Size="16px" /> @(Strings.T("Проект не имеет собственных спринтов — исполнение через спринты команд"))</span>
 </div>
 
 @if (_project is not null)
 {
 <FlareCard Variant="CardVariant.Outlined"><FlareCardContent><FlareStack>
-    <FlareText Element="h2" Typo="TypographyScale.TitleLarge">@(_project.Id == Guid.Empty ? "Новый проект" : "Рамка проекта")</FlareText>
-    <FlareTextField Label="Название" @bind-Value="_project.Name" Required />
-    <FlareTextArea Label="Описание" @bind-Value="_project.Description" AutoGrow />
-    <FlareText Typo="TypographyScale.LabelLarge">Команды проекта</FlareText>
+    <FlareText Element="h2" Typo="TypographyScale.TitleLarge">@(_project.Id == Guid.Empty ? Strings.T("Новый проект") : Strings.T("Рамка проекта"))</FlareText>
+    <FlareTextField Label="@(Strings.T("Название"))" @bind-Value="_project.Name" Required />
+    <FlareTextArea Label="@(Strings.T("Описание"))" @bind-Value="_project.Description" AutoGrow />
+    <FlareText Typo="TypographyScale.LabelLarge">@(Strings.T("Команды проекта"))</FlareText>
     @foreach (var team in Session.Teams) { <FlareCheckbox TValue="bool" Value="_project.TeamIds.Contains(team.Id)" ValueChanged="(bool value) => ToggleTeam(team.Id, value)">@team.Name</FlareCheckbox> }
     <FlareStack Row Wrap>
-        <FlareButton Loading="_busy" OnClick="SaveProject" Disabled="@(string.IsNullOrWhiteSpace(_project.Name))">Сохранить</FlareButton>
-        <FlareButton Variant="ButtonVariant.Text" OnClick="() => _project = null">Закрыть</FlareButton>
-        @if (_project.Id != Guid.Empty) { <FlareButton Variant="ButtonVariant.Text" Color="FlareColor.Error" OnClick="ArchiveProject">Архивировать</FlareButton> }
+        <FlareButton Loading="_busy" OnClick="SaveProject" Disabled="@(string.IsNullOrWhiteSpace(_project.Name))">@(Strings.T("Сохранить"))</FlareButton>
+        <FlareButton Variant="ButtonVariant.Text" OnClick="() => _project = null">@(Strings.T("Закрыть"))</FlareButton>
+        @if (_project.Id != Guid.Empty) { <FlareButton Variant="ButtonVariant.Text" Color="FlareColor.Error" OnClick="ArchiveProject">@(Strings.T("Архивировать"))</FlareButton> }
     </FlareStack>
 </FlareStack></FlareCardContent></FlareCard>
 }
 
 @if (_projects.Length == 0 && !_busy)
 {
-    <FlareEmptyState Title="Добавьте первый проект" Description="Объедините связанные задачи общим результатом." />
+    <FlareEmptyState Title="@(Strings.T("Добавьте первый проект"))" Description="@(Strings.T("Объедините связанные задачи общим результатом."))" />
 }
 else
 {
 <div class="alva-proj-layout">
-    <section class="alva-proj-registry" aria-label="Реестр проектов">
-        <div class="alva-proj-registry__head"><span>Реестр проектов</span><span>Сортировка: нагрузка</span></div>
+    <section class="alva-proj-registry" aria-label="@(Strings.T("Реестр проектов"))">
+        <div class="alva-proj-registry__head"><span>@(Strings.T("Реестр проектов"))</span><span>@(Strings.T("Сортировка: нагрузка"))</span></div>
         @foreach (var project in Visible)
         {
             var (done, total) = HoursOf(project);
@@ -54,15 +54,15 @@ else
                 <span class="alva-proj-card__name">@project.Name</span>
                 @if (!string.IsNullOrWhiteSpace(project.Description)) { <span class="alva-proj-card__desc">@project.Description</span> }
                 <span class="alva-proj-card__teams">
-                    <span class="alva-proj-card__teams-head"><span>Команды (M:N):</span><b>@project.TeamIds.Length @AlvaFormat.Plural(project.TeamIds.Length, "команда", "команды", "команд")</b></span>
+                    <span class="alva-proj-card__teams-head"><span>@(Strings.T("Команды (M:N):"))</span><b>@project.TeamIds.Length @AlvaFormat.Plural(project.TeamIds.Length, Strings.T("команда"), Strings.T("команды"), Strings.T("команд"))</b></span>
                     <span class="alva-proj-card__team-list">@string.Join(" · ", project.TeamIds.Select(TeamName))</span>
                 </span>
                 <span class="alva-loadbar__track"><span class="alva-loadbar__fill alva-loadbar__fill--info" style="width:@Pct(done, total)%"></span></span>
-                <span class="alva-proj-card__foot alva-num"><span><b>@Pct(done, total)%</b> (@tasks.Count(t => t.Status == "Done") / @tasks.Length @AlvaFormat.Plural(tasks.Length, "задача", "задачи", "задач"))</span><span>Релиз: @(ReleaseOf(project)?.ToString("d MMM yyyy") ?? "—")</span></span>
+                <span class="alva-proj-card__foot alva-num"><span><b>@Pct(done, total)%</b> (@tasks.Count(t => t.Status == "Done") / @tasks.Length @AlvaFormat.Plural(tasks.Length, "задача", Strings.T("задачи"), Strings.T("задач")))</span><span>Релиз: @(ReleaseOf(project)?.ToString("d MMM yyyy") ?? "—")</span></span>
             </button>
         }
-        @if (!Visible.Any()) { <FlareEmptyState Compact Title="Проектов нет" Description="Смените фильтр статуса." /> }
-        <div class="alva-proj-note"><FlareIconView Value="@MaterialDesign3Icons.Regular.Hub" Size="18px" /><span><b>M ↔ N модель данных.</b> Проект не привязан к одной команде: его задачи затягиваются разными командами в их спринты.</span></div>
+        @if (!Visible.Any()) { <FlareEmptyState Compact Title="@(Strings.T("Проектов нет"))" Description="@(Strings.T("Смените фильтр статуса."))" /> }
+        <div class="alva-proj-note"><FlareIconView Value="@MaterialDesign3Icons.Regular.Hub" Size="18px" /><span><b>M ↔ N модель данных.</b> @(Strings.T("Проект не привязан к одной команде: его задачи затягиваются разными командами в их спринты."))</span></div>
     </section>
 
     @if (Selected is { } p)
@@ -81,24 +81,24 @@ else
                         @if (!string.IsNullOrWhiteSpace(p.Description)) { <p class="alva-panel__subtitle">@p.Description</p> }
                     </div>
                     <div class="alva-proj-detail__actions">
-                        <FlareButton Variant="ButtonVariant.Tonal" Size="ButtonSize.Sm" OnClick="() => Edit(p)"><LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.Edit" Size="18px" /></LeadingIcon><ChildContent>Изменить рамку</ChildContent></FlareButton>
-                        <FlareButton Href="/tasks" Size="ButtonSize.Sm"><LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.AddTask" Size="18px" /></LeadingIcon><ChildContent>Создать задачу</ChildContent></FlareButton>
+                        <FlareButton Variant="ButtonVariant.Tonal" Size="ButtonSize.Sm" OnClick="() => Edit(p)"><LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.Edit" Size="18px" /></LeadingIcon><ChildContent>@(Strings.T("Изменить рамку"))</ChildContent></FlareButton>
+                        <FlareButton Href="/tasks" Size="ButtonSize.Sm"><LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.AddTask" Size="18px" /></LeadingIcon><ChildContent>@(Strings.T("Создать задачу"))</ChildContent></FlareButton>
                     </div>
                 </div>
                 <div class="alva-proj-kpis">
-                    <div class="alva-proj-kpi"><span class="alva-kpi__label">Общий прогресс</span><span class="alva-proj-kpi__value alva-num">@Pct(done, total)%</span><span class="alva-loadbar__track"><span class="alva-loadbar__fill alva-loadbar__fill--info" style="width:@Pct(done, total)%"></span></span><small class="alva-num">@tasks.Count(t => t.Status == "Done") из @tasks.Length задач закрыто</small></div>
-                    <div class="alva-proj-kpi"><span class="alva-kpi__label">Трудозатраты</span><span class="alva-proj-kpi__value alva-num">@AlvaFormat.Hours(total) ч</span><small class="alva-num">Закрыто: @AlvaFormat.Hours(done) ч / Остаток: @AlvaFormat.Hours(total - done) ч</small></div>
-                    <div class="alva-proj-kpi"><span class="alva-kpi__label">Активные спринты</span><span class="alva-proj-kpi__value alva-proj-kpi__value--primary alva-num">@sprints.Count(s => s.Status == "Active") @AlvaFormat.Plural(sprints.Count(s => s.Status == "Active"), "спринт", "спринта", "спринтов")</span><small class="alva-num">@tasks.Count(t => t.Status == "InProgress") @AlvaFormat.Plural(tasks.Count(t => t.Status == "InProgress"), "задача", "задачи", "задач") сейчас в работе</small></div>
-                    <div class="alva-proj-kpi"><span class="alva-kpi__label">Дедлайн / релиз</span><span class="alva-proj-kpi__value alva-num">@(release?.ToString("d MMM") ?? "—")</span><small class="alva-num">@(release is { } r ? $"{r:yyyy} (осталось {Math.Max(0, r.DayNumber - DateOnly.FromDateTime(DateTime.Today).DayNumber)} дн.)" : "Дедлайны не заданы")</small>@if (risks > 0) { <small class="alva-kpi__alert">@risks @AlvaFormat.Plural(risks, "риск", "риска", "рисков") по задачам</small> }</div>
+                    <div class="alva-proj-kpi"><span class="alva-kpi__label">@(Strings.T("Общий прогресс"))</span><span class="alva-proj-kpi__value alva-num">@Pct(done, total)%</span><span class="alva-loadbar__track"><span class="alva-loadbar__fill alva-loadbar__fill--info" style="width:@Pct(done, total)%"></span></span><small class="alva-num">@tasks.Count(t => t.Status == "Done") из @tasks.Length задач закрыто</small></div>
+                    <div class="alva-proj-kpi"><span class="alva-kpi__label">@(Strings.T("Трудозатраты"))</span><span class="alva-proj-kpi__value alva-num">@AlvaFormat.Hours(total) ч</span><small class="alva-num">Закрыто: @AlvaFormat.Hours(done) ч / Остаток: @AlvaFormat.Hours(total - done) ч</small></div>
+                    <div class="alva-proj-kpi"><span class="alva-kpi__label">@(Strings.T("Активные спринты"))</span><span class="alva-proj-kpi__value alva-proj-kpi__value--primary alva-num">@sprints.Count(s => s.Status == "Active") @AlvaFormat.Plural(sprints.Count(s => s.Status == "Active"), Strings.T("спринт"), Strings.T("спринта"), Strings.T("спринтов"))</span><small class="alva-num">@tasks.Count(t => t.Status == "InProgress") @AlvaFormat.Plural(tasks.Count(t => t.Status == "InProgress"), "задача", Strings.T("задачи"), Strings.T("задач")) сейчас в работе</small></div>
+                    <div class="alva-proj-kpi"><span class="alva-kpi__label">@(Strings.T("Дедлайн / релиз"))</span><span class="alva-proj-kpi__value alva-num">@(release?.ToString("d MMM") ?? "—")</span><small class="alva-num">@(release is { } r ? $"{r:yyyy} (осталось {Math.Max(0, r.DayNumber - DateOnly.FromDateTime(DateTime.Today).DayNumber)} дн.)" : Strings.T("Дедлайны не заданы"))</small>@if (risks > 0) { <small class="alva-kpi__alert">@risks @AlvaFormat.Plural(risks, Strings.T("риск"), Strings.T("риска"), Strings.T("рисков")) по задачам</small> }</div>
                 </div>
             </div>
 
-            <h3 class="alva-section-title"><FlareIconView Value="@MaterialDesign3Icons.Regular.Hub" Size="18px" /> Команды и их спринты по проекту</h3>
+            <h3 class="alva-section-title"><FlareIconView Value="@MaterialDesign3Icons.Regular.Hub" Size="18px" /> @(Strings.T("Команды и их спринты по проекту"))</h3>
             <div class="alva-proj-teams">
                 @foreach (var teamId in p.TeamIds)
                 {
                     <div class="alva-panel alva-proj-team" @key="teamId">
-                        <div class="alva-proj-team__head"><span class="alva-proj-team__dot" aria-hidden="true"></span><b>@TeamName(teamId)</b>@if (teamId == Session.TeamId) { <AlvaStatusChip Tone="AlvaTone.Info">Текущая команда</AlvaStatusChip> }</div>
+                        <div class="alva-proj-team__head"><span class="alva-proj-team__dot" aria-hidden="true"></span><b>@TeamName(teamId)</b>@if (teamId == Session.TeamId) { <AlvaStatusChip Tone="AlvaTone.Info">@(Strings.T("Текущая команда"))</AlvaStatusChip> }</div>
                         @if (teamId == Session.TeamId)
                         {
                             @foreach (var sprint in sprints)
@@ -106,14 +106,14 @@ else
                                 var inSprint = tasks.Where(t => t.SprintIds.Contains(sprint.Id)).ToArray();
                                 <a class="alva-proj-sprint" href="@($"/sprints/{sprint.Id}")">
                                     <span class="alva-proj-sprint__head"><span><FlareIconView Value="@MaterialDesign3Icons.Regular.Flag" Size="15px" /> @sprint.Name</span><AlvaStatusChip Tone="AlvaTones.Status(sprint.Status)">@Labels.Status(sprint.Status)</AlvaStatusChip></span>
-                                    <span class="alva-proj-sprint__row alva-num"><span>Взято задач проекта:</span><b>@inSprint.Length (@AlvaFormat.Hours(inSprint.Sum(t => t.EstimateHours ?? 0)) ч)</b></span>
+                                    <span class="alva-proj-sprint__row alva-num"><span>@(Strings.T("Взято задач проекта:"))</span><b>@inSprint.Length (@AlvaFormat.Hours(inSprint.Sum(t => t.EstimateHours ?? 0)) ч)</b></span>
                                 </a>
                             }
-                            <span class="alva-proj-sprint__row alva-num"><span>В бэклоге команды:</span><b>@tasks.Count(t => !t.Planned && t.Status is not ("Done" or "Cancelled")) задач (@AlvaFormat.Hours(tasks.Where(t => !t.Planned && t.Status is not ("Done" or "Cancelled")).Sum(t => t.EstimateHours ?? 0)) ч)</b></span>
+                            <span class="alva-proj-sprint__row alva-num"><span>@(Strings.T("В бэклоге команды:"))</span><b>@tasks.Count(t => !t.Planned && t.Status is not ("Done" or "Cancelled")) задач (@AlvaFormat.Hours(tasks.Where(t => !t.Planned && t.Status is not ("Done" or "Cancelled")).Sum(t => t.EstimateHours ?? 0)) ч)</b></span>
                         }
                         else
                         {
-                            <p class="alva-kpi__note">Задачи и спринты этой команды видны в её собственном пространстве.</p>
+                            <p class="alva-kpi__note">@(Strings.T("Задачи и спринты этой команды видны в её собственном пространстве."))</p>
                         }
                     </div>
                 }
@@ -121,11 +121,11 @@ else
 
             <div class="alva-panel alva-wbs">
                 <header class="alva-wbs__head">
-                    <div><h3 class="alva-panel__title"><FlareIconView Value="@MaterialDesign3Icons.Regular.AccountTree" Size="20px" Class="alva-panel__icon" /> Дерево задач проекта (WBS)</h3><p class="alva-panel__subtitle">Иерархия задач с проекцией на спринты и исполнителей</p></div>
-                    <FlareTextField @bind-Value="_wbsSearch" Immediate Clearable Placeholder="Поиск в дереве…" AriaLabel="Поиск в дереве задач"><AdornmentStart><FlareIconView Value="@MaterialDesign3Icons.Regular.Search" Size="18px" /></AdornmentStart></FlareTextField>
+                    <div><h3 class="alva-panel__title"><FlareIconView Value="@MaterialDesign3Icons.Regular.AccountTree" Size="20px" Class="alva-panel__icon" /> @(Strings.T("Дерево задач проекта (WBS)"))</h3><p class="alva-panel__subtitle">@(Strings.T("Иерархия задач с проекцией на спринты и исполнителей"))</p></div>
+                    <FlareTextField @bind-Value="_wbsSearch" Immediate Clearable Placeholder="@(Strings.T("Поиск в дереве…"))" AriaLabel="@(Strings.T("Поиск в дереве задач"))"><AdornmentStart><FlareIconView Value="@MaterialDesign3Icons.Regular.Search" Size="18px" /></AdornmentStart></FlareTextField>
                 </header>
-                <div class="alva-wbs__table" role="table" aria-label="Задачи проекта">
-                    <div class="alva-wbs__row alva-wbs__row--head" role="row"><span role="columnheader">Наименование / WBS</span><span role="columnheader">Текущий спринт</span><span role="columnheader">Исполнитель</span><span role="columnheader">Дедлайн</span><span role="columnheader">Статус</span></div>
+                <div class="alva-wbs__table" role="table" aria-label="@(Strings.T("Задачи проекта"))">
+                    <div class="alva-wbs__row alva-wbs__row--head" role="row"><span role="columnheader">@(Strings.T("Наименование / WBS"))</span><span role="columnheader">@(Strings.T("Текущий спринт"))</span><span role="columnheader">@(Strings.T("Исполнитель"))</span><span role="columnheader">@(Strings.T("Дедлайн"))</span><span role="columnheader">@(Strings.T("Статус"))</span></div>
                     @foreach (var (task, depth) in Tree(tasks))
                     {
                         <div class="alva-wbs__row @(depth == 0 ? "alva-wbs__row--root" : "")" role="row" @key="task.Id">
@@ -133,15 +133,15 @@ else
                                 <FlareIconView Value="@(tasks.Any(t => t.ParentId == task.Id) ? MaterialDesign3Icons.Regular.Folder : MaterialDesign3Icons.Regular.SubdirectoryArrowRight)" Size="16px" />
                                 <a href="@($"/tasks/{task.Id}")">@task.Title</a>
                             </span>
-                            <span role="cell" class="alva-wbs__muted">@(task.SprintIds.Length == 0 ? "Бэклог команды" : string.Join(", ", _sprints.Where(s => task.SprintIds.Contains(s.Id)).OrderBy(s => s.StartDate).Select(s => s.Name)))</span>
+                            <span role="cell" class="alva-wbs__muted">@(task.SprintIds.Length == 0 ? Strings.T("Бэклог команды") : string.Join(", ", _sprints.Where(s => task.SprintIds.Contains(s.Id)).OrderBy(s => s.StartDate).Select(s => s.Name)))</span>
                             <span role="cell"><AlvaAssignee Task="task" Actors="_actors" /></span>
                             <span role="cell" class="alva-num">@(task.Deadline?.ToString("d MMM") ?? "—")</span>
                             <span role="cell"><AlvaStatusChip Tone="AlvaTones.Status(task.Status)">@Labels.Status(task.Status)</AlvaStatusChip></span>
                         </div>
                     }
-                    @if (!Tree(tasks).Any()) { <div class="alva-sprint-table__empty">Задач в проекте пока нет.</div> }
+                    @if (!Tree(tasks).Any()) { <div class="alva-sprint-table__empty">@(Strings.T("Задач в проекте пока нет."))</div> }
                 </div>
-                <footer class="alva-sprint-tasks__foot alva-num"><span>Связанные задачи распределяются по спринтам команд</span><span>Всего в проекте: <b>@tasks.Length</b> @AlvaFormat.Plural(tasks.Length, "задача", "задачи", "задач")</span></footer>
+                <footer class="alva-sprint-tasks__foot alva-num"><span>@(Strings.T("Связанные задачи распределяются по спринтам команд"))</span><span>@(Strings.T("Всего в проекте:")) <b>@tasks.Length</b> @AlvaFormat.Plural(tasks.Length, "задача", Strings.T("задачи"), Strings.T("задач"))</span></footer>
             </div>
         </section>
     }
@@ -149,7 +149,7 @@ else
 }
 }
 @code {
-    private static readonly (string Key, string Label)[] Filters = [("all", "Все проекты"), ("active", "В работе"), ("new", "Не начаты"), ("done", "Завершены")];
+    private (string Key, string Label)[] Filters => [("all", Strings.T("Все проекты")), ("active", Strings.T("В работе")), ("new", Strings.T("Не начаты")), ("done", Strings.T("Завершены"))];
     private ProjectModel[] _projects = [];
     private TaskModel[] _tasks = [];
     private SprintModel[] _sprints = [];
@@ -173,7 +173,7 @@ else
     private DateOnly? ReleaseOf(ProjectModel p) => TasksOf(p).Where(t => t.Deadline.HasValue).Select(t => t.Deadline).Max();
     private SprintModel[] SprintsOf(ProjectModel p) => _sprints.Where(s => TasksOf(p).Any(t => t.SprintIds.Contains(s.Id))).OrderBy(s => s.StartDate).ToArray();
     private static int Pct(decimal part, decimal whole) => whole <= 0 ? 0 : (int)Math.Round(part / whole * 100);
-    private string TeamName(Guid id) => Session.Teams.FirstOrDefault(t => t.Id == id)?.Name ?? (id == Session.TeamId ? Session.TeamName : "Другая команда");
+    private string TeamName(Guid id) => Session.Teams.FirstOrDefault(t => t.Id == id)?.Name ?? (id == Session.TeamId ? Session.TeamName : Strings.T("Другая команда"));
 
     /// <summary>Статус проекта из задач: в работе / не начат / завершён.</summary>
     private string Status(ProjectModel p)
@@ -182,7 +182,7 @@ else
         if (tasks.Length > 0 && tasks.All(t => t.Status == "Done")) return "done";
         return tasks.Any(t => t.Status is "InProgress" or "Done" || t.SprintIds.Length > 0) ? "active" : "new";
     }
-    private static string StatusLabel(string status) => status switch { "done" => "Завершён", "active" => "В работе", _ => "Не начат" };
+    private static string StatusLabel(string status) => status switch { "done" => Strings.T("Завершён"), "active" => Strings.T("В работе"), _ => Strings.T("Не начат") };
     private static AlvaTone StatusTone(string status) => status switch { "done" => AlvaTone.Ok, "active" => AlvaTone.Info, _ => AlvaTone.Neutral };
 
     /// <summary>Задачи проекта в порядке дерева: корень (родитель вне проекта) и его потомки с глубиной.</summary>

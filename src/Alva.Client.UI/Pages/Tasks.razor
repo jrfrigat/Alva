@@ -15,26 +15,26 @@ else if (TaskId.HasValue)
     @* Ссылка на конкретную задачу никогда не превращается в список: пока грузится — прогресс, ошибка — ошибка,
        а если задачи нет — так и сказано. *@
     <PageFeedback Error="@_error" Loading="_busy" />
-    @if (_loaded) { <UnavailableState Title="Задача не найдена или недоступна" BackHref="/tasks" BackLabel="К задачам" /> }
+    @if (_loaded) { <UnavailableState Title="@(Strings.T("Задача не найдена или недоступна"))" BackHref="/tasks" BackLabel="@(Strings.T("К задачам"))" /> }
 }
 else
 {
-<AlvaPageHeader Category="Планирование · Задачи" Title="@PageHeading" Description="Пул задач команды: дерево, статусы и назначения.">
-    <Actions><FlareButton @ref="_newButton" OnClick="NewTask" Disabled="@(Session.TeamId is null)" Size="ButtonSize.Sm">Новая задача</FlareButton></Actions>
+<AlvaPageHeader Category="@(Strings.T("Планирование · Задачи"))" Title="@PageHeading" Description="@(Strings.T("Пул задач команды: дерево, статусы и назначения."))">
+    <Actions><FlareButton @ref="_newButton" OnClick="NewTask" Disabled="@(Session.TeamId is null)" Size="ButtonSize.Sm">@(Strings.T("Новая задача"))</FlareButton></Actions>
 </AlvaPageHeader>
 <PageFeedback Error="@_error" Loading="_busy" />
 @if(Session.TeamId is null) { <TeamRequired /> }
 else
 {
 <FlareStack Row Wrap Gap="FlareSpacing.Small">
-    <FlareTextField Label="Поиск задач" @bind-Value="_search" @bind-Value:after="SaveListContext" Immediate Clearable Style="flex:2;min-width:min(100%,15rem)" />
-    <FlareSelect TValue="Guid?" Label="Проект" Items="_projects.Select(x => (Guid?)x.Id)" ItemLabel="ProjectName" NullOption="Все проекты" @bind-Value="_projectFilter" @bind-Value:after="SaveListContext" Style="flex:1;min-width:12rem" />
-    <FlareSelect TValue="string" Label="Статус" Items="_statuses" ItemLabel="Labels.Status" NullOption="Все статусы" @bind-Value="_statusFilter" @bind-Value:after="SaveListContext" Style="flex:1;min-width:12rem" />
+    <FlareTextField Label="@(Strings.T("Поиск задач"))" @bind-Value="_search" @bind-Value:after="SaveListContext" Immediate Clearable Style="flex:2;min-width:min(100%,15rem)" />
+    <FlareSelect TValue="Guid?" Label="@(Strings.T("Проект"))" Items="_projects.Select(x => (Guid?)x.Id)" ItemLabel="ProjectName" NullOption="@(Strings.T("Все проекты"))" @bind-Value="_projectFilter" @bind-Value:after="SaveListContext" Style="flex:1;min-width:12rem" />
+    <FlareSelect TValue="string" Label="@(Strings.T("Статус"))" Items="_statuses" ItemLabel="Labels.Status" NullOption="@(Strings.T("Все статусы"))" @bind-Value="_statusFilter" @bind-Value:after="SaveListContext" Style="flex:1;min-width:12rem" />
 </FlareStack>
-<FlareStack Row Wrap Gap="FlareSpacing.Small"><FlareButton Href="/tasks" Variant="ButtonVariant.Text" Size="ButtonSize.Sm">Все задачи</FlareButton><FlareButton Href="/unassigned" Variant="ButtonVariant.Text" Size="ButtonSize.Sm">Без исполнителя</FlareButton><FlareButton Href="/my-work" Variant="ButtonVariant.Text" Size="ButtonSize.Sm">Моя работа</FlareButton><FlareButton OnClick="Load" Variant="ButtonVariant.Text" Size="ButtonSize.Sm">Обновить</FlareButton></FlareStack>
+<FlareStack Row Wrap Gap="FlareSpacing.Small"><FlareButton Href="/tasks" Variant="ButtonVariant.Text" Size="ButtonSize.Sm">@(Strings.T("Все задачи"))</FlareButton><FlareButton Href="/unassigned" Variant="ButtonVariant.Text" Size="ButtonSize.Sm">@(Strings.T("Без исполнителя"))</FlareButton><FlareButton Href="/my-work" Variant="ButtonVariant.Text" Size="ButtonSize.Sm">@(Strings.T("Моя работа"))</FlareButton><FlareButton OnClick="Load" Variant="ButtonVariant.Text" Size="ButtonSize.Sm">@(Strings.T("Обновить"))</FlareButton></FlareStack>
 <FlareGrid MinColumnWidth="min(100%, 26rem)" Gap="FlareSpacing.Large">
 <FlareCard Variant="CardVariant.Outlined"><FlareCardContent>
-    @if (!Filtered.Any()) { <FlareEmptyState Compact Title="Задач пока нет" Description="Добавьте первую задачу или измените фильтры." /> }
+    @if (!Filtered.Any()) { <FlareEmptyState Compact Title="@(Strings.T("Задач пока нет"))" Description="@(Strings.T("Добавьте первую задачу или измените фильтры."))" /> }
     else {
     <FlareDataTree TItem="TaskModel" Items="Roots" KeySelector="t => t!.Id" ChildrenProvider="Children" HasChildren="HasChildren" ItemClick="Open" Height="34rem" id="@TaskListState.TreeElementId">
         <ItemTemplate Context="task"><FlareStack Row Align="FlareAlignItems.Center" Gap="FlareSpacing.Small" Wrap>
@@ -50,25 +50,25 @@ else
 @if(_editing is not null)
 {
 <FlareCard Variant="CardVariant.Outlined"><FlareCardContent><FlareStack Gap="FlareSpacing.Medium">
-    <FlareStack Row StretchFirst><FlareText Element="h2" Typo="TypographyScale.TitleLarge">@(_editing.Id == Guid.Empty ? "Новая задача" : "Карточка задачи")</FlareText><FlareButton OnClick="Close" Variant="ButtonVariant.Text" Size="ButtonSize.Sm">Закрыть</FlareButton></FlareStack>
-    <FlareTextField Label="Название" @bind-Value="_editing.Title" Required MaxLength="500" Autofocus />
-    <FlareTextArea Label="Описание" @bind-Value="_editing.Description" AutoGrow />
+    <FlareStack Row StretchFirst><FlareText Element="h2" Typo="TypographyScale.TitleLarge">@(_editing.Id == Guid.Empty ? Strings.T("Новая задача") : Strings.T("Карточка задачи"))</FlareText><FlareButton OnClick="Close" Variant="ButtonVariant.Text" Size="ButtonSize.Sm">@(Strings.T("Закрыть"))</FlareButton></FlareStack>
+    <FlareTextField Label="@(Strings.T("Название"))" @bind-Value="_editing.Title" Required MaxLength="500" Autofocus />
+    <FlareTextArea Label="@(Strings.T("Описание"))" @bind-Value="_editing.Description" AutoGrow />
     <FlareGrid MinColumnWidth="min(100%,12rem)">
-        <FlareSelect TValue="string" Label="Статус" Items="_statuses" ItemLabel="Labels.Status" @bind-Value="_editing.Status" />
-        <FlareSelect TValue="Guid?" Label="Проект" Items="_projects.Select(x => (Guid?)x.Id)" ItemLabel="ProjectName" NullOption="Текучка" @bind-Value="_editing.ProjectId" />
-        <FlareSelect TValue="Guid?" Label="Спринт (по датам)" Items="_sprints.OrderBy(x => x.StartDate).Select(x => (Guid?)x.Id)" ItemLabel="SprintName" NullOption="Бэклог — без дат" Value="SprintDates.First(_editing, _sprints)" ValueChanged="id => SprintDates.Place(_editing, _sprints.FirstOrDefault(s => s.Id == id))" HelperText="@SprintDates.Hint(_editing, _sprints)" />
-        <FlareSelect TValue="Guid?" Label="Родительская задача" Items="_tasks.Where(x => x.Id != _editing.Id).Select(x => (Guid?)x.Id)" ItemLabel="TaskName" NullOption="Корневая задача" @bind-Value="_editing.ParentId" Searchable />
-        <FlareNumericField TValue="decimal?" Label="Оценка, часы" @bind-Value="_editing.EstimateHours" Min="0" />
-        <FlareDatePicker Label="Дедлайн" @bind-Value="_editing.Deadline" />
-        <FlareDatePicker Label="Начало" @bind-Value="_editing.StartDate" />
-        <FlareDatePicker Label="Окончание" @bind-Value="_editing.EndDate" />
+        <FlareSelect TValue="string" Label="@(Strings.T("Статус"))" Items="_statuses" ItemLabel="Labels.Status" @bind-Value="_editing.Status" />
+        <FlareSelect TValue="Guid?" Label="@(Strings.T("Проект"))" Items="_projects.Select(x => (Guid?)x.Id)" ItemLabel="ProjectName" NullOption="@(Strings.T("Текучка"))" @bind-Value="_editing.ProjectId" />
+        <FlareSelect TValue="Guid?" Label="@(Strings.T("Спринт (по датам)"))" Items="_sprints.OrderBy(x => x.StartDate).Select(x => (Guid?)x.Id)" ItemLabel="SprintName" NullOption="@(Strings.T("Бэклог — без дат"))" Value="SprintDates.First(_editing, _sprints)" ValueChanged="id => SprintDates.Place(_editing, _sprints.FirstOrDefault(s => s.Id == id))" HelperText="@SprintDates.Hint(_editing, _sprints)" />
+        <FlareSelect TValue="Guid?" Label="@(Strings.T("Родительская задача"))" Items="_tasks.Where(x => x.Id != _editing.Id).Select(x => (Guid?)x.Id)" ItemLabel="TaskName" NullOption="@(Strings.T("Корневая задача"))" @bind-Value="_editing.ParentId" Searchable />
+        <FlareNumericField TValue="decimal?" Label="@(Strings.T("Оценка, часы"))" @bind-Value="_editing.EstimateHours" Min="0" />
+        <FlareDatePicker Label="@(Strings.T("Дедлайн"))" @bind-Value="_editing.Deadline" />
+        <FlareDatePicker Label="@(Strings.T("Начало"))" @bind-Value="_editing.StartDate" />
+        <FlareDatePicker Label="@(Strings.T("Окончание"))" @bind-Value="_editing.EndDate" />
     </FlareGrid>
-    <FlareSelect TValue="Guid?" Label="Исполнитель, подкоманда или роль" Items="_actors.Select(x => (Guid?)x.Id)" ItemLabel="ActorName" NullOption="Не назначена" @bind-Value="_editing.AssignmentTargetId" Searchable />
-    @if(_actors.FirstOrDefault(a=>a.Id==_editing.AssignmentTargetId)?.Kind is "Role" or "Department") { <FlareSelect TValue="Guid?" Label="Конкретный исполнитель" Items="@(_actors.Where(a=>a.Kind=="Person").Select(a=>(Guid?)a.Id))" ItemLabel="ActorName" NullOption="Пока не выбран" @bind-Value="_editing.ResolvedPersonId" Searchable /> }
-    <FlareStack Row Wrap><FlareButton Loading="_busy" Disabled="@(string.IsNullOrWhiteSpace(_editing.Title))" OnClick="Save">Сохранить задачу</FlareButton>
-        @if(_editing.Id != Guid.Empty) { <FlareButton Variant="ButtonVariant.Text" OnClick="() => NewChild(_editing.Id)">Подзадача</FlareButton><FlareButton Color="FlareColor.Error" Variant="ButtonVariant.Text" OnClick="Archive">Архивировать</FlareButton> }
+    <FlareSelect TValue="Guid?" Label="@(Strings.T("Исполнитель, подкоманда или роль"))" Items="_actors.Select(x => (Guid?)x.Id)" ItemLabel="ActorName" NullOption="@(Strings.T("Не назначена"))" @bind-Value="_editing.AssignmentTargetId" Searchable />
+    @if(_actors.FirstOrDefault(a=>a.Id==_editing.AssignmentTargetId)?.Kind is "Role" or "Department") { <FlareSelect TValue="Guid?" Label="@(Strings.T("Конкретный исполнитель"))" Items="@(_actors.Where(a=>a.Kind=="Person").Select(a=>(Guid?)a.Id))" ItemLabel="ActorName" NullOption="@(Strings.T("Пока не выбран"))" @bind-Value="_editing.ResolvedPersonId" Searchable /> }
+    <FlareStack Row Wrap><FlareButton Loading="_busy" Disabled="@(string.IsNullOrWhiteSpace(_editing.Title))" OnClick="Save">@(Strings.T("Сохранить задачу"))</FlareButton>
+        @if(_editing.Id != Guid.Empty) { <FlareButton Variant="ButtonVariant.Text" OnClick="() => NewChild(_editing.Id)">@(Strings.T("Подзадача"))</FlareButton><FlareButton Color="FlareColor.Error" Variant="ButtonVariant.Text" OnClick="Archive">@(Strings.T("Архивировать"))</FlareButton> }
     </FlareStack>
-    @if(_history.Length>0) { <FlareText Element="h3" Typo="TypographyScale.TitleMedium">История</FlareText>@foreach(var entry in _history) { <FlareText Typo="TypographyScale.BodySmall">@entry.At.ToLocalTime().ToString("g") · @entry.Summary</FlareText> } }
+    @if(_history.Length>0) { <FlareText Element="h3" Typo="TypographyScale.TitleMedium">@(Strings.T("История"))</FlareText>@foreach(var entry in _history) { <FlareText Typo="TypographyScale.BodySmall">@entry.At.ToLocalTime().ToString("g") · @entry.Summary</FlareText> } }
 </FlareStack></FlareCardContent></FlareCard>
 }
 </FlareGrid>
@@ -81,15 +81,15 @@ else
     private double _pendingScroll;
     private readonly string[] _statuses=["Backlog","Planned","InProgress","Done","Cancelled"];
     private string Route => new Uri(Navigation.Uri).AbsolutePath;
-    private string PageHeading => Route == "/my-work" ? "Моя работа" : Route == "/unassigned" ? "Без исполнителя" : "Задачи команды";
+    private string PageHeading => Route == "/my-work" ? Strings.T("Моя работа") : Route == "/unassigned" ? Strings.T("Без исполнителя") : Strings.T("Задачи команды");
     private IEnumerable<TaskModel> Filtered => _tasks.Where(t => (string.IsNullOrWhiteSpace(_search) || t.Title.Contains(_search,StringComparison.OrdinalIgnoreCase)) && (!_projectFilter.HasValue || t.ProjectId==_projectFilter) && (_statusFilter is null || t.Status==_statusFilter) && (Route != "/unassigned" || t.AssignmentTargetId is null || _actors.FirstOrDefault(a=>a.Id==t.AssignmentTargetId)?.Kind=="Role") && (Route != "/my-work" || _actors.Any(a=>a.Id==t.AssignmentTargetId && a.Email==Session.User?.Email)));
     private IEnumerable<TaskModel> Roots => Filtered.Where(t=>t.ParentId is null || !Filtered.Any(p=>p.Id==t.ParentId)).OrderBy(t=>t.Order);
     private Task<IEnumerable<TaskModel?>> Children(TaskModel? task) => Task.FromResult(Filtered.Where(t=>t.ParentId==task!.Id).OrderBy(t=>t.Order).Cast<TaskModel?>());
     private bool HasChildren(TaskModel? task) => Filtered.Any(t=>t.ParentId==task!.Id);
-    private string ProjectName(Guid? id)=>_projects.FirstOrDefault(x=>x.Id==id)?.Name??"Текучка";
-    private string SprintName(Guid? id)=>_sprints.FirstOrDefault(x=>x.Id==id)?.Name??"Без спринта";
-    private string TaskName(Guid? id)=>_tasks.FirstOrDefault(x=>x.Id==id)?.Title??"Корневая задача";
-    private string ActorName(Guid? id) { var actor=_actors.FirstOrDefault(x=>x.Id==id);return actor is null?"Не назначена":$"{actor.Name} · {Labels.Kind(actor.Kind)}"; }
+    private string ProjectName(Guid? id)=>_projects.FirstOrDefault(x=>x.Id==id)?.Name??Strings.T("Текучка");
+    private string SprintName(Guid? id)=>_sprints.FirstOrDefault(x=>x.Id==id)?.Name??Strings.T("Без спринта");
+    private string TaskName(Guid? id)=>_tasks.FirstOrDefault(x=>x.Id==id)?.Title??Strings.T("Корневая задача");
+    private string ActorName(Guid? id) { var actor=_actors.FirstOrDefault(x=>x.Id==id);return actor is null?Strings.T("Не назначена"):$"{actor.Name} · {Labels.Kind(actor.Kind)}"; }
     private TaskModel? Current => TaskId.HasValue ? _tasks.FirstOrDefault(t=>t.Id==TaskId) : null;
     protected override async Task OnInitializedAsync()
     {

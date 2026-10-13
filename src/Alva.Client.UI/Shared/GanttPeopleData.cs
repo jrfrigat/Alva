@@ -109,18 +109,18 @@ public sealed class GanttPeopleData
             var children = people.Where(p => GroupOf(p) == group).Select(PersonRow)
                 .Concat(roles.Where(r => GroupOfRole(r) == group).Select(RoleRow)).ToArray();
             if (children.Length == 0) continue;
-            var name = group is { } id ? Data.Actor(id)!.Name : "Без подкоманды";
+            var name = group is { } id ? Data.Actor(id)!.Name : Strings.T(Strings.T("Без подкоманды"));
             var count = children.Count(c => c.Kind == "person");
-            rows.Add(new PeopleRow(GroupKey(group), "group", name, $"{count} {AlvaFormat.Plural(count, "человек", "человека", "человек")}", Data.Actor(group), children));
+            rows.Add(new PeopleRow(GroupKey(group), "group", name, $"{count} {AlvaFormat.Plural(count, "человек", Strings.T(Strings.T("человека")), "человек")}", Data.Actor(group), children));
         }
-        rows.Add(new PeopleRow(Pool, "pool", "Не назначено", "Задачи без исполнителя", null, []));
+        rows.Add(new PeopleRow(Pool, "pool", Strings.T(Strings.T("Не назначено")), Strings.T(Strings.T("Задачи без исполнителя")), null, []));
         return rows;
     }
 
     private PeopleRow PersonRow(ActorModel person)
     {
         var rows = _capacityOf[person.Id].ToArray();
-        var roles = string.Join(" / ", Data.Actors.Where(a => person.RoleIds.Contains(a.Id)).Select(a => a.Name).DefaultIfEmpty("Участник команды"));
+        var roles = string.Join(" / ", Data.Actors.Where(a => person.RoleIds.Contains(a.Id)).Select(a => a.Name).DefaultIfEmpty(Strings.T(Strings.T("Участник команды"))));
         var load = $"{AlvaFormat.Hours(rows.Sum(r => r.AllocatedHours))} / {AlvaFormat.Hours(rows.Sum(r => r.AvailableHours))} ч";
         return new PeopleRow(PersonKey(person.Id), "person", person.Name, $"{roles} · {load}", person, []);
     }
@@ -212,12 +212,12 @@ public sealed class GanttPeopleData
         if (primary?.RowKey is { } row && IsGroup(row)) throw new InvalidOperationException(GroupRefusal);
         await Data.Save(session, args.Changes);
         if (primary?.RowKey is not { } target || Data.Task(args.ItemKey) is not { } task)
-            return args.Changes.Count > 1 ? $"Даты сохранены, сдвинуто последователей: {args.Changes.Count - 1}" : "Даты сохранены";
+            return args.Changes.Count > 1 ? $"Даты сохранены, сдвинуто последователей: {args.Changes.Count - 1}" : Strings.T(Strings.T("Даты сохранены"));
         await Reassign(session, task, target);
-        return target == Pool ? "Назначение снято" : "Задача переназначена";
+        return target == Pool ? Strings.T(Strings.T("Назначение снято")) : Strings.T(Strings.T("Задача переназначена"));
     }
 
-    public const string GroupRefusal = "Задачу нельзя назначить на группу — выберите человека или роль.";
+    public static readonly string GroupRefusal = Strings.T(Strings.T("Задачу нельзя назначить на группу — выберите человека или роль."));
 
     /// <summary>Строка проекции людей, а не ключ задачи: человек, роль, группа или «Не назначено».</summary>
     public static bool IsRowKey(string key) => key == Pool || key.Length > 2 && key[1] == ':';
@@ -231,7 +231,7 @@ public sealed class GanttPeopleData
         var path = session.TeamPath($"tasks/{task.Id}/assignment");
         if (rowKey == Pool) return session.Send(HttpMethod.Delete, path, new { });
         if (IsGroup(rowKey)) throw new InvalidOperationException(GroupRefusal);
-        var actor = Data.Actor(Guid.ParseExact(rowKey[2..], "N")) ?? throw new InvalidOperationException("Исполнитель не найден.");
+        var actor = Data.Actor(Guid.ParseExact(rowKey[2..], "N")) ?? throw new InvalidOperationException(Strings.T(Strings.T("Исполнитель не найден.")));
         if (actor.Kind != "Person") return session.Send(HttpMethod.Put, path, new AssignmentRequest(actor.Id));
         var keep = Data.Actor(task.AssignmentTargetId) is { Kind: not "Person" } target
             && (actor.RoleIds.Contains(target.Id) || actor.DepartmentIds.Contains(target.Id));

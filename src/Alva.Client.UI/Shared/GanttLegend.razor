@@ -2,7 +2,7 @@
 @* Одна легенда для всех диаграмм Ганта: образцы рисует библиотека теми же элементами, что и график, поэтому цвета
    берутся из тех же правил .alva-gantt. Свои пункты страницы (спринты, ячейки ёмкости, предложение) идут перед видами
    полос, ссылка и уведомление страницы — после. *@
-<FlareGanttLegend Items="@AllItems" AriaLabel="Обозначения" Class="@($"alva-gantt alva-gantt-legend {Class}".Trim())">
+<FlareGanttLegend Items="@AllItems" AriaLabel="@(Strings.T("Обозначения"))" Class="@($"alva-gantt alva-gantt-legend {Class}".Trim())">
     @Trailing
     @if (Notice is not null)
     {
@@ -11,13 +11,13 @@
 </FlareGanttLegend>
 
 @code {
-    private static readonly GanttLegendItem[] Bars =
+    private GanttLegendItem[] Bars =>
     [
-        new("work", "Работа", Title: "Задача без риска сорвать срок"),
-        new("risk-medium", "Средний риск", Title: "Срок под угрозой: причины — в подсказке полосы"),
-        new("risk-high", "Высокий риск", Title: "Срок, скорее всего, будет сорван: причины — в подсказке полосы"),
-        new("waiting", "Ожидание подзадач", GanttLegendShape.Segment, "Родительская задача ждёт окончания подзадач; сплошная часть — её собственная работа", BarKind: "work"),
-        new("done", "Готово")
+        new("work", Strings.T("Работа"), Title: Strings.T("Задача без риска сорвать срок")),
+        new("risk-medium", Strings.T("Средний риск"), Title: Strings.T("Срок под угрозой: причины — в подсказке полосы")),
+        new("risk-high", Strings.T("Высокий риск"), Title: Strings.T("Срок, скорее всего, будет сорван: причины — в подсказке полосы")),
+        new("waiting", Strings.T("Ожидание подзадач"), GanttLegendShape.Segment, Strings.T("Родительская задача ждёт окончания подзадач; сплошная часть — её собственная работа"), BarKind: "work"),
+        new("done", Strings.T("Готово"))
     ];
 
     /// <summary>Пункты страницы перед видами полос.</summary>

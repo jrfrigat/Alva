@@ -1,0 +1,703 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="&amp;gt;115% Критичный перегруз" xml:space="preserve"><value>&amp;gt;115% Critical overload</value></data>
+  <data name="&amp;lt;70% Недогруз" xml:space="preserve"><value>&amp;lt;70% Underload</value></data>
+  <data name="+ Отсутствие / отпуск" xml:space="preserve"><value>+ Absence / vacation</value></data>
+  <data name="«Матрёшка»" xml:space="preserve"><value>"Matryoshka"</value></data>
+  <data name="→ не рассчитан" xml:space="preserve"><value>→ not calculated</value></data>
+  <data name="· владелец" xml:space="preserve"><value>· owner</value></data>
+  <data name="· Задач с рисками:" xml:space="preserve"><value>· Tasks at risk:</value></data>
+  <data name="· Закрыто:" xml:space="preserve"><value>· Closed:</value></data>
+  <data name="101–115% Напряжение" xml:space="preserve"><value>101–115% Strained</value></data>
+  <data name="70–100% Баланс" xml:space="preserve"><value>70–100% Balanced</value></data>
+  <data name="Alva — на главную" xml:space="preserve"><value>Alva — home</value></data>
+  <data name="Alva проверяет загрузку, сроки и назначение задач." xml:space="preserve"><value>Alva checks workload, deadlines and task assignment.</value></data>
+  <data name="Alva: новые риски" xml:space="preserve"><value>Alva: new risks</value></data>
+  <data name="Автобаланс" xml:space="preserve"><value>Auto-balance</value></data>
+  <data name="Активен" xml:space="preserve"><value>Active</value></data>
+  <data name="Активные" xml:space="preserve"><value>Active</value></data>
+  <data name="Активные спринты" xml:space="preserve"><value>Active sprints</value></data>
+  <data name="Активный" xml:space="preserve"><value>Active</value></data>
+  <data name="Активный состав команды" xml:space="preserve"><value>Active team members</value></data>
+  <data name="Активных спринтов" xml:space="preserve"><value>Active sprints</value></data>
+  <data name="Аналитика" xml:space="preserve"><value>Analytics</value></data>
+  <data name="Аналитика · Alva" xml:space="preserve"><value>Analytics · Alva</value></data>
+  <data name="Аналитика · Риски" xml:space="preserve"><value>Analytics · Risks</value></data>
+  <data name="Архивировать" xml:space="preserve"><value>Archive</value></data>
+  <data name="Архивировать задачу" xml:space="preserve"><value>Archive task</value></data>
+  <data name="Базовый цикл рабочей недели и часовой пояс" xml:space="preserve"><value>Base working week and time zone</value></data>
+  <data name="Баланс ёмкости" xml:space="preserve"><value>Capacity balance</value></data>
+  <data name="Баланс ёмкости команды:" xml:space="preserve"><value>Team capacity balance:</value></data>
+  <data name="Баланс нормы" xml:space="preserve"><value>Norm balance</value></data>
+  <data name="Баланс специальностей: план vs доступность" xml:space="preserve"><value>Skills balance: plan vs availability</value></data>
+  <data name="Балансировать спринт" xml:space="preserve"><value>Balance sprint</value></data>
+  <data name="без дат" xml:space="preserve"><value>undated</value></data>
+  <data name="Без дедлайна" xml:space="preserve"><value>No deadline</value></data>
+  <data name="Без исполнителя" xml:space="preserve"><value>Unassigned</value></data>
+  <data name="Без перегрузок" xml:space="preserve"><value>No overloads</value></data>
+  <data name="Без подкоманды" xml:space="preserve"><value>No sub-team</value></data>
+  <data name="Без спринта" xml:space="preserve"><value>No sprint</value></data>
+  <data name="без срока" xml:space="preserve"><value>no due date</value></data>
+  <data name="Без человека" xml:space="preserve"><value>No assignee</value></data>
+  <data name="Бережно" xml:space="preserve"><value>Gentle</value></data>
+  <data name="Бесконечная декомпозиция (Матрёшка)" xml:space="preserve"><value>Endless decomposition (Matryoshka)</value></data>
+  <data name="Ближайшие дедлайны" xml:space="preserve"><value>Upcoming deadlines</value></data>
+  <data name="Ближайший срыв" xml:space="preserve"><value>Nearest slippage</value></data>
+  <data name="Браузер запретил уведомления для Alva — разрешите их в настройках сайта." xml:space="preserve"><value>The browser blocked notifications for Alva — allow them in the site settings.</value></data>
+  <data name="Бросьте задачу на день — она попадёт в спринт этого дня и получит срок; на строку человека — ещё и исполнителя. Человека — на полосу." xml:space="preserve"><value>Drop a task onto a day — it joins that day's sprint and gets a due date; onto a person's row — it also gets an assignee. A person — onto a bar.</value></data>
+  <data name="Быстрое добавление вложенной матрёшки (Enter)…" xml:space="preserve"><value>Quick add of a nested task (Enter)…</value></data>
+  <data name="Быстрый фильтр" xml:space="preserve"><value>Quick filter</value></data>
+  <data name="Быстрый фильтр:" xml:space="preserve"><value>Quick filter:</value></data>
+  <data name="Бэклог — без дат" xml:space="preserve"><value>Backlog — undated</value></data>
+  <data name="Бэклог команды" xml:space="preserve"><value>Team backlog</value></data>
+  <data name="в балансе" xml:space="preserve"><value>balanced</value></data>
+  <data name="В бэклоге команды:" xml:space="preserve"><value>In the team backlog:</value></data>
+  <data name="В демо данные хранятся только в этом браузере: импорт и экспорт файлов работают в версии Alva с сервером." xml:space="preserve"><value>In the demo the data lives only in this browser: file import and export work in the server edition of Alva.</value></data>
+  <data name="В карточке задачи есть несохранённые правки. Уйти и потерять их?" xml:space="preserve"><value>The task card has unsaved changes. Leave and lose them?</value></data>
+  <data name="В команде нет людей с графиком на этот спринт." xml:space="preserve"><value>No team member has a schedule for this sprint.</value></data>
+  <data name="в норме" xml:space="preserve"><value>on track</value></data>
+  <data name="В плане" xml:space="preserve"><value>Planned</value></data>
+  <data name="В подкоманде пока нет участников." xml:space="preserve"><value>The sub-team has no members yet.</value></data>
+  <data name="В пуле" xml:space="preserve"><value>In the pool</value></data>
+  <data name="В пуле пусто" xml:space="preserve"><value>The pool is empty</value></data>
+  <data name="В работе" xml:space="preserve"><value>In progress</value></data>
+  <data name="В спринт" xml:space="preserve"><value>Into sprint</value></data>
+  <data name="В этом разделе спринтов нет" xml:space="preserve"><value>There are no sprints in this section</value></data>
+  <data name="Вакансия" xml:space="preserve"><value>Vacancy</value></data>
+  <data name="Ваше имя" xml:space="preserve"><value>Your name</value></data>
+  <data name="Ваши команды и планы доступны после входа." xml:space="preserve"><value>Your teams and plans are available after signing in.</value></data>
+  <data name="Введите пароль." xml:space="preserve"><value>Enter a password.</value></data>
+  <data name="Вернуть в бэклог (снять даты)" xml:space="preserve"><value>Return to backlog (clear dates)</value></data>
+  <data name="Вернуть в бэклог вместе с подзадачами (снять даты)" xml:space="preserve"><value>Return to backlog with subtasks (clear dates)</value></data>
+  <data name="Взято задач проекта:" xml:space="preserve"><value>Project tasks taken:</value></data>
+  <data name="Владелец пространства" xml:space="preserve"><value>Workspace owner</value></data>
+  <data name="Внешний вид" xml:space="preserve"><value>Appearance</value></data>
+  <data name="Возможно, запись удалили, она принадлежит другой команде или в адресе опечатка." xml:space="preserve"><value>The record may have been deleted, may belong to another team, or the address has a typo.</value></data>
+  <data name="Войдите в Alva" xml:space="preserve"><value>Sign in to Alva</value></data>
+  <data name="Войти" xml:space="preserve"><value>Sign in</value></data>
+  <data name="Воскресенье" xml:space="preserve"><value>Sunday</value></data>
+  <data name="ВС" xml:space="preserve"><value>Sun</value></data>
+  <data name="Все" xml:space="preserve"><value>All</value></data>
+  <data name="Все задачи" xml:space="preserve"><value>All tasks</value></data>
+  <data name="Все исполнители" xml:space="preserve"><value>All assignees</value></data>
+  <data name="Все проекты" xml:space="preserve"><value>All projects</value></data>
+  <data name="Все риски" xml:space="preserve"><value>All risks</value></data>
+  <data name="Все риски команды" xml:space="preserve"><value>All team risks</value></data>
+  <data name="Все спринты" xml:space="preserve"><value>All sprints</value></data>
+  <data name="Всё сразу: люди с общей ролью, даты, ровная загрузка" xml:space="preserve"><value>Everything at once: people with a shared role, dates, even workload</value></data>
+  <data name="Все сроки держатся" xml:space="preserve"><value>All deadlines hold</value></data>
+  <data name="Все статусы" xml:space="preserve"><value>All statuses</value></data>
+  <data name="Все уровни" xml:space="preserve"><value>All levels</value></data>
+  <data name="Всего" xml:space="preserve"><value>Total</value></data>
+  <data name="Всего в проекте:" xml:space="preserve"><value>Total in the project:</value></data>
+  <data name="Встреча или интервал" xml:space="preserve"><value>Meeting or interval</value></data>
+  <data name="Встречи и вычеты" xml:space="preserve"><value>Meetings and deductions</value></data>
+  <data name="ВТ" xml:space="preserve"><value>Tue</value></data>
+  <data name="Вторник" xml:space="preserve"><value>Tuesday</value></data>
+  <data name="Вход · Alva" xml:space="preserve"><value>Sign in · Alva</value></data>
+  <data name="Выберите команду" xml:space="preserve"><value>Choose a team</value></data>
+  <data name="Выберите роль" xml:space="preserve"><value>Choose a role</value></data>
+  <data name="Выберите файл JSON, CSV или XLSX. Используйте экспорт Alva как образец структуры." xml:space="preserve"><value>Choose a JSON, CSV or XLSX file. Use an Alva export as the structure sample.</value></data>
+  <data name="Выбранный спринт" xml:space="preserve"><value>Selected sprint</value></data>
+  <data name="Выбрать команду" xml:space="preserve"><value>Choose team</value></data>
+  <data name="Выбрать файл" xml:space="preserve"><value>Choose file</value></data>
+  <data name="Выйти" xml:space="preserve"><value>Sign out</value></data>
+  <data name="Выйти из Alva" xml:space="preserve"><value>Sign out of Alva</value></data>
+  <data name="Выработка" xml:space="preserve"><value>Throughput</value></data>
+  <data name="Высокая" xml:space="preserve"><value>High</value></data>
+  <data name="Высокая контрастность" xml:space="preserve"><value>High contrast</value></data>
+  <data name="Высокий" xml:space="preserve"><value>High</value></data>
+  <data name="Высокий риск" xml:space="preserve"><value>High risk</value></data>
+  <data name="Высокий уровень" xml:space="preserve"><value>High level</value></data>
+  <data name="Выходной" xml:space="preserve"><value>Day off</value></data>
+  <data name="Выходной день" xml:space="preserve"><value>Day off</value></data>
+  <data name="Вычеты" xml:space="preserve"><value>Deductions</value></data>
+  <data name="Вычеты из фокусного времени" xml:space="preserve"><value>Deductions from focus time</value></data>
+  <data name="Гантт по задачам" xml:space="preserve"><value>Task Gantt</value></data>
+  <data name="Гантт по задачам · Alva" xml:space="preserve"><value>Task Gantt · Alva</value></data>
+  <data name="Гантт по людям" xml:space="preserve"><value>People Gantt</value></data>
+  <data name="Гантт спринтов" xml:space="preserve"><value>Sprint Gantt</value></data>
+  <data name="Готова" xml:space="preserve"><value>Done</value></data>
+  <data name="Готово" xml:space="preserve"><value>Done</value></data>
+  <data name="график не задан" xml:space="preserve"><value>no schedule set</value></data>
+  <data name="График сохранён" xml:space="preserve"><value>Schedule saved</value></data>
+  <data name="Графики людей" xml:space="preserve"><value>People schedules</value></data>
+  <data name="Графики людей и доступность команды" xml:space="preserve"><value>People schedules and team availability</value></data>
+  <data name="Данные (Импорт/Экспорт)" xml:space="preserve"><value>Data (Import/Export)</value></data>
+  <data name="Данные · Alva" xml:space="preserve"><value>Data · Alva</value></data>
+  <data name="Данные импортированы. Откройте нужный раздел для проверки." xml:space="preserve"><value>Data imported. Open the relevant section to check.</value></data>
+  <data name="Даты сохранены" xml:space="preserve"><value>Dates saved</value></data>
+  <data name="Дедлайн" xml:space="preserve"><value>Deadline</value></data>
+  <data name="Дедлайн / релиз" xml:space="preserve"><value>Deadline / release</value></data>
+  <data name="Дедлайны не заданы" xml:space="preserve"><value>No deadlines set</value></data>
+  <data name="День" xml:space="preserve"><value>Day</value></data>
+  <data name="День недели" xml:space="preserve"><value>Weekday</value></data>
+  <data name="Дерево задач проекта (WBS)" xml:space="preserve"><value>Project task tree (WBS)</value></data>
+  <data name="Дефицит" xml:space="preserve"><value>Deficit</value></data>
+  <data name="Дефицита нет" xml:space="preserve"><value>No deficit</value></data>
+  <data name="Дефицитные слоты" xml:space="preserve"><value>Deficit slots</value></data>
+  <data name="Диаграммы" xml:space="preserve"><value>Charts</value></data>
+  <data name="Диаграммы · Гантт" xml:space="preserve"><value>Charts · Gantt</value></data>
+  <data name="дн." xml:space="preserve"><value>d</value></data>
+  <data name="дней" xml:space="preserve"><value>days</value></data>
+  <data name="Дни" xml:space="preserve"><value>Days</value></data>
+  <data name="Дни недели" xml:space="preserve"><value>Weekdays</value></data>
+  <data name="дня" xml:space="preserve"><value>day</value></data>
+  <data name="Добавить" xml:space="preserve"><value>Add</value></data>
+  <data name="Добавить задачу в спринт" xml:space="preserve"><value>Add a task to the sprint</value></data>
+  <data name="Добавить матрёшку" xml:space="preserve"><value>Add a nested task</value></data>
+  <data name="Добавить нерабочий интервал" xml:space="preserve"><value>Add a non-working interval</value></data>
+  <data name="Добавить период" xml:space="preserve"><value>Add a period</value></data>
+  <data name="Добавить роль" xml:space="preserve"><value>Add a role</value></data>
+  <data name="Добавьте зарегистрированного пользователя по почте и выберите команды." xml:space="preserve"><value>Add a registered user by email and choose the teams.</value></data>
+  <data name="Добавьте первую задачу или измените фильтры." xml:space="preserve"><value>Add the first task or change the filters.</value></data>
+  <data name="Добавьте первый проект" xml:space="preserve"><value>Add the first project</value></data>
+  <data name="Добавьте роли людям, чтобы видеть баланс специальностей." xml:space="preserve"><value>Give people roles to see the skills balance.</value></data>
+  <data name="Добавьте участников в разделе «Команда»." xml:space="preserve"><value>Add members in the "Team" section.</value></data>
+  <data name="Добавьте участников, подкоманды и роли для назначения задач." xml:space="preserve"><value>Add members, sub-teams and roles to assign tasks.</value></data>
+  <data name="Добро пожаловать в Alva" xml:space="preserve"><value>Welcome to Alva</value></data>
+  <data name="доступно" xml:space="preserve"><value>available</value></data>
+  <data name="Доступно (фонд)" xml:space="preserve"><value>Available (fund)</value></data>
+  <data name="Доступно для задач с учётом отпусков" xml:space="preserve"><value>Available for work, vacations included</value></data>
+  <data name="Доступный фонд (номинал)" xml:space="preserve"><value>Available fund (nominal)</value></data>
+  <data name="Другая команда" xml:space="preserve"><value>Another team</value></data>
+  <data name="Другие спринты" xml:space="preserve"><value>Other sprints</value></data>
+  <data name="Ёмкость" xml:space="preserve"><value>Capacity</value></data>
+  <data name="Ёмкость · Графики людей" xml:space="preserve"><value>Capacity · People schedules</value></data>
+  <data name="Ёмкость и загрузка" xml:space="preserve"><value>Capacity and workload</value></data>
+  <data name="Ёмкость команды" xml:space="preserve"><value>Team capacity</value></data>
+  <data name="Ёмкость пересчитана по новому графику." xml:space="preserve"><value>Capacity recalculated from the new schedule.</value></data>
+  <data name="Ёмкость периода" xml:space="preserve"><value>Period capacity</value></data>
+  <data name="Завершён" xml:space="preserve"><value>Completed</value></data>
+  <data name="Завершённые" xml:space="preserve"><value>Completed</value></data>
+  <data name="Завершённые спринты" xml:space="preserve"><value>Completed sprints</value></data>
+  <data name="Завершены" xml:space="preserve"><value>Completed</value></data>
+  <data name="Завершить спринт" xml:space="preserve"><value>Complete sprint</value></data>
+  <data name="Зависимости" xml:space="preserve"><value>Dependencies</value></data>
+  <data name="Загрузка данных" xml:space="preserve"><value>Loading data</value></data>
+  <data name="Загрузка за период" xml:space="preserve"><value>Workload over the period</value></data>
+  <data name="Загрузка команды" xml:space="preserve"><value>Team workload</value></data>
+  <data name="Загрузка периода" xml:space="preserve"><value>Period workload</value></data>
+  <data name="Загрузка, ч" xml:space="preserve"><value>Load, h</value></data>
+  <data name="Задайте сроки и соберите задачи команды." xml:space="preserve"><value>Set the dates and gather the team's tasks.</value></data>
+  <data name="Задайте цель и выберите задачи из пула." xml:space="preserve"><value>Set a goal and pick tasks from the pool.</value></data>
+  <data name="задач" xml:space="preserve"><value>tasks</value></data>
+  <data name="Задач в проекте пока нет." xml:space="preserve"><value>The project has no tasks yet.</value></data>
+  <data name="Задач в работе" xml:space="preserve"><value>Tasks in progress</value></data>
+  <data name="задач включено" xml:space="preserve"><value>tasks included</value></data>
+  <data name="Задач по этому фильтру нет." xml:space="preserve"><value>No tasks match this filter.</value></data>
+  <data name="Задач под риском" xml:space="preserve"><value>Tasks at risk</value></data>
+  <data name="Задач пока нет" xml:space="preserve"><value>No tasks yet</value></data>
+  <data name="Задача" xml:space="preserve"><value>Task</value></data>
+  <data name="Задача · исполнитель" xml:space="preserve"><value>Task · assignee</value></data>
+  <data name="Задача · исполнитель · часы" xml:space="preserve"><value>Task · assignee · hours</value></data>
+  <data name="Задача без риска сорвать срок" xml:space="preserve"><value>Task not at risk of missing its due date</value></data>
+  <data name="задача включена" xml:space="preserve"><value>task included</value></data>
+  <data name="Задача не найдена или недоступна" xml:space="preserve"><value>Task not found or unavailable</value></data>
+  <data name="Задача не найдена." xml:space="preserve"><value>Task not found.</value></data>
+  <data name="Задача переназначена" xml:space="preserve"><value>Task reassigned</value></data>
+  <data name="задачи" xml:space="preserve"><value>tasks</value></data>
+  <data name="Задачи без исполнителя" xml:space="preserve"><value>Unassigned tasks</value></data>
+  <data name="Задачи в итерации" xml:space="preserve"><value>Tasks in the iteration</value></data>
+  <data name="Задачи в плане" xml:space="preserve"><value>Planned tasks</value></data>
+  <data name="задачи включено" xml:space="preserve"><value>tasks included</value></data>
+  <data name="Задачи во времени" xml:space="preserve"><value>Tasks over time</value></data>
+  <data name="Задачи и спринты этой команды видны в её собственном пространстве." xml:space="preserve"><value>This team's tasks and sprints are visible in its own workspace.</value></data>
+  <data name="Задачи команды" xml:space="preserve"><value>Team tasks</value></data>
+  <data name="Задачи под риском" xml:space="preserve"><value>Tasks at risk</value></data>
+  <data name="Задачи проекта" xml:space="preserve"><value>Project tasks</value></data>
+  <data name="Задачи спринта" xml:space="preserve"><value>Sprint tasks</value></data>
+  <data name="Задачу нельзя назначить на группу — выберите человека или роль." xml:space="preserve"><value>A task cannot be assigned to a group — choose a person or a role.</value></data>
+  <data name="Закрыто" xml:space="preserve"><value>Closed</value></data>
+  <data name="Закрыто часов спринта" xml:space="preserve"><value>Sprint hours closed</value></data>
+  <data name="Закрыто:" xml:space="preserve"><value>Closed:</value></data>
+  <data name="Закрыть" xml:space="preserve"><value>Close</value></data>
+  <data name="Запас" xml:space="preserve"><value>Buffer</value></data>
+  <data name="Запланирована" xml:space="preserve"><value>Planned</value></data>
+  <data name="Запланированная нагрузка" xml:space="preserve"><value>Planned workload</value></data>
+  <data name="Запланированные" xml:space="preserve"><value>Planned</value></data>
+  <data name="Запланированные отсутствия" xml:space="preserve"><value>Planned absences</value></data>
+  <data name="Запланировано" xml:space="preserve"><value>Planned</value></data>
+  <data name="Запланировано в спринт" xml:space="preserve"><value>Planned into the sprint</value></data>
+  <data name="Запланировано задач" xml:space="preserve"><value>Tasks planned</value></data>
+  <data name="Запланировано от фонда" xml:space="preserve"><value>Planned of the fund</value></data>
+  <data name="Запустите запланированный спринт, чтобы следить за ходом цикла." xml:space="preserve"><value>Start the planned sprint to follow the cycle.</value></data>
+  <data name="Зафиксировать спринт" xml:space="preserve"><value>Commit the sprint</value></data>
+  <data name="Иерархия задач с проекцией на спринты и исполнителей" xml:space="preserve"><value>Task hierarchy projected onto sprints and assignees</value></data>
+  <data name="Иерархия подзадач" xml:space="preserve"><value>Subtask hierarchy</value></data>
+  <data name="Иерархия работ во времени: окна задач и спринтов, сроки, зависимости и риск. Перетащите полосу или нажмите Ctrl+стрелку, чтобы перенести даты; L — связать с другой задачей." xml:space="preserve"><value>Work hierarchy over time: task and sprint windows, deadlines, dependencies and risk. Drag a bar or press Ctrl+arrow to move the dates; L links to another task.</value></data>
+  <data name="Изменений пока нет" xml:space="preserve"><value>No changes yet</value></data>
+  <data name="Изменить рамку" xml:space="preserve"><value>Edit the frame</value></data>
+  <data name="Импорт данных" xml:space="preserve"><value>Import data</value></data>
+  <data name="Импорт и экспорт" xml:space="preserve"><value>Import and export</value></data>
+  <data name="Импорт и экспорт недоступны в демо" xml:space="preserve"><value>Import and export are unavailable in the demo</value></data>
+  <data name="Импортировать" xml:space="preserve"><value>Import</value></data>
+  <data name="Имя" xml:space="preserve"><value>Name</value></data>
+  <data name="Имя или название" xml:space="preserve"><value>Name or title</value></data>
+  <data name="Исполнитель" xml:space="preserve"><value>Assignee</value></data>
+  <data name="Исполнитель / слот" xml:space="preserve"><value>Assignee / slot</value></data>
+  <data name="Исполнитель · загрузка за период" xml:space="preserve"><value>Assignee · workload over the period</value></data>
+  <data name="Исполнитель не найден." xml:space="preserve"><value>Assignee not found.</value></data>
+  <data name="Исполнитель, подкоманда или роль" xml:space="preserve"><value>Assignee, sub-team or role</value></data>
+  <data name="История" xml:space="preserve"><value>History</value></data>
+  <data name="Итог фонда" xml:space="preserve"><value>Fund total</value></data>
+  <data name="Итоги по выборке: План:" xml:space="preserve"><value>Selection totals: Plan:</value></data>
+  <data name="К задачам" xml:space="preserve"><value>To tasks</value></data>
+  <data name="К сегодняшнему дню (Alt + колесо — прокрутка по времени)" xml:space="preserve"><value>To today (Alt + wheel — scroll through time)</value></data>
+  <data name="К содержимому" xml:space="preserve"><value>Skip to content</value></data>
+  <data name="К спринтам" xml:space="preserve"><value>To sprints</value></data>
+  <data name="Как на устройстве" xml:space="preserve"><value>Match device</value></data>
+  <data name="Какие задачи могут не успеть и почему: перегрузка и отпуска исполнителей, работа без человека, просроченные сроки и незакрытые зависимости." xml:space="preserve"><value>Which tasks may be late and why: assignee overload and vacations, work without a person, missed due dates and open dependencies.</value></data>
+  <data name="Календарь месяца" xml:space="preserve"><value>Month calendar</value></data>
+  <data name="Календарь сотрудника" xml:space="preserve"><value>Employee calendar</value></data>
+  <data name="Карточка задачи" xml:space="preserve"><value>Task card</value></data>
+  <data name="Колокольчик в шапке показывает риски команды и отмечает новые. Настройка хранится на этом устройстве." xml:space="preserve"><value>The bell in the header shows team risks and marks new ones. The setting is stored on this device.</value></data>
+  <data name="команд" xml:space="preserve"><value>teams</value></data>
+  <data name="команда" xml:space="preserve"><value>team</value></data>
+  <data name="Команда · Обзор" xml:space="preserve"><value>Team · Overview</value></data>
+  <data name="Команды" xml:space="preserve"><value>Teams</value></data>
+  <data name="Команды (M:N):" xml:space="preserve"><value>Teams (M:N):</value></data>
+  <data name="Команды · Alva" xml:space="preserve"><value>Teams · Alva</value></data>
+  <data name="Команды и их спринты по проекту" xml:space="preserve"><value>Teams and their sprints per project</value></data>
+  <data name="Команды проекта" xml:space="preserve"><value>Project teams</value></data>
+  <data name="Конец горизонта" xml:space="preserve"><value>End of horizon</value></data>
+  <data name="Конкретный исполнитель" xml:space="preserve"><value>Specific assignee</value></data>
+  <data name="Корневая задача" xml:space="preserve"><value>Root task</value></data>
+  <data name="Корпоративный реестр · M:N архитектура" xml:space="preserve"><value>Corporate registry · M:N architecture</value></data>
+  <data name="Критический путь" xml:space="preserve"><value>Critical path</value></data>
+  <data name="Критичность:" xml:space="preserve"><value>Criticality:</value></data>
+  <data name="Кто чем занят во времени: часы назначенной работы против доступных, перегрузки и отсутствия. Перетащите задачу на другую строку или нажмите Ctrl+↑/↓, чтобы переназначить; Ctrl+стрелка влево/вправо переносит даты." xml:space="preserve"><value>Who is busy and when: hours of assigned work versus available, overloads and absences. Drag a task to another row or press Ctrl+up/down to reassign; Ctrl+left/right moves the dates.</value></data>
+  <data name="Люди" xml:space="preserve"><value>People</value></data>
+  <data name="Люди и загрузка месяца" xml:space="preserve"><value>People and month workload</value></data>
+  <data name="Люди и роли во времени" xml:space="preserve"><value>People and roles over time</value></data>
+  <data name="Люди команды" xml:space="preserve"><value>Team people</value></data>
+  <data name="Люди спринта" xml:space="preserve"><value>Sprint people</value></data>
+  <data name="Максимум" xml:space="preserve"><value>Maximum</value></data>
+  <data name="Масштаб" xml:space="preserve"><value>Scale</value></data>
+  <data name="Матрица распределения ёмкости" xml:space="preserve"><value>Capacity distribution matrix</value></data>
+  <data name="Месяцы" xml:space="preserve"><value>Months</value></data>
+  <data name="Моя работа" xml:space="preserve"><value>My work</value></data>
+  <data name="На них действует этот график" xml:space="preserve"><value>These are covered by this schedule</value></data>
+  <data name="На пределе" xml:space="preserve"><value>At the limit</value></data>
+  <data name="На что обратить внимание" xml:space="preserve"><value>What to watch</value></data>
+  <data name="На этой неделе задач нет." xml:space="preserve"><value>No tasks this week.</value></data>
+  <data name="Набрано от доступного" xml:space="preserve"><value>Taken of available</value></data>
+  <data name="Навигация" xml:space="preserve"><value>Navigation</value></data>
+  <data name="Название" xml:space="preserve"><value>Title</value></data>
+  <data name="Название новой подзадачи" xml:space="preserve"><value>New subtask title</value></data>
+  <data name="Название пространства" xml:space="preserve"><value>Workspace name</value></data>
+  <data name="Название рабочего пространства" xml:space="preserve"><value>Workspace name</value></data>
+  <data name="Назначение исполнителя" xml:space="preserve"><value>Assignment</value></data>
+  <data name="Назначение снято" xml:space="preserve"><value>Assignment removed</value></data>
+  <data name="Назначить исполнителя" xml:space="preserve"><value>Assign an assignee</value></data>
+  <data name="Наименование / WBS" xml:space="preserve"><value>Title / WBS</value></data>
+  <data name="Например, Europe/Moscow" xml:space="preserve"><value>For example, Europe/Moscow</value></data>
+  <data name="Нарушение связей" xml:space="preserve"><value>Broken dependencies</value></data>
+  <data name="Настройки" xml:space="preserve"><value>Settings</value></data>
+  <data name="Настройки · Alva" xml:space="preserve"><value>Settings · Alva</value></data>
+  <data name="Начало" xml:space="preserve"><value>Start</value></data>
+  <data name="Не назначена" xml:space="preserve"><value>Unassigned</value></data>
+  <data name="Не назначено" xml:space="preserve"><value>Not assigned</value></data>
+  <data name="Не начат" xml:space="preserve"><value>Not started</value></data>
+  <data name="Не начаты" xml:space="preserve"><value>Not started</value></data>
+  <data name="Не ожидается" xml:space="preserve"><value>Not expected</value></data>
+  <data name="Не удалось выполнить действие" xml:space="preserve"><value>The action failed</value></data>
+  <data name="Не успевает к сроку" xml:space="preserve"><value>Will miss the due date</value></data>
+  <data name="недели" xml:space="preserve"><value>weeks</value></data>
+  <data name="недель" xml:space="preserve"><value>weeks</value></data>
+  <data name="неделя" xml:space="preserve"><value>week</value></data>
+  <data name="Недогруз" xml:space="preserve"><value>Underload</value></data>
+  <data name="Неназначенные" xml:space="preserve"><value>Unassigned</value></data>
+  <data name="Нерабочий период" xml:space="preserve"><value>Non-working period</value></data>
+  <data name="Несохранённые изменения" xml:space="preserve"><value>Unsaved changes</value></data>
+  <data name="Нет активного" xml:space="preserve"><value>No active</value></data>
+  <data name="Нет ближайших дедлайнов" xml:space="preserve"><value>No upcoming deadlines</value></data>
+  <data name="Нет графика" xml:space="preserve"><value>No schedule</value></data>
+  <data name="Нет доступа: у вашей роли нет прав на эти данные. Попросите владельца пространства выдать доступ." xml:space="preserve"><value>No access: your role has no rights to this data. Ask the workspace owner for access.</value></data>
+  <data name="Нет задач по этому фильтру." xml:space="preserve"><value>No tasks match this filter.</value></data>
+  <data name="Нет исполнителя" xml:space="preserve"><value>No assignee</value></data>
+  <data name="нет людей" xml:space="preserve"><value>no people</value></data>
+  <data name="Нет людей с рабочими графиками за горизонт." xml:space="preserve"><value>No people have schedules over the horizon.</value></data>
+  <data name="Нет назначений" xml:space="preserve"><value>No assignments</value></data>
+  <data name="Нет рабочих графиков людей за период спринта." xml:space="preserve"><value>No people schedules for the sprint period.</value></data>
+  <data name="НЕТ СЛОТА" xml:space="preserve"><value>NO SLOT</value></data>
+  <data name="Нет человека" xml:space="preserve"><value>No person</value></data>
+  <data name="Нехватка ёмкости" xml:space="preserve"><value>Capacity shortage</value></data>
+  <data name="Нечего планировать" xml:space="preserve"><value>Nothing to plan</value></data>
+  <data name="Никого не найдено" xml:space="preserve"><value>Nobody found</value></data>
+  <data name="никто" xml:space="preserve"><value>nobody</value></data>
+  <data name="Новая задача" xml:space="preserve"><value>New task</value></data>
+  <data name="Новая команда" xml:space="preserve"><value>New team</value></data>
+  <data name="Новое пространство" xml:space="preserve"><value>New workspace</value></data>
+  <data name="Новый проект" xml:space="preserve"><value>New project</value></data>
+  <data name="Новый спринт" xml:space="preserve"><value>New sprint</value></data>
+  <data name="Номинал недели" xml:space="preserve"><value>Week nominal</value></data>
+  <data name="Номинал фонда" xml:space="preserve"><value>Fund nominal</value></data>
+  <data name="Нужен активный спринт и рабочие графики людей." xml:space="preserve"><value>An active sprint and people's schedules are required.</value></data>
+  <data name="Нужен человек" xml:space="preserve"><value>A person is required</value></data>
+  <data name="Обзор (Дашборд)" xml:space="preserve"><value>Overview (Dashboard)</value></data>
+  <data name="Обзор · Alva" xml:space="preserve"><value>Overview · Alva</value></data>
+  <data name="Обзор ёмкости" xml:space="preserve"><value>Capacity overview</value></data>
+  <data name="Обзор ёмкости команды" xml:space="preserve"><value>Team capacity overview</value></data>
+  <data name="Обзор команды" xml:space="preserve"><value>Team overview</value></data>
+  <data name="Обновить" xml:space="preserve"><value>Refresh</value></data>
+  <data name="Обозначения" xml:space="preserve"><value>Legend</value></data>
+  <data name="Общие нерабочие дни и повторяющиеся встречи подкоманды. Они вычитаются из ёмкости всех её участников и вложенных подкоманд поверх их личных графиков." xml:space="preserve"><value>Shared non-working days and recurring sub-team meetings. They are deducted from the capacity of all its members and nested sub-teams on top of their personal schedules.</value></data>
+  <data name="Общий прогресс" xml:space="preserve"><value>Overall progress</value></data>
+  <data name="Общий темп выполнения спринта" xml:space="preserve"><value>Overall sprint pace</value></data>
+  <data name="Объедините связанные задачи общим результатом." xml:space="preserve"><value>Tie related tasks together with a shared outcome.</value></data>
+  <data name="Ограничивать доступ по разрешениям" xml:space="preserve"><value>Restrict access by permissions</value></data>
+  <data name="Ожидание подзадач" xml:space="preserve"><value>Waiting for subtasks</value></data>
+  <data name="Окончание" xml:space="preserve"><value>End</value></data>
+  <data name="Описание" xml:space="preserve"><value>Description</value></data>
+  <data name="Описание и параметры" xml:space="preserve"><value>Description and parameters</value></data>
+  <data name="Описание и цели" xml:space="preserve"><value>Description and goals</value></data>
+  <data name="Оптимально" xml:space="preserve"><value>Optimal</value></data>
+  <data name="Основные разделы" xml:space="preserve"><value>Main sections</value></data>
+  <data name="Остаток" xml:space="preserve"><value>Remaining</value></data>
+  <data name="Остаться" xml:space="preserve"><value>Stay</value></data>
+  <data name="Отгул / отпуск" xml:space="preserve"><value>Time off / vacation</value></data>
+  <data name="Отклонить" xml:space="preserve"><value>Reject</value></data>
+  <data name="Открытых рисков нет" xml:space="preserve"><value>No open risks</value></data>
+  <data name="Открыть Гантт" xml:space="preserve"><value>Open the Gantt</value></data>
+  <data name="Открыть задачу" xml:space="preserve"><value>Open task</value></data>
+  <data name="Открыть планирование" xml:space="preserve"><value>Open planning</value></data>
+  <data name="Отмена" xml:space="preserve"><value>Cancel</value></data>
+  <data name="Отменена" xml:space="preserve"><value>Cancelled</value></data>
+  <data name="Отметить всё прочитанным" xml:space="preserve"><value>Mark all as read</value></data>
+  <data name="Отпуск / отсутствие" xml:space="preserve"><value>Vacation / absence</value></data>
+  <data name="Отпуск в периоде" xml:space="preserve"><value>Vacation in the period</value></data>
+  <data name="Отпуск исполнителя" xml:space="preserve"><value>Assignee vacation</value></data>
+  <data name="Отпуска" xml:space="preserve"><value>Vacations</value></data>
+  <data name="Отпуска и праздники" xml:space="preserve"><value>Vacations and holidays</value></data>
+  <data name="Отпуска, отсутствия и праздники" xml:space="preserve"><value>Vacations, absences and holidays</value></data>
+  <data name="Отпусков в месяце нет" xml:space="preserve"><value>No vacations this month</value></data>
+  <data name="Отпусков и праздников не задано." xml:space="preserve"><value>No vacations or holidays set.</value></data>
+  <data name="Отпусков не запланировано." xml:space="preserve"><value>No vacations planned.</value></data>
+  <data name="Отсутствие" xml:space="preserve"><value>Absence</value></data>
+  <data name="Отсутствий не запланировано" xml:space="preserve"><value>No absences planned</value></data>
+  <data name="Оценка" xml:space="preserve"><value>Estimate</value></data>
+  <data name="Оценка, часы" xml:space="preserve"><value>Estimate, hours</value></data>
+  <data name="Пайплайн" xml:space="preserve"><value>Pipeline</value></data>
+  <data name="Параметры спринта" xml:space="preserve"><value>Sprint settings</value></data>
+  <data name="Пароль" xml:space="preserve"><value>Password</value></data>
+  <data name="Первый спринт начинается с цели" xml:space="preserve"><value>The first sprint starts with a goal</value></data>
+  <data name="перегруз" xml:space="preserve"><value>overload</value></data>
+  <data name="Перегрузка" xml:space="preserve"><value>Overload</value></data>
+  <data name="Перейти в спринт" xml:space="preserve"><value>Go to the sprint</value></data>
+  <data name="Перетащите задачу на Гантт — на день или на строку человека. Сюда — чтобы вернуть в бэклог." xml:space="preserve"><value>Drag a task onto the Gantt — onto a day or onto a person's row. Here — to return it to the backlog.</value></data>
+  <data name="Перетащите человека на задачу, чтобы назначить. Клик — показать на Гантте." xml:space="preserve"><value>Drag a person onto a task to assign. Click — to show it on the Gantt.</value></data>
+  <data name="Периоды со своей доступностью — заменяют обычные часы дня" xml:space="preserve"><value>Periods with their own availability replace the usual hours of the day</value></data>
+  <data name="Персональный календарь" xml:space="preserve"><value>Personal calendar</value></data>
+  <data name="План уже сбалансирован в этом режиме — менять нечего." xml:space="preserve"><value>The plan is already balanced in this mode — nothing to change.</value></data>
+  <data name="Планирование" xml:space="preserve"><value>Planning</value></data>
+  <data name="Планирование · Задачи" xml:space="preserve"><value>Planning · Tasks</value></data>
+  <data name="Планирование · Спринты" xml:space="preserve"><value>Planning · Sprints</value></data>
+  <data name="Планирование ресурсов" xml:space="preserve"><value>Resource planning</value></data>
+  <data name="Планируйте спринты, распределяйте работу и замечайте перегрузки заранее." xml:space="preserve"><value>Plan sprints, distribute the work and spot overloads early.</value></data>
+  <data name="Планы команды, ближайшие сроки и работа под риском." xml:space="preserve"><value>Team plans, upcoming deadlines and work at risk.</value></data>
+  <data name="ПН" xml:space="preserve"><value>Mon</value></data>
+  <data name="По" xml:space="preserve"><value>By</value></data>
+  <data name="По дням" xml:space="preserve"><value>By day</value></data>
+  <data name="По неделям" xml:space="preserve"><value>By week</value></data>
+  <data name="По ролям людей и задачам, назначенным на роль" xml:space="preserve"><value>By people's roles and tasks assigned to a role</value></data>
+  <data name="По спринтам" xml:space="preserve"><value>By sprint</value></data>
+  <data name="По умолчанию все участники команды видят её данные. Изменение доступно владельцу пространства." xml:space="preserve"><value>By default every team member sees its data. Only the workspace owner can change this.</value></data>
+  <data name="По этим условиям рисков нет. Смените фильтр или поиск." xml:space="preserve"><value>No risks match these conditions. Change the filter or search.</value></data>
+  <data name="Повторяющиеся встречи" xml:space="preserve"><value>Recurring meetings</value></data>
+  <data name="Повторяющиеся вычеты" xml:space="preserve"><value>Recurring deductions</value></data>
+  <data name="подзадач" xml:space="preserve"><value>subtasks</value></data>
+  <data name="Подзадача" xml:space="preserve"><value>Subtask</value></data>
+  <data name="Подзадачи" xml:space="preserve"><value>Subtasks</value></data>
+  <data name="Подкоманда" xml:space="preserve"><value>Sub-team</value></data>
+  <data name="подкомандах" xml:space="preserve"><value>sub-teams</value></data>
+  <data name="подкоманде" xml:space="preserve"><value>sub-team</value></data>
+  <data name="Подкоманды" xml:space="preserve"><value>Sub-teams</value></data>
+  <data name="Подразделения:" xml:space="preserve"><value>Departments:</value></data>
+  <data name="Поиск в дереве задач" xml:space="preserve"><value>Search the task tree</value></data>
+  <data name="Поиск в дереве…" xml:space="preserve"><value>Search the tree…</value></data>
+  <data name="Поиск в пуле" xml:space="preserve"><value>Search the pool</value></data>
+  <data name="Поиск задач" xml:space="preserve"><value>Search tasks</value></data>
+  <data name="Поиск кандидата" xml:space="preserve"><value>Search a candidate</value></data>
+  <data name="Поиск по задаче или причине" xml:space="preserve"><value>Search by task or reason</value></data>
+  <data name="Поиск по коду или заголовку…" xml:space="preserve"><value>Search by code or title…</value></data>
+  <data name="Поиск по названию спринта" xml:space="preserve"><value>Search by sprint name</value></data>
+  <data name="Поиск риска" xml:space="preserve"><value>Search a risk</value></data>
+  <data name="Поиск спринта" xml:space="preserve"><value>Search a sprint</value></data>
+  <data name="Пока не выбран" xml:space="preserve"><value>Not chosen yet</value></data>
+  <data name="Пока не выбран — требуется человек" xml:space="preserve"><value>Not chosen yet — a person is required</value></data>
+  <data name="Показывать" xml:space="preserve"><value>Show</value></data>
+  <data name="Показывать перегрузы (&gt;100%)" xml:space="preserve"><value>Show overloads (&gt;100%)</value></data>
+  <data name="Полный баланс" xml:space="preserve"><value>Full balance</value></data>
+  <data name="Полный день" xml:space="preserve"><value>Full day</value></data>
+  <data name="Понедельник" xml:space="preserve"><value>Monday</value></data>
+  <data name="После конца спринта" xml:space="preserve"><value>After the sprint ends</value></data>
+  <data name="Почта" xml:space="preserve"><value>Email</value></data>
+  <data name="Почта указана в неверном формате, например: name@company.ru." xml:space="preserve"><value>The email is in the wrong format, for example: name@company.ru.</value></data>
+  <data name="Почта участника" xml:space="preserve"><value>Member email</value></data>
+  <data name="Правки задачи появятся здесь." xml:space="preserve"><value>Task edits will appear here.</value></data>
+  <data name="Превышение / овертайм" xml:space="preserve"><value>Overtime</value></data>
+  <data name="Предложение" xml:space="preserve"><value>Proposal</value></data>
+  <data name="Предстоящие отсутствия" xml:space="preserve"><value>Upcoming absences</value></data>
+  <data name="Предыдущая неделя" xml:space="preserve"><value>Previous week</value></data>
+  <data name="Предыдущий месяц" xml:space="preserve"><value>Previous month</value></data>
+  <data name="Применить к выбранным сотрудникам" xml:space="preserve"><value>Apply to the selected employees</value></data>
+  <data name="Применить назначение" xml:space="preserve"><value>Apply the assignment</value></data>
+  <data name="Применить недельные часы к сотрудникам" xml:space="preserve"><value>Apply the weekly hours to the employees</value></data>
+  <data name="Причина" xml:space="preserve"><value>Reason</value></data>
+  <data name="Причины" xml:space="preserve"><value>Reasons</value></data>
+  <data name="Причины:" xml:space="preserve"><value>Reasons:</value></data>
+  <data name="Проверены сроки, прогнозы по графикам исполнителей, отпуска, перегрузка, назначения и зависимости." xml:space="preserve"><value>Deadlines, forecasts from assignee schedules, vacations, overload, assignments and dependencies were checked.</value></data>
+  <data name="Проверьте адрес или вернитесь к обзору." xml:space="preserve"><value>Check the address or return to the overview.</value></data>
+  <data name="Прогноз баланса ёмкости по периодам" xml:space="preserve"><value>Capacity balance forecast by period</value></data>
+  <data name="Прогнозы укладываются в сроки" xml:space="preserve"><value>Forecasts fit the deadlines</value></data>
+  <data name="Прогресс выполнения спринта" xml:space="preserve"><value>Sprint progress</value></data>
+  <data name="Прогресс спринта" xml:space="preserve"><value>Sprint progress</value></data>
+  <data name="Проект" xml:space="preserve"><value>Project</value></data>
+  <data name="Проект не имеет собственных спринтов — исполнение через спринты команд" xml:space="preserve"><value>A project has no sprints of its own — it is delivered through team sprints</value></data>
+  <data name="Проект не привязан к одной команде: его задачи затягиваются разными командами в их спринты." xml:space="preserve"><value>A project is not tied to one team: different teams pull its tasks into their sprints.</value></data>
+  <data name="проекта" xml:space="preserve"><value>project's</value></data>
+  <data name="проектов" xml:space="preserve"><value>projects</value></data>
+  <data name="Проектов нет" xml:space="preserve"><value>No projects</value></data>
+  <data name="Проекты" xml:space="preserve"><value>Projects</value></data>
+  <data name="Проекты · Alva" xml:space="preserve"><value>Projects · Alva</value></data>
+  <data name="Проекты в спринте" xml:space="preserve"><value>Projects in the sprint</value></data>
+  <data name="Проекты:" xml:space="preserve"><value>Projects:</value></data>
+  <data name="Проекция 1: задачи спринтов" xml:space="preserve"><value>Projection 1: sprint tasks</value></data>
+  <data name="Проекция 1: иерархия работ и фазы во времени" xml:space="preserve"><value>Projection 1: work hierarchy and phases over time</value></data>
+  <data name="Проекция 2: дорожки людей и ёмкость (часы в день)" xml:space="preserve"><value>Projection 2: people lanes and capacity (hours per day)</value></data>
+  <data name="Просрочка" xml:space="preserve"><value>Overdue</value></data>
+  <data name="Простой поиск" xml:space="preserve"><value>Simple search</value></data>
+  <data name="Пространства" xml:space="preserve"><value>Workspaces</value></data>
+  <data name="Пространство и доступ" xml:space="preserve"><value>Workspace and access</value></data>
+  <data name="Профиль" xml:space="preserve"><value>Profile</value></data>
+  <data name="Профиль и настройки" xml:space="preserve"><value>Profile and settings</value></data>
+  <data name="Прочее" xml:space="preserve"><value>Other</value></data>
+  <data name="ПТ" xml:space="preserve"><value>Fri</value></data>
+  <data name="Пул задач (бэклог)" xml:space="preserve"><value>Task pool (backlog)</value></data>
+  <data name="Пул задач команды: дерево, статусы и назначения." xml:space="preserve"><value>The team's task pool: tree, statuses and assignments.</value></data>
+  <data name="Пул неназначенных" xml:space="preserve"><value>Unassigned pool</value></data>
+  <data name="Пул неназначенных задач" xml:space="preserve"><value>Pool of unassigned tasks</value></data>
+  <data name="Путь к задаче" xml:space="preserve"><value>Path to the task</value></data>
+  <data name="Путь к календарю сотрудника" xml:space="preserve"><value>Path to the employee calendar</value></data>
+  <data name="Путь к редактору" xml:space="preserve"><value>Path to the editor</value></data>
+  <data name="Путь к спринту" xml:space="preserve"><value>Path to the sprint</value></data>
+  <data name="Пятница" xml:space="preserve"><value>Friday</value></data>
+  <data name="Работа" xml:space="preserve"><value>Work</value></data>
+  <data name="Рабочее пространство" xml:space="preserve"><value>Workspace</value></data>
+  <data name="Рабочие часы по дням недели" xml:space="preserve"><value>Working hours by weekday</value></data>
+  <data name="Рабочие часы, отпуска и регулярные встречи каждого человека — и сколько чистого времени остаётся у команды по дням." xml:space="preserve"><value>Every person's working hours, vacations and recurring meetings — and how much clean time the team has per day.</value></data>
+  <data name="Рабочий" xml:space="preserve"><value>Working</value></data>
+  <data name="Рабочий график" xml:space="preserve"><value>Work schedule</value></data>
+  <data name="Рабочий день" xml:space="preserve"><value>Working day</value></data>
+  <data name="Разбивка периода" xml:space="preserve"><value>Period breakdown</value></data>
+  <data name="Разброс свободного времени" xml:space="preserve"><value>Spread of free time</value></data>
+  <data name="Разрешение не выдано." xml:space="preserve"><value>Permission not granted.</value></data>
+  <data name="Рамка проекта" xml:space="preserve"><value>Project frame</value></data>
+  <data name="Распределение ёмкости" xml:space="preserve"><value>Capacity distribution</value></data>
+  <data name="Расчёт ёмкости на 2 недели" xml:space="preserve"><value>Two-week capacity calculation</value></data>
+  <data name="Расчёт по сохранённому графику; новые часы учтутся после сохранения." xml:space="preserve"><value>Calculated from the saved schedule; new hours count after saving.</value></data>
+  <data name="Регулярные встречи и церемонии, которые исключаются из фокусного времени" xml:space="preserve"><value>Recurring meetings and ceremonies excluded from focus time</value></data>
+  <data name="Регулярные вычеты" xml:space="preserve"><value>Recurring deductions</value></data>
+  <data name="Регулярных вычетов нет" xml:space="preserve"><value>No recurring deductions</value></data>
+  <data name="Редактировать состав" xml:space="preserve"><value>Edit the membership</value></data>
+  <data name="Редактор графика" xml:space="preserve"><value>Schedule editor</value></data>
+  <data name="Редактор графиков" xml:space="preserve"><value>Schedule editor</value></data>
+  <data name="Редактор рабочего графика" xml:space="preserve"><value>Work schedule editor</value></data>
+  <data name="Реестр · Люди" xml:space="preserve"><value>Registry · People</value></data>
+  <data name="Реестр · Подкоманды" xml:space="preserve"><value>Registry · Sub-teams</value></data>
+  <data name="Реестр · Роли" xml:space="preserve"><value>Registry · Roles</value></data>
+  <data name="Реестр проектов" xml:space="preserve"><value>Project registry</value></data>
+  <data name="Реестр проектов и вовлечённость команд. Проекты объединяют задачи, исполняемые спринтами разных команд." xml:space="preserve"><value>Project registry and team involvement. Projects unite tasks delivered by sprints of different teams.</value></data>
+  <data name="Режим" xml:space="preserve"><value>Mode</value></data>
+  <data name="Режим автобаланса" xml:space="preserve"><value>Auto-balance mode</value></data>
+  <data name="резерв" xml:space="preserve"><value>reserve</value></data>
+  <data name="Резерв ёмкости" xml:space="preserve"><value>Capacity reserve</value></data>
+  <data name="Резерв ёмкости:" xml:space="preserve"><value>Capacity reserve:</value></data>
+  <data name="Резерва нет" xml:space="preserve"><value>No reserve</value></data>
+  <data name="Рекомендовано" xml:space="preserve"><value>Recommended</value></data>
+  <data name="Рекурсивное каскадирование оценок и исполнителей" xml:space="preserve"><value>Recursive cascading of estimates and assignees</value></data>
+  <data name="Ресурс / подкоманда" xml:space="preserve"><value>Resource / sub-team</value></data>
+  <data name="Ресурсы · Ёмкость" xml:space="preserve"><value>Resources · Capacity</value></data>
+  <data name="Решатель OR-Tools: лучший план за отведённое время" xml:space="preserve"><value>OR-Tools solver: the best plan within the time given</value></data>
+  <data name="Решатель OR-Tools: лучший план найден и доказан" xml:space="preserve"><value>OR-Tools solver: the best plan found and proven</value></data>
+  <data name="Риск" xml:space="preserve"><value>Risk</value></data>
+  <data name="риска" xml:space="preserve"><value>risk</value></data>
+  <data name="Риски" xml:space="preserve"><value>Risks</value></data>
+  <data name="Риски и причины" xml:space="preserve"><value>Risks and reasons</value></data>
+  <data name="Риски и причины сдвига сроков" xml:space="preserve"><value>Risks and reasons for slipping deadlines</value></data>
+  <data name="рисков" xml:space="preserve"><value>risks</value></data>
+  <data name="Рисков нет" xml:space="preserve"><value>No risks</value></data>
+  <data name="Рисков по вашей подписке нет." xml:space="preserve"><value>No risks match your subscription.</value></data>
+  <data name="Родительская задача" xml:space="preserve"><value>Parent task</value></data>
+  <data name="Родительская задача ждёт окончания подзадач; сплошная часть — её собственная работа" xml:space="preserve"><value>A parent task waits for its subtasks; the solid part is its own work</value></data>
+  <data name="Роли" xml:space="preserve"><value>Roles</value></data>
+  <data name="Роли команды" xml:space="preserve"><value>Team roles</value></data>
+  <data name="Роль" xml:space="preserve"><value>Role</value></data>
+  <data name="Роль / статус" xml:space="preserve"><value>Role / status</value></data>
+  <data name="С" xml:space="preserve"><value>From</value></data>
+  <data name="С рабочим графиком в этом месяце" xml:space="preserve"><value>With a schedule this month</value></data>
+  <data name="С рисками" xml:space="preserve"><value>With risks</value></data>
+  <data name="С ролью" xml:space="preserve"><value>With a role</value></data>
+  <data name="Самый перегруженный" xml:space="preserve"><value>Most loaded</value></data>
+  <data name="СБ" xml:space="preserve"><value>Sat</value></data>
+  <data name="Сбалансировать" xml:space="preserve"><value>Balance</value></data>
+  <data name="Сбросить изменения" xml:space="preserve"><value>Discard changes</value></data>
+  <data name="сверх ёмкости" xml:space="preserve"><value>over capacity</value></data>
+  <data name="Светлый" xml:space="preserve"><value>Light</value></data>
+  <data name="свободен" xml:space="preserve"><value>free</value></data>
+  <data name="Свободно" xml:space="preserve"><value>Free</value></data>
+  <data name="Свободно после применения предложения" xml:space="preserve"><value>Free after the proposal is applied</value></data>
+  <data name="Свободный резерв" xml:space="preserve"><value>Free reserve</value></data>
+  <data name="Связанные задачи распределяются по спринтам команд" xml:space="preserve"><value>Linked tasks are distributed across team sprints</value></data>
+  <data name="Связь добавлена" xml:space="preserve"><value>Link added</value></data>
+  <data name="Сдвигать даты, чтобы успеть к сроку и соблюсти связи" xml:space="preserve"><value>Shift dates to meet the deadline and respect the dependencies</value></data>
+  <data name="Сегодня" xml:space="preserve"><value>Today</value></data>
+  <data name="Синхронно с задачами (2D)" xml:space="preserve"><value>Synchronised with tasks (2D)</value></data>
+  <data name="Синхронный Гантт 2D" xml:space="preserve"><value>Synchronised Gantt 2D</value></data>
+  <data name="Скачайте данные для резервной копии или работы в таблицах." xml:space="preserve"><value>Download the data for a backup or to work in spreadsheets.</value></data>
+  <data name="Скорость &amp;amp; темп" xml:space="preserve"><value>Speed &amp;amp; pace</value></data>
+  <data name="Следующая неделя" xml:space="preserve"><value>Next week</value></data>
+  <data name="Следующий месяц" xml:space="preserve"><value>Next month</value></data>
+  <data name="Следующий старт:" xml:space="preserve"><value>Next start:</value></data>
+  <data name="Смените вкладку или условие поиска." xml:space="preserve"><value>Change the tab or the search condition.</value></data>
+  <data name="Смените фильтр статуса." xml:space="preserve"><value>Change the status filter.</value></data>
+  <data name="Сменить команду" xml:space="preserve"><value>Change team</value></data>
+  <data name="Создайте задачи в «Матрёшке», и они появятся на диаграмме." xml:space="preserve"><value>Create tasks in the "Matryoshka" and they appear on the chart.</value></data>
+  <data name="Создайте или выберите команду в рабочем пространстве." xml:space="preserve"><value>Create or choose a team in the workspace.</value></data>
+  <data name="Создайте первую команду в пространстве." xml:space="preserve"><value>Create the first team in the workspace.</value></data>
+  <data name="Создайте пространство для команды" xml:space="preserve"><value>Create a workspace for the team</value></data>
+  <data name="Создайте спринт, чтобы собрать в него задачи из пула." xml:space="preserve"><value>Create a sprint to gather tasks from the pool.</value></data>
+  <data name="Создать аккаунт" xml:space="preserve"><value>Create an account</value></data>
+  <data name="Создать задачу" xml:space="preserve"><value>Create a task</value></data>
+  <data name="Создать команду" xml:space="preserve"><value>Create a team</value></data>
+  <data name="Создать пространство" xml:space="preserve"><value>Create a workspace</value></data>
+  <data name="Сокращённый период" xml:space="preserve"><value>Shortened period</value></data>
+  <data name="Сортировка: нагрузка" xml:space="preserve"><value>Sort: workload</value></data>
+  <data name="Сотрудник" xml:space="preserve"><value>Employee</value></data>
+  <data name="сотрудникам" xml:space="preserve"><value>employees</value></data>
+  <data name="Сотрудники команды" xml:space="preserve"><value>Team employees</value></data>
+  <data name="сотруднику" xml:space="preserve"><value>employee</value></data>
+  <data name="Сохранить" xml:space="preserve"><value>Save</value></data>
+  <data name="Сохранить график" xml:space="preserve"><value>Save the schedule</value></data>
+  <data name="Сохранить задачу" xml:space="preserve"><value>Save the task</value></data>
+  <data name="Сохранить пространство" xml:space="preserve"><value>Save the workspace</value></data>
+  <data name="Сохранить профиль" xml:space="preserve"><value>Save the profile</value></data>
+  <data name="Сохранить спринт" xml:space="preserve"><value>Save the sprint</value></data>
+  <data name="Сохранить участника" xml:space="preserve"><value>Save the member</value></data>
+  <data name="Список" xml:space="preserve"><value>List</value></data>
+  <data name="Список пока пуст" xml:space="preserve"><value>The list is empty for now</value></data>
+  <data name="Спланируйте первый спринт" xml:space="preserve"><value>Plan the first sprint</value></data>
+  <data name="Спринт" xml:space="preserve"><value>Sprint</value></data>
+  <data name="Спринт (по датам)" xml:space="preserve"><value>Sprint (by dates)</value></data>
+  <data name="Спринт / период / цель" xml:space="preserve"><value>Sprint / period / goal</value></data>
+  <data name="Спринт не найден или недоступен" xml:space="preserve"><value>Sprint not found or unavailable</value></data>
+  <data name="спринта" xml:space="preserve"><value>sprint's</value></data>
+  <data name="спринтов" xml:space="preserve"><value>sprints</value></data>
+  <data name="Спринты" xml:space="preserve"><value>Sprints</value></data>
+  <data name="Спринты команды" xml:space="preserve"><value>Team sprints</value></data>
+  <data name="СР" xml:space="preserve"><value>Wed</value></data>
+  <data name="Сравнение номинала фонда, запланированной работы и ресурсного дефицита" xml:space="preserve"><value>Comparison of the fund nominal, planned work and resource deficit</value></data>
+  <data name="Среда" xml:space="preserve"><value>Wednesday</value></data>
+  <data name="Средний" xml:space="preserve"><value>Medium</value></data>
+  <data name="Средний риск" xml:space="preserve"><value>Medium risk</value></data>
+  <data name="Средняя" xml:space="preserve"><value>Medium</value></data>
+  <data name="Срок" xml:space="preserve"><value>Due date</value></data>
+  <data name="Срок / прогноз" xml:space="preserve"><value>Due date / forecast</value></data>
+  <data name="Срок под угрозой: причины — в подсказке полосы" xml:space="preserve"><value>Due date at risk: the reasons are in the bar tooltip</value></data>
+  <data name="Срок прошёл" xml:space="preserve"><value>Past due</value></data>
+  <data name="Срок прошёл или прогноз позже срока больше чем на 3 дня" xml:space="preserve"><value>Past due, or the forecast is more than 3 days late</value></data>
+  <data name="Срок, скорее всего, будет сорван: причины — в подсказке полосы" xml:space="preserve"><value>The due date will most likely be missed: the reasons are in the bar tooltip</value></data>
+  <data name="Сроки и связи" xml:space="preserve"><value>Dates and dependencies</value></data>
+  <data name="Сроки появятся после настройки задач." xml:space="preserve"><value>Dates appear once the tasks are set up.</value></data>
+  <data name="Старт" xml:space="preserve"><value>Start</value></data>
+  <data name="Статус" xml:space="preserve"><value>Status</value></data>
+  <data name="Статус закрытия" xml:space="preserve"><value>Closing status</value></data>
+  <data name="Статус проекта" xml:space="preserve"><value>Project status</value></data>
+  <data name="Страница не найдена" xml:space="preserve"><value>Page not found</value></data>
+  <data name="Страница спринта" xml:space="preserve"><value>Sprint page</value></data>
+  <data name="Суббота" xml:space="preserve"><value>Saturday</value></data>
+  <data name="Суммарно:" xml:space="preserve"><value>Total:</value></data>
+  <data name="Текучка" xml:space="preserve"><value>Ongoing</value></data>
+  <data name="Текущая итерация в работе" xml:space="preserve"><value>Current iteration in progress</value></data>
+  <data name="Текущая команда" xml:space="preserve"><value>Current team</value></data>
+  <data name="Текущий исполнитель" xml:space="preserve"><value>Current assignee</value></data>
+  <data name="Текущий спринт" xml:space="preserve"><value>Current sprint</value></data>
+  <data name="Текущий цикл" xml:space="preserve"><value>Current cycle</value></data>
+  <data name="Тёмный" xml:space="preserve"><value>Dark</value></data>
+  <data name="Темп" xml:space="preserve"><value>Pace</value></data>
+  <data name="Темп появится после первого завершённого спринта." xml:space="preserve"><value>Pace appears after the first completed sprint.</value></data>
+  <data name="Тепловая шкала:" xml:space="preserve"><value>Heat scale:</value></data>
+  <data name="Тип балансировки" xml:space="preserve"><value>Balancing type</value></data>
+  <data name="Типы связей" xml:space="preserve"><value>Link types</value></data>
+  <data name="Только высокий уровень" xml:space="preserve"><value>High level only</value></data>
+  <data name="Только исполнители, даты не трогать" xml:space="preserve"><value>Assignees only, keep the dates</value></data>
+  <data name="Только мои задачи" xml:space="preserve"><value>Only my tasks</value></data>
+  <data name="Требуется человек" xml:space="preserve"><value>A person is required</value></data>
+  <data name="Требуется человек / вакантный слот" xml:space="preserve"><value>A person required / vacant slot</value></data>
+  <data name="Трудозатраты" xml:space="preserve"><value>Effort</value></data>
+  <data name="У меня уже есть аккаунт" xml:space="preserve"><value>I already have an account</value></data>
+  <data name="Уведомления браузера о новых рисках" xml:space="preserve"><value>Browser notifications about new risks</value></data>
+  <data name="Уведомления о рисках" xml:space="preserve"><value>Risk notifications</value></data>
+  <data name="Удалить вычет" xml:space="preserve"><value>Delete the deduction</value></data>
+  <data name="Удалить период" xml:space="preserve"><value>Delete the period</value></data>
+  <data name="Уйти без сохранения" xml:space="preserve"><value>Leave without saving</value></data>
+  <data name="Укажите имя." xml:space="preserve"><value>Enter a name.</value></data>
+  <data name="Укажите название пространства." xml:space="preserve"><value>Enter a workspace name.</value></data>
+  <data name="Укажите электронную почту." xml:space="preserve"><value>Enter an email.</value></data>
+  <data name="Уровень" xml:space="preserve"><value>Level</value></data>
+  <data name="Участник команды" xml:space="preserve"><value>Team member</value></data>
+  <data name="Участники" xml:space="preserve"><value>Members</value></data>
+  <data name="Участники пространства" xml:space="preserve"><value>Workspace members</value></data>
+  <data name="Факторы риска" xml:space="preserve"><value>Risk factors</value></data>
+  <data name="Фильтр инженера" xml:space="preserve"><value>Engineer filter</value></data>
+  <data name="Фильтр инженера:" xml:space="preserve"><value>Engineer filter:</value></data>
+  <data name="Фильтр по причине" xml:space="preserve"><value>Filter by reason</value></data>
+  <data name="Фильтр пула" xml:space="preserve"><value>Pool filter</value></data>
+  <data name="Финиш" xml:space="preserve"><value>Finish</value></data>
+  <data name="Фонд — по рабочим графикам людей с учётом отпусков и блоков" xml:space="preserve"><value>Fund from people's work schedules, vacations and blocks included</value></data>
+  <data name="Фонд месяца по графику" xml:space="preserve"><value>Month fund from the schedule</value></data>
+  <data name="Фонд на 2 недели" xml:space="preserve"><value>Two-week fund</value></data>
+  <data name="Фонд, план и дефицит по периодам" xml:space="preserve"><value>Fund, plan and deficit by period</value></data>
+  <data name="Формат" xml:space="preserve"><value>Format</value></data>
+  <data name="Целевой коридор: 85–95%" xml:space="preserve"><value>Target corridor: 85–95%</value></data>
+  <data name="Цели, сроки и состав спринтов команды." xml:space="preserve"><value>The team's sprint goals, dates and scope.</value></data>
+  <data name="Цель" xml:space="preserve"><value>Goal</value></data>
+  <data name="ч" xml:space="preserve"><value>h</value></data>
+  <data name="Часов в день" xml:space="preserve"><value>Hours per day</value></data>
+  <data name="Часовой пояс IANA" xml:space="preserve"><value>IANA time zone</value></data>
+  <data name="Часовой пояс и часы по дням копируются; отпуска и вычеты у каждого остаются свои." xml:space="preserve"><value>The time zone and daily hours are copied; vacations and deductions stay individual.</value></data>
+  <data name="Часы" xml:space="preserve"><value>Hours</value></data>
+  <data name="Человек" xml:space="preserve"><value>Person</value></data>
+  <data name="человека" xml:space="preserve"><value>person's</value></data>
+  <data name="Черновик планирования" xml:space="preserve"><value>Planning draft</value></data>
+  <data name="Четверг" xml:space="preserve"><value>Thursday</value></data>
+  <data name="Чистая ёмкость" xml:space="preserve"><value>Clean capacity</value></data>
+  <data name="Чистые часы" xml:space="preserve"><value>Clean hours</value></data>
+  <data name="ЧТ" xml:space="preserve"><value>Thu</value></data>
+  <data name="Ширина единицы оси" xml:space="preserve"><value>Axis unit width</value></data>
+  <data name="Штат" xml:space="preserve"><value>Staff</value></data>
+  <data name="Экспорт данных команды" xml:space="preserve"><value>Export team data</value></data>
+  <data name="Электронная почта" xml:space="preserve"><value>Email</value></data>
+  <data name="Этот браузер не поддерживает уведомления." xml:space="preserve"><value>This browser does not support notifications.</value></data>
+  <data name="Эффективный фонд команды" xml:space="preserve"><value>Effective team fund</value></data>
+  <data name="часов" xml:space="preserve"><value>hours</value></data>
+  <data name="часов фокуса" xml:space="preserve"><value>focus hours</value></data>
+  <data name="По графику:" xml:space="preserve"><value>By schedule:</value></data>
+  <data name="ч / нед / чел." xml:space="preserve"><value>h / week / person</value></data>
+  <data name="чистых часов" xml:space="preserve"><value>clean hours</value></data>
+  <data name="% от номинала" xml:space="preserve"><value>% of nominal</value></data>
+  <data name="новый" xml:space="preserve"><value>new</value></data>
+  <data name="общая" xml:space="preserve"><value>overall</value></data>
+  <data name="ч / нед" xml:space="preserve"><value>h / week</value></data>
+  <data name="чел/час" xml:space="preserve"><value>person/hour</value></data>
+  <data name="ч дефицита" xml:space="preserve"><value>h deficit</value></data>
+  <data name="ч доступно" xml:space="preserve"><value>h available</value></data>
+  <data name="ч номинала" xml:space="preserve"><value>h nominal</value></data>
+  <data name="из" xml:space="preserve"><value>out of</value></data>
+  <data name="Ближайшее:" xml:space="preserve"><value>Nearest:</value></data>
+</root>

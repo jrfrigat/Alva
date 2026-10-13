@@ -3,7 +3,7 @@
    подпись под именем: >100% — перегрузка (crimson). *@
 @if (Target is null)
 {
-    <span class="alva-slot alva-slot--empty"><span class="alva-slot__mark" aria-hidden="true">?</span><span class="alva-slot__text"><span class="alva-slot__name">Не назначена</span><span class="alva-slot__meta alva-slot__meta--warning">Нет исполнителя</span></span></span>
+    <span class="alva-slot alva-slot--empty"><span class="alva-slot__mark" aria-hidden="true">?</span><span class="alva-slot__text"><span class="alva-slot__name">@(Strings.T("Не назначена"))</span><span class="alva-slot__meta alva-slot__meta--warning">@(Strings.T("Нет исполнителя"))</span></span></span>
 }
 else if (Person is not null)
 {
@@ -14,13 +14,13 @@ else if (Person is not null)
         }
         else
         {
-            <span class="alva-slot__meta">@(Target.Kind == "Person" ? "Человек" : $"{Labels.Kind(Target.Kind)}: {Target.Name}")</span>
+            <span class="alva-slot__meta">@(Target.Kind == "Person" ? Strings.T("Человек") : $"{Labels.Kind(Target.Kind)}: {Target.Name}")</span>
         }
     </span></span>
 }
 else
 {
-    <span class="alva-slot alva-slot--role"><span class="alva-slot__mark" aria-hidden="true"><FlareIconView Value="@MaterialDesign3Icons.Regular.Groups" Size="14px" /></span><span class="alva-slot__text"><span class="alva-slot__name">@Labels.Kind(Target.Kind): @Target.Name</span><span class="alva-slot__meta alva-slot__meta--critical">Требуется человек</span></span></span>
+    <span class="alva-slot alva-slot--role"><span class="alva-slot__mark" aria-hidden="true"><FlareIconView Value="@MaterialDesign3Icons.Regular.Groups" Size="14px" /></span><span class="alva-slot__text"><span class="alva-slot__name">@Labels.Kind(Target.Kind): @Target.Name</span><span class="alva-slot__meta alva-slot__meta--critical">@(Strings.T("Требуется человек"))</span></span></span>
 }
 @code {
     [Parameter, EditorRequired] public TaskModel Task { get; set; } = default!;

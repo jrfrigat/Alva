@@ -4,13 +4,13 @@
     <header class="alva-panel__header">
         <FlareIconView Value="@MaterialDesign3Icons.Regular.Groups" Size="20px" Class="alva-panel__icon" />
         <div>
-            <h2 class="alva-panel__title">Люди спринта</h2>
-            <p class="alva-panel__subtitle">Перетащите человека на задачу, чтобы назначить. Клик — показать на Гантте.</p>
+            <h2 class="alva-panel__title">@(Strings.T("Люди спринта"))</h2>
+            <p class="alva-panel__subtitle">@(Strings.T("Перетащите человека на задачу, чтобы назначить. Клик — показать на Гантте."))</p>
         </div>
     </header>
     @if (Rows.Count == 0)
     {
-        <p class="alva-panel__subtitle">В команде нет людей с графиком на этот спринт.</p>
+        <p class="alva-panel__subtitle">@(Strings.T("В команде нет людей с графиком на этот спринт."))</p>
     }
     <div class="alva-plan-people__list">
         @foreach (var row in Rows)
@@ -28,11 +28,11 @@
                     </span>
                     <span class="alva-person-card__free alva-num">
                         <b>@(row.Free >= 0 ? $"{AlvaFormat.Hours(row.Free)} ч" : $"−{AlvaFormat.Hours(-row.Free)} ч")</b>
-                        <small>@(row.Free >= 0 ? "свободно" : "перегруз")</small>
+                        <small>@(row.Free >= 0 ? "свободно" : Strings.T("перегруз"))</small>
                         @if (Shift.GetValueOrDefault(person.Id) is var shift && shift != 0)
                         {
                             var after = row.Free - shift;
-                            <small class="alva-person-card__after alva-person-card__after--@(shift > 0 ? "more" : "less")" title="Свободно после применения предложения">
+                            <small class="alva-person-card__after alva-person-card__after--@(shift > 0 ? "more" : "less")" title="@(Strings.T("Свободно после применения предложения"))">
                                 → @(after >= 0 ? $"{AlvaFormat.Hours(after)} ч" : $"−{AlvaFormat.Hours(-after)} ч")
                             </small>
                         }
@@ -77,7 +77,7 @@
         .Select(person =>
         {
             var days = Capacity.Where(c => c.ActorId == person.Id && c.Date >= Sprint.StartDate && c.Date <= Sprint.EndDate).ToArray();
-            var roles = string.Join(" / ", Actors.Where(a => person.RoleIds.Contains(a.Id)).Select(a => a.Name).DefaultIfEmpty("Участник команды"));
+            var roles = string.Join(" / ", Actors.Where(a => person.RoleIds.Contains(a.Id)).Select(a => a.Name).DefaultIfEmpty(Strings.T("Участник команды")));
             return new PersonLoad(person, roles, days.Sum(d => d.AvailableHours), days.Sum(d => d.AllocatedHours), Absences(days));
         })
         .Where(p => p.Available > 0 || p.Allocated > 0)

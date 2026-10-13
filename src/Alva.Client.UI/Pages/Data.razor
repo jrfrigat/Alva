@@ -1,16 +1,16 @@
 @page "/data"
 @inject AlvaSession Session
-<PageTitle>Данные · Alva</PageTitle>
-<FlareText Element="h1" Typo="TypographyScale.HeadlineLarge">Импорт и экспорт</FlareText>
+<PageTitle>@(Strings.T("Данные · Alva"))</PageTitle>
+<FlareText Element="h1" Typo="TypographyScale.HeadlineLarge">@(Strings.T("Импорт и экспорт"))</FlareText>
 <PageFeedback Loading="_busy" Error="@_error" />
 @if(Session.TeamId is null){<TeamRequired />}
 else
 {
 @* Демо без сервера не умеет ни разбирать файлы, ни выгружать их — говорим об этом до любых действий, а не после. *@
-@if(!Session.SupportsDataTransfer){<FlareAlert Severity="AlertSeverity.Info" Title="Импорт и экспорт недоступны в демо">В демо данные хранятся только в этом браузере: импорт и экспорт файлов работают в версии Alva с сервером.</FlareAlert>}
+@if(!Session.SupportsDataTransfer){<FlareAlert Severity="AlertSeverity.Info" Title="@(Strings.T("Импорт и экспорт недоступны в демо"))">@(Strings.T("В демо данные хранятся только в этом браузере: импорт и экспорт файлов работают в версии Alva с сервером."))</FlareAlert>}
 <FlareGrid MinColumnWidth="min(100%,24rem)">
-<FlareCard Variant="CardVariant.Outlined"><FlareCardContent><FlareStack Gap="FlareSpacing.Large"><FlareText Element="h2" Typo="TypographyScale.TitleLarge">Экспорт данных команды</FlareText><FlareText>Скачайте данные для резервной копии или работы в таблицах.</FlareText><FlareStack Row Wrap>@foreach(var format in Formats){<FlareButton Href="@(Session.SupportsDataTransfer ? Session.TeamPath("data/export?format="+format) : null)" Disabled="@(!Session.SupportsDataTransfer)" Variant="ButtonVariant.Tonal" Target="_blank">@format.ToUpperInvariant()</FlareButton>}</FlareStack></FlareStack></FlareCardContent></FlareCard>
-<FlareCard Variant="CardVariant.Outlined"><FlareCardContent><FlareStack Gap="FlareSpacing.Large"><FlareText Element="h2" Typo="TypographyScale.TitleLarge">Импорт данных</FlareText><FlareText>Выберите файл JSON, CSV или XLSX. Используйте экспорт Alva как образец структуры.</FlareText><FlareSelect TValue="string" Label="Формат" Items="Formats" @bind-Value="_format" Disabled="@(!Session.SupportsDataTransfer)" /><FlareFileUploadButton Text="Выбрать файл" Accept=".json,.csv,.xlsx" Multiple="false" OnFilesChanged="SelectFiles" ShowFileList MaxFileSize="10485760" Disabled="@(!Session.SupportsDataTransfer)" /><FlareButton OnClick="Import" Loading="_busy" Disabled="@(_file is null || !Session.SupportsDataTransfer)">Импортировать</FlareButton>@if(_success){<FlareAlert Severity="AlertSeverity.Success">Данные импортированы. Откройте нужный раздел для проверки.</FlareAlert>}</FlareStack></FlareCardContent></FlareCard>
+<FlareCard Variant="CardVariant.Outlined"><FlareCardContent><FlareStack Gap="FlareSpacing.Large"><FlareText Element="h2" Typo="TypographyScale.TitleLarge">@(Strings.T("Экспорт данных команды"))</FlareText><FlareText>@(Strings.T("Скачайте данные для резервной копии или работы в таблицах."))</FlareText><FlareStack Row Wrap>@foreach(var format in Formats){<FlareButton Href="@(Session.SupportsDataTransfer ? Session.TeamPath("data/export?format="+format) : null)" Disabled="@(!Session.SupportsDataTransfer)" Variant="ButtonVariant.Tonal" Target="_blank">@format.ToUpperInvariant()</FlareButton>}</FlareStack></FlareStack></FlareCardContent></FlareCard>
+<FlareCard Variant="CardVariant.Outlined"><FlareCardContent><FlareStack Gap="FlareSpacing.Large"><FlareText Element="h2" Typo="TypographyScale.TitleLarge">@(Strings.T("Импорт данных"))</FlareText><FlareText>@(Strings.T("Выберите файл JSON, CSV или XLSX. Используйте экспорт Alva как образец структуры."))</FlareText><FlareSelect TValue="string" Label="@(Strings.T("Формат"))" Items="Formats" @bind-Value="_format" Disabled="@(!Session.SupportsDataTransfer)" /><FlareFileUploadButton Text="@(Strings.T("Выбрать файл"))" Accept=".json,.csv,.xlsx" Multiple="false" OnFilesChanged="SelectFiles" ShowFileList MaxFileSize="10485760" Disabled="@(!Session.SupportsDataTransfer)" /><FlareButton OnClick="Import" Loading="_busy" Disabled="@(_file is null || !Session.SupportsDataTransfer)">@(Strings.T("Импортировать"))</FlareButton>@if(_success){<FlareAlert Severity="AlertSeverity.Success">@(Strings.T("Данные импортированы. Откройте нужный раздел для проверки."))</FlareAlert>}</FlareStack></FlareCardContent></FlareCard>
 </FlareGrid>
 }
 @code {

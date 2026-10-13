@@ -4,17 +4,17 @@
 @inject NavigationManager Navigation
 <NavigationLock OnBeforeInternalNavigation="ConfirmLeave" ConfirmExternalNavigation="Dirty" />
 <div class="alva-task">
-    <FlareBreadcrumb Items="Crumbs" Separator="›" AriaLabel="Путь к задаче" />
+    <FlareBreadcrumb Items="Crumbs" Separator="›" AriaLabel="@(Strings.T("Путь к задаче"))" />
     <div class="alva-task__actions">
         <FlareButton Loading="_busy" Disabled="@string.IsNullOrWhiteSpace(_model.Title)" OnClick="Save" Size="ButtonSize.Sm">
             <LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.Save" Size="18px" /></LeadingIcon>
-            <ChildContent>Сохранить</ChildContent>
+            <ChildContent>@(Strings.T("Сохранить"))</ChildContent>
         </FlareButton>
         <FlareButton Variant="ButtonVariant.Tonal" OnClick="OpenAssign" Size="ButtonSize.Sm">
             <LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.PersonAdd" Size="18px" /></LeadingIcon>
-            <ChildContent>Назначить исполнителя</ChildContent>
+            <ChildContent>@(Strings.T("Назначить исполнителя"))</ChildContent>
         </FlareButton>
-        <FlareIconButton Icon="@MaterialDesign3Icons.Regular.Delete" Color="FlareColor.Error" Size="ButtonSize.Sm" Tooltip="Архивировать задачу" AriaLabel="Архивировать задачу" OnClick="Archive" />
+        <FlareIconButton Icon="@MaterialDesign3Icons.Regular.Delete" Color="FlareColor.Error" Size="ButtonSize.Sm" Tooltip="@(Strings.T("Архивировать задачу"))" AriaLabel="@(Strings.T("Архивировать задачу"))" OnClick="Archive" />
     </div>
     <div class="alva-task__heading">
         <span class="alva-task__bar alva-task__bar--@RiskTone.ToString().ToLowerInvariant()" aria-hidden="true"></span>
@@ -26,23 +26,23 @@
     <section class="alva-panel">
         <header class="alva-panel__header">
             <FlareIconView Value="@MaterialDesign3Icons.Regular.Description" Size="20px" Class="alva-panel__icon" />
-            <h2 class="alva-panel__title">Описание и параметры</h2>
+            <h2 class="alva-panel__title">@(Strings.T("Описание и параметры"))</h2>
         </header>
         <FlareStack Gap="FlareSpacing.Medium">
-            <FlareTextField Label="Название" @bind-Value="_model.Title" Required MaxLength="500" />
-            <FlareTextArea Label="Описание и цели" @bind-Value="_model.Description" AutoGrow />
+            <FlareTextField Label="@(Strings.T("Название"))" @bind-Value="_model.Title" Required MaxLength="500" />
+            <FlareTextArea Label="@(Strings.T("Описание и цели"))" @bind-Value="_model.Description" AutoGrow />
             <FlareGrid MinColumnWidth="min(100%,12rem)">
-                <FlareSelect TValue="string" Label="Статус" Items="Statuses" ItemLabel="Labels.Status" @bind-Value="_model.Status" />
-                <FlareSelect TValue="Guid?" Label="Проект" Items="Projects.Select(x => (Guid?)x.Id)" ItemLabel="ProjectName" NullOption="Текучка" @bind-Value="_model.ProjectId" />
-                <FlareSelect TValue="Guid?" Label="Спринт (по датам)" Items="Sprints.OrderBy(x => x.StartDate).Select(x => (Guid?)x.Id)" ItemLabel="SprintName" NullOption="Бэклог — без дат" Value="SprintDates.First(_model, Sprints)" ValueChanged="id => SprintDates.Place(_model, Sprints.FirstOrDefault(s => s.Id == id))" HelperText="@SprintDates.Hint(_model, Sprints)" />
-                <FlareSelect TValue="Guid?" Label="Родительская задача" Items="Tasks.Where(x => x.Id != Item.Id).Select(x => (Guid?)x.Id)" ItemLabel="TaskName" NullOption="Корневая задача" @bind-Value="_model.ParentId" Searchable />
-                <FlareNumericField TValue="decimal?" Label="Оценка, часы" @bind-Value="_model.EstimateHours" Min="0" />
-                <FlareDatePicker Label="Дедлайн" @bind-Value="_model.Deadline" />
-                <FlareDatePicker Label="Начало" @bind-Value="_model.StartDate" />
-                <FlareDatePicker Label="Окончание" @bind-Value="_model.EndDate" />
+                <FlareSelect TValue="string" Label="@(Strings.T("Статус"))" Items="Statuses" ItemLabel="Labels.Status" @bind-Value="_model.Status" />
+                <FlareSelect TValue="Guid?" Label="@(Strings.T("Проект"))" Items="Projects.Select(x => (Guid?)x.Id)" ItemLabel="ProjectName" NullOption="@(Strings.T("Текучка"))" @bind-Value="_model.ProjectId" />
+                <FlareSelect TValue="Guid?" Label="@(Strings.T("Спринт (по датам)"))" Items="Sprints.OrderBy(x => x.StartDate).Select(x => (Guid?)x.Id)" ItemLabel="SprintName" NullOption="@(Strings.T("Бэклог — без дат"))" Value="SprintDates.First(_model, Sprints)" ValueChanged="id => SprintDates.Place(_model, Sprints.FirstOrDefault(s => s.Id == id))" HelperText="@SprintDates.Hint(_model, Sprints)" />
+                <FlareSelect TValue="Guid?" Label="@(Strings.T("Родительская задача"))" Items="Tasks.Where(x => x.Id != Item.Id).Select(x => (Guid?)x.Id)" ItemLabel="TaskName" NullOption="@(Strings.T("Корневая задача"))" @bind-Value="_model.ParentId" Searchable />
+                <FlareNumericField TValue="decimal?" Label="@(Strings.T("Оценка, часы"))" @bind-Value="_model.EstimateHours" Min="0" />
+                <FlareDatePicker Label="@(Strings.T("Дедлайн"))" @bind-Value="_model.Deadline" />
+                <FlareDatePicker Label="@(Strings.T("Начало"))" @bind-Value="_model.StartDate" />
+                <FlareDatePicker Label="@(Strings.T("Окончание"))" @bind-Value="_model.EndDate" />
             </FlareGrid>
             <div class="alva-task__assignee">
-                <span class="alva-micro-label">Исполнитель</span>
+                <span class="alva-micro-label">@(Strings.T("Исполнитель"))</span>
                 <AlvaAssignee Task="Item" Actors="Actors" />
             </div>
         </FlareStack>
@@ -52,15 +52,15 @@
         <header class="alva-panel__header">
             <FlareIconView Value="@MaterialDesign3Icons.Regular.Layers" Size="20px" Class="alva-panel__icon" />
             <div>
-                <h2 class="alva-panel__title">Бесконечная декомпозиция (Матрёшка)</h2>
-                <p class="alva-panel__subtitle">Рекурсивное каскадирование оценок и исполнителей</p>
+                <h2 class="alva-panel__title">@(Strings.T("Бесконечная декомпозиция (Матрёшка)"))</h2>
+                <p class="alva-panel__subtitle">@(Strings.T("Рекурсивное каскадирование оценок и исполнителей"))</p>
             </div>
         </header>
         <div class="alva-task__summary">
-            <span class="alva-task__summary-label">Суммарно:</span>
+            <span class="alva-task__summary-label">@(Strings.T("Суммарно:"))</span>
             <span class="alva-task__summary-value alva-num">
                 <FlareIconView Value="@MaterialDesign3Icons.Regular.Schedule" Size="16px" />
-                @AlvaFormat.Hours(Children.Sum(c => c.EstimateHours ?? 0)) ч (@Children.Length @AlvaFormat.Plural(Children.Length, "подзадача", "подзадачи", "подзадач"))
+                @AlvaFormat.Hours(Children.Sum(c => c.EstimateHours ?? 0)) ч (@Children.Length @AlvaFormat.Plural(Children.Length, Strings.T("подзадача"), Strings.T("подзадачи"), Strings.T("подзадач")))
             </span>
             @if (Children.Where(c => c.Deadline.HasValue).Select(c => c.Deadline!.Value).DefaultIfEmpty().Max() is var last && last != default)
             {
@@ -68,9 +68,9 @@
                 <span class="alva-task__summary-date alva-num"><FlareIconView Value="@MaterialDesign3Icons.Regular.Event" Size="16px" /> до @last.ToString("d MMM yyyy")</span>
             }
         </div>
-        <div class="alva-subtasks" role="table" aria-label="Подзадачи">
+        <div class="alva-subtasks" role="table" aria-label="@(Strings.T("Подзадачи"))">
             <div class="alva-subtasks__head" role="row">
-                <span role="columnheader">Иерархия подзадач</span><span role="columnheader">Исполнитель / слот</span><span role="columnheader" class="alva-subtasks__est">Оценка</span>
+                <span role="columnheader">@(Strings.T("Иерархия подзадач"))</span><span role="columnheader">@(Strings.T("Исполнитель / слот"))</span><span role="columnheader" class="alva-subtasks__est">@(Strings.T("Оценка"))</span>
             </div>
             @for (var i = 0; i < Children.Length; i++)
             {
@@ -86,10 +86,10 @@
                 </div>
             }
             <div class="alva-subtasks__add">
-                <FlareTextField @bind-Value="_quickTitle" Immediate Placeholder="Быстрое добавление вложенной матрёшки (Enter)…" AriaLabel="Название новой подзадачи" OnKeyDown="QuickKey" Variant="InputVariant.Bare">
+                <FlareTextField @bind-Value="_quickTitle" Immediate Placeholder="@(Strings.T("Быстрое добавление вложенной матрёшки (Enter)…"))" AriaLabel="@(Strings.T("Название новой подзадачи"))" OnKeyDown="QuickKey" Variant="InputVariant.Bare">
                     <AdornmentStart><FlareIconView Value="@MaterialDesign3Icons.Regular.AddCircle" Size="18px" /></AdornmentStart>
                 </FlareTextField>
-                <FlareButton Variant="ButtonVariant.Tonal" Size="ButtonSize.Sm" Loading="_adding" Disabled="@(_adding || string.IsNullOrWhiteSpace(_quickTitle))" OnClick="QuickAdd">Добавить матрёшку</FlareButton>
+                <FlareButton Variant="ButtonVariant.Tonal" Size="ButtonSize.Sm" Loading="_adding" Disabled="@(_adding || string.IsNullOrWhiteSpace(_quickTitle))" OnClick="QuickAdd">@(Strings.T("Добавить матрёшку"))</FlareButton>
             </div>
         </div>
     </section>
@@ -99,7 +99,7 @@
             <FlareIconView Value="@MaterialDesign3Icons.Regular.History" Size="20px" Class="alva-panel__icon" />
             <h2 class="alva-panel__title">История изменений (@_history.Length)</h2>
         </header>
-        @if (_history.Length == 0) { <FlareEmptyState Compact Title="Изменений пока нет" Description="Правки задачи появятся здесь." /> }
+        @if (_history.Length == 0) { <FlareEmptyState Compact Title="@(Strings.T("Изменений пока нет"))" Description="@(Strings.T("Правки задачи появятся здесь."))" /> }
         @foreach (var entry in _history)
         {
             <div class="alva-history">
@@ -113,19 +113,19 @@
     </section>
 </div>
 
-<FlareDrawer Anchor="DrawerAnchor.Right" @bind-Open="_assignOpen" Width="26rem" AriaLabel="Назначение исполнителя">
+<FlareDrawer Anchor="DrawerAnchor.Right" @bind-Open="_assignOpen" Width="26rem" AriaLabel="@(Strings.T("Назначение исполнителя"))">
     <HeaderContent>
         <div class="alva-assign__header">
             <FlareIconView Value="@MaterialDesign3Icons.Regular.PersonAdd" Size="22px" Class="alva-panel__icon" />
             <div>
-                <div class="alva-assign__title">Назначение исполнителя</div>
+                <div class="alva-assign__title">@(Strings.T("Назначение исполнителя"))</div>
                 <div class="alva-assign__task alva-num">@Code(Item)@(Item.EstimateHours.HasValue ? $" ({AlvaFormat.Hours(Item.EstimateHours.Value)}ч)" : "")</div>
             </div>
         </div>
     </HeaderContent>
     <ChildContent>
         <div class="alva-assign">
-            <span class="alva-micro-label">Тип балансировки</span>
+            <span class="alva-micro-label">@(Strings.T("Тип балансировки"))</span>
             <FlareTabs @bind-ActiveIndex="_assignTab">
                 @foreach (var kind in Kinds)
                 {
@@ -134,13 +134,13 @@
             </FlareTabs>
             @if (Actors.FirstOrDefault(a => a.Id == _assignTarget)?.Kind is "Role" or "Department")
             {
-                <FlareSelect TValue="Guid?" Label="Конкретный исполнитель" Items="@(Actors.Where(a => a.Kind == "Person").Select(a => (Guid?)a.Id))" ItemLabel="ActorName" NullOption="Пока не выбран — требуется человек" @bind-Value="_assignPerson" Searchable />
+                <FlareSelect TValue="Guid?" Label="@(Strings.T("Конкретный исполнитель"))" Items="@(Actors.Where(a => a.Kind == "Person").Select(a => (Guid?)a.Id))" ItemLabel="ActorName" NullOption="@(Strings.T("Пока не выбран — требуется человек"))" @bind-Value="_assignPerson" Searchable />
             }
             <div class="alva-assign__footer">
-                <FlareButton Variant="ButtonVariant.Text" Size="ButtonSize.Sm" OnClick="() => _assignOpen = false">Отмена</FlareButton>
+                <FlareButton Variant="ButtonVariant.Text" Size="ButtonSize.Sm" OnClick="() => _assignOpen = false">@(Strings.T("Отмена"))</FlareButton>
                 <FlareButton Size="ButtonSize.Sm" Loading="_busy" Disabled="@(_assignTarget is null)" OnClick="ApplyAssign">
                     <LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.Check" Size="18px" /></LeadingIcon>
-                    <ChildContent>Применить назначение</ChildContent>
+                    <ChildContent>@(Strings.T("Применить назначение"))</ChildContent>
                 </FlareButton>
             </div>
         </div>
@@ -206,8 +206,8 @@
     private async Task ConfirmLeave(LocationChangingContext context)
     {
         if (_leaving || !Dirty || Confirm is null) return;
-        var leave = await Confirm.ConfirmAsync("Несохранённые изменения",
-            "В карточке задачи есть несохранённые правки. Уйти и потерять их?", "Уйти без сохранения", "Остаться");
+        var leave = await Confirm.ConfirmAsync(Strings.T("Несохранённые изменения"),
+            Strings.T("В карточке задачи есть несохранённые правки. Уйти и потерять их?"), Strings.T("Уйти без сохранения"), Strings.T("Остаться"));
         if (leave != true) context.PreventNavigation();
     }
 
@@ -224,10 +224,10 @@
     }
 
     private static string Code(TaskModel task) => AlvaFormat.Code(task.Id);
-    private string ProjectName(Guid? id) => Projects.FirstOrDefault(x => x.Id == id)?.Name ?? "Текучка";
-    private string SprintName(Guid? id) => Sprints.FirstOrDefault(x => x.Id == id)?.Name ?? "Без спринта";
-    private string TaskName(Guid? id) => Tasks.FirstOrDefault(x => x.Id == id)?.Title ?? "Корневая задача";
-    private string ActorName(Guid? id) => Actors.FirstOrDefault(x => x.Id == id)?.Name ?? "Не назначена";
+    private string ProjectName(Guid? id) => Projects.FirstOrDefault(x => x.Id == id)?.Name ?? Strings.T("Текучка");
+    private string SprintName(Guid? id) => Sprints.FirstOrDefault(x => x.Id == id)?.Name ?? Strings.T("Без спринта");
+    private string TaskName(Guid? id) => Tasks.FirstOrDefault(x => x.Id == id)?.Title ?? Strings.T("Корневая задача");
+    private string ActorName(Guid? id) => Actors.FirstOrDefault(x => x.Id == id)?.Name ?? Strings.T("Не назначена");
 
     /// <summary>Кандидаты одного вида. У людей — загрузка за окно спринта (или 14 дней).</summary>
     private RenderFragment Candidates(string kind) => __builder =>
@@ -235,11 +235,11 @@
         var list = Actors.Where(a => a.Kind == kind && (string.IsNullOrWhiteSpace(_assignSearch) || a.Name.Contains(_assignSearch, StringComparison.OrdinalIgnoreCase))).ToArray();
         var recommended = kind == "Person" ? list.Where(a => _load.ContainsKey(a.Id) && _load[a.Id].Available > 0).OrderBy(a => Percent(a.Id)).FirstOrDefault()?.Id : null;
         <div class="alva-assign__list">
-            <FlareTextField @bind-Value="_assignSearch" Immediate Clearable Placeholder="@($"Поиск по команде {Session.TeamName}…")" AriaLabel="Поиск кандидата">
+            <FlareTextField @bind-Value="_assignSearch" Immediate Clearable Placeholder="@($"Поиск по команде {Session.TeamName}…")" AriaLabel="@(Strings.T("Поиск кандидата"))">
                 <AdornmentStart><FlareIconView Value="@MaterialDesign3Icons.Regular.Search" Size="18px" /></AdornmentStart>
             </FlareTextField>
-            <div class="alva-assign__caption"><span>Кандидаты команды (@list.Length)</span>@if (kind == "Person") { <span>Ёмкость периода</span> }</div>
-            @if (list.Length == 0) { <FlareEmptyState Compact Title="Никого не найдено" Description="Добавьте участников в разделе «Команда»." /> }
+            <div class="alva-assign__caption"><span>Кандидаты команды (@list.Length)</span>@if (kind == "Person") { <span>@(Strings.T("Ёмкость периода"))</span> }</div>
+            @if (list.Length == 0) { <FlareEmptyState Compact Title="@(Strings.T("Никого не найдено"))" Description="@(Strings.T("Добавьте участников в разделе «Команда»."))" /> }
             <FlareRadioGroup TValue="Guid?" @bind-Value="_assignTarget" Label="@($"Кандидаты: {Labels.Kind(kind)}")" Class="alva-assign__group">
                 @foreach (var actor in list)
                 {
@@ -252,7 +252,7 @@
                             <span class="alva-candidate__content">
                                 <span class="alva-slot__mark alva-candidate__avatar" aria-hidden="true">@AlvaFormat.Initials(actor.Name)</span>
                                 <span class="alva-candidate__body">
-                                    <span class="alva-candidate__name">@actor.Name @if (actor.Id == recommended) { <AlvaStatusChip Tone="AlvaTone.Ok">Рекомендовано</AlvaStatusChip> }</span>
+                                    <span class="alva-candidate__name">@actor.Name @if (actor.Id == recommended) { <AlvaStatusChip Tone="AlvaTone.Ok">@(Strings.T("Рекомендовано"))</AlvaStatusChip> }</span>
                                     <span class="alva-candidate__meta">@CandidateMeta(actor)</span>
                                     @if (percent is not null)
                                     {
@@ -260,9 +260,9 @@
                                             @(percent > 100 ? $"Перегружен (дефицит {AlvaFormat.Hours(-reserve)}ч)" : percent > 80 ? $"Оптимально (резерв +{AlvaFormat.Hours(reserve)}ч)" : $"Свободен (резерв +{AlvaFormat.Hours(reserve)}ч)")
                                         </span>
                                     }
-                                    @if (actor.Id == Item.AssignmentTargetId || actor.Id == Item.ResolvedPersonId) { <span class="alva-candidate__current">Текущий исполнитель</span> }
+                                    @if (actor.Id == Item.AssignmentTargetId || actor.Id == Item.ResolvedPersonId) { <span class="alva-candidate__current">@(Strings.T("Текущий исполнитель"))</span> }
                                 </span>
-                                @if (percent is not null) { <span class="alva-candidate__side"><AlvaStatusChip Tone="tone" Title="Загрузка за период">@percent%</AlvaStatusChip></span> }
+                                @if (percent is not null) { <span class="alva-candidate__side"><AlvaStatusChip Tone="tone" Title="@(Strings.T("Загрузка за период"))">@percent%</AlvaStatusChip></span> }
                             </span>
                         </FlareRadio>
                     </div>
@@ -275,7 +275,7 @@
     {
         if (actor.Kind != "Person") return $"{Labels.Kind(actor.Kind)} · {Actors.Count(a => a.RoleIds.Contains(actor.Id) || a.DepartmentIds.Contains(actor.Id))} чел.";
         var tags = Actors.Where(a => actor.RoleIds.Contains(a.Id) || actor.DepartmentIds.Contains(a.Id)).Select(a => a.Name).ToArray();
-        return tags.Length > 0 ? string.Join(" / ", tags) : "Участник команды";
+        return tags.Length > 0 ? string.Join(" / ", tags) : Strings.T("Участник команды");
     }
 
     private int Percent(Guid actorId)

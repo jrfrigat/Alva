@@ -7,7 +7,7 @@
                  Links="@Data.Links().ToArray()" LinkTypes="@Types" ShowCriticalPath="Critical" RollupParents="true"
                  Markers="@DeadlineMarkers" Editable="true" AllowRowChange="false" OnChange="OnChange" OnLinkCreate="OnLinkCreate"
                  OnLinkRejected="OnLinkRejected" Header="Header" DropGroup="@DropGroup" DropAccepts="DropAccepts"
-                 ItemDropGroup="@ItemDropGroup" ItemDropAccepts="ItemDropAccepts" Suggested="Suggested" AriaLabel="Задачи во времени">
+                 ItemDropGroup="@ItemDropGroup" ItemDropAccepts="ItemDropAccepts" Suggested="Suggested" AriaLabel="@(Strings.T("Задачи во времени"))">
     <RowHeader Context="task">
         @if (DragRows)
         {
@@ -77,5 +77,5 @@
     private IEnumerable<GanttMarker> DeadlineMarkers => Data.Tasks
         .Where(t => !GanttData.IsClosed(t) && (t.EffectiveDeadline ?? t.Deadline) is not null)
         .Select(t => new GanttMarker("deadline", (t.EffectiveDeadline ?? t.Deadline)!.Value.AddDays(1).ToDateTime(TimeOnly.MinValue),
-            GanttData.Key(t.Id), "Срок", GanttData.Key(t.Id)));
+            GanttData.Key(t.Id), Strings.T("Срок"), GanttData.Key(t.Id)));
 }

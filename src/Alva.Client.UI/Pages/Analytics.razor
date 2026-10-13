@@ -2,12 +2,12 @@
 @inject AlvaSession Session
 @* Риски и причины сдвига сроков: сводка, быстрые фильтры по видам причин и список задач под риском.
    Макета для страницы нет — разметка по DESIGN.md и образцам реестра спринтов и обзора ёмкости. *@
-<PageTitle>Аналитика · Alva</PageTitle>
+<PageTitle>@(Strings.T("Аналитика · Alva"))</PageTitle>
 <section class="alva-page-header">
     <div class="alva-page-header__text">
-        <div class="alva-micro-label"><span>Аналитика · Риски</span></div>
-        <h1 class="alva-page-header__title">Риски и причины сдвига сроков</h1>
-        <p class="alva-page-header__desc">Какие задачи могут не успеть и почему: перегрузка и отпуска исполнителей, работа без человека, просроченные сроки и незакрытые зависимости.</p>
+        <div class="alva-micro-label"><span>@(Strings.T("Аналитика · Риски"))</span></div>
+        <h1 class="alva-page-header__title">@(Strings.T("Риски и причины сдвига сроков"))</h1>
+        <p class="alva-page-header__desc">@(Strings.T("Какие задачи могут не успеть и почему: перегрузка и отпуска исполнителей, работа без человека, просроченные сроки и незакрытые зависимости."))</p>
     </div>
 </section>
 <PageFeedback Loading="_busy" Error="@_error" />
@@ -16,26 +16,26 @@ else if (!_busy)
 {
 <div class="alva-kpis">
     <section class="alva-kpi">
-        <div class="alva-kpi__head"><div><span class="alva-kpi__label">Задач под риском</span><span class="alva-num"><span class="alva-kpi__value">@_risks.Length</span> <span class="alva-kpi__unit">из @OpenTasks открытых</span></span></div><span class="alva-kpi__icon"><FlareIconView Value="@MaterialDesign3Icons.Regular.Warning" Size="18px" /></span></div>
-        <p class="alva-kpi__note">@(_risks.Length == 0 ? "Все сроки держатся" : $"{Pct(_risks.Length, OpenTasks)}% открытых задач")</p>
+        <div class="alva-kpi__head"><div><span class="alva-kpi__label">@(Strings.T("Задач под риском"))</span><span class="alva-num"><span class="alva-kpi__value">@_risks.Length</span> <span class="alva-kpi__unit">из @OpenTasks открытых</span></span></div><span class="alva-kpi__icon"><FlareIconView Value="@MaterialDesign3Icons.Regular.Warning" Size="18px" /></span></div>
+        <p class="alva-kpi__note">@(_risks.Length == 0 ? Strings.T("Все сроки держатся") : $"{Pct(_risks.Length, OpenTasks)}% открытых задач")</p>
     </section>
     <section class="alva-kpi @(High > 0 ? "alva-kpi--critical" : "")">
-        <div class="alva-kpi__head"><div><span class="alva-kpi__label">Высокий уровень</span><span class="alva-num"><span class="alva-kpi__value">@High</span> <span class="alva-kpi__unit">@AlvaFormat.Plural(High, "задача", "задачи", "задач")</span></span></div><span class="alva-kpi__icon"><FlareIconView Value="@MaterialDesign3Icons.Regular.Error" Size="18px" /></span></div>
-        <p class="alva-kpi__note">Срок прошёл или прогноз позже срока больше чем на 3 дня</p>
+        <div class="alva-kpi__head"><div><span class="alva-kpi__label">@(Strings.T("Высокий уровень"))</span><span class="alva-num"><span class="alva-kpi__value">@High</span> <span class="alva-kpi__unit">@AlvaFormat.Plural(High, "задача", Strings.T("задачи"), Strings.T("задач"))</span></span></div><span class="alva-kpi__icon"><FlareIconView Value="@MaterialDesign3Icons.Regular.Error" Size="18px" /></span></div>
+        <p class="alva-kpi__note">@(Strings.T("Срок прошёл или прогноз позже срока больше чем на 3 дня"))</p>
     </section>
     <section class="alva-kpi">
-        <div class="alva-kpi__head"><div><span class="alva-kpi__label">Ближайший срыв</span><span class="alva-kpi__title">@(Nearest?.Risk.Title ?? "Не ожидается")</span></div><span class="alva-kpi__icon"><FlareIconView Value="@MaterialDesign3Icons.Regular.EventBusy" Size="18px" /></span></div>
-        <p class="alva-kpi__note alva-num">@(Nearest is { } n ? $"Срок {n.Due:d MMM}, прогноз {n.Risk.ForecastDate:d MMM} (+{Slip(n.Risk)} дн.)" : "Прогнозы укладываются в сроки")</p>
+        <div class="alva-kpi__head"><div><span class="alva-kpi__label">@(Strings.T("Ближайший срыв"))</span><span class="alva-kpi__title">@(Nearest?.Risk.Title ?? Strings.T("Не ожидается"))</span></div><span class="alva-kpi__icon"><FlareIconView Value="@MaterialDesign3Icons.Regular.EventBusy" Size="18px" /></span></div>
+        <p class="alva-kpi__note alva-num">@(Nearest is { } n ? $"Срок {n.Due:d MMM}, прогноз {n.Risk.ForecastDate:d MMM} (+{Slip(n.Risk)} дн.)" : Strings.T("Прогнозы укладываются в сроки"))</p>
     </section>
     <section class="alva-kpi">
-        <div class="alva-kpi__head"><div><span class="alva-kpi__label">Без человека</span><span class="alva-num"><span class="alva-kpi__value">@Count(RiskKind.Unassigned)</span> <span class="alva-kpi__unit">@AlvaFormat.Plural(Count(RiskKind.Unassigned), "задача", "задачи", "задач")</span></span></div><span class="alva-kpi__icon"><FlareIconView Value="@MaterialDesign3Icons.Regular.PersonSearch" Size="18px" /></span></div>
-        <p class="alva-kpi__note"><a href="/unassigned">Пул неназначенных задач</a></p>
+        <div class="alva-kpi__head"><div><span class="alva-kpi__label">@(Strings.T("Без человека"))</span><span class="alva-num"><span class="alva-kpi__value">@Count(RiskKind.Unassigned)</span> <span class="alva-kpi__unit">@AlvaFormat.Plural(Count(RiskKind.Unassigned), "задача", Strings.T("задачи"), Strings.T("задач"))</span></span></div><span class="alva-kpi__icon"><FlareIconView Value="@MaterialDesign3Icons.Regular.PersonSearch" Size="18px" /></span></div>
+        <p class="alva-kpi__note"><a href="/unassigned">@(Strings.T("Пул неназначенных задач"))</a></p>
     </section>
 </div>
 
 <div class="alva-capacity-bar">
-    <span class="alva-capacity-bar__label"><FlareIconView Value="@MaterialDesign3Icons.Regular.FilterList" Size="16px" /> Причины:</span>
-    <div class="alva-quickfilter" role="group" aria-label="Фильтр по причине">
+    <span class="alva-capacity-bar__label"><FlareIconView Value="@MaterialDesign3Icons.Regular.FilterList" Size="16px" /> @(Strings.T("Причины:"))</span>
+    <div class="alva-quickfilter" role="group" aria-label="@(Strings.T("Фильтр по причине"))">
         <button type="button" class="alva-quickfilter__item @(_kind is null ? "alva-quickfilter__item--active" : "")" aria-pressed="@(_kind is null)" @onclick="() => _kind = null">Все (@_risks.Length)</button>
         @foreach (var kind in Kinds.Where(k => Count(k) > 0))
         {
@@ -46,47 +46,47 @@ else if (!_busy)
 
 <div class="alva-filterbar">
     <FlareTabs @bind-ActiveIndex="_level" Class="alva-filterbar__tabs">
-        <FlareTab Label="Все уровни" Badge="@_risks.Length.ToString()" BadgeColor="FlareColor.Secondary" />
-        <FlareTab Label="Высокий" Badge="@High.ToString()" BadgeColor="FlareColor.Error" />
-        <FlareTab Label="Средний" Badge="@((_risks.Length - High).ToString())" BadgeColor="FlareColor.Secondary" />
+        <FlareTab Label="@(Strings.T("Все уровни"))" Badge="@_risks.Length.ToString()" BadgeColor="FlareColor.Secondary" />
+        <FlareTab Label="@(Strings.T("Высокий"))" Badge="@High.ToString()" BadgeColor="FlareColor.Error" />
+        <FlareTab Label="@(Strings.T("Средний"))" Badge="@((_risks.Length - High).ToString())" BadgeColor="FlareColor.Secondary" />
     </FlareTabs>
-    <FlareSelect TValue="Guid?" Items="@(People.Select(p => (Guid?)p.Id))" ItemLabel="PersonName" NullOption="Все исполнители" @bind-Value="_person" Size="FieldSize.Sm" InputAttributes="@(new Dictionary<string, object> { ["aria-label"] = "Исполнитель" })" Class="alva-filterbar__person" />
-    <FlareTextField @bind-Value="_search" Immediate Clearable Placeholder="Поиск по задаче или причине" AriaLabel="Поиск риска" Class="alva-filterbar__search">
+    <FlareSelect TValue="Guid?" Items="@(People.Select(p => (Guid?)p.Id))" ItemLabel="PersonName" NullOption="@(Strings.T("Все исполнители"))" @bind-Value="_person" Size="FieldSize.Sm" InputAttributes="@(new Dictionary<string, object> { ["aria-label"] = Strings.T("Исполнитель") })" Class="alva-filterbar__person" />
+    <FlareTextField @bind-Value="_search" Immediate Clearable Placeholder="@(Strings.T("Поиск по задаче или причине"))" AriaLabel="@(Strings.T("Поиск риска"))" Class="alva-filterbar__search">
         <AdornmentStart><FlareIconView Value="@MaterialDesign3Icons.Regular.Search" Size="18px" /></AdornmentStart>
     </FlareTextField>
 </div>
 
 @if (_risks.Length == 0)
 {
-    <FlareEmptyState Title="Открытых рисков нет" Description="Проверены сроки, прогнозы по графикам исполнителей, отпуска, перегрузка, назначения и зависимости." />
+    <FlareEmptyState Title="@(Strings.T("Открытых рисков нет"))" Description="@(Strings.T("Проверены сроки, прогнозы по графикам исполнителей, отпуска, перегрузка, назначения и зависимости."))" />
 }
 else
 {
 <section class="alva-panel alva-risk-panel">
-    <div class="alva-risk-table" role="table" aria-label="Задачи под риском">
-        <div class="alva-risk-table__row alva-risk-table__row--head" role="row"><span role="columnheader">Задача</span><span role="columnheader">Уровень</span><span role="columnheader">Причины</span><span role="columnheader">Исполнитель</span><span role="columnheader">Срок / прогноз</span></div>
+    <div class="alva-risk-table" role="table" aria-label="@(Strings.T("Задачи под риском"))">
+        <div class="alva-risk-table__row alva-risk-table__row--head" role="row"><span role="columnheader">@(Strings.T("Задача"))</span><span role="columnheader">@(Strings.T("Уровень"))</span><span role="columnheader">@(Strings.T("Причины"))</span><span role="columnheader">@(Strings.T("Исполнитель"))</span><span role="columnheader">@(Strings.T("Срок / прогноз"))</span></div>
         @foreach (var risk in Visible)
         {
             var task = TaskOf(risk.TaskId);
             var slip = Slip(risk);
             <div class="alva-risk-table__row" role="row" @key="risk.TaskId">
                 <span role="cell" class="alva-risk-table__task"><a href="@($"/tasks/{risk.TaskId}")">@risk.Title</a><span class="alva-num">@AlvaFormat.Code(risk.TaskId)</span></span>
-                <span role="cell"><AlvaStatusChip Tone="AlvaTones.Severity(risk.Severity)">@(risk.Severity == "High" ? "Высокий" : "Средний")</AlvaStatusChip></span>
+                <span role="cell"><AlvaStatusChip Tone="AlvaTones.Severity(risk.Severity)">@(risk.Severity == "High" ? Strings.T("Высокий") : Strings.T("Средний"))</AlvaStatusChip></span>
                 <span role="cell" class="alva-risk-table__reasons">@foreach (var reason in risk.Reasons) { <span class="alva-chip alva-chip--@Tone(KindOf(reason))">@reason</span> }</span>
                 <span role="cell" class="alva-risk-table__person">
                     @if (task?.ResolvedPersonId is { } personId && Actor(personId) is { } person)
                     {
                         <a href="@($"/capacity/{person.Id}")" class="alva-person-link"><span class="alva-slot__mark" aria-hidden="true">@AlvaFormat.Initials(person.Name)</span><span>@person.Name</span></a>
                     }
-                    else { <span class="alva-week__muted">@(task?.AssignmentTargetId is { } target ? Actor(target)?.Name ?? "—" : "Не назначена")</span> }
+                    else { <span class="alva-week__muted">@(task?.AssignmentTargetId is { } target ? Actor(target)?.Name ?? "—" : Strings.T("Не назначена"))</span> }
                 </span>
                 <span role="cell" class="alva-risk-table__dates alva-num">
-                    <span>@(DueOf(task) is { } due ? due.ToString("d MMM") : "без срока")</span>
-                    <span class="@(slip > 0 ? "alva-risk-table__slip" : "")">@(risk.ForecastDate is { } forecast ? $"→ {forecast:d MMM}" : "→ не рассчитан")@(slip > 0 ? $" (+{slip} дн.)" : "")</span>
+                    <span>@(DueOf(task) is { } due ? due.ToString("d MMM") : Strings.T("без срока"))</span>
+                    <span class="@(slip > 0 ? "alva-risk-table__slip" : "")">@(risk.ForecastDate is { } forecast ? $"→ {forecast:d MMM}" : Strings.T("→ не рассчитан"))@(slip > 0 ? $" (+{slip} дн.)" : "")</span>
                 </span>
             </div>
         }
-        @if (!Visible.Any()) { <div class="alva-sprint-table__empty">По этим условиям рисков нет. Смените фильтр или поиск.</div> }
+        @if (!Visible.Any()) { <div class="alva-sprint-table__empty">@(Strings.T("По этим условиям рисков нет. Смените фильтр или поиск."))</div> }
     </div>
 </section>
 }
@@ -109,7 +109,7 @@ else
     private int High => _risks.Count(r => r.Severity == "High");
     private TaskModel? TaskOf(Guid id) => _tasks.FirstOrDefault(t => t.Id == id);
     private ActorModel? Actor(Guid id) => _actors.FirstOrDefault(a => a.Id == id);
-    private string PersonName(Guid? id) => id is { } value ? Actor(value)?.Name ?? "—" : "Все исполнители";
+    private string PersonName(Guid? id) => id is { } value ? Actor(value)?.Name ?? "—" : Strings.T("Все исполнители");
     private IEnumerable<ActorModel> People => _risks.Select(r => TaskOf(r.TaskId)?.ResolvedPersonId).OfType<Guid>().Distinct().Select(Actor).OfType<ActorModel>().OrderBy(a => a.Name);
 
     /// <summary>Вид причины по её тексту: префиксы задаёт расчёт рисков (RiskMath).</summary>
@@ -127,13 +127,13 @@ else
 
     private static string Label(RiskKind kind) => kind switch
     {
-        RiskKind.Overdue => "Срок прошёл",
-        RiskKind.Forecast => "Не успевает к сроку",
-        RiskKind.Overload => "Перегрузка",
-        RiskKind.Absence => "Отпуск исполнителя",
-        RiskKind.Unassigned => "Нет человека",
-        RiskKind.Dependency => "Зависимости",
-        _ => "Прочее"
+        RiskKind.Overdue => Strings.T("Срок прошёл"),
+        RiskKind.Forecast => Strings.T("Не успевает к сроку"),
+        RiskKind.Overload => Strings.T("Перегрузка"),
+        RiskKind.Absence => Strings.T("Отпуск исполнителя"),
+        RiskKind.Unassigned => Strings.T("Нет человека"),
+        RiskKind.Dependency => Strings.T("Зависимости"),
+        _ => Strings.T("Прочее")
     };
 
     private static string Tone(RiskKind kind) => kind switch

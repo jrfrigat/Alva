@@ -2,11 +2,11 @@
 @page "/register"
 @inject AlvaSession Session
 @inject NavigationManager Navigation
-<PageTitle>Вход · Alva</PageTitle>
+<PageTitle>@(Strings.T("Вход · Alva"))</PageTitle>
 <FlareContainer MaxWidth="ContainerMaxWidth.Sm">
 <FlareCard Variant="CardVariant.Outlined"><FlareCardContent><FlareStack Gap="FlareSpacing.Large">
-    <FlareText Element="h1" Typo="TypographyScale.HeadlineLarge">@(_register ? "Создайте пространство для команды" : "Добро пожаловать в Alva")</FlareText>
-    <FlareText>Планируйте спринты, распределяйте работу и замечайте перегрузки заранее.</FlareText>
+    <FlareText Element="h1" Typo="TypographyScale.HeadlineLarge">@(_register ? Strings.T("Создайте пространство для команды") : Strings.T("Добро пожаловать в Alva"))</FlareText>
+    <FlareText>@(Strings.T("Планируйте спринты, распределяйте работу и замечайте перегрузки заранее."))</FlareText>
     @* Общая сводка — для ответов сервера, которые не относятся к одному полю (неверный пароль, сбой). *@
     <PageFeedback Error="@_error" />
     @* novalidate: всплывающие подсказки браузера не связаны с полями и не читаются вместе с ними — проверяет сама форма. *@
@@ -15,13 +15,13 @@
         @* Ошибка поля выводится под ним (ErrorText Flare связывает её с полем через aria-describedby). *@
         @if (_register)
         {
-            <FlareTextField @ref="_nameField" Label="Ваше имя" Value="@_displayName" ValueChanged="v => Edit(ref _displayName, v, Field.Name)" ErrorText="@ErrorOf(Field.Name)" Required Autocomplete="name" />
-            <FlareTextField @ref="_workspaceField" Label="Название рабочего пространства" Value="@_workspaceName" ValueChanged="v => Edit(ref _workspaceName, v, Field.Workspace)" ErrorText="@ErrorOf(Field.Workspace)" Required />
+            <FlareTextField @ref="_nameField" Label="@(Strings.T("Ваше имя"))" Value="@_displayName" ValueChanged="v => Edit(ref _displayName, v, Field.Name)" ErrorText="@ErrorOf(Field.Name)" Required Autocomplete="name" />
+            <FlareTextField @ref="_workspaceField" Label="@(Strings.T("Название рабочего пространства"))" Value="@_workspaceName" ValueChanged="v => Edit(ref _workspaceName, v, Field.Workspace)" ErrorText="@ErrorOf(Field.Workspace)" Required />
         }
-        <FlareTextField @ref="_emailField" Label="Электронная почта" Value="@_email" ValueChanged="v => Edit(ref _email, v, Field.Email)" ErrorText="@ErrorOf(Field.Email)" Type="email" Required Autocomplete="email" />
-        <FlareTextField @ref="_passwordField" Label="Пароль" Value="@_password" ValueChanged="v => Edit(ref _password, v, Field.Password)" ErrorText="@ErrorOf(Field.Password)" Type="password" Required Autocomplete="@(_register ? "new-password" : "current-password")" HelperText="@(_register ? $"Не менее {MinPassword} символов" : null)" />
-        <FlareButton Type="ButtonType.Submit" Loading="_busy" FullWidth>@(_register ? "Создать пространство" : "Войти")</FlareButton>
-        <FlareButton Variant="ButtonVariant.Text" OnClick="Toggle">@(_register ? "У меня уже есть аккаунт" : "Создать аккаунт")</FlareButton>
+        <FlareTextField @ref="_emailField" Label="@(Strings.T("Электронная почта"))" Value="@_email" ValueChanged="v => Edit(ref _email, v, Field.Email)" ErrorText="@ErrorOf(Field.Email)" Type="email" Required Autocomplete="email" />
+        <FlareTextField @ref="_passwordField" Label="@(Strings.T("Пароль"))" Value="@_password" ValueChanged="v => Edit(ref _password, v, Field.Password)" ErrorText="@ErrorOf(Field.Password)" Type="password" Required Autocomplete="@(_register ? "new-password" : "current-password")" HelperText="@(_register ? $"Не менее {MinPassword} символов" : null)" />
+        <FlareButton Type="ButtonType.Submit" Loading="_busy" FullWidth>@(_register ? Strings.T("Создать пространство") : Strings.T("Войти"))</FlareButton>
+        <FlareButton Variant="ButtonVariant.Text" OnClick="Toggle">@(_register ? Strings.T("У меня уже есть аккаунт") : Strings.T("Создать аккаунт"))</FlareButton>
     </FlareStack>
     </EditForm>
 </FlareStack></FlareCardContent></FlareCard>
@@ -58,12 +58,12 @@
     private void Validate()
     {
         _errors.Clear();
-        if (_register && string.IsNullOrWhiteSpace(_displayName)) _errors[Field.Name] = "Укажите имя.";
-        if (_register && string.IsNullOrWhiteSpace(_workspaceName)) _errors[Field.Workspace] = "Укажите название пространства.";
+        if (_register && string.IsNullOrWhiteSpace(_displayName)) _errors[Field.Name] = Strings.T("Укажите имя.");
+        if (_register && string.IsNullOrWhiteSpace(_workspaceName)) _errors[Field.Workspace] = Strings.T("Укажите название пространства.");
         var email = _email?.Trim();
-        if (string.IsNullOrEmpty(email)) _errors[Field.Email] = "Укажите электронную почту.";
-        else if (!System.Net.Mail.MailAddress.TryCreate(email, out var parsed) || parsed.Address != email) _errors[Field.Email] = "Почта указана в неверном формате, например: name@company.ru.";
-        if (string.IsNullOrEmpty(_password)) _errors[Field.Password] = "Введите пароль.";
+        if (string.IsNullOrEmpty(email)) _errors[Field.Email] = Strings.T("Укажите электронную почту.");
+        else if (!System.Net.Mail.MailAddress.TryCreate(email, out var parsed) || parsed.Address != email) _errors[Field.Email] = Strings.T("Почта указана в неверном формате, например: name@company.ru.");
+        if (string.IsNullOrEmpty(_password)) _errors[Field.Password] = Strings.T("Введите пароль.");
         else if (_register && _password.Length is < MinPassword or > MaxPassword) _errors[Field.Password] = $"Пароль должен содержать от {MinPassword} до {MaxPassword} символов.";
     }
 

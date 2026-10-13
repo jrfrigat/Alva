@@ -13,4 +13,8 @@ builder.Services.AddScoped(_ =>
     return client;
 });
 builder.Services.AddScoped<IApiService, ApiServiceHttp>();
-await builder.Build().RunAsync();
+builder.Services.AddLocalization();
+builder.Services.AddScoped<CultureService>();
+var host = builder.Build();
+await host.Services.GetRequiredService<CultureService>().InitializeAsync();
+await host.RunAsync();

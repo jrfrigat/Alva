@@ -126,7 +126,7 @@ public sealed class RiskNotifications(AlvaSession session, IJSRuntime js) : IAsy
         foreach (var item in fresh.Take(3))
             await module.InvokeVoidAsync("show", $"Риск: {item.Risk.Title}", string.Join("; ", item.Risk.Reasons), item.Risk.TaskId.ToString());
         if (fresh.Length > 3)
-            await module.InvokeVoidAsync("show", "Alva: новые риски", $"Ещё {fresh.Length - 3} — откройте колокольчик в Alva.", "alva-risks");
+            await module.InvokeVoidAsync("show", Strings.T(Strings.T("Alva: новые риски")), $"Ещё {fresh.Length - 3} — откройте колокольчик в Alva.", "alva-risks");
         foreach (var item in fresh) _state.Shown.Add(Key(item.Risk));
     }
 
