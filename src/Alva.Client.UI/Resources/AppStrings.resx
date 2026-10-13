@@ -703,4 +703,5 @@
   <data name="Не менее" xml:space="preserve"><value>At least</value></data>
   <data name="символов" xml:space="preserve"><value>characters</value></data>
   <data name="Обзор" xml:space="preserve"><value>Overview</value></data>
+  <data name="Задачу изменил кто-то другой: ваши правки не сохранены. Данные перечитаны — перенесите нужное и сохраните снова." xml:space="preserve"><value>Someone else changed this task, so your edits were not saved. The latest data has been reloaded — reapply what is needed and save again.</value></data>
 </root>

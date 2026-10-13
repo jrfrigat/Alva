@@ -196,6 +196,9 @@
 
     private bool _leaving;
 
+    // Черновик уступает свежим данным после конфликта версий: иначе сохранение уходило бы со старой версией.
+    private bool _adoptFresh;
+
     /// <summary>Черновик расходится с задачей: уход со страницы или перечитывание её потеряли бы правки.</summary>
     private bool Dirty => _model.Id == Item.Id && (_model.Title != Item.Title || _model.Description != Item.Description
         || _model.Status != Item.Status || _model.ProjectId != Item.ProjectId || _model.ParentId != Item.ParentId
@@ -216,14 +219,21 @@
         if (_model.Id == Item.Id && _model.Version == Item.Version) return;
         // Задачу перечитали (подзадача, назначение, чужая правка), а черновик ещё не сохранён — он остаётся;
         // сохранение уйдёт со старой версией, и сервер сообщит о конфликте вместо тихой потери правок.
-        if (Dirty) return;
-        _model = System.Text.Json.JsonSerializer.Deserialize<TaskModel>(System.Text.Json.JsonSerializer.Serialize(Item))!;
+        // После конфликта черновик, наоборот, уступает свежим данным (_adoptFresh): сохранять поверх
+        // устаревшей версии бессмысленно, а человеку нужно видеть актуальное состояние.
+        if (Dirty && !_adoptFresh) return;
+        _adoptFresh = false;
+        _model = Fresh();
         _quickTitle = null;
         try { _history = await Session.Get<HistoryDto[]>(Session.TeamPath($"tasks/{Item.Id}/history")); }
         catch (Exception e) when (e is HttpRequestException or InvalidOperationException) { _error = e.Message; }
     }
 
     private static string Code(TaskModel task) => AlvaFormat.Code(task.Id);
+
+    /// <summary>Копия задачи из параметра: черновик карточки — отдельный объект, поэтому правки не трогают
+    /// данные страницы, пока их не сохранили.</summary>
+    private TaskModel Fresh() => System.Text.Json.JsonSerializer.Deserialize<TaskModel>(System.Text.Json.JsonSerializer.Serialize(Item))!;
     private string ProjectName(Guid? id) => Projects.FirstOrDefault(x => x.Id == id)?.Name ?? Strings.T("Текучка");
     private string SprintName(Guid? id) => Sprints.FirstOrDefault(x => x.Id == id)?.Name ?? Strings.T("Без спринта");
     private string TaskName(Guid? id) => Tasks.FirstOrDefault(x => x.Id == id)?.Title ?? Strings.T("Корневая задача");
@@ -362,6 +372,16 @@
     {
         _busy = true; _error = null;
         try { await action(); }
+        catch (HttpRequestException e) when (e.StatusCode == System.Net.HttpStatusCode.Conflict)
+        {
+            // Задачу изменили между чтением и сохранением: сервер отверг устаревшую версию. Говорим словами,
+            // что правки не сохранены, и показываем актуальное состояние: без этого человек сохранял бы
+            // поверх устаревшей версии снова и снова, видя только код ответа.
+            _error = Strings.T("Задачу изменил кто-то другой: ваши правки не сохранены. Данные перечитаны — перенесите нужное и сохраните снова.");
+            _adoptFresh = true;
+            if (Changed.HasDelegate) await Changed.InvokeAsync();
+            else { _model = Fresh(); _adoptFresh = false; }
+        }
         catch (Exception e) when (e is HttpRequestException or InvalidOperationException) { _error = e.Message; }
         finally { _busy = false; }
     }
