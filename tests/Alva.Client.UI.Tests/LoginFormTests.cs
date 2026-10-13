@@ -42,8 +42,8 @@ public sealed class LoginFormTests : UiTestBase
         Assert.Equal("Укажите электронную почту.", ErrorOf(cut, "Электронная почта"));
         Assert.Equal("Введите пароль.", ErrorOf(cut, "Пароль"));
         Assert.Empty(Api.Authentications);
-        // Фокус уходит на первое поле с ошибкой.
-        JSInterop.VerifyFocusAsyncInvoke();
+        // Фокус уходит на первое поле с ошибкой — после yield внутри формы.
+        cut.WaitForAssertion(() => JSInterop.VerifyFocusAsyncInvoke());
     }
 
     [Fact]
