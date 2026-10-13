@@ -8,7 +8,7 @@ using Xunit;
 
 namespace Alva.Client.UI.Tests;
 
-/// <summary>TASK-70: ссылка на несуществующую задачу или спринт не превращается в список, пустоту или чужую запись.</summary>
+/// <summary>Ссылка на несуществующую задачу или спринт не превращается в список, пустоту или чужую запись.</summary>
 public sealed class UnavailableRecordTests : UiTestBase
 {
     private readonly SprintModel _active = new() { Id = Guid.NewGuid(), Name = "Спринт 7", Status = "Active" };

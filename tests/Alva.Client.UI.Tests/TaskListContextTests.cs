@@ -7,7 +7,7 @@ using Xunit;
 
 namespace Alva.Client.UI.Tests;
 
-/// <summary>TASK-61 (A07): после перехода в задачу и Back список возвращается с прежним контекстом.</summary>
+/// <summary>После перехода в задачу и Back список возвращается с прежним контекстом.</summary>
 public sealed class TaskListContextTests : UiTestBase
 {
     private readonly TaskModel _release = new() { Id = Guid.NewGuid(), Title = "Релиз", Status = "Planned" };

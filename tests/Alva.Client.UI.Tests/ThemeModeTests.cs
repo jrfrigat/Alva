@@ -5,7 +5,7 @@ using Xunit;
 namespace Alva.Client.UI.Tests;
 
 /// <summary>
-/// TASK-67: плоскости и рамки темы зависят от режима. Светлые литералы в токенах оболочки или в стилях
+/// Плоскости и рамки темы зависят от режима. Светлые литералы в токенах оболочки или в стилях
 /// дают в тёмном режиме и в высокой контрастности светлый текст на белом.
 /// </summary>
 public sealed partial class ThemeModeTests
@@ -20,7 +20,7 @@ public sealed partial class ThemeModeTests
 
     private static readonly string[] Tones = ["critical", "warning", "ok", "role", "info"];
 
-    // TASK-68: текст каждого тона читается (≥ 4,5:1) на своих подложках и на плоскостях своего режима.
+    // Текст каждого тона читается (≥ 4,5:1) на своих подложках и на плоскостях своего режима.
     [Theory]
     [InlineData(false, new[] { "#FFFFFF", "#F8F9FF", "#F8FAFC" })]
     [InlineData(true, new[] { "#06121F", "#0B1C30", "#12233A" })]

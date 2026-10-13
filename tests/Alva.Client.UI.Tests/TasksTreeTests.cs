@@ -8,7 +8,7 @@ using Xunit;
 
 namespace Alva.Client.UI.Tests;
 
-/// <summary>TASK-63: каждую задачу дерева можно открыть с клавиатуры — её название настоящая ссылка.</summary>
+/// <summary>Каждую задачу дерева можно открыть с клавиатуры — её название настоящая ссылка.</summary>
 public sealed class TasksTreeTests : UiTestBase
 {
     private readonly TaskModel _parent = new() { Id = Guid.NewGuid(), Title = "Релиз", Status = "Planned" };

@@ -10,7 +10,7 @@ using Xunit;
 
 namespace Alva.Client.UI.Tests;
 
-/// <summary>TASK-64: фокус следует за страницей, которая догрузилась, и за открытым и закрытым редактором.</summary>
+/// <summary>Фокус следует за страницей, которая догрузилась, и за открытым и закрытым редактором.</summary>
 public sealed class FocusTests : UiTestBase
 {
     private readonly SprintModel _sprint = new() { Id = Guid.NewGuid(), Name = "Спринт 7", Status = "Active", StartDate = new DateOnly(2026, 10, 5), EndDate = new DateOnly(2026, 10, 16) };

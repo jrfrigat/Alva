@@ -5,7 +5,7 @@ using Xunit;
 
 namespace Alva.Client.UI.Tests;
 
-/// <summary>TASK-69: страница «Данные» не сообщает об импорте, которого не было.</summary>
+/// <summary>Страница «Данные» не сообщает об импорте, которого не было.</summary>
 public sealed class DataPageTests : UiTestBase
 {
     private IRenderedComponent<Data> Page() => Render<Data>();

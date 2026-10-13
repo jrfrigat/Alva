@@ -8,7 +8,7 @@ using Xunit;
 
 namespace Alva.Client.UI.Tests;
 
-/// <summary>TASK-71: ошибки входа и регистрации стоят у своих полей, связаны с ними и уводят на них фокус.</summary>
+/// <summary>Ошибки входа и регистрации стоят у своих полей, связаны с ними и уводят на них фокус.</summary>
 public sealed class LoginFormTests : UiTestBase
 {
     private BunitNavigationManager Navigation => Services.GetRequiredService<BunitNavigationManager>();

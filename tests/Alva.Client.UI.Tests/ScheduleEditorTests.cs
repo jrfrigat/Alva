@@ -7,7 +7,7 @@ using Xunit;
 
 namespace Alva.Client.UI.Tests;
 
-/// <summary>TASK-59: операции с вычетами и периодами не сбрасывают несохранённые часы недели и часовой пояс.</summary>
+/// <summary>Операции с вычетами и периодами не сбрасывают несохранённые часы недели и часовой пояс.</summary>
 public sealed class ScheduleEditorTests : UiTestBase
 {
     private readonly Guid _person = Guid.NewGuid();

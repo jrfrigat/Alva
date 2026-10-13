@@ -7,8 +7,8 @@ using Xunit;
 
 namespace Alva.Client.UI.Tests;
 
-/// <summary>TASK-66 (A15): в оболочке ровно один основной landmark, и skip-link ведёт именно в него.
-/// TASK-79: вошедшему пользователю выход доступен прямо из шапки.</summary>
+/// <summary>В оболочке ровно один основной landmark, и skip-link ведёт именно в него.
+/// Вошедшему пользователю выход доступен прямо из шапки.</summary>
 public sealed class MainLayoutTests : UiTestBase
 {
     private BunitNavigationManager Navigation => Services.GetRequiredService<BunitNavigationManager>();

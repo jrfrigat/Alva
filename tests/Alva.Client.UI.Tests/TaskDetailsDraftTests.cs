@@ -9,7 +9,7 @@ using Xunit;
 
 namespace Alva.Client.UI.Tests;
 
-/// <summary>TASK-60: несохранённые правки карточки задачи не теряются молча при уходе со страницы.</summary>
+/// <summary>Несохранённые правки карточки задачи не теряются молча при уходе со страницы.</summary>
 public sealed class TaskDetailsDraftTests : UiTestBase
 {
     private TaskModel _task = new() { Id = Guid.NewGuid(), Title = "Релиз", Status = "Planned", Version = 1 };

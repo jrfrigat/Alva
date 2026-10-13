@@ -5,7 +5,7 @@ using Xunit;
 
 namespace Flare.Components.Gantt.Tests;
 
-/// <summary>TASK-65 (A13): ширину колонки шапок меняют клавиатурой и кнопками, а не только перетаскиванием.</summary>
+/// <summary>Ширину колонки шапок меняют клавиатурой и кнопками, а не только перетаскиванием.</summary>
 public sealed class GanttSideWidthTests : GanttTestBase
 {
     private IRenderedComponent<FlareGantt> Resizable(List<string> seen) =>

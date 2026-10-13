@@ -141,7 +141,7 @@ public static class DataTransfer
         return payload.Deserialize<TaskCard>(Json) ?? throw new JsonException("Пустая запись.");
     }
 
-    /// <summary>Спринт задачи из выгрузок до STORY-27; задача без дат получает при импорте его окно.</summary>
+    /// <summary>Спринт задачи из старых выгрузок; задача без дат получает при импорте его окно.</summary>
     public static Guid? LegacySprint(DataRow row) =>
         row.Kind == "task" && row.Payload.TryGetProperty("sprintId", out var value) && value.ValueKind == JsonValueKind.String && value.TryGetGuid(out var id) ? id : null;
 

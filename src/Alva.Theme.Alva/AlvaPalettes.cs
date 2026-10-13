@@ -3,8 +3,7 @@ using Flare.Abstractions.Tokens;
 namespace Alva.Theme.Alva;
 
 /// <summary>
-/// Палитра Alva — «Alva Sapphire». Светлая схема перенесена из дизайн-источника Stitch
-/// (<c>.aiko/stitch_alva_resource_planner_pwa/alva_strategic_resource_platform/DESIGN.md</c>) значение
+/// Палитра Alva — «Alva Sapphire». Светлая схема перенесена из дизайн-источника Stitch значение
 /// в значение.
 /// </summary>
 /// <remarks>
