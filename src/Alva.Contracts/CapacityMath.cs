@@ -104,6 +104,12 @@ public static class CapacityMath
             .Select(x => new CapacityDemandDto(x.Key.Item1, targets[x.Key.Item1].Name, targets[x.Key.Item1].Kind, x.Key.Item2, Math.Round(x.Value, 2)))];
     }
 
+    /// <summary>
+    /// Перегруз — сумма превышений по каждому человеку и дню. Свободный день не гасит перегруженный: в сумме периода
+    /// человек может выглядеть недогруженным, хотя в отдельные дни работы больше, чем часов.
+    /// </summary>
+    public static decimal Overload(IEnumerable<CapacityDto> days) => days.Sum(d => Math.Max(0m, d.AllocatedHours - d.AvailableHours));
+
     /// <summary>Строки ёмкости по людям и дням диапазона: доступные часы и распределённая на них работа.</summary>
     public static CapacityDto[] Build(IEnumerable<(Guid Id, string Name)> people, Func<Guid, CalendarDto> calendarOf, IEnumerable<CapacityWork> work, DateOnly from, DateOnly to)
     {

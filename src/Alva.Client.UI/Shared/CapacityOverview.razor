@@ -104,10 +104,11 @@
                     {
                         var (avail, alloc) = Cell(person.Id, period);
                         var pct = Pct(alloc, avail);
-                        <span role="cell" class="alva-heat alva-heat--@Heat(pct, avail, alloc) @(_highlight && alloc > avail ? "alva-heat--flag" : "")">
+                        var over = Overload(person.Id, period);
+                        <span role="cell" class="alva-heat alva-heat--@Heat(pct, avail, alloc) @(_highlight && over > 0 ? "alva-heat--flag" : "")">
                             <span class="alva-heat__top alva-num"><span>@AlvaFormat.Hours(alloc) ч / @AlvaFormat.Hours(avail) ч</span><b>@(avail > 0 ? $"{pct}%" : "—")</b></span>
                             <span class="alva-heat__bar"><span style="width:@Math.Min(100, pct)%"></span></span>
-                            <span class="alva-heat__note">@CellNote(avail, alloc)</span>
+                            <span class="alva-heat__note">@CellNote(avail, alloc, over)</span>
                         </span>
                     }
                     <span role="cell" class="alva-num alva-matrix__total @(Allocated(person.Id) > Available(person.Id) ? "alva-matrix__total--critical" : "")">@AlvaFormat.Hours(Allocated(person.Id)) ч / @AlvaFormat.Hours(Available(person.Id)) ч</span>
@@ -191,17 +192,21 @@
 
     private decimal Fund => VisiblePeople.Sum(p => Available(p.Id));
     private decimal Planned => VisiblePeople.Sum(p => Allocated(p.Id));
-    private decimal Deficit => VisiblePeople.Sum(p => Math.Max(0, Allocated(p.Id) - Available(p.Id))) + Vacancies.Sum(Demand);
+    // Дефицит людей — превышения по дням: резерв одного дня не покрывает перегруз другого.
+    private decimal Overload(Guid id, Period period) => CapacityMath.Overload(_rows.Where(r => r.ActorId == id && r.Date >= period.From && r.Date <= period.To));
+    private decimal Overload(Guid id) => _periods.Sum(p => Overload(id, p));
+    private decimal Deficit => VisiblePeople.Sum(p => Overload(p.Id)) + Vacancies.Sum(Demand);
     private decimal Reserve => VisiblePeople.Sum(p => Math.Max(0, Available(p.Id) - Allocated(p.Id)));
-    private int OverloadedCount => VisiblePeople.Count(p => Allocated(p.Id) > Available(p.Id));
-    private string? WorstName => VisiblePeople.Select(p => (p.Name, Gap: Allocated(p.Id) - Available(p.Id))).Concat(Vacancies.Select(v => (v.Name, Gap: Demand(v)))).Where(x => x.Gap > 0).OrderByDescending(x => x.Gap).Select(x => x.Name).FirstOrDefault();
+    private int OverloadedCount => VisiblePeople.Count(p => Overload(p.Id) > 0);
+    private string? WorstName => VisiblePeople.Select(p => (p.Name, Gap: Overload(p.Id))).Concat(Vacancies.Select(v => (v.Name, Gap: Demand(v)))).Where(x => x.Gap > 0).OrderByDescending(x => x.Gap).Select(x => x.Name).FirstOrDefault();
     private string? FreestName => VisiblePeople.Select(p => (p.Name, Free: Available(p.Id) - Allocated(p.Id))).Where(x => x.Free > 0).OrderByDescending(x => x.Free).Select(x => $"{x.Name} (+{AlvaFormat.Hours(x.Free)} ч)").FirstOrDefault();
     private AlvaTone LoadTone => Pct(Planned, Fund) switch { > 100 => AlvaTone.Critical, >= 85 and <= 95 => AlvaTone.Ok, > 95 => AlvaTone.Warning, _ => AlvaTone.Info };
     private string LoadLabel => Pct(Planned, Fund) switch { > 100 => "Перегруз", >= 85 and <= 95 => Strings.T("Оптимально"), > 95 => Strings.T("На пределе"), _ => Strings.T("Недогруз") };
 
     private static int Pct(decimal part, decimal whole) => whole <= 0 ? (part > 0 ? 999 : 0) : (int)Math.Round(part / whole * 100);
     private static string Heat(int pct, decimal avail, decimal alloc) => avail <= 0 && alloc <= 0 ? "empty" : pct > 115 ? "critical" : pct > 100 ? "tension" : pct >= 70 ? "balance" : "under";
-    private static string CellNote(decimal avail, decimal alloc) =>
+    private static string CellNote(decimal avail, decimal alloc, decimal over) =>
+        over > 0 && alloc <= avail ? $"{Strings.T("Перегруз по дням:")} {AlvaFormat.Hours(over)} ч" :
         avail <= 0 && alloc <= 0 ? Strings.T("Нет графика") : alloc > avail ? $"Перегрузка: −{AlvaFormat.Hours(alloc - avail)} ч" : alloc == avail ? Strings.T("Полный баланс") : $"Резерв: +{AlvaFormat.Hours(avail - alloc)} ч";
     private string PeriodWord(int n) => _mode switch
     {
@@ -214,7 +219,7 @@
     [
         new ChartSeries(Strings.T("Номинал фонда"), _periods.Select(p => (double)VisiblePeople.Sum(x => Cell(x.Id, p).Available)).ToArray(), "#B7C4FF"),
         new ChartSeries(Strings.T("Запланировано"), _periods.Select(p => (double)VisiblePeople.Sum(x => Cell(x.Id, p).Allocated)).ToArray(), "#1D4ED8"),
-        new ChartSeries(Strings.T("Дефицит"), _periods.Select(p => (double)(VisiblePeople.Sum(x => Math.Max(0, Cell(x.Id, p).Allocated - Cell(x.Id, p).Available)) + Vacancies.Sum(v => Demand(v, p)))).ToArray(), "#DC2626"),
+        new ChartSeries(Strings.T("Дефицит"), _periods.Select(p => (double)(VisiblePeople.Sum(x => Overload(x.Id, p)) + Vacancies.Sum(v => Demand(v, p)))).ToArray(), "#DC2626"),
     ], _periods.Select(p => p.Title).ToArray());
 
     protected override async Task OnInitializedAsync()

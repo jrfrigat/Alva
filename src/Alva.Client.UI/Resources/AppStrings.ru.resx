@@ -718,4 +718,5 @@
   <data name="Без команд, к которым нет доступа:" xml:space="preserve"><value>Без команд, к которым нет доступа:</value></data>
   <data name="сейчас в работе" xml:space="preserve"><value>сейчас в работе</value></data>
   <data name="задача" xml:space="preserve"><value>задача</value></data>
+  <data name="Перегруз по дням:" xml:space="preserve"><value>Перегруз по дням:</value></data>
 </root>

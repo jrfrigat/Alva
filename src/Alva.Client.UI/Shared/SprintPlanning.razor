@@ -262,8 +262,9 @@
     private (TaskModel[]? Tasks, Guid Sprint, TaskModel[] Value) _inSprint = (null, Guid.Empty, []);
     private decimal Planned => InSprint.Sum(t => t.EstimateHours ?? 0);
     private decimal Capacity => _load.Values.Sum(l => l.Available);
-    private decimal Overtime => _load.Values.Sum(l => Math.Max(0, l.Allocated - l.Available));
-    private int OvertimePeople => _load.Values.Count(l => l.Allocated > l.Available);
+    // Перегруз по дням: свободные дни спринта не гасят перегруженные (так же считает автобаланс).
+    private decimal Overtime => CapacityMath.Overload(_capacity);
+    private int OvertimePeople => _capacity.Where(r => r.AllocatedHours > r.AvailableHours).Select(r => r.ActorId).Distinct().Count();
     private static int Pct(decimal part, decimal whole) => whole <= 0 ? 0 : (int)Math.Round(part / whole * 100);
     private string ProjectName(Guid? id) => _projects.FirstOrDefault(p => p.Id == id)?.Name ?? Strings.T("Текучка");
 
