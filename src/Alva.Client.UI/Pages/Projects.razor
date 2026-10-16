@@ -48,7 +48,7 @@ else
         @foreach (var project in Visible)
         {
             var (done, total) = HoursOf(project);
-            var tasks = TasksOf(project);
+            var tasks = ProjectTasks(project);
             <button type="button" class="alva-proj-card @(project.Id == Selected?.Id ? "alva-proj-card--selected" : "")" aria-pressed="@(project.Id == Selected?.Id)" @onclick="() => _selected = project.Id" @key="project.Id">
                 <span class="alva-proj-card__chips"><AlvaStatusChip Tone="StatusTone(Status(project))">@StatusLabel(Status(project))</AlvaStatusChip></span>
                 <span class="alva-proj-card__name">@project.Name</span>
@@ -68,7 +68,10 @@ else
     @if (Selected is { } p)
     {
         var tasks = TasksOf(p);
+        var all = ProjectTasks(p);
         var (done, total) = HoursOf(p);
+        var (teamDone, teamTotal) = Hours(tasks);
+        var closed = p.TeamIds.Count(_closedTeams.Contains);
         var sprints = SprintsOf(p);
         var release = ReleaseOf(p);
         var risks = _risks.Count(r => tasks.Any(t => t.Id == r.TaskId));
@@ -86,9 +89,11 @@ else
                     </div>
                 </div>
                 <div class="alva-proj-kpis">
-                    <div class="alva-proj-kpi"><span class="alva-kpi__label">@(Strings.T("Общий прогресс"))</span><span class="alva-proj-kpi__value alva-num">@Pct(done, total)%</span><span class="alva-loadbar__track"><span class="alva-loadbar__fill alva-loadbar__fill--info" style="width:@Pct(done, total)%"></span></span><small class="alva-num">@tasks.Count(t => t.Status == "Done") из @tasks.Length задач закрыто</small></div>
+                    <div class="alva-proj-kpi"><span class="alva-kpi__label">@(Strings.T("Общий прогресс"))</span><span class="alva-proj-kpi__value alva-num">@Pct(done, total)%</span><span class="alva-loadbar__track"><span class="alva-loadbar__fill alva-loadbar__fill--info" style="width:@Pct(done, total)%"></span></span><small class="alva-num">@all.Count(t => t.Status == "Done") @(Strings.T("из")) @all.Length @(Strings.T("задач закрыто"))</small>
+                        @if (p.TeamIds.Length > 1) { <small class="alva-num">@(Strings.T("Вклад команды")) «@TeamName(Session.TeamId!.Value)»: @Pct(teamDone, teamTotal)% · @tasks.Length @AlvaFormat.Plural(tasks.Length, Strings.T("задача"), Strings.T("задачи"), Strings.T("задач"))</small> }
+                        @if (closed > 0) { <small class="alva-kpi__note">@(Strings.T("Без команд, к которым нет доступа:")) @closed</small> }</div>
                     <div class="alva-proj-kpi"><span class="alva-kpi__label">@(Strings.T("Трудозатраты"))</span><span class="alva-proj-kpi__value alva-num">@AlvaFormat.Hours(total) ч</span><small class="alva-num">Закрыто: @AlvaFormat.Hours(done) ч / Остаток: @AlvaFormat.Hours(total - done) ч</small></div>
-                    <div class="alva-proj-kpi"><span class="alva-kpi__label">@(Strings.T("Активные спринты"))</span><span class="alva-proj-kpi__value alva-proj-kpi__value--primary alva-num">@sprints.Count(s => s.Status == "Active") @AlvaFormat.Plural(sprints.Count(s => s.Status == "Active"), Strings.T("спринт"), Strings.T("спринта"), Strings.T("спринтов"))</span><small class="alva-num">@tasks.Count(t => t.Status == "InProgress") @AlvaFormat.Plural(tasks.Count(t => t.Status == "InProgress"), "задача", Strings.T("задачи"), Strings.T("задач")) сейчас в работе</small></div>
+                    <div class="alva-proj-kpi"><span class="alva-kpi__label">@(Strings.T("Активные спринты"))</span><span class="alva-proj-kpi__value alva-proj-kpi__value--primary alva-num">@sprints.Count(s => s.Status == "Active") @AlvaFormat.Plural(sprints.Count(s => s.Status == "Active"), Strings.T("спринт"), Strings.T("спринта"), Strings.T("спринтов"))</span><small class="alva-num">@all.Count(t => t.Status == "InProgress") @AlvaFormat.Plural(all.Count(t => t.Status == "InProgress"), Strings.T("задача"), Strings.T("задачи"), Strings.T("задач")) @(Strings.T("сейчас в работе"))</small></div>
                     <div class="alva-proj-kpi"><span class="alva-kpi__label">@(Strings.T("Дедлайн / релиз"))</span><span class="alva-proj-kpi__value alva-num">@(release?.ToString("d MMM") ?? "—")</span><small class="alva-num">@(release is { } r ? $"{r:yyyy} (осталось {Math.Max(0, r.DayNumber - DateOnly.FromDateTime(DateTime.Today).DayNumber)} дн.)" : Strings.T("Дедлайны не заданы"))</small>@if (risks > 0) { <small class="alva-kpi__alert">@risks @AlvaFormat.Plural(risks, Strings.T("риск"), Strings.T("риска"), Strings.T("рисков")) по задачам</small> }</div>
                 </div>
             </div>
@@ -155,6 +160,8 @@ else
     private SprintModel[] _sprints = [];
     private ActorModel[] _actors = [];
     private RiskDto[] _risks = [];
+    private readonly Dictionary<Guid, TaskModel[]> _teamTasks = [];
+    private readonly HashSet<Guid> _closedTeams = [];
     private ProjectModel? _project;
     private Guid? _selected;
     private string _filter = "all";
@@ -162,15 +169,19 @@ else
     private bool _busy;
 
     private IEnumerable<ProjectModel> Visible => _projects.Where(p => _filter == "all" || Status(p) == _filter)
-        .OrderByDescending(p => TasksOf(p).Where(t => t.Status is not ("Done" or "Cancelled")).Sum(t => t.EstimateHours ?? 0));
+        .OrderByDescending(p => ProjectTasks(p).Where(t => t.Status is not ("Done" or "Cancelled")).Sum(t => t.EstimateHours ?? 0));
     private ProjectModel? Selected => Visible.FirstOrDefault(p => p.Id == _selected) ?? Visible.FirstOrDefault();
+    /// <summary>Задачи проекта в текущей команде: её спринты, бэклог и WBS.</summary>
     private TaskModel[] TasksOf(ProjectModel p) => _tasks.Where(t => t.ProjectId == p.Id && t.Status != "Cancelled").ToArray();
-    private (decimal Done, decimal Total) HoursOf(ProjectModel p)
-    {
-        var tasks = TasksOf(p);
-        return (tasks.Where(t => t.Status == "Done").Sum(t => t.EstimateHours ?? 0), tasks.Sum(t => t.EstimateHours ?? 0));
-    }
-    private DateOnly? ReleaseOf(ProjectModel p) => TasksOf(p).Where(t => t.Deadline.HasValue).Select(t => t.Deadline).Max();
+    /// <summary>Задачи проекта во всех его командах, доступных пользователю: из них считаются статус и общий прогресс,
+    /// чтобы проект нескольких команд не выглядел по-разному из каждой.</summary>
+    private TaskModel[] ProjectTasks(ProjectModel p) => p.TeamIds.Where(id => id != Session.TeamId)
+        .SelectMany(id => _teamTasks.GetValueOrDefault(id) ?? []).Concat(_tasks)
+        .Where(t => t.ProjectId == p.Id && t.Status != "Cancelled").ToArray();
+    private (decimal Done, decimal Total) HoursOf(ProjectModel p) => Hours(ProjectTasks(p));
+    private static (decimal Done, decimal Total) Hours(TaskModel[] tasks) =>
+        (tasks.Where(t => t.Status == "Done").Sum(t => t.EstimateHours ?? 0), tasks.Sum(t => t.EstimateHours ?? 0));
+    private DateOnly? ReleaseOf(ProjectModel p) => ProjectTasks(p).Where(t => t.Deadline.HasValue).Select(t => t.Deadline).Max();
     private SprintModel[] SprintsOf(ProjectModel p) => _sprints.Where(s => TasksOf(p).Any(t => t.SprintIds.Contains(s.Id))).OrderBy(s => s.StartDate).ToArray();
     private static int Pct(decimal part, decimal whole) => whole <= 0 ? 0 : (int)Math.Round(part / whole * 100);
     private string TeamName(Guid id) => Session.Teams.FirstOrDefault(t => t.Id == id)?.Name ?? (id == Session.TeamId ? Session.TeamName : Strings.T("Другая команда"));
@@ -178,7 +189,7 @@ else
     /// <summary>Статус проекта из задач: в работе / не начат / завершён.</summary>
     private string Status(ProjectModel p)
     {
-        var tasks = TasksOf(p);
+        var tasks = ProjectTasks(p);
         if (tasks.Length > 0 && tasks.All(t => t.Status == "Done")) return "done";
         return tasks.Any(t => t.Status is "InProgress" or "Done" || t.SprintIds.Length > 0) ? "active" : "new";
     }
@@ -214,6 +225,15 @@ else
         _sprints = await Session.Get<SprintModel[]>(Session.TeamPath("sprints"));
         _actors = await Session.Get<ActorModel[]>(Session.TeamPath("actors"));
         _risks = await Session.Get<RiskDto[]>(Session.TeamPath("risks"));
+        _teamTasks.Clear();
+        _closedTeams.Clear();
+        foreach (var teamId in _projects.SelectMany(p => p.TeamIds).Distinct().Where(id => id != Session.TeamId))
+        {
+            if (Session.Teams.All(t => t.Id != teamId)) { _closedTeams.Add(teamId); continue; }
+            // Команда без доступа или с ошибкой не роняет страницу: проект показывается без неё и с пометкой.
+            try { _teamTasks[teamId] = await Session.Get<TaskModel[]>(Session.TeamPath(teamId, "tasks")); }
+            catch (Exception e) when (e is HttpRequestException or InvalidOperationException) { _closedTeams.Add(teamId); }
+        }
     });
 
     private void New() => _project = new ProjectModel { TeamIds = [Session.TeamId!.Value] };

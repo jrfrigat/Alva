@@ -23,6 +23,15 @@ public sealed class AlvaSession(IApiService api, IJSRuntime js)
     public bool SupportsDataTransfer => api.SupportsDataTransfer;
     public event Action? Changed { add => api.Changed += value; remove => api.Changed -= value; }
     public string TeamPath(string resource) => api.TeamPath(resource);
+    /// <summary>Путь ресурса другой команды: проект нескольких команд сводит их задачи, права проверяет сервер.</summary>
+    public string TeamPath(Guid teamId, string resource)
+    {
+        var path = api.TeamPath(resource);
+        if (api.TeamId is not { } current || current == teamId) return path;
+        var segment = $"/{current}/";
+        var at = path.IndexOf(segment, StringComparison.OrdinalIgnoreCase);
+        return at < 0 ? path : string.Concat(path.AsSpan(0, at), $"/{teamId}/", path.AsSpan(at + segment.Length));
+    }
     public Task Initialize() => api.Initialize();
     public Task Authenticate(string endpoint, object input) => api.Authenticate(endpoint, input);
     public Task Logout() => api.Logout();

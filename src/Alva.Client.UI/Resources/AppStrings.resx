@@ -713,4 +713,9 @@
   <data name="Укажите не более 50 навыков длиной до 80 символов." xml:space="preserve"><value>Use up to 50 skills, each up to 80 characters.</value></data>
   <data name="Введите навык и нажмите Enter. Тег можно удалить." xml:space="preserve"><value>Type a skill and press Enter. Tags can be removed.</value></data>
   <data name="Без исполнителя:" xml:space="preserve"><value>Unassigned:</value></data>
+  <data name="задач закрыто" xml:space="preserve"><value>tasks closed</value></data>
+  <data name="Вклад команды" xml:space="preserve"><value>Team contribution</value></data>
+  <data name="Без команд, к которым нет доступа:" xml:space="preserve"><value>Excluding teams you cannot access:</value></data>
+  <data name="сейчас в работе" xml:space="preserve"><value>in progress now</value></data>
+  <data name="задача" xml:space="preserve"><value>task</value></data>
 </root>

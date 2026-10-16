@@ -21,7 +21,7 @@ public sealed class FakeApi : IApiService
 
     public UserInfo? User { get; set; }
     public SpaceInfo[] Workspaces => [];
-    public TeamInfo[] Teams => [];
+    public TeamInfo[] Teams { get; set; } = [];
     public Guid? WorkspaceId => Guid.Empty;
     public Guid? TeamId => TeamGuid;
     public string TeamName => "Команда";
