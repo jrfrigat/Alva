@@ -121,7 +121,7 @@
                 <div class="alva-iteration__line">
                     <span class="alva-iteration__label">Команда (@PeopleOf(tasks).Length):</span>
                     <span class="alva-avatars">@foreach (var person in PeopleOf(tasks)) { <span class="alva-slot__mark" title="@person.Name">@AlvaFormat.Initials(person.Name)</span> }</span>
-                    @if (tasks.Any(t => t.AssignmentTargetId is null)) { <span class="alva-iteration__hint">Без исполнителя: @tasks.Count(t => t.AssignmentTargetId is null)</span> }
+                    @if (tasks.Count(t => Assignees.Person(t, _actors) is null) is > 0 and var unassigned) { <span class="alva-iteration__hint">@(Strings.T("Без исполнителя:")) @unassigned</span> }
                 </div>
             </div>
             <div class="alva-iteration__side">

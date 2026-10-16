@@ -54,4 +54,10 @@ public sealed class AssigneeFilterTests : UiTestBase
         _me.Email = "Anna@Example.com";
         Assert.Equal(["Напрямую мне", "Через роль мне"], Titles("my-work"));
     }
+
+    [Fact]
+    public void Unassigned_lists_only_tasks_without_a_person()
+    {
+        Assert.Equal(["Никому", "Подкоманда без человека", "Роль без человека"], Titles("unassigned"));
+    }
 }

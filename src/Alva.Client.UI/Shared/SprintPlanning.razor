@@ -270,13 +270,13 @@
     private IEnumerable<(string Key, string Label)> PoolFilters =>
         new[] { ("all", Strings.T("Все")) }
         .Concat(_projects.Where(p => Pool.Any(t => t.ProjectId == p.Id)).Select(p => (p.Id.ToString(), p.Name)))
-        .Concat(new[] { ("routine", Strings.T("Текучка")), ("unassigned", Strings.T("Неназначенные")), ("role", Strings.T("С ролью")) });
+        .Concat(new[] { ("routine", Strings.T("Текучка")), ("unassigned", Strings.T("Без исполнителя")), ("role", Strings.T("С ролью")) });
 
     private bool Matches(TaskModel t, string key) => key switch
     {
         "all" => true,
         "routine" => t.ProjectId is null,
-        "unassigned" => t.AssignmentTargetId is null,
+        "unassigned" => Assignees.Person(t, _actors) is null,
         "role" => t.ResolvedPersonId is null && _actors.FirstOrDefault(a => a.Id == t.AssignmentTargetId)?.Kind is "Role" or "Department",
         _ => t.ProjectId?.ToString() == key
     };

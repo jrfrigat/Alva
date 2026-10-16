@@ -712,4 +712,5 @@
   <data name="Все необходимые навыки есть" xml:space="preserve"><value>Все необходимые навыки есть</value></data>
   <data name="Укажите не более 50 навыков длиной до 80 символов." xml:space="preserve"><value>Укажите не более 50 навыков длиной до 80 символов.</value></data>
   <data name="Введите навык и нажмите Enter. Тег можно удалить." xml:space="preserve"><value>Введите навык и нажмите Enter. Тег можно удалить.</value></data>
+  <data name="Без исполнителя:" xml:space="preserve"><value>Без исполнителя:</value></data>
 </root>

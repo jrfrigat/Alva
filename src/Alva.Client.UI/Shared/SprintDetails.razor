@@ -108,7 +108,7 @@
         @foreach (var task in Filtered(_filter))
         {
             index++;
-            var person = task.ResolvedPersonId ?? (_actors.FirstOrDefault(a => a.Id == task.AssignmentTargetId)?.Kind == "Person" ? task.AssignmentTargetId : null);
+            var person = Assignees.Person(task, _actors);
             <div class="alva-sprint-table__row @(task.Status == "Done" ? "alva-sprint-table__row--done" : "")" role="row" @key="task.Id">
                 <span role="cell" class="alva-num alva-sprint-table__index">@index</span>
                 <span role="cell" class="alva-sprint-table__task">
@@ -179,7 +179,7 @@
     private IEnumerable<TaskModel> Filtered(string key) => key switch
     {
         "risk" => SprintTasks.Where(t => _risks.Any(r => r.TaskId == t.Id)),
-        "unassigned" => SprintTasks.Where(t => t.AssignmentTargetId is null || (t.ResolvedPersonId is null && _actors.FirstOrDefault(a => a.Id == t.AssignmentTargetId)?.Kind != "Person")),
+        "unassigned" => SprintTasks.Where(t => Assignees.Person(t, _actors) is null),
         "work" => SprintTasks.Where(t => t.Status == "InProgress"),
         _ => SprintTasks
     };
