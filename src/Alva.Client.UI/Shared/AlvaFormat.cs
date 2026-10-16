@@ -23,6 +23,17 @@ public static class AlvaFormat
         return days;
     }
 
+    /// <summary>
+    /// Сколько рабочих дней спринта осталось, включая сегодняшний: сегодня ещё можно работать. До старта — весь спринт,
+    /// после конца — 0. Одно правило для реестра и карточки спринта.
+    /// </summary>
+    public static int SprintDaysLeft(DateOnly start, DateOnly end, DateOnly today) =>
+        today > end ? 0 : WorkDays(today < start ? start : today, end);
+
+    /// <summary>Какой по счёту рабочий день спринта идёт сегодня (от 1 до длины спринта).</summary>
+    public static int SprintDay(DateOnly start, DateOnly end, DateOnly today) =>
+        Math.Clamp(WorkDays(start, today < start ? start : today), 1, Math.Max(1, WorkDays(start, end)));
+
     /// <summary>Короткий код задачи «#1A2B» — последние знаки id: у засеянных данных начало id совпадает.</summary>
     public static string Code(Guid id) => "#" + id.ToString("N")[^4..].ToUpperInvariant();
 

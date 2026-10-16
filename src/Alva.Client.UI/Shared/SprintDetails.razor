@@ -236,8 +236,8 @@
     // Закрытый спринт показывает итог при закрытии: перенесённый остаток уже ушёл из него, но в истории он был.
     private decimal HeadDone => Sprint.Result?.DoneHours ?? Done;
     private decimal HeadTotal => Sprint.Result?.Hours ?? Total;
-    private int DayOf => Math.Clamp(AlvaFormat.WorkDays(Sprint.StartDate, Today < Sprint.StartDate ? Sprint.StartDate : Today), 1, Math.Max(1, AlvaFormat.WorkDays(Sprint.StartDate, Sprint.EndDate)));
-    private int DaysLeft => Today > Sprint.EndDate ? 0 : AlvaFormat.WorkDays(Today < Sprint.StartDate ? Sprint.StartDate : Today, Sprint.EndDate);
+    private int DayOf => AlvaFormat.SprintDay(Sprint.StartDate, Sprint.EndDate, Today);
+    private int DaysLeft => AlvaFormat.SprintDaysLeft(Sprint.StartDate, Sprint.EndDate, Today);
     private static int Percent(decimal part, decimal whole) => whole <= 0 ? 0 : (int)Math.Round(part / whole * 100);
     private static AlvaTone Tone(int pct) => pct > 100 ? AlvaTone.Critical : pct > 80 ? AlvaTone.Info : AlvaTone.Ok;
     private int LoadOf(Guid id) => Percent(_load[id].Allocated, _load[id].Available);

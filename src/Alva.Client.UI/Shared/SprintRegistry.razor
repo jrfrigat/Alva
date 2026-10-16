@@ -248,8 +248,8 @@
     }
 
     private static int Percent(decimal part, decimal whole) => whole <= 0 ? 0 : (int)Math.Round(part / whole * 100);
-    private static int DayOf(SprintModel s) => Math.Clamp(AlvaFormat.WorkDays(s.StartDate, Today < s.StartDate ? s.StartDate : Today), 1, Math.Max(1, AlvaFormat.WorkDays(s.StartDate, s.EndDate)));
-    private static int DaysLeft(SprintModel s) => Today > s.EndDate ? 0 : AlvaFormat.WorkDays(Today.AddDays(1) > s.StartDate ? Today.AddDays(1) : s.StartDate, s.EndDate);
+    private static int DayOf(SprintModel s) => AlvaFormat.SprintDay(s.StartDate, s.EndDate, Today);
+    private static int DaysLeft(SprintModel s) => AlvaFormat.SprintDaysLeft(s.StartDate, s.EndDate, Today);
     private decimal WeeklyPace(SprintModel s) => Hours(s).Done / Math.Max(1m, (s.EndDate.DayNumber - s.StartDate.DayNumber + 1) / 7m);
 
     /// <summary>Средний темп последних трёх завершённых спринтов и изменение к предыдущему, %.</summary>
