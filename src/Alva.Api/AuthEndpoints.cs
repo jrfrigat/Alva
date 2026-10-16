@@ -74,7 +74,7 @@ public static class AuthEndpoints
         workspaces.MapPost("/{workspaceId:guid}/members", async (Guid workspaceId, MembershipRequest request, ClaimsPrincipal user, AlvaDbContext db) =>
         {
             await using var transaction = await db.Database.BeginTransactionAsync();
-            await db.Database.ExecuteSqlInterpolatedAsync($"SELECT 1 FROM \"Workspaces\" WHERE \"Id\" = {workspaceId} FOR UPDATE");
+            await DbLocks.LockWorkspace(db, workspaceId);
             await AccessControl.RequireWorkspace(db, user, workspaceId, true);
             var normalized = (request.Email ?? "").Trim().ToUpperInvariant();
             var account = await db.Users.SingleOrDefaultAsync(x => x.NormalizedEmail == normalized) ?? throw new ApiException(404, "Пользователь должен сначала зарегистрироваться.");

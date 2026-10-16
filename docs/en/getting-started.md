@@ -49,7 +49,9 @@ dotnet run --project src/Alva.Api --urls http://localhost:8080
 ```
 
 The SQLite schema is created automatically; the file `alva-dev.db` appears in the working directory —
-delete it to reset the local data. With a local PostgreSQL keep the default provider (`Npgsql`) and set
+delete it to reset the local data. An existing SQLite file is not upgraded: when a new Alva version changes
+the data model, delete `alva-dev.db` (migrations run on PostgreSQL only).
+With a local PostgreSQL keep the default provider (`Npgsql`) and set
 the connection string through user secrets:
 
 ```powershell

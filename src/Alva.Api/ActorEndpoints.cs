@@ -61,7 +61,7 @@ public static class ActorEndpoints
         group.MapPost("", async (Guid teamId, ActorRequest request, ClaimsPrincipal user, AlvaDbContext db) =>
         {
             await using var transaction = await db.Database.BeginTransactionAsync();
-            await db.Database.ExecuteSqlInterpolatedAsync($"SELECT 1 FROM \"Teams\" WHERE \"Id\" = {teamId} FOR UPDATE");
+            await DbLocks.LockTeam(db, teamId);
             await AccessControl.RequireTeam(db, user, teamId, "team", "edit");
             var actor = new Actor { TeamId = teamId }; db.Add(actor); await Save(db, teamId, actor, request);
             if (actor.Kind == ActorKind.Person) db.Add(new WorkCalendar { ActorId = actor.Id });
@@ -70,7 +70,7 @@ public static class ActorEndpoints
         group.MapPut("/{actorId:guid}", async (Guid teamId, Guid actorId, ActorRequest request, ClaimsPrincipal user, AlvaDbContext db) =>
         {
             await using var transaction = await db.Database.BeginTransactionAsync();
-            await db.Database.ExecuteSqlInterpolatedAsync($"SELECT 1 FROM \"Teams\" WHERE \"Id\" = {teamId} FOR UPDATE");
+            await DbLocks.LockTeam(db, teamId);
             await AccessControl.RequireTeam(db, user, teamId, "team", "edit");
             var actor = await db.Actors.SingleOrDefaultAsync(a => a.TeamId == teamId && a.Id == actorId && !a.Archived) ?? throw new ApiException(404, "Участник не найден.");
             await Save(db, teamId, actor, request); await db.SaveChangesAsync(); await transaction.CommitAsync(); return (await ListActors(db, teamId)).Single(a => a.Id == actor.Id);
@@ -78,7 +78,7 @@ public static class ActorEndpoints
         group.MapDelete("/{actorId:guid}", async (Guid teamId, Guid actorId, ClaimsPrincipal user, AlvaDbContext db) =>
         {
             await using var transaction = await db.Database.BeginTransactionAsync();
-            await db.Database.ExecuteSqlInterpolatedAsync($"SELECT 1 FROM \"Teams\" WHERE \"Id\" = {teamId} FOR UPDATE");
+            await DbLocks.LockTeam(db, teamId);
             await AccessControl.RequireTeam(db, user, teamId, "team", "manage");
             var actor = await db.Actors.SingleOrDefaultAsync(a => a.TeamId == teamId && a.Id == actorId && !a.Archived) ?? throw new ApiException(404, "Участник не найден.");
             if (await db.Assignments.AnyAsync(a => (a.TargetId == actorId || a.ResolvedPersonId == actorId) && db.Tasks.Any(t => t.Id == a.TaskId && !t.Archived)) || await db.Actors.AnyAsync(a => a.ParentId == actorId && !a.Archived) || await db.ActorRoles.AnyAsync(r => r.RoleId == actorId) || await db.ActorDepartments.AnyAsync(d => d.DepartmentId == actorId)) throw new ApiException(400, "Участник используется задачами или справочником.");
