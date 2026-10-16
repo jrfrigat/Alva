@@ -55,7 +55,7 @@ public static class PlanningEndpoints
         {
             await AccessControl.RequireTeam(db, user, teamId, "sprints", "edit");
             var sprint = new Sprint { TeamId = teamId };
-            ApplySprint(sprint, request);
+            await ApplySprint(db, sprint, request);
             db.Add(sprint);
             await db.SaveChangesAsync();
             return (await ListSprints(db, teamId)).Single(x => x.Id == sprint.Id);
@@ -64,7 +64,7 @@ public static class PlanningEndpoints
         {
             await AccessControl.RequireTeam(db, user, teamId, "sprints", "edit");
             var sprint = await db.Sprints.SingleOrDefaultAsync(x => x.TeamId == teamId && x.Id == sprintId) ?? throw new ApiException(404, "Спринт не найден.");
-            ApplySprint(sprint, request);
+            await ApplySprint(db, sprint, request);
             await db.SaveChangesAsync();
             return (await ListSprints(db, teamId)).Single(x => x.Id == sprint.Id);
         });
@@ -186,16 +186,44 @@ public static class PlanningEndpoints
     }
 
     private static async Task<SprintDto[]> ListSprints(AlvaDbContext db, Guid teamId) =>
-        await db.Sprints.AsNoTracking().Where(x => x.TeamId == teamId).OrderByDescending(x => x.StartDate)
-            .Select(x => new SprintDto(x.Id, x.TeamId, x.Name, x.Goal, x.StartDate, x.EndDate, x.Status.ToString())).ToArrayAsync();
+        [.. (await db.Sprints.AsNoTracking().Where(x => x.TeamId == teamId).OrderByDescending(x => x.StartDate).ToArrayAsync()).Select(ToDto)];
 
-    private static void ApplySprint(Sprint sprint, SprintRequest request)
+    private static SprintDto ToDto(Sprint x) => new(x.Id, x.TeamId, x.Name, x.Goal, x.StartDate, x.EndDate, x.Status.ToString(),
+        x.CommitmentTasks is { } committed ? new SprintSnapshotDto(committed, x.CommitmentHours ?? 0, x.CommitmentDoneHours ?? 0, x.CommittedAt ?? default) : null,
+        x.ResultTasks is { } result ? new SprintSnapshotDto(result, x.ResultHours ?? 0, x.ResultDoneHours ?? 0, x.ClosedAt ?? default) : null);
+
+    private static async Task ApplySprint(AlvaDbContext db, Sprint sprint, SprintRequest request)
     {
         if (request.EndDate < request.StartDate) throw new ApiException(400, "Окончание спринта раньше начала.");
         if (!Enum.TryParse<SprintStatus>(request.Status, true, out var status) || !Enum.IsDefined(status)) throw new ApiException(400, "Неизвестный статус спринта.");
+        var before = sprint.Status;
         sprint.Name = AccessControl.RequiredName(request.Name);
         sprint.Goal = request.Goal ?? "";
         sprint.StartDate = request.StartDate; sprint.EndDate = request.EndDate; sprint.Status = status;
+        await Snapshot(db, sprint, before);
+    }
+
+    /// <summary>
+    /// Снимки при смене статуса: старт фиксирует обязательство (один раз), закрытие — итог; переоткрытый спринт итога не
+    /// имеет. Цифры берутся из задач команды на момент перехода и дальше не пересчитываются.
+    /// </summary>
+    public static async Task Snapshot(AlvaDbContext db, Sprint sprint, SprintStatus before)
+    {
+        if (sprint.Status == before && (sprint.Status != SprintStatus.Active || sprint.CommitmentTasks is not null)) return;
+        if (sprint.Status != SprintStatus.Completed) { sprint.ResultTasks = null; sprint.ResultHours = sprint.ResultDoneHours = null; sprint.ClosedAt = null; }
+        if (sprint.Status == SprintStatus.Planned || (sprint.Status == SprintStatus.Completed && sprint.ResultTasks is not null)) return;
+        var tasks = await db.Tasks.AsNoTracking().Where(t => t.TeamId == sprint.TeamId && !t.Archived && (t.StartDate != null || t.EndDate != null))
+            .Select(t => new { t.EstimateHours, t.StartDate, t.EndDate, t.Status }).ToListAsync();
+        var snapshot = SprintWindows.Snapshot(tasks.Select(t => (t.EstimateHours, t.StartDate, t.EndDate, t.Status == WorkStatus.Done, t.Status == WorkStatus.Cancelled)),
+            sprint.StartDate, sprint.EndDate, DateTimeOffset.UtcNow);
+        if (sprint.CommitmentTasks is null && sprint.Status is SprintStatus.Active or SprintStatus.Completed && before != SprintStatus.Completed)
+        {
+            sprint.CommitmentTasks = snapshot.Tasks; sprint.CommitmentHours = snapshot.Hours; sprint.CommitmentDoneHours = snapshot.DoneHours; sprint.CommittedAt = snapshot.At;
+        }
+        if (sprint.Status == SprintStatus.Completed)
+        {
+            sprint.ResultTasks = snapshot.Tasks; sprint.ResultHours = snapshot.Hours; sprint.ResultDoneHours = snapshot.DoneHours; sprint.ClosedAt = snapshot.At;
+        }
     }
 
     private static (DateOnly Start, DateOnly End) Period(DateOnly? from, DateOnly? to)

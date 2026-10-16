@@ -200,12 +200,14 @@
         {
             var tasks = TasksOf(sprint);
             var (done, total) = Hours(sprint);
-            var open = tasks.Count(t => t.Status is not ("Done" or "Cancelled"));
+            // С итогом при закрытии «не закрыто» — часы, оставшиеся на момент закрытия; поздние правки задач его не меняют.
+            var open = sprint.Result is { } result ? result.Hours - result.DoneHours : SprintHours.Sum(tasks.Where(t => t.Status is not ("Done" or "Cancelled")), sprint);
             <div class="alva-archive__row" role="row" @key="sprint.Id">
                 <span role="cell"><a class="alva-archive__name" href="@($"sprints/{sprint.Id}")">@sprint.Name</a><span class="alva-archive__meta alva-num">@AlvaFormat.Period(sprint.StartDate, sprint.EndDate)</span>@if (!string.IsNullOrWhiteSpace(sprint.Goal)) { <span class="alva-archive__goal">@sprint.Goal</span> }</span>
                 <span role="cell">
-                    @if (open == 0) { <AlvaStatusChip Tone="AlvaTone.Ok">@(Strings.T("Завершён"))</AlvaStatusChip> }
-                    else { <AlvaStatusChip Tone="AlvaTone.Warning">Не закрыто @open</AlvaStatusChip> }
+                    @if (open <= 0) { <AlvaStatusChip Tone="AlvaTone.Ok">@(Strings.T("Завершён"))</AlvaStatusChip> }
+                    else { <AlvaStatusChip Tone="AlvaTone.Warning">@(Strings.T("Не закрыто")) @AlvaFormat.Hours(open) @(Strings.T("ч"))</AlvaStatusChip> }
+                    @if (sprint.Commitment is { } committed && sprint.Result is { } closed) { <span class="alva-archive__meta alva-num">@(Strings.T("Обязательство")) @AlvaFormat.Hours(committed.Hours) ч → @(Strings.T("итог")) @AlvaFormat.Hours(closed.Hours) ч</span> }
                 </span>
                 <span role="cell" class="alva-archive__yield"><span class="alva-num">@AlvaFormat.Hours(done) ч / @AlvaFormat.Hours(total) ч</span><FlareProgressLinear Value="@Percent(done, total)" aria-label="@(Strings.T("Выработка"))" /></span>
                 <span role="cell" class="alva-num"><b>@AlvaFormat.Hours(WeeklyPace(sprint))</b> @(Strings.T("ч / нед"))</span>
@@ -240,6 +242,7 @@
     /// <summary>Закрытые и все оценённые часы спринта — доли задач, которые приходятся на него.</summary>
     private (decimal Done, decimal Total) Hours(SprintModel sprint)
     {
+        if (sprint.Status == "Completed" && sprint.Result is { } result) return (result.DoneHours, result.Hours);
         var tasks = TasksOf(sprint);
         return (SprintHours.Sum(tasks.Where(t => t.Status == "Done"), sprint), SprintHours.Sum(tasks, sprint));
     }

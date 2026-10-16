@@ -23,7 +23,10 @@ public record AssignmentRequest(Guid TargetId, Guid? ResolvedPersonId = null);
 public record DependencyDto(Guid Id, Guid PredecessorId, Guid SuccessorId, string Kind, int LagDays);
 public record DependencyRequest(Guid PredecessorId, Guid SuccessorId, string Kind = "FS", int LagDays = 0);
 public record HistoryDto(Guid Id, DateTimeOffset At, Guid UserId, string Summary);
-public record SprintDto(Guid Id, Guid TeamId, string Name, string Goal, DateOnly StartDate, DateOnly EndDate, string Status);
+/// <summary>Спринт. Commitment — снимок при старте, Result — при закрытии; без них спринт ещё не стартовал или не закрыт.</summary>
+public record SprintDto(Guid Id, Guid TeamId, string Name, string Goal, DateOnly StartDate, DateOnly EndDate, string Status, SprintSnapshotDto? Commitment = null, SprintSnapshotDto? Result = null);
+/// <summary>Снимок спринта: задачи и их часы в спринте (доля по SprintWindows.Share), из них закрытые.</summary>
+public record SprintSnapshotDto(int Tasks, decimal Hours, decimal DoneHours, DateTimeOffset At);
 public record SprintRequest(string Name, string Goal, DateOnly StartDate, DateOnly EndDate, string Status = "Planned");
 public record CalendarDto(Guid ActorId, string TimeZone, decimal Monday, decimal Tuesday, decimal Wednesday, decimal Thursday, decimal Friday, decimal Saturday, decimal Sunday, CalendarExceptionDto[] Exceptions, RecurringBlockDto[] RecurringBlocks);
 public record CalendarExceptionDto(Guid Id, DateOnly From, DateOnly To, decimal AvailableHours, string Reason);

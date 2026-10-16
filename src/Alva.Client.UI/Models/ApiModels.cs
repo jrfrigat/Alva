@@ -58,6 +58,10 @@ public sealed class SprintModel
     public DateOnly StartDate { get; set; } = DateOnly.FromDateTime(DateTime.Today);
     public DateOnly EndDate { get; set; } = DateOnly.FromDateTime(DateTime.Today.AddDays(13));
     public string Status { get; set; } = "Planned";
+    /// <summary>Снимок при старте спринта: что команда взяла.</summary>
+    public Alva.Contracts.SprintSnapshotDto? Commitment { get; set; }
+    /// <summary>Снимок при закрытии: с ним история спринта не меняется от поздних правок задач.</summary>
+    public Alva.Contracts.SprintSnapshotDto? Result { get; set; }
 }
 /// <summary>
 /// Кто реально делает задачу. Назначение на роль или подкоманду становится работой человека, когда для него выбран

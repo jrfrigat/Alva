@@ -12,6 +12,12 @@
             @if (!string.IsNullOrWhiteSpace(Sprint.Goal)) { <p class="alva-sprint-head__goal">@Sprint.Goal</p> }
             <span class="alva-sprint-head__meta alva-num">@AlvaFormat.Period(Sprint.StartDate, Sprint.EndDate)</span>
             <span class="alva-sprint-head__meta alva-num"><FlareIconView Value="@MaterialDesign3Icons.Regular.Timelapse" Size="16px" /> @(Strings.T("Закрыто:")) <b>@AlvaFormat.Hours(Done) ч</b> из @AlvaFormat.Hours(Total) ч (@Percent(Done, Total)%)</span>
+            @if (Sprint.Commitment is { } committed) { <span class="alva-sprint-head__meta alva-num">@(Strings.T("Обязательство при старте:")) <b>@committed.Tasks @AlvaFormat.Plural(committed.Tasks, Strings.T("задача"), Strings.T("задачи"), Strings.T("задач")), @AlvaFormat.Hours(committed.Hours) ч</b> · @committed.At.ToLocalTime().ToString("d MMM")</span> }
+            @if (Sprint.Result is { } result)
+            {
+                <span class="alva-sprint-head__meta alva-num">@(Strings.T("Итог при закрытии:")) <b>@AlvaFormat.Hours(result.DoneHours) @(Strings.T("из")) @AlvaFormat.Hours(result.Hours) ч</b> · @result.At.ToLocalTime().ToString("d MMM")</span>
+                @if (Done != result.DoneHours || Total != result.Hours) { <span class="alva-sprint-head__meta alva-num">@(Strings.T("После закрытия задачи изменились: сейчас")) @AlvaFormat.Hours(Done) @(Strings.T("из")) @AlvaFormat.Hours(Total) ч</span> }
+            }
         </div>
         <div class="alva-sprint-head__actions">
             <FlareButton Variant="ButtonVariant.Tonal" Size="ButtonSize.Sm" OnClick="Edit">

@@ -470,9 +470,10 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
         var request = Read<SprintRequest>(value);
         if (id is not { } sprintId)
         {
-            var created = new SprintModel { Id = Guid.NewGuid(), Name = request.Name, Goal = request.Goal, StartDate = request.StartDate, EndDate = request.EndDate, Status = request.Status };
+            var created = new SprintModel { Id = Guid.NewGuid(), Name = request.Name, Goal = request.Goal, StartDate = request.StartDate, EndDate = request.EndDate, Status = "Planned" };
             store.Sprints.Add(created);
             store.SprintTeam[created.Id] = teamId;
+            SetStatus(store, created, request.Status);
             return created;
         }
         var sprint = store.Sprints.FirstOrDefault(s => s.Id == sprintId) ?? throw new InvalidOperationException("Спринт не найден.");
@@ -480,8 +481,23 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
         sprint.Goal = request.Goal;
         sprint.StartDate = request.StartDate;
         sprint.EndDate = request.EndDate;
-        sprint.Status = request.Status;
+        SetStatus(store, sprint, request.Status);
         return sprint;
+    }
+
+    /// <summary>Смена статуса со снимками, как в API: старт фиксирует обязательство, закрытие — итог.</summary>
+    private static void SetStatus(DemoStore store, SprintModel sprint, string status)
+    {
+        var before = sprint.Status;
+        sprint.Status = status;
+        if (status == before && (status != "Active" || sprint.Commitment is not null)) return;
+        if (status != "Completed") sprint.Result = null;
+        if (status == "Planned") return;
+        var team = store.SprintTeam.GetValueOrDefault(sprint.Id);
+        var snapshot = SprintWindows.Snapshot(store.Tasks.Where(t => t.TeamId == team).Select(t => (t.EstimateHours, t.StartDate, t.EndDate, t.Status == "Done", t.Status == "Cancelled")),
+            sprint.StartDate, sprint.EndDate, DateTimeOffset.Now);
+        if (sprint.Commitment is null && before != "Completed") sprint.Commitment = snapshot;
+        if (status == "Completed") sprint.Result = snapshot;
     }
 
     private static void AssignTask(DemoStore store, Guid taskId, HttpMethod method, object value)

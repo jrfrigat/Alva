@@ -33,6 +33,18 @@ public static class SprintWindows
         return hours * WorkDays(from, to) / all;
     }
 
+    /// <summary>
+    /// Снимок спринта из задач команды: те, чьё плановое окно пересекает спринт (кроме отменённых), и их часы в нём.
+    /// Одно правило для API и demo, чтобы обязательство и итог считались одинаково.
+    /// </summary>
+    public static SprintSnapshotDto Snapshot(IEnumerable<(decimal? Estimate, DateOnly? Start, DateOnly? End, bool Done, bool Cancelled)> tasks, DateOnly sprintStart, DateOnly sprintEnd, DateTimeOffset at)
+    {
+        var inSprint = tasks.Where(t => !t.Cancelled && Overlaps(t.Start, t.End, sprintStart, sprintEnd)).ToArray();
+        return new SprintSnapshotDto(inSprint.Length,
+            inSprint.Sum(t => Share(t.Estimate, t.Start, t.End, sprintStart, sprintEnd)),
+            inSprint.Where(t => t.Done).Sum(t => Share(t.Estimate, t.Start, t.End, sprintStart, sprintEnd)), at);
+    }
+
     private static int WorkDays(DateOnly from, DateOnly to)
     {
         var days = 0;

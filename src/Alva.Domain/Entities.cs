@@ -37,6 +37,16 @@ public sealed class Sprint : Entity
     public DateOnly StartDate { get; set; }
     public DateOnly EndDate { get; set; }
     public SprintStatus Status { get; set; }
+    // Снимки спринта: что команда взяла при старте и что было при закрытии. История спринта не должна меняться от
+    // поздних правок задач, поэтому цифры сохраняются, а не пересчитываются.
+    public int? CommitmentTasks { get; set; }
+    public decimal? CommitmentHours { get; set; }
+    public decimal? CommitmentDoneHours { get; set; }
+    public DateTimeOffset? CommittedAt { get; set; }
+    public int? ResultTasks { get; set; }
+    public decimal? ResultHours { get; set; }
+    public decimal? ResultDoneHours { get; set; }
+    public DateTimeOffset? ClosedAt { get; set; }
 }
 public sealed class TaskCard : Entity
 {

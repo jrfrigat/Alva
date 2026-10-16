@@ -717,8 +717,12 @@
   <data name="Вклад команды" xml:space="preserve"><value>Team contribution</value></data>
   <data name="Без команд, к которым нет доступа:" xml:space="preserve"><value>Excluding teams you cannot access:</value></data>
   <data name="сейчас в работе" xml:space="preserve"><value>in progress now</value></data>
-  <data name="задача" xml:space="preserve"><value>task</value></data>
   <data name="Перегруз по дням:" xml:space="preserve"><value>Daily overload:</value></data>
   <data name="Занято" xml:space="preserve"><value>Busy</value></data>
-  <data name="свободно" xml:space="preserve"><value>free</value></data>
+  <data name="Не закрыто" xml:space="preserve"><value>Not closed</value></data>
+  <data name="Обязательство" xml:space="preserve"><value>Commitment</value></data>
+  <data name="итог" xml:space="preserve"><value>result</value></data>
+  <data name="Обязательство при старте:" xml:space="preserve"><value>Commitment at start:</value></data>
+  <data name="Итог при закрытии:" xml:space="preserve"><value>Result at closing:</value></data>
+  <data name="После закрытия задачи изменились: сейчас" xml:space="preserve"><value>Tasks changed after closing: now</value></data>
 </root>
