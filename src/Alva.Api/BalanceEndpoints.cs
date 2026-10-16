@@ -21,6 +21,36 @@ public static class BalanceEndpoints
             var (choice, status) = BalanceSolver.Solve(problem, Limit);
             return BalanceMath.Proposal(problem, choice, status);
         }).RequireAuthorization();
+
+        // Применение предложения — одна транзакция: или все отмеченные изменения, или ни одного. Версии задач должны совпасть
+        // с теми, на которых строилось предложение, иначе план успел измениться и его нужно пересчитать.
+        app.MapPost("/api/teams/{teamId:guid}/sprints/{sprintId:guid}/balance/apply", async (Guid teamId, Guid sprintId, BalanceApplyRequest request, ClaimsPrincipal user, AlvaDbContext db) =>
+        {
+            await AccessControl.RequireTeam(db, user, teamId, "tasks", "edit");
+            if (!await db.Sprints.AnyAsync(x => x.TeamId == teamId && x.Id == sprintId)) throw new ApiException(404, "Спринт не найден.");
+            var userId = user.UserId();
+            await using var transaction = await db.Database.BeginTransactionAsync();
+            foreach (var change in request.Changes ?? [])
+            {
+                var task = await TaskEndpoints.Find(db, teamId, change.TaskId);
+                if (task.Version != change.Version) throw new ApiException(409, "Задачи изменились после расчёта. Пересчитайте автобаланс.");
+                if (change.ToEnd < change.ToStart) throw new ApiException(400, "Окончание задачи раньше начала.");
+                var person = await db.Actors.AsNoTracking().SingleOrDefaultAsync(x => x.TeamId == teamId && x.Id == change.ToPersonId && x.Kind == ActorKind.Person && !x.Archived)
+                    ?? throw new ApiException(400, "Исполнитель должен быть человеком команды.");
+                if (change.ToTargetId != person.Id && !await db.Actors.AnyAsync(x => x.TeamId == teamId && x.Id == change.ToTargetId && x.Kind != ActorKind.Person && !x.Archived))
+                    throw new ApiException(400, "Роль или подкоманда не найдена в команде.");
+                task.StartDate = change.ToStart; task.EndDate = change.ToEnd;
+                var resolved = change.ToTargetId == person.Id ? (Guid?)null : person.Id;
+                if (await db.Assignments.SingleOrDefaultAsync(x => x.TaskId == task.Id) is { } existing) { existing.TargetId = change.ToTargetId; existing.ResolvedPersonId = resolved; }
+                else db.Add(new Assignment { TaskId = task.Id, TargetId = change.ToTargetId, ResolvedPersonId = resolved });
+                task.Version++;
+                db.Add(new TaskHistory { TaskId = task.Id, UserId = userId, Summary = "Применено предложение автобаланса" });
+                await TaskEndpoints.KeepParentsAroundChildren(db, teamId, task, userId);
+            }
+            await db.SaveChangesAsync();
+            await transaction.CommitAsync();
+            return Results.NoContent();
+        }).RequireAuthorization();
     }
 
     internal static async Task<BalanceProblem> Problem(AlvaDbContext db, Guid teamId, Guid sprintId, string? mode)

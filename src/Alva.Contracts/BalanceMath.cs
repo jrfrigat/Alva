@@ -368,3 +368,9 @@ public static class BalanceMath
         return text.Length == 0 ? "Улучшает план" : char.ToUpperInvariant(text[0]) + text[1..];
     }
 }
+
+/// <summary>Применение отмеченных изменений предложения одной операцией.</summary>
+public record BalanceApplyRequest(BalanceApplyItem[] Changes);
+
+/// <summary>Изменение задачи из предложения. Version — версия задачи, на которой построено предложение.</summary>
+public record BalanceApplyItem(Guid TaskId, long Version, DateOnly ToStart, DateOnly ToEnd, Guid ToTargetId, Guid ToPersonId);

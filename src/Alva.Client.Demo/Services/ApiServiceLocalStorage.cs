@@ -329,6 +329,9 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
                 if (method == HttpMethod.Delete) { store.Actors.RemoveAll(a => a.Id == Id(id)); store.Calendars.RemoveAll(c => c.ActorId == Id(id)); }
                 else UpdateActor(store, Id(id), value);
                 break;
+            case ["api", "teams", var at, "sprints", _, "balance", "apply"]:
+                ApplyBalance(store, Id(at), Read<BalanceApplyRequest>(value));
+                break;
             case ["api", "teams", var bt, "tasks", "backlog-order"]:
                 var order = Read<BacklogOrderRequest>(value).TaskIds;
                 for (var i = 0; i < order.Length; i++)
@@ -546,6 +549,28 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
             KeepParentsAroundChildren(store, task);
         }
         return sprint;
+    }
+
+
+    /// <summary>Применение предложения автобаланса, как в API: сначала проверка всех изменений, потом запись — всё или ничего.</summary>
+    private static void ApplyBalance(DemoStore store, Guid teamId, BalanceApplyRequest request)
+    {
+        var changes = (request.Changes ?? []).Select(change =>
+        {
+            var task = store.Tasks.FirstOrDefault(t => t.Id == change.TaskId && t.TeamId == teamId) ?? throw new InvalidOperationException("Задача не найдена.");
+            if (task.Version != change.Version) throw new InvalidOperationException("Задачи изменились после расчёта. Пересчитайте автобаланс.");
+            if (store.Actors.All(a => a.Id != change.ToPersonId || a.Kind != "Person")) throw new InvalidOperationException("Исполнитель должен быть человеком команды.");
+            return (Task: task, Change: change);
+        }).ToList();
+        foreach (var (task, change) in changes)
+        {
+            task.StartDate = change.ToStart; task.EndDate = change.ToEnd;
+            task.AssignmentTargetId = change.ToTargetId;
+            task.ResolvedPersonId = change.ToTargetId == change.ToPersonId ? null : change.ToPersonId;
+            task.Version++;
+            AddHistory(store, task.Id, "Применено предложение автобаланса");
+            KeepParentsAroundChildren(store, task);
+        }
     }
 
 

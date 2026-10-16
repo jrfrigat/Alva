@@ -476,23 +476,14 @@
 
     private void RejectProposal() => _proposal = null;
 
-    /// <summary>Применяет отмеченные изменения обычными правками: даты задачи, затем исполнитель.</summary>
+    /// <summary>Применяет отмеченные изменения одной операцией сервера: все или ни одного, с проверкой версий задач.</summary>
     private Task ApplyProposal() => Run(async () =>
     {
-        if (_gantt is null || _people is null) return;
-        try
-        {
-            foreach (var change in Chosen)
-            {
-                if (_gantt.Tasks.FirstOrDefault(t => t.Id == change.TaskId) is not { } task) continue;
-                if (change.FromStart != change.ToStart || change.FromEnd != change.ToEnd)
-                    await _gantt.Save(Session, [new GanttChange(GanttData.Key(task.Id), GanttSpan.FromDays(change.ToStart, change.ToEnd))]);
-                if (change.FromPersonId != change.ToPersonId)
-                    await _people.Reassign(Session, task, GanttPeopleData.PersonKey(change.ToPersonId));
-            }
-        }
-        // Часть изменений могла сохраниться до ошибки — доска показывает то, что есть на самом деле.
-        finally { await Refresh(); }
+        var items = Chosen.Select(c => Tasks.FirstOrDefault(t => t.Id == c.TaskId) is { } task
+                ? new BalanceApplyItem(c.TaskId, task.Version, c.ToStart, c.ToEnd, c.ToTargetId, c.ToPersonId) : null)
+            .OfType<BalanceApplyItem>().ToArray();
+        await Session.Send(HttpMethod.Post, Session.TeamPath($"sprints/{Sprint.Id}/balance/apply"), new BalanceApplyRequest(items));
+        await Refresh();
     });
 
     private Task Commit() => Run(async () =>
