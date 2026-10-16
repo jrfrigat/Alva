@@ -64,9 +64,10 @@ public sealed class FakeApi : IApiService
         if (OnSend(method, path, value) is { } error) throw error;
     }
 
+    public object? SaveResult { get; set; }
     public async Task<T> Save<T>(HttpMethod method, string path, object value)
     {
         await Send(method, path, value);
-        return default!;
+        return SaveResult is T result ? result : default!;
     }
 }

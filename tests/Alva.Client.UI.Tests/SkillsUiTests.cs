@@ -12,6 +12,21 @@ namespace Alva.Client.UI.Tests;
 public sealed class SkillsUiTests : UiTestBase
 {
     [Fact]
+    public async Task New_task_saves_requirement_tags()
+    {
+        Api.Answer("tasks", _=>Array.Empty<TaskModel>()).Answer("actors", _=>Array.Empty<ActorModel>())
+            .Answer("projects", _=>Array.Empty<ProjectModel>()).Answer("sprints", _=>Array.Empty<SprintModel>());
+        Api.SaveResult=new TaskModel { Id=Guid.NewGuid(), Title="New task" };
+        var cut=Render<Alva.Client.Pages.Tasks>();
+        cut.WaitForAssertion(()=>Button(cut,"Новая задача"));
+        Button(cut,"Новая задача").Click();
+        Field(cut,"Название").Change("New task");
+        await cut.InvokeAsync(()=>cut.FindComponent<SkillTagEditor>().Instance.ValuesChanged.InvokeAsync(["SQL"]));
+        Button(cut,"Сохранить задачу").Click();
+        cut.WaitForAssertion(()=>Assert.Contains(Api.Sent,x=>x.Method==HttpMethod.Post && x.Value is TaskRequest r && r.RequiredSkills!.SequenceEqual(new[]{"SQL"})));
+    }
+
+    [Fact]
     public async Task Tags_are_editable_and_normalized_without_case_duplicates()
     {
         string[] selected = [];

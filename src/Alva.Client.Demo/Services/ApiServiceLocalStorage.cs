@@ -262,7 +262,7 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
         if (mode != BalanceModes.Gentle)
             throw new NotSupportedException("Demo: режимы «Сроки и связи» и «Максимум» требуют сервера — решатель OR-Tools работает только там.");
         var sprint = store.Sprints.FirstOrDefault(s => s.Id == sprintId) ?? throw new InvalidOperationException("Спринт не найден.");
-        var people = store.Actors.Where(a => a.Kind == "Person").ToArray();
+        var people = store.Actors.Where(a => a.TeamId == teamId && a.Kind == "Person").ToArray();
         var persons = people.Select(p => new BalancePersonInput(p.Id, p.Name, p.RoleIds, p.DepartmentIds, p.Skills)).ToArray();
         var tasks = OpenTasks(store, teamId).Select(x => new BalanceTaskInput(x.Task.Id, x.Task.Title, x.Task.Status, x.Task.ParentId,
             x.Task.EstimateHours, x.Start, x.End, x.Task.Deadline, x.Task.AssignmentTargetId, x.Task.ResolvedPersonId, x.Task.RequiredSkills)).ToArray();

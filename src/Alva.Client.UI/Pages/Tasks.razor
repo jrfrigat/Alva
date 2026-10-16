@@ -58,6 +58,8 @@ else
     <FlareStack Row StretchFirst><FlareText Element="h2" Typo="TypographyScale.TitleLarge">@(_editing.Id == Guid.Empty ? Strings.T("Новая задача") : Strings.T("Карточка задачи"))</FlareText><FlareButton OnClick="Close" Variant="ButtonVariant.Text" Size="ButtonSize.Sm">@(Strings.T("Закрыть"))</FlareButton></FlareStack>
     <FlareTextField Label="@(Strings.T("Название"))" @bind-Value="_editing.Title" Required MaxLength="500" Autofocus />
     <FlareTextArea Label="@(Strings.T("Описание"))" @bind-Value="_editing.Description" AutoGrow />
+    <SkillTagEditor Label="@(Strings.T("Необходимые навыки"))" @bind-Values="_editing.RequiredSkills"
+                    Suggestions="_actors.SelectMany(a=>a.Skills).Concat(_tasks.SelectMany(t=>t.RequiredSkills)).Distinct(StringComparer.OrdinalIgnoreCase)" />
     <FlareGrid MinColumnWidth="min(100%,12rem)">
         <FlareSelect TValue="string" Label="@(Strings.T("Статус"))" Items="_statuses" ItemLabel="Labels.Status" @bind-Value="_editing.Status" />
         <FlareSelect TValue="Guid?" Label="@(Strings.T("Проект"))" Items="_projects.Select(x => (Guid?)x.Id)" ItemLabel="ProjectName" NullOption="@(Strings.T("Текучка"))" @bind-Value="_editing.ProjectId" />
@@ -69,6 +71,7 @@ else
         <FlareDatePicker Label="@(Strings.T("Окончание"))" @bind-Value="_editing.EndDate" />
     </FlareGrid>
     <FlareSelect TValue="Guid?" Label="@(Strings.T("Исполнитель, подкоманда или роль"))" Items="_actors.Select(x => (Guid?)x.Id)" ItemLabel="ActorName" NullOption="@(Strings.T("Не назначена"))" @bind-Value="_editing.AssignmentTargetId" Searchable />
+    <SkillMatch Required="_editing.RequiredSkills" Person="@(_actors.FirstOrDefault(a=>a.Id==(_editing.ResolvedPersonId ?? _editing.AssignmentTargetId)))" />
     @if(_actors.FirstOrDefault(a=>a.Id==_editing.AssignmentTargetId)?.Kind is "Role" or "Department") { <FlareSelect TValue="Guid?" Label="@(Strings.T("Конкретный исполнитель"))" Items="@(_actors.Where(a=>a.Kind=="Person").Select(a=>(Guid?)a.Id))" ItemLabel="ActorName" NullOption="@(Strings.T("Пока не выбран"))" @bind-Value="_editing.ResolvedPersonId" Searchable /> }
     <FlareStack Row Wrap><FlareButton Loading="_busy" Disabled="@(string.IsNullOrWhiteSpace(_editing.Title))" OnClick="Save">@(Strings.T("Сохранить задачу"))</FlareButton>
         @if(_editing.Id != Guid.Empty) { <FlareButton Variant="ButtonVariant.Text" OnClick="() => NewChild(_editing.Id)">@(Strings.T("Подзадача"))</FlareButton><FlareButton Color="FlareColor.Error" Variant="ButtonVariant.Text" OnClick="Archive">@(Strings.T("Архивировать"))</FlareButton> }
@@ -163,7 +166,7 @@ else
     // Закрытие редактора возвращает фокус на кнопку, которой его открыли, а не роняет его на body.
     private async Task Close(){Hide();StateHasChanged();if(_newButton is not null) await _newButton.FocusAsync();}
     private Task Save()=>Run(async()=>{
-        var model=_editing!;var request=new TaskRequest(model.Title,model.Description,model.Status,model.ProjectId,model.ParentId,model.EstimateHours,model.Deadline,model.StartDate,model.EndDate,model.Order,model.Id==Guid.Empty?null:model.Version);
+        var model=_editing!;var request=new TaskRequest(model.Title,model.Description,model.Status,model.ProjectId,model.ParentId,model.EstimateHours,model.Deadline,model.StartDate,model.EndDate,model.Order,model.Id==Guid.Empty?null:model.Version,model.RequiredSkills);
         var saved=await Session.Save<TaskModel>(model.Id==Guid.Empty?HttpMethod.Post:HttpMethod.Put,Session.TeamPath("tasks"+(model.Id==Guid.Empty?"":$"/{model.Id}")),request);
         if(model.AssignmentTargetId.HasValue)await Session.Send(HttpMethod.Put,Session.TeamPath($"tasks/{saved.Id}/assignment"),new AssignmentRequest(model.AssignmentTargetId.Value,model.ResolvedPersonId));
         else if(model.Id!=Guid.Empty && _tasks.Any(t=>t.Id==model.Id && t.AssignmentTargetId.HasValue))await Session.Send(HttpMethod.Delete,Session.TeamPath($"tasks/{saved.Id}/assignment"),new{});
