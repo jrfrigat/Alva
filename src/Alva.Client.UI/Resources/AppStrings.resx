@@ -725,4 +725,14 @@
   <data name="Обязательство при старте:" xml:space="preserve"><value>Commitment at start:</value></data>
   <data name="Итог при закрытии:" xml:space="preserve"><value>Result at closing:</value></data>
   <data name="После закрытия задачи изменились: сейчас" xml:space="preserve"><value>Tasks changed after closing: now</value></data>
+  <data name="Спринт закрыт." xml:space="preserve"><value>Sprint closed.</value></data>
+  <data name="Не закрыто при закрытии:" xml:space="preserve"><value>Open at closing:</value></data>
+  <data name="Все задачи спринта завершены. Итог будет сохранён при закрытии." xml:space="preserve"><value>All sprint tasks are finished. The result is saved on closing.</value></data>
+  <data name="Незавершённых задач:" xml:space="preserve"><value>Unfinished tasks:</value></data>
+  <data name="Решите, что сделать с каждой: итог спринта сохранится до переноса." xml:space="preserve"><value>Decide what to do with each one: the sprint result is saved before anything moves.</value></data>
+  <data name="Следующий спринт для переноса" xml:space="preserve"><value>Next sprint to move work into</value></data>
+  <data name="Что сделать" xml:space="preserve"><value>Action</value></data>
+  <data name="В следующий спринт" xml:space="preserve"><value>To the next sprint</value></data>
+  <data name="Вернуть в пул" xml:space="preserve"><value>Back to the pool</value></data>
+  <data name="Отметить готовой" xml:space="preserve"><value>Mark as done</value></data>
 </root>

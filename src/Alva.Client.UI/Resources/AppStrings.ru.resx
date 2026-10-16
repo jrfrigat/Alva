@@ -725,4 +725,14 @@
   <data name="Обязательство при старте:" xml:space="preserve"><value>Обязательство при старте:</value></data>
   <data name="Итог при закрытии:" xml:space="preserve"><value>Итог при закрытии:</value></data>
   <data name="После закрытия задачи изменились: сейчас" xml:space="preserve"><value>После закрытия задачи изменились: сейчас</value></data>
+  <data name="Спринт закрыт." xml:space="preserve"><value>Спринт закрыт.</value></data>
+  <data name="Не закрыто при закрытии:" xml:space="preserve"><value>Не закрыто при закрытии:</value></data>
+  <data name="Все задачи спринта завершены. Итог будет сохранён при закрытии." xml:space="preserve"><value>Все задачи спринта завершены. Итог будет сохранён при закрытии.</value></data>
+  <data name="Незавершённых задач:" xml:space="preserve"><value>Незавершённых задач:</value></data>
+  <data name="Решите, что сделать с каждой: итог спринта сохранится до переноса." xml:space="preserve"><value>Решите, что сделать с каждой: итог спринта сохранится до переноса.</value></data>
+  <data name="Следующий спринт для переноса" xml:space="preserve"><value>Следующий спринт для переноса</value></data>
+  <data name="Что сделать" xml:space="preserve"><value>Что сделать</value></data>
+  <data name="В следующий спринт" xml:space="preserve"><value>В следующий спринт</value></data>
+  <data name="Вернуть в пул" xml:space="preserve"><value>Вернуть в пул</value></data>
+  <data name="Отметить готовой" xml:space="preserve"><value>Отметить готовой</value></data>
 </root>

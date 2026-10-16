@@ -144,7 +144,7 @@ public static class TaskEndpoints
     /// Родитель охватывает детей: после правки задачи она сама не уже потомков, а предки с датами — не уже её.
     /// Версию предков не меняем: это следствие чужой правки, и клиент, сохраняющий детей раньше родителя, не получит 409.
     /// </summary>
-    private static async Task KeepParentsAroundChildren(AlvaDbContext db, Guid teamId, TaskCard task, Guid userId)
+    internal static async Task KeepParentsAroundChildren(AlvaDbContext db, Guid teamId, TaskCard task, Guid userId)
     {
         var stored = await db.Tasks.Where(x => x.TeamId == teamId && !x.Archived && x.Id != task.Id).ToListAsync();
         var dates = stored.Select(x => new TaskDates(x.Id, x.ParentId, x.StartDate, x.EndDate))

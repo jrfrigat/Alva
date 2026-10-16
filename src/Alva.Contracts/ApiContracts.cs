@@ -38,3 +38,7 @@ public record CapacityDto(Guid ActorId, string ActorName, DateOnly Date, decimal
 public record CapacityDemandDto(Guid TargetId, string TargetName, string Kind, DateOnly Date, decimal Hours);
 public record RiskDto(Guid TaskId, string Title, string Severity, string[] Reasons, DateOnly? ForecastDate);
 public record DashboardDto(int TotalTasks, int DoneTasks, int ActiveSprints, decimal EstimateHours, RiskDto[] Risks);
+/// <summary>Закрытие спринта: решение по каждой незавершённой задаче и спринт, куда переносится остаток.</summary>
+public record SprintCloseRequest(SprintCarryDto[] Tasks, Guid? NextSprintId = null);
+/// <summary>Что делать с незавершённой задачей при закрытии: next — в следующий спринт, backlog — в пул, done — готова.</summary>
+public record SprintCarryDto(Guid TaskId, string Action);

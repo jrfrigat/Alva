@@ -11,12 +11,12 @@
             <ReadyHeading Class="alva-sprint-head__title">@Sprint.Name</ReadyHeading>
             @if (!string.IsNullOrWhiteSpace(Sprint.Goal)) { <p class="alva-sprint-head__goal">@Sprint.Goal</p> }
             <span class="alva-sprint-head__meta alva-num">@AlvaFormat.Period(Sprint.StartDate, Sprint.EndDate)</span>
-            <span class="alva-sprint-head__meta alva-num"><FlareIconView Value="@MaterialDesign3Icons.Regular.Timelapse" Size="16px" /> @(Strings.T("Закрыто:")) <b>@AlvaFormat.Hours(Done) ч</b> из @AlvaFormat.Hours(Total) ч (@Percent(Done, Total)%)</span>
+            <span class="alva-sprint-head__meta alva-num"><FlareIconView Value="@MaterialDesign3Icons.Regular.Timelapse" Size="16px" /> @(Strings.T("Закрыто:")) <b>@AlvaFormat.Hours(HeadDone) ч</b> из @AlvaFormat.Hours(HeadTotal) ч (@Percent(HeadDone, HeadTotal)%)</span>
             @if (Sprint.Commitment is { } committed) { <span class="alva-sprint-head__meta alva-num">@(Strings.T("Обязательство при старте:")) <b>@committed.Tasks @AlvaFormat.Plural(committed.Tasks, Strings.T("задача"), Strings.T("задачи"), Strings.T("задач")), @AlvaFormat.Hours(committed.Hours) ч</b> · @committed.At.ToLocalTime().ToString("d MMM")</span> }
             @if (Sprint.Result is { } result)
             {
                 <span class="alva-sprint-head__meta alva-num">@(Strings.T("Итог при закрытии:")) <b>@AlvaFormat.Hours(result.DoneHours) @(Strings.T("из")) @AlvaFormat.Hours(result.Hours) ч</b> · @result.At.ToLocalTime().ToString("d MMM")</span>
-                @if (Done != result.DoneHours || Total != result.Hours) { <span class="alva-sprint-head__meta alva-num">@(Strings.T("После закрытия задачи изменились: сейчас")) @AlvaFormat.Hours(Done) @(Strings.T("из")) @AlvaFormat.Hours(Total) ч</span> }
+                @if (Done != result.DoneHours) { <span class="alva-sprint-head__meta alva-num">@(Strings.T("После закрытия задачи изменились: сейчас")) @AlvaFormat.Hours(Done) @(Strings.T("из")) @AlvaFormat.Hours(Total) ч</span> }
             }
         </div>
         <div class="alva-sprint-head__actions">
@@ -26,7 +26,7 @@
             </FlareButton>
             @if (Sprint.Status == "Active")
             {
-                <FlareButton Size="ButtonSize.Sm" Loading="_busy" OnClick="Complete">
+                <FlareButton Size="ButtonSize.Sm" Loading="_busy" OnClick="OpenClose">
                     <LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.CheckCircle" Size="18px" /></LeadingIcon>
                     <ChildContent>@(Strings.T("Завершить спринт"))</ChildContent>
                 </FlareButton>
@@ -50,7 +50,15 @@
 <div class="alva-kpis">
     <section class="alva-kpi">
         <div class="alva-kpi__head"><div><span class="alva-kpi__label">@(Strings.T("Остаток"))</span><span class="alva-kpi__value alva-num">@AlvaFormat.Hours(Total - Done) ч</span></div><span class="alva-kpi__icon"><FlareIconView Value="@MaterialDesign3Icons.Regular.TrendingDown" Size="18px" /></span></div>
-        <p class="alva-kpi__note">Осталось @DaysLeft раб. @AlvaFormat.Plural(DaysLeft, Strings.T("день"), Strings.T("дня"), Strings.T("дней")); нужный темп — <b class="alva-num">@(DaysLeft > 0 ? AlvaFormat.Hours(Math.Round((Total - Done) / DaysLeft, 1)) : "—") ч/день</b>.</p>
+        @if (Sprint.Status == "Completed")
+        {
+            @* Закрытому спринту темп уже не нужен: остаток при закрытии перенесён или возвращён в пул. *@
+            <p class="alva-kpi__note">@(Strings.T("Спринт закрыт.")) @(Sprint.Result is { } closed ? $"{Strings.T("Не закрыто при закрытии:")} {AlvaFormat.Hours(closed.Hours - closed.DoneHours)} ч." : "")</p>
+        }
+        else
+        {
+            <p class="alva-kpi__note">Осталось @DaysLeft раб. @AlvaFormat.Plural(DaysLeft, Strings.T("день"), Strings.T("дня"), Strings.T("дней")); нужный темп — <b class="alva-num">@(DaysLeft > 0 ? AlvaFormat.Hours(Math.Round((Total - Done) / DaysLeft, 1)) : "—") ч/день</b>.</p>
+        }
         <div class="alva-kpi__foot"><span class="alva-num">План: @AlvaFormat.Hours(Total) ч</span><span class="alva-num">Задач: @SprintTasks.Length</span></div>
     </section>
 
@@ -138,9 +146,68 @@
     </footer>
 </section>
 
+<FlareDialog @bind-Visible="_closing" Title="@($"{Strings.T("Завершить спринт")} «{Sprint.Name}»")" Size="DialogSize.Lg" Divider>
+    <ChildContent>
+        @if (Open.Length == 0)
+        {
+            <p class="alva-close__lead">@(Strings.T("Все задачи спринта завершены. Итог будет сохранён при закрытии."))</p>
+        }
+        else
+        {
+            <p class="alva-close__lead">@(Strings.T("Незавершённых задач:")) <b class="alva-num">@Open.Length (@AlvaFormat.Hours(Open.Sum(Hours)) ч)</b>. @(Strings.T("Решите, что сделать с каждой: итог спринта сохранится до переноса."))</p>
+            @if (NextChoices.Length > 0)
+            {
+                <FlareSelect TValue="Guid?" Label="@(Strings.T("Следующий спринт для переноса"))" Items="NextChoices.Select(s => (Guid?)s.Id)" ItemLabel="NextLabel" @bind-Value="_next" />
+            }
+            <ul class="alva-close__list">
+                @foreach (var task in Open)
+                {
+                    <li class="alva-close__item" @key="task.Id">
+                        <span class="alva-close__task"><a href="@($"tasks/{task.Id}")">@task.Title</a><small class="alva-num">@Labels.Status(task.Status) · @EstimateText(task)</small></span>
+                        <FlareSelect TValue="string" Label="@(Strings.T("Что сделать"))" Items="Actions" ItemLabel="ActionLabel" Value="@Decision(task)" ValueChanged="(string value) => _decisions[task.Id] = value" Size="FieldSize.Sm" />
+                    </li>
+                }
+            </ul>
+            <p class="alva-close__sum alva-num">@CloseSummary</p>
+        }
+    </ChildContent>
+    <ActionsContent>
+        <FlareButton Variant="ButtonVariant.Text" OnClick="() => _closing = false">@(Strings.T("Отмена"))</FlareButton>
+        <FlareButton Loading="_busy" Disabled="@(Open.Any(t => Decision(t) == SprintCarry.Next) && _next is null)" OnClick="Complete">@(Strings.T("Завершить спринт"))</FlareButton>
+    </ActionsContent>
+</FlareDialog>
+
 @code {
     [Parameter, EditorRequired] public SprintModel Sprint { get; set; } = default!;
     [Parameter] public TaskModel[] Tasks { get; set; } = [];
+    /// <summary>Спринты команды: из незакрытых выбирается тот, куда переносится остаток.</summary>
+    [Parameter] public SprintModel[] Sprints { get; set; } = [];
+
+    private bool _closing;
+    private Guid? _next;
+    private readonly Dictionary<Guid, string> _decisions = [];
+    /// <summary>Незавершённые задачи спринта — по каждой нужно решение при закрытии.</summary>
+    private TaskModel[] Open => SprintTasks.Where(t => t.Status != "Done").ToArray();
+    private SprintModel[] NextChoices => Sprints.Where(s => s.Id != Sprint.Id && s.Status != "Completed" && s.EndDate >= Sprint.StartDate).OrderBy(s => s.StartDate).ToArray();
+    private string NextLabel(Guid? id) => Sprints.FirstOrDefault(s => s.Id == id) is { } s ? $"{s.Name} ({AlvaFormat.Period(s.StartDate, s.EndDate)})" : "";
+    private string[] Actions => NextChoices.Length > 0 ? [SprintCarry.Next, SprintCarry.Backlog, SprintCarry.Done] : [SprintCarry.Backlog, SprintCarry.Done];
+    private static string ActionLabel(string action) => action switch
+    {
+        SprintCarry.Next => Strings.T("В следующий спринт"),
+        SprintCarry.Backlog => Strings.T("Вернуть в пул"),
+        _ => Strings.T("Отметить готовой")
+    };
+    private string Decision(TaskModel task) => _decisions.TryGetValue(task.Id, out var action) && Actions.Contains(action) ? action : Actions[0];
+    private string CloseSummary => string.Join(" · ", Actions
+        .Select(a => (Label: ActionLabel(a), Hours: Open.Where(t => Decision(t) == a).Sum(Hours)))
+        .Where(x => x.Hours > 0).Select(x => $"{x.Label}: {AlvaFormat.Hours(x.Hours)} ч"));
+
+    private void OpenClose()
+    {
+        _decisions.Clear();
+        _next = NextChoices.FirstOrDefault(s => s.StartDate > Sprint.EndDate)?.Id ?? NextChoices.FirstOrDefault()?.Id;
+        _closing = true;
+    }
 
     /// <summary>Открыть редактирование состава (планирование спринта).</summary>
     [Parameter] public EventCallback OnEdit { get; set; }
@@ -166,6 +233,9 @@
     private decimal Total => SprintTasks.Sum(Hours);
     private decimal Done => SprintTasks.Where(t => t.Status == "Done").Sum(Hours);
     private decimal InWork => SprintTasks.Where(t => t.Status == "InProgress").Sum(Hours);
+    // Закрытый спринт показывает итог при закрытии: перенесённый остаток уже ушёл из него, но в истории он был.
+    private decimal HeadDone => Sprint.Result?.DoneHours ?? Done;
+    private decimal HeadTotal => Sprint.Result?.Hours ?? Total;
     private int DayOf => Math.Clamp(AlvaFormat.WorkDays(Sprint.StartDate, Today < Sprint.StartDate ? Sprint.StartDate : Today), 1, Math.Max(1, AlvaFormat.WorkDays(Sprint.StartDate, Sprint.EndDate)));
     private int DaysLeft => Today > Sprint.EndDate ? 0 : AlvaFormat.WorkDays(Today < Sprint.StartDate ? Sprint.StartDate : Today, Sprint.EndDate);
     private static int Percent(decimal part, decimal whole) => whole <= 0 ? 0 : (int)Math.Round(part / whole * 100);
@@ -224,7 +294,10 @@
         _busy = true; _error = null;
         try
         {
-            await Session.Save<SprintModel>(HttpMethod.Put, Session.TeamPath($"sprints/{Sprint.Id}"), new SprintRequest(Sprint.Name, Sprint.Goal, Sprint.StartDate, Sprint.EndDate, "Completed"));
+            // Закрытие и перенос остатка — одна операция сервера: итог фиксируется до того, как задачи уйдут из спринта.
+            var moves = Open.Select(t => new SprintCarryDto(t.Id, Decision(t))).ToArray();
+            await Session.Save<SprintModel>(HttpMethod.Post, Session.TeamPath($"sprints/{Sprint.Id}/close"), new SprintCloseRequest(moves, moves.Any(m => m.Action == SprintCarry.Next) ? _next : null));
+            _closing = false;
             await Changed.InvokeAsync();
         }
         catch (Exception e) when (e is HttpRequestException or InvalidOperationException) { _error = e.Message; }

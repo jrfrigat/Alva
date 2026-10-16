@@ -284,6 +284,7 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
             ["api", "teams", _, "tasks", _, "dependencies"] => AddDependency(store, value),
             ["api", "teams", var t, "sprints"] => SaveSprint(store, Id(t), null, value),
             ["api", "teams", _, "sprints", var id] => SaveSprint(store, Guid.Empty, Id(id), value),
+            ["api", "teams", var t, "sprints", var id, "close"] => CloseSprint(store, Id(t), Id(id), value),
             _ => throw new NotSupportedException($"Demo: {method} {path} не поддерживается.")
         };
         await Persist();
@@ -499,6 +500,48 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
         if (sprint.Commitment is null && before != "Completed") sprint.Commitment = snapshot;
         if (status == "Completed") sprint.Result = snapshot;
     }
+
+    /// <summary>Закрытие спринта с решениями по остатку — то же правило, что в API: готовые, снимок итога, перенос.</summary>
+    private static SprintModel CloseSprint(DemoStore store, Guid teamId, Guid sprintId, object value)
+    {
+        var request = Read<SprintCloseRequest>(value);
+        var sprint = store.Sprints.FirstOrDefault(s => s.Id == sprintId) ?? throw new InvalidOperationException("Спринт не найден.");
+        if (sprint.Status == "Completed") throw new InvalidOperationException("Спринт уже закрыт.");
+        var decisions = new Dictionary<Guid, string>();
+        foreach (var item in request.Tasks ?? [])
+            if (!SprintCarry.Known(item.Action) || !decisions.TryAdd(item.TaskId, item.Action)) throw new InvalidOperationException("Неизвестное или повторное решение по задаче.");
+        var open = store.Tasks.Where(t => t.TeamId == teamId && t.Status is not ("Done" or "Cancelled") && SprintWindows.Overlaps(t.StartDate, t.EndDate, sprint.StartDate, sprint.EndDate)).ToList();
+        if (open.Any(t => !decisions.ContainsKey(t.Id))) throw new InvalidOperationException("Решите, что делать с каждой незавершённой задачей спринта.");
+        var next = decisions.ContainsValue(SprintCarry.Next)
+            ? store.Sprints.FirstOrDefault(s => s.Id == request.NextSprintId && s.Id != sprintId && s.Status != "Completed" && store.SprintTeam.GetValueOrDefault(s.Id) == teamId)
+              ?? throw new InvalidOperationException("Выберите незакрытый спринт команды для переноса.")
+            : null;
+        foreach (var task in open.Where(t => decisions[t.Id] == SprintCarry.Done))
+        {
+            task.Status = "Done"; task.Version++;
+            AddHistory(store, task.Id, $"Отмечена готовой при закрытии спринта «{sprint.Name}»");
+        }
+        SetStatus(store, sprint, "Completed");
+        var parents = store.Tasks.ToDictionary(t => t.Id, t => t.ParentId);
+        foreach (var task in SprintCarry.LeavesFirst(open.Where(t => decisions[t.Id] != SprintCarry.Done), t => t.Id, id => parents.GetValueOrDefault(id)))
+        {
+            if (decisions[task.Id] == SprintCarry.Next)
+            {
+                (var start, var end) = SprintCarry.Move(task.StartDate, task.EndDate, next!.StartDate);
+                task.StartDate = start; task.EndDate = end;
+                AddHistory(store, task.Id, $"Перенесена из «{sprint.Name}» в «{next.Name}»");
+            }
+            else
+            {
+                task.StartDate = task.EndDate = null;
+                AddHistory(store, task.Id, $"Возвращена в пул при закрытии «{sprint.Name}»");
+            }
+            task.Version++;
+            KeepParentsAroundChildren(store, task);
+        }
+        return sprint;
+    }
+
 
     private static void AssignTask(DemoStore store, Guid taskId, HttpMethod method, object value)
     {

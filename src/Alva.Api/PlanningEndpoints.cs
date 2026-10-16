@@ -60,6 +60,13 @@ public static class PlanningEndpoints
             await db.SaveChangesAsync();
             return (await ListSprints(db, teamId)).Single(x => x.Id == sprint.Id);
         });
+        group.MapPost("/sprints/{sprintId:guid}/close", async (Guid teamId, Guid sprintId, SprintCloseRequest request, ClaimsPrincipal user, AlvaDbContext db) =>
+        {
+            await AccessControl.RequireTeam(db, user, teamId, "sprints", "edit");
+            await AccessControl.RequireTeam(db, user, teamId, "tasks", "edit");
+            await Close(db, teamId, sprintId, request, user.UserId());
+            return (await ListSprints(db, teamId)).Single(x => x.Id == sprintId);
+        });
         group.MapPut("/sprints/{sprintId:guid}", async (Guid teamId, Guid sprintId, SprintRequest request, ClaimsPrincipal user, AlvaDbContext db) =>
         {
             await AccessControl.RequireTeam(db, user, teamId, "sprints", "edit");
@@ -224,6 +231,56 @@ public static class PlanningEndpoints
         {
             sprint.ResultTasks = snapshot.Tasks; sprint.ResultHours = snapshot.Hours; sprint.ResultDoneHours = snapshot.DoneHours; sprint.ClosedAt = snapshot.At;
         }
+    }
+
+
+    /// <summary>
+    /// Закрытие спринта с решением по каждой незавершённой задаче, одной транзакцией: отметки «готова», затем снимок итога
+    /// (в нём остаток виден как незакрытые часы), затем перенос остатка в следующий спринт или в пул.
+    /// </summary>
+    private static async Task Close(AlvaDbContext db, Guid teamId, Guid sprintId, SprintCloseRequest request, Guid userId)
+    {
+        var sprint = await db.Sprints.SingleOrDefaultAsync(x => x.TeamId == teamId && x.Id == sprintId) ?? throw new ApiException(404, "Спринт не найден.");
+        if (sprint.Status == SprintStatus.Completed) throw new ApiException(400, "Спринт уже закрыт.");
+        var decisions = new Dictionary<Guid, string>();
+        foreach (var item in request.Tasks ?? [])
+            if (!SprintCarry.Known(item.Action) || !decisions.TryAdd(item.TaskId, item.Action)) throw new ApiException(400, "Неизвестное или повторное решение по задаче.");
+        var open = (await db.Tasks.Where(t => t.TeamId == teamId && !t.Archived && t.Status != WorkStatus.Done && t.Status != WorkStatus.Cancelled && (t.StartDate != null || t.EndDate != null)).ToListAsync())
+            .Where(t => SprintWindows.Overlaps(t.StartDate, t.EndDate, sprint.StartDate, sprint.EndDate)).ToList();
+        if (open.Any(t => !decisions.ContainsKey(t.Id))) throw new ApiException(400, "Решите, что делать с каждой незавершённой задачей спринта.");
+        Sprint? next = null;
+        if (decisions.Values.Contains(SprintCarry.Next))
+            next = await db.Sprints.SingleOrDefaultAsync(x => x.TeamId == teamId && x.Id == request.NextSprintId && x.Id != sprintId && x.Status != SprintStatus.Completed)
+                ?? throw new ApiException(400, "Выберите незакрытый спринт команды для переноса.");
+
+        await using var transaction = await db.Database.BeginTransactionAsync();
+        foreach (var task in open.Where(t => decisions[t.Id] == SprintCarry.Done))
+        {
+            task.Status = WorkStatus.Done; task.Version++;
+            db.Add(new TaskHistory { TaskId = task.Id, UserId = userId, Summary = $"Отмечена готовой при закрытии спринта «{sprint.Name}»" });
+        }
+        await db.SaveChangesAsync();
+        var before = sprint.Status;
+        sprint.Status = SprintStatus.Completed;
+        await Snapshot(db, sprint, before);
+        var parents = await db.Tasks.Where(t => t.TeamId == teamId).ToDictionaryAsync(t => t.Id, t => t.ParentId);
+        foreach (var task in SprintCarry.LeavesFirst(open.Where(t => decisions[t.Id] != SprintCarry.Done), t => t.Id, id => parents.GetValueOrDefault(id)))
+        {
+            if (decisions[task.Id] == SprintCarry.Next)
+            {
+                (task.StartDate, task.EndDate) = SprintCarry.Move(task.StartDate, task.EndDate, next!.StartDate);
+                db.Add(new TaskHistory { TaskId = task.Id, UserId = userId, Summary = $"Перенесена из «{sprint.Name}» в «{next.Name}»" });
+            }
+            else
+            {
+                task.StartDate = task.EndDate = null;
+                db.Add(new TaskHistory { TaskId = task.Id, UserId = userId, Summary = $"Возвращена в пул при закрытии «{sprint.Name}»" });
+            }
+            task.Version++;
+            await TaskEndpoints.KeepParentsAroundChildren(db, teamId, task, userId);
+        }
+        await db.SaveChangesAsync();
+        await transaction.CommitAsync();
     }
 
     private static (DateOnly Start, DateOnly End) Period(DateOnly? from, DateOnly? to)

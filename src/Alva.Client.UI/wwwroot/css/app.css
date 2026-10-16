@@ -254,6 +254,13 @@ html,body{margin:0;min-height:100%;font-family:var(--alva-font);background:var(-
 .alva-sprint-table__meta{font-size:11px;color:var(--flare-color-on-surface-variant,var(--alva-on-surface-variant))}
 .alva-sprint-table__est{font-size:12px}
 .alva-sprint-table__empty{padding:1rem;text-align:center;font-size:13px;color:var(--flare-color-on-surface-variant,var(--alva-on-surface-variant))}
+/* Диалог закрытия спринта: по строке на незавершённую задачу с выбором, что с ней сделать. */
+.alva-close__lead{margin:0 0 .75rem}
+.alva-close__list{list-style:none;margin:.75rem 0;padding:0;display:flex;flex-direction:column;gap:.5rem}
+.alva-close__item{display:grid;grid-template-columns:minmax(0,1fr) minmax(11rem,14rem);gap:.75rem;align-items:center;padding:.5rem 0;border-bottom:1px solid var(--flare-color-outline-variant,var(--alva-outline))}
+.alva-close__task{display:flex;flex-direction:column;gap:2px;min-width:0}
+.alva-close__task small,.alva-close__sum{font-size:12px;color:var(--flare-color-on-surface-variant,var(--alva-on-surface-variant))}
+@media (max-width:40rem){.alva-close__item{grid-template-columns:1fr}}
 .alva-sprint-tasks__foot{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:.75rem;padding:.625rem 1rem;border-top:1px solid var(--alva-border);background:var(--flare-color-surface-container-low,#eff4ff);font-size:12px}
 @media(max-width:1023px){.alva-sprint-table__head{display:none}.alva-sprint-table__row{grid-template-columns:2rem minmax(0,1fr);row-gap:.375rem}.alva-sprint-table__row>span:nth-child(n+3){grid-column:2}}
 

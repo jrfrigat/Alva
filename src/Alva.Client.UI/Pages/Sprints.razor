@@ -34,7 +34,7 @@ else
     else if(_loaded){<FlareEmptyState Title="@(Strings.T("Нечего планировать"))" Description="@(Strings.T("Создайте спринт, чтобы собрать в него задачи из пула."))"><ActionContent><FlareButton @ref="_emptyNewButton" Size="ButtonSize.Sm" OnClick="New">@(Strings.T("Новый спринт"))</FlareButton></ActionContent></FlareEmptyState>}
 }
 else if(SprintId is null){<SprintRegistry Sprints="_sprints" Tasks="_tasks" />}
-else if(Current is not null){<SprintDetails Sprint="Current" Tasks="_tasks" OnEdit="@(()=>Navigation.NavigateTo($"sprints/{Current.Id}/plan"))" Changed="Load" />}
+else if(Current is not null){<SprintDetails Sprint="Current" Tasks="_tasks" Sprints="_sprints" OnEdit="@(()=>Navigation.NavigateTo($"sprints/{Current.Id}/plan"))" Changed="Load" />}
 else if(_loaded){<UnavailableState Title="@(Strings.T("Спринт не найден или недоступен"))" BackHref="sprints" BackLabel="@(Strings.T("К спринтам"))" />}
 }
 @code {
