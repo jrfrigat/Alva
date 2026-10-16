@@ -141,7 +141,16 @@ else
     }
     // Фильтры сохраняются при каждом изменении (@bind-Value:after), чтобы контекст был готов к переходу.
     private Task SaveListContext() => Session.TaskList.SaveFilters(_search, _projectFilter, _statusFilter);
-    protected override async Task OnParametersSetAsync() { _editing=null; FocusOpened(); await Load(); }
+    // Создание из другого экрана (проект): форма открывается сразу с его контекстом, а сохранение возвращает туда.
+    [SupplyParameterFromQuery(Name = "new")] public int? NewFlag { get; set; }
+    [SupplyParameterFromQuery(Name = "project")] public Guid? NewProject { get; set; }
+    [SupplyParameterFromQuery(Name = "back")] public string? Back { get; set; }
+    private bool BackToProject => Back == "project" && NewProject.HasValue;
+    protected override async Task OnParametersSetAsync()
+    {
+        _editing=null; FocusOpened(); await Load();
+        if (NewFlag == 1 && TaskId is null && Session.TeamId is not null) { NewTask(); _editing!.ProjectId = _projects.Any(p => p.Id == NewProject) ? NewProject : null; }
+    }
 
     // Открытие задачи (клик по строке или Enter по ссылке) помечает карточку как цель фокуса.
     private void FocusOpened()
@@ -166,13 +175,13 @@ else
     private bool _returnFocus;
     private void Hide(){_editing=null;_history=[];}
     // Закрытие редактора возвращает фокус на кнопку, которой его открыли, а не роняет его на body.
-    private async Task Close(){Hide();StateHasChanged();if(_newButton is not null) await _newButton.FocusAsync();}
+    private async Task Close(){Hide();if(BackToProject){Navigation.NavigateTo($"projects?project={NewProject}");return;}StateHasChanged();if(_newButton is not null) await _newButton.FocusAsync();}
     private Task Save()=>Run(async()=>{
         var model=_editing!;var request=new TaskRequest(model.Title,model.Description,model.Status,model.ProjectId,model.ParentId,model.EstimateHours,model.Deadline,model.StartDate,model.EndDate,model.Order,model.Id==Guid.Empty?null:model.Version,model.RequiredSkills,model.Priority);
         var saved=await Session.Save<TaskModel>(model.Id==Guid.Empty?HttpMethod.Post:HttpMethod.Put,Session.TeamPath("tasks"+(model.Id==Guid.Empty?"":$"/{model.Id}")),request);
         if(model.AssignmentTargetId.HasValue)await Session.Send(HttpMethod.Put,Session.TeamPath($"tasks/{saved.Id}/assignment"),new AssignmentRequest(model.AssignmentTargetId.Value,model.ResolvedPersonId));
         else if(model.Id!=Guid.Empty && _tasks.Any(t=>t.Id==model.Id && t.AssignmentTargetId.HasValue))await Session.Send(HttpMethod.Delete,Session.TeamPath($"tasks/{saved.Id}/assignment"),new{});
-        Hide();Navigation.NavigateTo($"tasks/{saved.Id}");
+        Hide();Navigation.NavigateTo(BackToProject ? $"projects?project={NewProject}" : $"tasks/{saved.Id}");
     });
     private Task Archive()=>Run(async()=>{await Session.Send(HttpMethod.Delete,Session.TeamPath($"tasks/{_editing!.Id}"),new{});Hide();_tasks=await Session.Get<TaskModel[]>(Session.TeamPath("tasks"));});
 }

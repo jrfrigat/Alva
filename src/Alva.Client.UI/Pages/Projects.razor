@@ -85,7 +85,7 @@ else
                     </div>
                     <div class="alva-proj-detail__actions">
                         <FlareButton Variant="ButtonVariant.Tonal" Size="ButtonSize.Sm" OnClick="() => Edit(p)"><LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.Edit" Size="18px" /></LeadingIcon><ChildContent>@(Strings.T("Изменить рамку"))</ChildContent></FlareButton>
-                        <FlareButton Href="tasks" Size="ButtonSize.Sm"><LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.AddTask" Size="18px" /></LeadingIcon><ChildContent>@(Strings.T("Создать задачу"))</ChildContent></FlareButton>
+                        <FlareButton Href="@($"tasks?new=1&project={p.Id}&back=project")" Size="ButtonSize.Sm"><LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.AddTask" Size="18px" /></LeadingIcon><ChildContent>@(Strings.T("Создать задачу"))</ChildContent></FlareButton>
                     </div>
                 </div>
                 <div class="alva-proj-kpis">
@@ -207,7 +207,10 @@ else
         return string.IsNullOrWhiteSpace(_wbsSearch) ? all : all.Where(x => x.Item1.Title.Contains(_wbsSearch, StringComparison.OrdinalIgnoreCase));
     }
 
-    protected override async Task OnInitializedAsync() => await Load();
+    /// <summary>Проект, выбранный по ссылке (например, после создания задачи из него).</summary>
+    [SupplyParameterFromQuery(Name = "project")] public Guid? ProjectParam { get; set; }
+
+    protected override async Task OnInitializedAsync() { _selected = ProjectParam; await Load(); }
 
     private async Task Run(Func<Task> action)
     {
