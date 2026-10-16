@@ -69,7 +69,7 @@
         @foreach (var (actor, pct) in People.Take(3))
         {
             <div class="alva-loadbar">
-                <div class="alva-loadbar__row"><span>@actor.Name</span><span class="alva-loadbar__pct alva-loadbar__pct--@Tone(pct).ToString().ToLowerInvariant() alva-num">@pct% @(pct > 100 ? Strings.T("перегрузка") : pct > 80 ? Strings.T("в норме") : Strings.T("свободен"))</span></div>
+                <div class="alva-loadbar__row"><span>@actor.Name</span><span class="alva-loadbar__pct alva-loadbar__pct--@Tone(pct).ToString().ToLowerInvariant() alva-num">@LoadText(actor.Id, pct)</span></div>
                 <div class="alva-loadbar__track"><span class="alva-loadbar__fill alva-loadbar__fill--@Tone(pct).ToString().ToLowerInvariant()" style="width:@Math.Min(100, pct)%"></span></div>
             </div>
         }
@@ -163,6 +163,13 @@
     private static int Percent(decimal part, decimal whole) => whole <= 0 ? 0 : (int)Math.Round(part / whole * 100);
     private static AlvaTone Tone(int pct) => pct > 100 ? AlvaTone.Critical : pct > 80 ? AlvaTone.Info : AlvaTone.Ok;
     private int LoadOf(Guid id) => Percent(_load[id].Allocated, _load[id].Available);
+    // Процент — доля занятого времени; рядом свободные часы или перегруз, чтобы число не читалось как «свободно N%».
+    private string LoadText(Guid id, int pct)
+    {
+        var (available, allocated) = _load[id];
+        var rest = available - allocated;
+        return $"{Strings.T("Занято")} {pct}% · {(rest >= 0 ? Strings.T("свободно") : Strings.T("перегруз"))} {AlvaFormat.Hours(Math.Abs(rest))} {Strings.T("ч")}";
+    }
     private string ProjectName(Guid? id) => _projects.FirstOrDefault(p => p.Id == id)?.Name ?? Strings.T("Текучка");
 
     private IEnumerable<BreadcrumbItem> Crumbs => [new(Strings.T("Спринты"), "sprints"), new(Sprint.Name)];

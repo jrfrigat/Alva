@@ -719,4 +719,6 @@
   <data name="сейчас в работе" xml:space="preserve"><value>сейчас в работе</value></data>
   <data name="задача" xml:space="preserve"><value>задача</value></data>
   <data name="Перегруз по дням:" xml:space="preserve"><value>Перегруз по дням:</value></data>
+  <data name="Занято" xml:space="preserve"><value>Занято</value></data>
+  <data name="свободно" xml:space="preserve"><value>свободно</value></data>
 </root>
