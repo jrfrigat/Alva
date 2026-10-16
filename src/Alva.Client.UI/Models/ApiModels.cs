@@ -59,6 +59,21 @@ public sealed class SprintModel
     public DateOnly EndDate { get; set; } = DateOnly.FromDateTime(DateTime.Today.AddDays(13));
     public string Status { get; set; } = "Planned";
 }
+/// <summary>
+/// Кто реально делает задачу. Назначение на роль или подкоманду становится работой человека, когда для него выбран
+/// конкретный исполнитель (ResolvedPersonId); все экраны должны отвечать на этот вопрос одинаково.
+/// </summary>
+public static class Assignees
+{
+    /// <summary>Эффективный исполнитель: выбранный человек, иначе цель назначения, если это человек.</summary>
+    public static Guid? Person(TaskModel task, IEnumerable<ActorModel> actors) =>
+        task.ResolvedPersonId ?? (task.AssignmentTargetId is { } target && actors.FirstOrDefault(a => a.Id == target) is { Kind: "Person" } person ? person.Id : null);
+
+    /// <summary>Участники-люди текущего пользователя: связанные по UserId или с тем же email.</summary>
+    public static HashSet<Guid> Me(IEnumerable<ActorModel> actors, UserInfo? user) => user is null ? [] : actors
+        .Where(a => a.Kind == "Person" && (a.UserId == user.Id || (!string.IsNullOrWhiteSpace(a.Email) && string.Equals(a.Email, user.Email, StringComparison.OrdinalIgnoreCase))))
+        .Select(a => a.Id).ToHashSet();
+}
 public record CapacityDay(Guid ActorId, string ActorName, DateOnly Date, decimal AvailableHours, decimal AllocatedHours);
 public record RiskInfo(Guid TaskId, string Title, string Severity, string[] Reasons, DateOnly? ForecastDate);
 public static class Labels

@@ -90,7 +90,7 @@ else
     private readonly string[] _statuses=["Backlog","Planned","InProgress","Done","Cancelled"];
     private string Route => AppRoutes.Current(Navigation);
     private string PageHeading => Route == "my-work" ? Strings.T("Моя работа") : Route == "unassigned" ? Strings.T("Без исполнителя") : Strings.T("Задачи команды");
-    private IEnumerable<TaskModel> Filtered => _tasks.Where(t => (string.IsNullOrWhiteSpace(_search) || t.Title.Contains(_search,StringComparison.OrdinalIgnoreCase)) && (!_projectFilter.HasValue || t.ProjectId==_projectFilter) && (_statusFilter is null || t.Status==_statusFilter) && (Route != "unassigned" || t.AssignmentTargetId is null || _actors.FirstOrDefault(a=>a.Id==t.AssignmentTargetId)?.Kind=="Role") && (Route != "my-work" || _actors.Any(a=>a.Id==t.AssignmentTargetId && a.Email==Session.User?.Email)));
+    private IEnumerable<TaskModel> Filtered => _tasks.Where(t => (string.IsNullOrWhiteSpace(_search) || t.Title.Contains(_search,StringComparison.OrdinalIgnoreCase)) && (!_projectFilter.HasValue || t.ProjectId==_projectFilter) && (_statusFilter is null || t.Status==_statusFilter) && (Route != "unassigned" || t.AssignmentTargetId is null || _actors.FirstOrDefault(a=>a.Id==t.AssignmentTargetId)?.Kind=="Role") && (Route != "my-work" || Assignees.Person(t,_actors) is { } person && Assignees.Me(_actors,Session.User).Contains(person)));
     private IEnumerable<TaskModel> Roots => Filtered.Where(t=>t.ParentId is null || !Filtered.Any(p=>p.Id==t.ParentId)).OrderBy(t=>t.Order);
     private Task<IEnumerable<TaskModel?>> Children(TaskModel? task) => Task.FromResult(Filtered.Where(t=>t.ParentId==task!.Id).OrderBy(t=>t.Order).Cast<TaskModel?>());
     private bool HasChildren(TaskModel? task) => Filtered.Any(t=>t.ParentId==task!.Id);
