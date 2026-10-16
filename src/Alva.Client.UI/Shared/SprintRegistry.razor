@@ -102,7 +102,7 @@
     {
         var tasks = TasksOf(sprint);
         var (done, total) = Hours(sprint);
-        var inWork = tasks.Where(t => t.Status == "InProgress").Sum(t => t.EstimateHours ?? 0);
+        var inWork = SprintHours.Sum(tasks.Where(t => t.Status == "InProgress"), sprint);
         var risks = RisksOf(sprint);
         <h2 class="alva-section-title"><span class="alva-section-title__dot" aria-hidden="true"></span>@(Strings.T("Текущая итерация в работе"))</h2>
         <section class="alva-iteration" @key="sprint.Id">
@@ -116,7 +116,7 @@
                 @if (!string.IsNullOrWhiteSpace(sprint.Goal)) { <p class="alva-iteration__goal">@sprint.Goal</p> }
                 <div class="alva-iteration__line">
                     <span class="alva-iteration__label">@(Strings.T("Проекты:"))</span>
-                    @foreach (var (name, share) in ProjectShares(tasks)) { <span class="alva-project-chip"><span class="alva-project-chip__dot" aria-hidden="true"></span>@name (@share%)</span> }
+                    @foreach (var (name, share) in ProjectShares(tasks, sprint)) { <span class="alva-project-chip"><span class="alva-project-chip__dot" aria-hidden="true"></span>@name (@share%)</span> }
                 </div>
                 <div class="alva-iteration__line">
                     <span class="alva-iteration__label">Команда (@PeopleOf(tasks).Length):</span>
@@ -237,11 +237,11 @@
     private TaskModel[] TasksOf(SprintModel sprint) => Tasks.Where(t => t.SprintIds.Contains(sprint.Id) && t.Status != "Cancelled").ToArray();
     private RiskDto[] RisksOf(SprintModel sprint) => _risks.Where(r => TasksOf(sprint).Any(t => t.Id == r.TaskId)).ToArray();
 
-    /// <summary>Закрытые и все оценённые часы спринта.</summary>
+    /// <summary>Закрытые и все оценённые часы спринта — доли задач, которые приходятся на него.</summary>
     private (decimal Done, decimal Total) Hours(SprintModel sprint)
     {
         var tasks = TasksOf(sprint);
-        return (tasks.Where(t => t.Status == "Done").Sum(t => t.EstimateHours ?? 0), tasks.Sum(t => t.EstimateHours ?? 0));
+        return (SprintHours.Sum(tasks.Where(t => t.Status == "Done"), sprint), SprintHours.Sum(tasks, sprint));
     }
 
     private static int Percent(decimal part, decimal whole) => whole <= 0 ? 0 : (int)Math.Round(part / whole * 100);
@@ -262,11 +262,11 @@
         }
     }
 
-    private IEnumerable<(string Name, int Share)> ProjectShares(TaskModel[] tasks)
+    private IEnumerable<(string Name, int Share)> ProjectShares(TaskModel[] tasks, SprintModel sprint)
     {
-        var total = tasks.Sum(t => t.EstimateHours ?? 0);
+        var total = SprintHours.Sum(tasks, sprint);
         return tasks.GroupBy(t => t.ProjectId)
-            .Select(g => (Name: g.Key is null ? Strings.T("Текучка") : _projects.FirstOrDefault(p => p.Id == g.Key)?.Name ?? Strings.T("Проект"), Share: Percent(g.Sum(t => t.EstimateHours ?? 0), total)))
+            .Select(g => (Name: g.Key is null ? Strings.T("Текучка") : _projects.FirstOrDefault(p => p.Id == g.Key)?.Name ?? Strings.T("Проект"), Share: Percent(SprintHours.Sum(g, sprint), total)))
             .OrderByDescending(x => x.Share);
     }
 

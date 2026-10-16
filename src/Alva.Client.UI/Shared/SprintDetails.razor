@@ -117,14 +117,14 @@
                 </span>
                 <span role="cell"><span class="alva-project-chip">@ProjectName(task.ProjectId)</span></span>
                 <span role="cell"><AlvaAssignee Task="task" Actors="_actors" Load="@(person is { } p && _load.ContainsKey(p) ? LoadOf(p) : null)" /></span>
-                <span role="cell" class="alva-num alva-sprint-table__est">@(task.EstimateHours.HasValue ? $"{AlvaFormat.Hours(task.EstimateHours.Value)} ч" : "—")</span>
+                <span role="cell" class="alva-num alva-sprint-table__est">@EstimateText(task)</span>
                 <span role="cell"><AlvaStatusChip Tone="AlvaTones.Status(task.Status)">@Labels.Status(task.Status)</AlvaStatusChip></span>
             </div>
         }
         @if (!Filtered(_filter).Any()) { <div class="alva-sprint-table__empty">@(Strings.T("Задач по этому фильтру нет."))</div> }
     </div>
     <footer class="alva-sprint-tasks__foot">
-        <span class="alva-num">@(Strings.T("Итоги по выборке: План:")) <b>@AlvaFormat.Hours(Filtered(_filter).Sum(t => t.EstimateHours ?? 0)) ч</b> @(Strings.T("· Закрыто:")) <b>@AlvaFormat.Hours(Filtered(_filter).Where(t => t.Status == "Done").Sum(t => t.EstimateHours ?? 0)) ч</b> @(Strings.T("· Задач с рисками:")) <b class="alva-kpi__alert">@Filtered(_filter).Count(t => Risks.Any(r => r.TaskId == t.Id))</b></span>
+        <span class="alva-num">@(Strings.T("Итоги по выборке: План:")) <b>@AlvaFormat.Hours(Filtered(_filter).Sum(Hours)) ч</b> @(Strings.T("· Закрыто:")) <b>@AlvaFormat.Hours(Filtered(_filter).Where(t => t.Status == "Done").Sum(Hours)) ч</b> @(Strings.T("· Задач с рисками:")) <b class="alva-kpi__alert">@Filtered(_filter).Count(t => Risks.Any(r => r.TaskId == t.Id))</b></span>
         <FlareButton Size="ButtonSize.Sm" OnClick="Edit">
             <LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.Add" Size="18px" /></LeadingIcon>
             <ChildContent>@(Strings.T("Добавить задачу в спринт"))</ChildContent>
@@ -155,9 +155,11 @@
     private static DateOnly Today => DateOnly.FromDateTime(DateTime.Today);
     private TaskModel[] SprintTasks => Tasks.Where(t => t.SprintIds.Contains(Sprint.Id) && t.Status != "Cancelled").OrderBy(t => t.Order).ToArray();
     private RiskDto[] Risks => _risks.Where(r => SprintTasks.Any(t => t.Id == r.TaskId)).ToArray();
-    private decimal Total => SprintTasks.Sum(t => t.EstimateHours ?? 0);
-    private decimal Done => SprintTasks.Where(t => t.Status == "Done").Sum(t => t.EstimateHours ?? 0);
-    private decimal InWork => SprintTasks.Where(t => t.Status == "InProgress").Sum(t => t.EstimateHours ?? 0);
+    // Часы задачи в этом спринте: задача на стыке спринтов делит оценку между ними (SprintWindows.Share).
+    private decimal Hours(TaskModel t) => SprintHours.Of(t, Sprint);
+    private decimal Total => SprintTasks.Sum(Hours);
+    private decimal Done => SprintTasks.Where(t => t.Status == "Done").Sum(Hours);
+    private decimal InWork => SprintTasks.Where(t => t.Status == "InProgress").Sum(Hours);
     private int DayOf => Math.Clamp(AlvaFormat.WorkDays(Sprint.StartDate, Today < Sprint.StartDate ? Sprint.StartDate : Today), 1, Math.Max(1, AlvaFormat.WorkDays(Sprint.StartDate, Sprint.EndDate)));
     private int DaysLeft => Today > Sprint.EndDate ? 0 : AlvaFormat.WorkDays(Today < Sprint.StartDate ? Sprint.StartDate : Today, Sprint.EndDate);
     private static int Percent(decimal part, decimal whole) => whole <= 0 ? 0 : (int)Math.Round(part / whole * 100);
@@ -170,6 +172,9 @@
         var rest = available - allocated;
         return $"{Strings.T("Занято")} {pct}% · {(rest >= 0 ? Strings.T("свободно") : Strings.T("перегруз"))} {AlvaFormat.Hours(Math.Abs(rest))} {Strings.T("ч")}";
     }
+    /// <summary>Оценка в таблице: доля спринта и, если задача идёт дальше, её полный объём.</summary>
+    private string EstimateText(TaskModel t) => t.EstimateHours is not { } all ? "—"
+        : Hours(t) is var part && part < all ? $"{AlvaFormat.Hours(part)} {Strings.T("из")} {AlvaFormat.Hours(all)} ч" : $"{AlvaFormat.Hours(all)} ч";
     private string ProjectName(Guid? id) => _projects.FirstOrDefault(p => p.Id == id)?.Name ?? Strings.T("Текучка");
 
     private IEnumerable<BreadcrumbItem> Crumbs => [new(Strings.T("Спринты"), "sprints"), new(Sprint.Name)];
@@ -180,7 +185,7 @@
         .Select(a => (a, LoadOf(a.Id))).OrderByDescending(x => x.Item2).ToArray();
 
     private (string Name, int Share)[] Shares => SprintTasks.GroupBy(t => t.ProjectId)
-        .Select(g => (ProjectName(g.Key), Percent(g.Sum(t => t.EstimateHours ?? 0), Total)))
+        .Select(g => (ProjectName(g.Key), Percent(g.Sum(Hours), Total)))
         .OrderByDescending(x => x.Item2).ToArray();
 
     private IEnumerable<TaskModel> Filtered(string key) => key switch

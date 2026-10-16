@@ -260,7 +260,7 @@
     private TaskModel[] InSprint => _inSprint.Tasks == Tasks && _inSprint.Sprint == Sprint.Id ? _inSprint.Value
         : (_inSprint = (Tasks, Sprint.Id, Tasks.Where(t => t.SprintIds.Contains(Sprint.Id) && t.Status != "Cancelled").OrderBy(t => t.Order).ToArray())).Value;
     private (TaskModel[]? Tasks, Guid Sprint, TaskModel[] Value) _inSprint = (null, Guid.Empty, []);
-    private decimal Planned => InSprint.Sum(t => t.EstimateHours ?? 0);
+    private decimal Planned => SprintHours.Sum(InSprint, Sprint);
     private decimal Capacity => _load.Values.Sum(l => l.Available);
     // Перегруз по дням: свободные дни спринта не гасят перегруженные (так же считает автобаланс).
     private decimal Overtime => CapacityMath.Overload(_capacity);
@@ -291,7 +291,7 @@
         .Select(role =>
         {
             var people = _actors.Where(a => a.Kind == "Person" && a.RoleIds.Contains(role.Id)).Select(a => a.Id).ToHashSet();
-            var plan = InSprint.Where(t => t.AssignmentTargetId == role.Id || (t.ResolvedPersonId ?? t.AssignmentTargetId) is { } p && people.Contains(p)).Sum(t => t.EstimateHours ?? 0);
+            var plan = InSprint.Where(t => t.AssignmentTargetId == role.Id || (t.ResolvedPersonId ?? t.AssignmentTargetId) is { } p && people.Contains(p)).Sum(t => SprintHours.Of(t, Sprint));
             var avail = people.Sum(p => _load.TryGetValue(p, out var l) ? l.Available : 0);
             return (role, plan, avail);
         })

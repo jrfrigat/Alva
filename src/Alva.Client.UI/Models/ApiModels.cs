@@ -74,6 +74,14 @@ public static class Assignees
         .Where(a => a.Kind == "Person" && (a.UserId == user.Id || (!string.IsNullOrWhiteSpace(a.Email) && string.Equals(a.Email, user.Email, StringComparison.OrdinalIgnoreCase))))
         .Select(a => a.Id).ToHashSet();
 }
+/// <summary>Часы задачи, которые приходятся на спринт (правило SprintWindows.Share).</summary>
+public static class SprintHours
+{
+    public static decimal Of(TaskModel task, SprintModel sprint) =>
+        Alva.Contracts.SprintWindows.Share(task.EstimateHours, task.StartDate, task.EndDate, sprint.StartDate, sprint.EndDate);
+
+    public static decimal Sum(IEnumerable<TaskModel> tasks, SprintModel sprint) => tasks.Sum(t => Of(t, sprint));
+}
 public record CapacityDay(Guid ActorId, string ActorName, DateOnly Date, decimal AvailableHours, decimal AllocatedHours);
 public record RiskInfo(Guid TaskId, string Title, string Severity, string[] Reasons, DateOnly? ForecastDate);
 public static class Labels
