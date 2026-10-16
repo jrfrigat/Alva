@@ -15,7 +15,7 @@ public static class ActorEndpoints
         var ids = actors.Select(a => a.Id).ToArray();
         var roles = await db.ActorRoles.Where(r => ids.Contains(r.ActorId)).ToListAsync();
         var departments = await db.ActorDepartments.Where(d => ids.Contains(d.ActorId)).ToListAsync();
-        return actors.Select(a => new ActorDto(a.Id, a.TeamId, a.Name, a.Kind.ToString(), a.Email, a.ParentId, a.UserId, roles.Where(r => r.ActorId == a.Id).Select(r => r.RoleId).ToArray(), departments.Where(d => d.ActorId == a.Id).Select(d => d.DepartmentId).ToArray())).ToArray();
+        return actors.Select(a => new ActorDto(a.Id, a.TeamId, a.Name, a.Kind.ToString(), a.Email, a.ParentId, a.UserId, roles.Where(r => r.ActorId == a.Id).Select(r => r.RoleId).ToArray(), departments.Where(d => d.ActorId == a.Id).Select(d => d.DepartmentId).ToArray(), a.Skills)).ToArray();
     }
     private static async Task Save(AlvaDbContext db, Guid teamId, Actor actor, ActorRequest request)
     {
@@ -42,6 +42,10 @@ public static class ActorEndpoints
         if (!string.IsNullOrWhiteSpace(request.Email) && (!MailAddress.TryCreate(request.Email, out var email) || email.Address != request.Email)) throw new ApiException(400, "Введите корректный email.");
         if (actor.Kind != kind && await db.Assignments.AnyAsync(a => a.TargetId == actor.Id || a.ResolvedPersonId == actor.Id)) throw new ApiException(400, "Нельзя менять вид назначенного участника.");
         if (actor.Kind != kind && (await db.Actors.AnyAsync(a => !a.Archived && a.ParentId == actor.Id) || await db.ActorDepartments.AnyAsync(d => d.DepartmentId == actor.Id) || await db.ActorRoles.AnyAsync(r => r.RoleId == actor.Id))) throw new ApiException(400, "Участник используется в справочнике.");
+        if (kind != ActorKind.Person && request.Skills is { Length: > 0 }) throw new ApiException(400, "Навыки задаются только для человека.");
+        try { if (request.Skills is not null) actor.Skills = SkillMath.Normalize(request.Skills); }
+        catch (ArgumentException) { throw new ApiException(400, "Укажите не более 50 навыков длиной до 80 символов."); }
+        if (kind != ActorKind.Person) actor.Skills = [];
         actor.Name = AccessControl.RequiredName(request.Name); actor.Kind = kind; actor.Email = string.IsNullOrWhiteSpace(request.Email) ? null : request.Email.Trim(); actor.ParentId = request.ParentId; actor.UserId = request.UserId;
         var oldRoles = await db.ActorRoles.Where(r => r.ActorId == actor.Id).ToListAsync();
         db.RemoveRange(oldRoles.Where(r => !roleIds.Contains(r.RoleId)));

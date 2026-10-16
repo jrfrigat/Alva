@@ -1,0 +1,11 @@
+@if (Required.Length > 0 && Person is { Kind: "Person" })
+{
+    var missing = SkillMath.Missing(Required, Person.Skills);
+    <span class="alva-slot__meta @(missing.Length > 0 ? "alva-slot__meta--warning" : "")" role="status">
+        @(missing.Length > 0 ? Strings.T("Не хватает навыков:") + " " + string.Join(", ", missing) : Strings.T("Все необходимые навыки есть"))
+    </span>
+}
+@code {
+    [Parameter] public string[] Required { get; set; } = [];
+    [Parameter] public ActorModel? Person { get; set; }
+}

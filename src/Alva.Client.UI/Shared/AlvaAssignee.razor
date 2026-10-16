@@ -16,6 +16,7 @@ else if (Person is not null)
         {
             <span class="alva-slot__meta">@(Target.Kind == "Person" ? Strings.T("Человек") : $"{Labels.Kind(Target.Kind)}: {Target.Name}")</span>
         }
+        <SkillMatch Required="Task.RequiredSkills" Person="Person" />
     </span></span>
 }
 else

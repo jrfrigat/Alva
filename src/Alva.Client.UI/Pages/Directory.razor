@@ -18,6 +18,10 @@ else
     <Columns>
         <FlareColumn TItem="ActorModel" Title="@(Strings.T("Имя"))" Field="a=>a!.Name" Sortable Filterable><Template Context="a"><FlareButton Variant="ButtonVariant.Text" Size="ButtonSize.Sm" OnClick="()=>EditActor(a!)">@a!.Name</FlareButton></Template></FlareColumn>
         <FlareColumn TItem="ActorModel" Title="@(Strings.T("Почта"))" Field="a=>a!.Email" />
+        @if (Kind == "Person")
+        {
+            <FlareColumn TItem="ActorModel" Title="@(Strings.T("Навыки"))"><Template Context="a"><FlareStack Row Wrap>@foreach(var skill in a!.Skills){<FlareChip TValue="string" Value="skill">@skill</FlareChip>}</FlareStack></Template></FlareColumn>
+        }
     </Columns><EmptyStateContent><FlareEmptyState Compact Title="@(Strings.T("Список пока пуст"))" Description="@(Strings.T("Добавьте участников, подкоманды и роли для назначения задач."))" /></EmptyStateContent>
     </FlareDataGrid>
 </FlareCardContent></FlareCard>
@@ -27,6 +31,7 @@ else
     <FlareText Element="h2" Typo="TypographyScale.TitleLarge">@Labels.Kind(_actor.Kind)</FlareText>
     <FlareTextField Label="@(Strings.T("Имя или название"))" @bind-Value="_actor.Name" Required />
     @if(_actor.Kind=="Person") { <FlareTextField Label="@(Strings.T("Электронная почта"))" @bind-Value="_actor.Email" Type="email" /> }
+    @if(_actor.Kind=="Person") { <SkillTagEditor Label="@(Strings.T("Навыки"))" @bind-Values="_actor.Skills" Suggestions="_skillSuggestions" /> }
     <FlareSelect TValue="Guid?" Label="@(Strings.T("Подкоманда"))" Items="@(_actors.Where(a=>a.Kind=="Department" && a.Id!=_actor.Id).Select(a=>(Guid?)a.Id))" ItemLabel="ActorName" NullOption="@(Strings.T("Без подкоманды"))" @bind-Value="_actor.ParentId" />
     @if(_actor.Kind=="Person") { @foreach(var department in _actors.Where(a=>a.Kind=="Department")){<FlareCheckbox Value="_actor.DepartmentIds.Contains(department.Id)" ValueChanged="(bool value)=>ToggleDepartment(department.Id,value)">@department.Name</FlareCheckbox>} }
     @if(_actor.Kind!="Role") {
@@ -42,20 +47,28 @@ else
 }
 @code {
     private ActorModel[] _actors=[];private ActorModel? _actor;private Guid? _role;private bool _busy;private string? _error;
+    private string[] _skillSuggestions=[];
     private string Route=>AppRoutes.Current(Navigation);
     private string Kind=>Route.EndsWith("departments")?"Department":Route.EndsWith("roles")?"Role":"Person";
     private string Title=>Kind=="Role"?Strings.T("Роли команды"):Kind=="Department"?Strings.T("Подкоманды"):Strings.T("Люди команды");
     private string Category=>Kind=="Role"?Strings.T("Реестр · Роли"):Kind=="Department"?Strings.T("Реестр · Подкоманды"):Strings.T("Реестр · Люди");
     protected override async Task OnParametersSetAsync(){Close();await Load();}
     private async Task Run(Func<Task> action){_busy=true;_error=null;try{await action();}catch(Exception e) when(e is HttpRequestException or InvalidOperationException){_error=e.Message;}finally{_busy=false;}}
-    private Task Load()=>Run(async()=>{await Session.Initialize();if(Session.TeamId is null)return;_actors=await Session.Get<ActorModel[]>(Session.TeamPath("actors"));});
+    private Task Load()=>Run(async()=>{await Session.Initialize();if(Session.TeamId is null)return;_actors=await Session.Get<ActorModel[]>(Session.TeamPath("actors"));await LoadSkillSuggestions();});
+    private async Task LoadSkillSuggestions()
+    {
+        var tags = _actors.SelectMany(a=>a.Skills);
+        try { tags = tags.Concat((await Session.Get<TaskModel[]>(Session.TeamPath("tasks"))).SelectMany(t=>t.RequiredSkills)); }
+        catch (HttpRequestException e) when(e.StatusCode==System.Net.HttpStatusCode.Forbidden) { }
+        _skillSuggestions=tags.Distinct(StringComparer.OrdinalIgnoreCase).Order(StringComparer.CurrentCultureIgnoreCase).ToArray();
+    }
     private void New()=>_actor=new ActorModel {Kind=Kind};
     private void Close(){_actor=null;_role=null;}
-    private void EditActor(ActorModel model){Close();_actor=new ActorModel{Id=model.Id,Name=model.Name,Kind=model.Kind,Email=model.Email,ParentId=model.ParentId,RoleIds=[..model.RoleIds],DepartmentIds=[..model.DepartmentIds],UserId=model.UserId};}
+    private void EditActor(ActorModel model){Close();_actor=new ActorModel{Id=model.Id,Name=model.Name,Kind=model.Kind,Email=model.Email,ParentId=model.ParentId,RoleIds=[..model.RoleIds],DepartmentIds=[..model.DepartmentIds],UserId=model.UserId,Skills=[..model.Skills]};}
     private void ToggleDepartment(Guid id,bool value)=>_actor!.DepartmentIds=value?_actor.DepartmentIds.Append(id).Distinct().ToArray():_actor.DepartmentIds.Where(x=>x!=id).ToArray();
     private string ActorName(Guid? id)=>_actors.FirstOrDefault(a=>a.Id==id)?.Name??Strings.T("Без подкоманды");
     private void AddRole(){if(_role.HasValue)_actor!.RoleIds=_actor.RoleIds.Append(_role.Value).Distinct().ToArray();_role=null;}
     private void RemoveRole(Guid id)=>_actor!.RoleIds=_actor.RoleIds.Where(x=>x!=id).ToArray();
-    private Task SaveActor()=>Run(async()=>{var a=_actor!;await Session.Send(a.Id==Guid.Empty?HttpMethod.Post:HttpMethod.Put,Session.TeamPath("actors"+(a.Id==Guid.Empty?"":$"/{a.Id}")),new ActorRequest(a.Name,a.Kind,a.Email,a.ParentId,a.UserId,a.RoleIds,a.DepartmentIds));Close();_actors=await Session.Get<ActorModel[]>(Session.TeamPath("actors"));});
+    private Task SaveActor()=>Run(async()=>{var a=_actor!;await Session.Send(a.Id==Guid.Empty?HttpMethod.Post:HttpMethod.Put,Session.TeamPath("actors"+(a.Id==Guid.Empty?"":$"/{a.Id}")),new ActorRequest(a.Name,a.Kind,a.Email,a.ParentId,a.UserId,a.RoleIds,a.DepartmentIds,a.Skills));Close();_actors=await Session.Get<ActorModel[]>(Session.TeamPath("actors"));});
     private Task ArchiveActor()=>Run(async()=>{await Session.Send(HttpMethod.Delete,Session.TeamPath($"actors/{_actor!.Id}"),new{});Close();_actors=await Session.Get<ActorModel[]>(Session.TeamPath("actors"));});
 }

@@ -1,0 +1,22 @@
+<FlareTagField TValue="string" Label="@Label" Values="Values" ValuesChanged="Changed"
+               Suggestions="Suggestions" MaxTags="50" ErrorText="@_error"
+               HelperText="@(Strings.T("Введите навык и нажмите Enter. Тег можно удалить."))" />
+
+@code {
+    [Parameter] public string Label { get; set; } = "";
+    [Parameter] public string[] Values { get; set; } = [];
+    [Parameter] public EventCallback<string[]> ValuesChanged { get; set; }
+    [Parameter] public IEnumerable<string> Suggestions { get; set; } = [];
+    private string? _error;
+
+    private async Task Changed(IReadOnlyList<string?> values)
+    {
+        try
+        {
+            var normalized = SkillMath.Normalize(values);
+            _error = null;
+            await ValuesChanged.InvokeAsync(normalized);
+        }
+        catch (ArgumentException) { _error = Strings.T("Укажите не более 50 навыков длиной до 80 символов."); }
+    }
+}

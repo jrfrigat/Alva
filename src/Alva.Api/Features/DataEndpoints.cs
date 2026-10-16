@@ -94,8 +94,9 @@ public static class DataEndpoints
                             x.StartDate ??= x.EndDate is { } end && end < window.StartDate ? end : window.StartDate;
                             x.EndDate ??= x.StartDate > window.EndDate ? x.StartDate : window.EndDate;
                         }
+                        x.RequiredSkills = SkillMath.Normalize(x.RequiredSkills);
                         x.TeamId = teamId; x.ProjectId = Optional(x.ProjectId); x.ParentId = Optional(x.ParentId); x.Version = 1; db.Tasks.Add(x); break;
-                    case Actor x: x.TeamId = teamId; x.ParentId = Optional(x.ParentId); x.UserId = null; db.Actors.Add(x); break;
+                    case Actor x: x.Skills = SkillMath.Normalize(x.Skills); x.TeamId = teamId; x.ParentId = Optional(x.ParentId); x.UserId = null; db.Actors.Add(x); break;
                     case ActorRole x: x.ActorId = Map(x.ActorId); x.RoleId = Map(x.RoleId); db.ActorRoles.Add(x); break;
                     case ActorDepartment x: x.ActorId = Map(x.ActorId); x.DepartmentId = Map(x.DepartmentId); db.ActorDepartments.Add(x); break;
                     case Assignment x: x.TaskId = Map(x.TaskId); x.TargetId = Map(x.TargetId); x.ResolvedPersonId = Optional(x.ResolvedPersonId); db.Assignments.Add(x); break;
@@ -183,11 +184,14 @@ public static class DataTransfer
                 case Project x: Name(id, x.Name); if (x.WorkspaceId == Guid.Empty) Error(id, "workspaceId", "Пространство источника обязательно."); break;
                 case Sprint x: Team(id, x.TeamId); Name(id, x.Name); Dates(id, x.StartDate, x.EndDate); break;
                 case TaskCard x:
+                    ValidateSkills(id, x.RequiredSkills);
                     Team(id, x.TeamId); Name(id, x.Title); Ref<Project>(id, x.ProjectId, "projectId", true); Ref<Sprint>(id, legacy.GetValueOrDefault(id), "sprintId", true); Ref<TaskCard>(id, x.ParentId, "parentId", true);
                     if (x.ParentId == id) Error(id, "parentId", "Задача не может быть собственным родителем.");
                     if (x.StartDate.HasValue && x.EndDate.HasValue) Dates(id, x.StartDate.Value, x.EndDate.Value);
                     if (x.Version < 1 || x.Order < 0) Error(id, "version/order", "Версия должна быть положительной, порядок — неотрицательным."); break;
                 case Actor x:
+                    ValidateSkills(id, x.Skills);
+                    if (x.Kind != ActorKind.Person && x.Skills is { Length: > 0 }) Error(id, "skills", "Навыки задаются только для человека.");
                     Team(id, x.TeamId); Name(id, x.Name); Ref<Actor>(id, x.ParentId, "parentId", true);
                     if (x.UserId.HasValue) Error(id, "userId", "Привязки пользователей нельзя импортировать.");
                     if (x.ParentId is { } parent && values.TryGetValue(parent, out var p) && p is Actor pa && (pa.Kind != ActorKind.Department || x.Kind == ActorKind.Role)) Error(id, "parentId", "Родителем участника может быть только подразделение; роль не имеет родителя."); break;
@@ -214,6 +218,12 @@ public static class DataTransfer
                 case CalendarException x: Ref<WorkCalendar>(id, x.CalendarId, "calendarId"); Dates(id, x.From, x.To); if (x.AvailableHours > 24) Error(id, "hours", "Не более 24 часов в сутки."); break;
                 case RecurringBlock x: Ref<WorkCalendar>(id, x.CalendarId, "calendarId"); Name(id, x.Name); if (x.Hours > 24) Error(id, "hours", "Не более 24 часов в сутки."); break;
             }
+        }
+        void ValidateSkills(Guid id, string[]? tags)
+        {
+            if (tags is null) { Error(id, "skills", "Навыки не могут быть null."); return; }
+            try { SkillMath.Normalize(tags); }
+            catch (ArgumentException) { Error(id, "skills", "Укажите не более 50 навыков длиной до 80 символов."); }
         }
         void Name(Guid id, string? name) { if (string.IsNullOrWhiteSpace(name) || name.Length > 200) Error(id, "name", "Название должно содержать 1–200 символов."); }
         void Team(Guid id, Guid team) { if (team != package.SourceTeamId) Error(id, "teamId", "Запись принадлежит другой команде."); }

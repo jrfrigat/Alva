@@ -12,6 +12,8 @@ public sealed class ProjectModel
 }
 public sealed class ActorModel
 {
+    public Guid TeamId { get; set; }
+    public string[] Skills { get; set; } = [];
     public Guid Id { get; set; }
     public string Name { get; set; } = "";
     public string Kind { get; set; } = "Person";
@@ -23,6 +25,7 @@ public sealed class ActorModel
 }
 public sealed class TaskModel
 {
+    public string[] RequiredSkills { get; set; } = [];
     public Guid Id { get; set; }
     public Guid TeamId { get; set; }
     public Guid? ProjectId { get; set; }

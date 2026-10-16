@@ -64,7 +64,7 @@
     </FlareLayoutDrawer>
     @* FlareLayoutContent уже рендерит единственный <main>; id и tabindex уходят на него через AdditionalAttributes,
        поэтому своя обёртка <main> не нужна, а skip-link «К содержимому» попадает прямо в основной landmark. *@
-    <FlareLayoutContent id="main-content" tabindex="-1"><FlareContainer MaxWidth="PageWidth"><FlareStack @key="PagePath" Gap="FlareSpacing.XLarge">@Body</FlareStack></FlareContainer></FlareLayoutContent>
+    <FlareLayoutContent id="main-content" tabindex="-1"><FlareContainer MaxWidth="PageWidth"><SkillAssignmentNotice /><FlareStack @key="PagePath" Gap="FlareSpacing.XLarge">@Body</FlareStack></FlareContainer></FlareLayoutContent>
 </FlareLayout>
 </FlareConfirmDialogProvider>
 @if (_mobile)

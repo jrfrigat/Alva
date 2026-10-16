@@ -46,6 +46,10 @@ namespace Alva.Infrastructure.Migrations
                     b.Property<Guid?>("ParentId")
                         .HasColumnType("uuid");
 
+                    b.PrimitiveCollection<string[]>("Skills")
+                        .IsRequired()
+                        .HasColumnType("text[]");
+
                     b.Property<Guid>("TeamId")
                         .HasColumnType("uuid");
 
@@ -329,6 +333,10 @@ namespace Alva.Infrastructure.Migrations
 
                     b.Property<Guid?>("ProjectId")
                         .HasColumnType("uuid");
+
+                    b.PrimitiveCollection<string[]>("RequiredSkills")
+                        .IsRequired()
+                        .HasColumnType("text[]");
 
                     b.Property<DateOnly?>("StartDate")
                         .HasColumnType("date");

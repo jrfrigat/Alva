@@ -169,6 +169,8 @@ public static class TaskEndpoints
         if (request.EstimateHours is { } estimate && (estimate < 0 || estimate > 100000)) throw new ApiException(400, "Оценка должна быть неотрицательной.");
         if (request.ProjectId is { } projectId && !await db.ProjectTeams.AnyAsync(x => x.TeamId == teamId && x.ProjectId == projectId)) throw new ApiException(400, "Проект не связан с командой.");
         await ValidateParent(db, teamId, task, request.ParentId);
+        try { if (request.RequiredSkills is not null) task.RequiredSkills = SkillMath.Normalize(request.RequiredSkills); }
+        catch (ArgumentException) { throw new ApiException(400, "Укажите не более 50 навыков длиной до 80 символов."); }
         task.Title = title; task.Description = request.Description ?? ""; task.Status = status;
         task.ProjectId = request.ProjectId; task.ParentId = request.ParentId;
         task.EstimateHours = request.EstimateHours; task.Deadline = request.Deadline; task.StartDate = request.StartDate; task.EndDate = request.EndDate; task.Order = request.Order;
@@ -204,7 +206,7 @@ public static class TaskEndpoints
         {
             assignments.TryGetValue(x.Id, out var assignment);
             Guid[] inSprints = [.. sprints[x.Id]];
-            return new TaskDto(x.Id, x.TeamId, x.ProjectId, x.ParentId, x.Title, x.Description, x.Status.ToString(), x.EstimateHours, x.Deadline, x.StartDate, x.EndDate, x.Order, assignment?.TargetId, assignment?.ResolvedPersonId, x.Version, estimates.GetValueOrDefault(x.Id), deadlines.GetValueOrDefault(x.Id), inSprints);
+            return new TaskDto(x.Id, x.TeamId, x.ProjectId, x.ParentId, x.Title, x.Description, x.Status.ToString(), x.EstimateHours, x.Deadline, x.StartDate, x.EndDate, x.Order, assignment?.TargetId, assignment?.ResolvedPersonId, x.Version, estimates.GetValueOrDefault(x.Id), deadlines.GetValueOrDefault(x.Id), inSprints, x.RequiredSkills);
         }).ToArray();
     }
 

@@ -209,7 +209,7 @@ networks:
     $role = Invoke-Api $owner POST "api/teams/$teamId/actors" @{ name = 'Developer'; kind = 'Role' } -ExpectedStatus @(200, 201)
     $person = Invoke-Api $owner POST "api/teams/$teamId/actors" @{
         name = 'Smoke developer'; kind = 'Person'; parentId = $department.id;
-        departmentIds = @($department.id); roleIds = @($role.id)
+        departmentIds = @($department.id); roleIds = @($role.id); skills = @(' SQL ', 'sql')
     } -ExpectedStatus @(200, 201)
     $subDepartment = Invoke-Api $owner POST "api/teams/$teamId/actors" @{
         name = 'Subdepartment'; kind = 'Department'; parentId = $department.id
@@ -221,6 +221,8 @@ networks:
     $savedPerson = @($actors | Where-Object id -eq $person.id)[0]
     Assert-True ($savedPerson.roleIds -contains $role.id) 'Person role link was not saved.'
     Assert-True ($savedPerson.departmentIds -contains $department.id) 'Person department link was not saved.'
+    Assert-True (($savedPerson.skills -join ',') -eq 'SQL') 'Skill tags were not normalized or persisted.'
+    [void](Invoke-Api $owner POST "api/teams/$teamId/actors" @{name='Invalid skills';kind='Person';skills=@(('x' * 81))} -ExpectedStatus @(400))
     $otherWorkspaces = Invoke-Api $stranger GET 'api/workspaces'
     $otherTeams = Invoke-Api $stranger GET "api/workspaces/$($otherWorkspaces[0].id)/teams"
     $foreignRole = Invoke-Api $stranger POST "api/teams/$($otherTeams[0].id)/actors" @{
@@ -282,13 +284,15 @@ networks:
         title = 'Parent'; projectId = $projectDto.id; estimateHours = 8; deadline = '2030-01-31'
     } -ExpectedStatus @(200, 201)
     $child = Invoke-Api $owner POST "api/teams/$teamId/tasks" @{
-        title = 'Child'; parentId = $parent.id; projectId = $projectDto.id; estimateHours = 3
+        title = 'Child'; parentId = $parent.id; projectId = $projectDto.id; estimateHours = 3; requiredSkills = @('C#')
     } -ExpectedStatus @(200, 201)
     [void](Invoke-Api $owner PUT "api/teams/$teamId/tasks/$($child.id)/assignment" @{
         targetId = $role.id; resolvedPersonId = $person.id
     } -ExpectedStatus @(200, 204))
     # Assignment is a task edit too; obtain the current version before testing updates.
     $child = @(Invoke-Api $owner GET "api/teams/$teamId/tasks" | Where-Object id -eq $child.id)[0]
+    Assert-True (($child.requiredSkills -join ',') -eq 'C#') 'Task skill requirements were not persisted.'
+    Assert-True ($child.resolvedPersonId -eq $person.id) 'A skill mismatch must not block manual assignment.'
     [void](Invoke-Api $owner PUT "api/teams/$teamId/tasks/$($parent.id)/move" @{
         parentId = $child.id; order = 0; version = $parent.version
     } -ExpectedStatus @(400))
@@ -303,6 +307,13 @@ networks:
         title = 'Stale edit'; version = $child.version
     } -ExpectedStatus @(409))
     Assert-True ($updated.version -gt $child.version) 'A task edit did not advance its version.'
+    Assert-True (($updated.requiredSkills -join ',') -eq 'C#') 'A partial update erased skill requirements.'
+    [void](Invoke-Api $owner PUT "api/teams/$teamId/actors/$($person.id)" @{
+        name='Smoke developer';kind='Person';departmentIds=@($department.id);roleIds=@($role.id);skills=@('C#')
+    })
+    $skillTask = @(Invoke-Api $owner GET "api/teams/$teamId/tasks" | Where-Object id -eq $child.id)[0]
+    Assert-True ($skillTask.resolvedPersonId -eq $person.id) 'Editing skills removed an existing assignment.'
+    Write-Host 'PASS: skill normalization, validation, requirement persistence and nonblocking manual assignment.'
 
     $otherWorkspaces = Invoke-Api $stranger GET 'api/workspaces'
     $otherTeams = Invoke-Api $stranger GET "api/workspaces/$($otherWorkspaces[0].id)/teams"
@@ -328,7 +339,8 @@ networks:
         name = 'Demand sprint'; goal = ''; startDate = $sprintStart.ToString('yyyy-MM-dd'); endDate = $sprintStart.AddDays(4).ToString('yyyy-MM-dd')
     } -ExpectedStatus @(200, 201)
     $roleTask = Invoke-Api $owner POST "api/teams/$teamId/tasks" @{
-        title = 'Role demand'; projectId = $projectDto.id; sprintId = $sprint.id; estimateHours = 10
+        title = 'Role demand'; projectId = $projectDto.id; estimateHours = 10
+        startDate = $sprint.startDate; endDate = $sprint.endDate
     } -ExpectedStatus @(200, 201)
     [void](Invoke-Api $owner PUT "api/teams/$teamId/tasks/$($roleTask.id)/assignment" @{ targetId = $role.id } -ExpectedStatus @(200, 204))
     $range = "from=$($sprintStart.ToString('yyyy-MM-dd'))&to=$($sprintStart.AddDays(6).ToString('yyyy-MM-dd'))"
@@ -377,6 +389,7 @@ networks:
     Assert-True (@($tasks | Where-Object id -eq $updated.id).Count -eq 1) 'Task disappeared after API restart.'
     Assert-True (@($tasks | Where-Object { $_.id -eq $updated.id -and $_.title -eq 'Updated child' }).Count -eq 1) `
         'Updated task state did not persist.'
+    Assert-True ((@($tasks | Where-Object id -eq $updated.id)[0].requiredSkills -join ',') -eq 'C#') 'Skills disappeared after restart.'
     [void](Invoke-Api $owner POST 'api/auth/logout' -ExpectedStatus @(200, 204))
     [void](Invoke-Api $owner GET 'api/workspaces' -ExpectedStatus @(401))
     [void](Invoke-Api $owner POST 'api/auth/login' @{ email = $registration.email; password = $password } `

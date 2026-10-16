@@ -58,6 +58,7 @@
         <span class="alva-gantt-row__body">
             <a class="alva-gantt-row__title" href="tasks/@task.Id" title="@task.Title">@task.Title</a>
             <span class="alva-gantt-row__meta">@Data.Assignee(task) · @AlvaFormat.Hours(task.EffectiveEstimateHours) ч</span>
+            <SkillMatch Required="task.RequiredSkills" Person="@(Data.Actor(task.ResolvedPersonId ?? task.AssignmentTargetId))" />
         </span>
         @if (RowActions is not null) { @RowActions(task) }
     };

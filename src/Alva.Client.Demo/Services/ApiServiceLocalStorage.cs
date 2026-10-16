@@ -118,7 +118,7 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
             ["api", "workspaces", var w, "teams"] => store.Teams.Where(t => t.WorkspaceId == Id(w)).Select(t => new TeamInfo(t.Id, t.Name)).ToArray(),
             ["api", "workspaces", _, "members"] => store.Members.ToArray(),
             ["api", "teams", var t, "projects"] => store.Projects.Where(p => p.TeamIds.Contains(Id(t))).ToArray(),
-            ["api", "teams", _, "actors"] => store.Actors.ToArray(),
+            ["api", "teams", var t, "actors"] => store.Actors.Where(a=>a.TeamId==Id(t)).ToArray(),
             ["api", "teams", var t, "sprints"] => store.Sprints.Where(x => store.SprintTeam.GetValueOrDefault(x.Id) == Id(t)).ToArray(),
             ["api", "teams", var t, "tasks"] => WithRollup(WithSprints(store, store.Tasks.Where(x => x.TeamId == Id(t)).ToArray())),
             ["api", "teams", var t, "tasks", "dependencies"] => TeamDependencies(store, Id(t)),
@@ -219,7 +219,7 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
 
     private static CapacityDto[] Capacity(DemoStore store, Guid teamId, DateOnly from, DateOnly to)
     {
-        var people = store.Actors.Where(a => a.Kind == "Person").ToArray();
+        var people = store.Actors.Where(a => a.TeamId == teamId && a.Kind == "Person").ToArray();
         var work = PlannedTasks(store, teamId).Select(x => (x, Person: PersonOf(store, x.Task))).Where(w => w.Person.HasValue)
             .Select(w => new CapacityWork(w.Person!.Value, w.x.Task.EstimateHours ?? 0m, w.x.Start, w.x.End, w.x.Task.Deadline));
         return CapacityMath.Build(people.Select(p => (p.Id, p.Name)), id => CalendarOf(store, people.First(p => p.Id == id)), work, from, to);
@@ -263,9 +263,9 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
             throw new NotSupportedException("Demo: режимы «Сроки и связи» и «Максимум» требуют сервера — решатель OR-Tools работает только там.");
         var sprint = store.Sprints.FirstOrDefault(s => s.Id == sprintId) ?? throw new InvalidOperationException("Спринт не найден.");
         var people = store.Actors.Where(a => a.Kind == "Person").ToArray();
-        var persons = people.Select(p => new BalancePersonInput(p.Id, p.Name, p.RoleIds, p.DepartmentIds)).ToArray();
+        var persons = people.Select(p => new BalancePersonInput(p.Id, p.Name, p.RoleIds, p.DepartmentIds, p.Skills)).ToArray();
         var tasks = OpenTasks(store, teamId).Select(x => new BalanceTaskInput(x.Task.Id, x.Task.Title, x.Task.Status, x.Task.ParentId,
-            x.Task.EstimateHours, x.Start, x.End, x.Task.Deadline, x.Task.AssignmentTargetId, x.Task.ResolvedPersonId)).ToArray();
+            x.Task.EstimateHours, x.Start, x.End, x.Task.Deadline, x.Task.AssignmentTargetId, x.Task.ResolvedPersonId, x.Task.RequiredSkills)).ToArray();
         var links = TeamDependencies(store, teamId).Select(d => new BalanceLinkInput(d.PredecessorId, d.SuccessorId, d.Kind, d.LagDays)).ToArray();
         var problem = BalanceMath.Build(mode, sprintId, sprint.StartDate, sprint.EndDate, persons, id => CalendarOf(store, people.First(p => p.Id == id)), tasks, links);
         return BalanceMath.Proposal(problem, BalanceMath.Greedy(problem), BalanceMath.Heuristic, "Demo: простой поиск без решателя OR-Tools.");
@@ -321,8 +321,8 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
                 if (method == HttpMethod.Delete) store.Projects.RemoveAll(p => p.Id == Id(id));
                 else UpdateProject(store, Id(id), value);
                 break;
-            case ["api", "teams", _, "actors"]:
-                AddActor(store, value);
+            case ["api", "teams", var t, "actors"]:
+                AddActor(store, Id(t), value);
                 break;
             case ["api", "teams", _, "actors", var id]:
                 if (method == HttpMethod.Delete) { store.Actors.RemoveAll(a => a.Id == Id(id)); store.Calendars.RemoveAll(c => c.ActorId == Id(id)); }
@@ -379,13 +379,14 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
         project.TeamIds = request.TeamIds;
     }
 
-    private static void AddActor(DemoStore store, object value)
+    private static void AddActor(DemoStore store, Guid teamId, object value)
     {
         var request = Read<ActorRequest>(value);
+        var skills = ActorSkills(request);
         var actor = new ActorModel
         {
-            Id = Guid.NewGuid(), Name = request.Name, Kind = request.Kind, Email = request.Email,
-            ParentId = request.ParentId, UserId = request.UserId, RoleIds = request.RoleIds ?? [], DepartmentIds = request.DepartmentIds ?? []
+            Id = Guid.NewGuid(), TeamId = teamId, Name = request.Name, Kind = request.Kind, Email = request.Email,
+            ParentId = request.ParentId, UserId = request.UserId, RoleIds = request.RoleIds ?? [], DepartmentIds = request.DepartmentIds ?? [], Skills = skills
         };
         store.Actors.Add(actor);
         if (actor.Kind == "Person") store.Calendars.Add(new CalendarDto(actor.Id, "Europe/Moscow", 8m, 8m, 8m, 8m, 8m, 0m, 0m, [], []));
@@ -394,6 +395,7 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
     private static void UpdateActor(DemoStore store, Guid id, object value)
     {
         var request = Read<ActorRequest>(value);
+        var skills = ActorSkills(request);
         var actor = store.Actors.FirstOrDefault(a => a.Id == id) ?? throw new InvalidOperationException("Участник не найден.");
         actor.Name = request.Name;
         actor.Kind = request.Kind;
@@ -402,6 +404,15 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
         actor.UserId = request.UserId;
         actor.RoleIds = request.RoleIds ?? [];
         actor.DepartmentIds = request.DepartmentIds ?? [];
+        if (request.Skills is not null) actor.Skills = skills;
+        if (actor.Kind != "Person") actor.Skills = [];
+    }
+
+    private static string[] ActorSkills(ActorRequest request)
+    {
+        if (request.Kind != "Person" && request.Skills is { Length: > 0 }) throw new InvalidOperationException("Навыки задаются только для человека.");
+        try { return SkillMath.Normalize(request.Skills); }
+        catch (ArgumentException) { throw new InvalidOperationException("Укажите не более 50 навыков длиной до 80 символов."); }
     }
 
     /// <summary>Родитель охватывает детей — то же правило, что в API; версия предков не меняется.</summary>
@@ -420,13 +431,16 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
     private static TaskModel SaveTask(DemoStore store, Guid teamId, Guid? id, object value)
     {
         var request = Read<TaskRequest>(value);
+        string[] skills;
+        try { skills = SkillMath.Normalize(request.RequiredSkills); }
+        catch (ArgumentException) { throw new InvalidOperationException("Укажите не более 50 навыков длиной до 80 символов."); }
         if (id is not { } taskId)
         {
             var created = new TaskModel
             {
                 Id = Guid.NewGuid(), TeamId = teamId, ProjectId = request.ProjectId, ParentId = request.ParentId,
                 Title = request.Title, Description = request.Description, Status = request.Status, EstimateHours = request.EstimateHours,
-                Deadline = request.Deadline, StartDate = request.StartDate, EndDate = request.EndDate, Order = request.Order, Version = 1
+                Deadline = request.Deadline, StartDate = request.StartDate, EndDate = request.EndDate, Order = request.Order, Version = 1, RequiredSkills = skills
             };
             store.Tasks.Add(created);
             AddHistory(store, created.Id, "Задача создана");
@@ -444,6 +458,7 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
         task.StartDate = request.StartDate;
         task.EndDate = request.EndDate;
         task.Order = request.Order;
+        if (request.RequiredSkills is not null) task.RequiredSkills = skills;
         task.Version++;
         AddHistory(store, task.Id, $"Изменена (статус {Labels.Status(task.Status)})");
         KeepParentsAroundChildren(store, task);
@@ -543,6 +558,8 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
         if (_store is not null) return _store;
         var raw = await js.InvokeAsync<string?>("localStorage.getItem", DataKey);
         _store = string.IsNullOrWhiteSpace(raw) ? DemoSeed.Create() : JsonSerializer.Deserialize<DemoStore>(DatesFromSprints(raw), Json) ?? DemoSeed.Create();
+        // Old demo actors predate team ownership; they belong to the original demo team.
+        foreach (var actor in _store.Actors.Where(a=>a.TeamId==Guid.Empty)) actor.TeamId = DemoIds.Team;
         return _store;
     }
 

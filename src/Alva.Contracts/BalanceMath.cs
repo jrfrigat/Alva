@@ -24,11 +24,11 @@ public record BalanceChangeDto(Guid TaskId, string Title, Guid? FromPersonId, st
 public record BalanceProposalDto(string Mode, string Status, BalanceMetricsDto Before, BalanceMetricsDto After, BalanceChangeDto[] Changes, string? Note);
 
 /// <summary>Человек команды для автобаланса: роли и подкоманды определяют, какие задачи ему можно дать.</summary>
-public record BalancePersonInput(Guid Id, string Name, Guid[] Roles, Guid[] Departments);
+public record BalancePersonInput(Guid Id, string Name, Guid[] Roles, Guid[] Departments, string[]? Skills = null);
 
 /// <summary>Открытая задача команды. Start и End — уже окно с датами спринта; Deadline — срок задачи.</summary>
 public record BalanceTaskInput(Guid Id, string Title, string Status, Guid? ParentId, decimal? EstimateHours,
-    DateOnly? Start, DateOnly? End, DateOnly? Deadline, Guid? TargetId, Guid? ResolvedPersonId);
+    DateOnly? Start, DateOnly? End, DateOnly? Deadline, Guid? TargetId, Guid? ResolvedPersonId, string[]? RequiredSkills = null);
 
 /// <summary>Связь задач: тип FS, SS, FF или SF и лаг в днях.</summary>
 public record BalanceLinkInput(Guid PredecessorId, Guid SuccessorId, string Kind, int LagDays);
@@ -149,7 +149,8 @@ public static class BalanceMath
             var tenths = ToTenths(t.EstimateHours!.Value);
             var current = PersonOf(t) ?? -1;
             var targetIsGroup = !personIndex.ContainsKey(t.TargetId!.Value);
-            var candidates = Candidates(mode, people, t.TargetId!.Value, targetIsGroup, current).ToArray();
+            var candidates = Candidates(mode, people, t.TargetId!.Value, targetIsGroup, current)
+                .Where(i => SkillMath.Compatible(t.RequiredSkills, people[i].Skills)).ToArray();
             var starts = mode == BalanceModes.Gentle ? [start] : Enumerable.Range(0, sprintDays).Prepend(start).Distinct().ToArray();
             BalanceOption Option(int person, int s) =>
                 new(person, s, length, Spread(person >= 0 ? capacity[person] : null, tenths, s, length, horizon),

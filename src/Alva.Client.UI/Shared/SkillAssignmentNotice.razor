@@ -1,0 +1,21 @@
+@implements IDisposable
+@inject AlvaSession Session
+@inject NavigationManager Navigation
+@if (!_dismissed && Session.AssignmentNotice is { } notice)
+{
+    <div role="status"><FlareAlert Severity="AlertSeverity.Warning" Title="@(Strings.T("Проверка навыков"))">
+        @notice
+        <FlareButton Variant="ButtonVariant.Text" Size="ButtonSize.Sm" OnClick="()=>_dismissed=true">@(Strings.T("Закрыть"))</FlareButton>
+    </FlareAlert></div>
+}
+@code {
+    private bool _dismissed;
+    protected override void OnInitialized()
+    {
+        Session.AssignmentChecked += Refresh;
+        Navigation.LocationChanged += Navigated;
+    }
+    private void Refresh() { _dismissed = false; _ = InvokeAsync(StateHasChanged); }
+    private void Navigated(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs args) => _dismissed = true;
+    public void Dispose() { Session.AssignmentChecked -= Refresh; Navigation.LocationChanged -= Navigated; }
+}

@@ -1,4 +1,5 @@
 using Alva.Client.Models;
+using Alva.Contracts;
 using Microsoft.JSInterop;
 
 namespace Alva.Client.Services;
@@ -30,7 +31,36 @@ public sealed class AlvaSession(IApiService api, IJSRuntime js)
     public Task SelectTeam(Guid id) => api.SelectTeam(id);
     public Task RefreshUser() => api.RefreshUser();
     public Task<T> Get<T>(string path) => api.Get<T>(path);
-    public Task Send(HttpMethod method, string path, object value) => api.Send(method, path, value);
+    public string? AssignmentNotice { get; private set; }
+    public event Action? AssignmentChecked;
+
+    public async Task Send(HttpMethod method, string path, object value)
+    {
+        await api.Send(method, path, value);
+        if (!path.EndsWith("/assignment", StringComparison.Ordinal)) return;
+        AssignmentNotice = null;
+        if (method != HttpMethod.Delete && Guid.TryParse(path.Split('/')[^2], out var taskId))
+        {
+            try
+            {
+                var tasks = await api.Get<TaskModel[]>(TeamPath("tasks"));
+                var actors = await api.Get<ActorModel[]>(TeamPath("actors"));
+                var task = tasks.FirstOrDefault(t => t.Id == taskId);
+                var person = actors.FirstOrDefault(a => a.Kind == "Person" && a.Id == (task?.ResolvedPersonId ?? task?.AssignmentTargetId));
+                if (task is not null && person is not null)
+                {
+                    var missing = SkillMath.Missing(task.RequiredSkills, person.Skills);
+                    if (missing.Length > 0) AssignmentNotice = $"{task.Title} — {person.Name}: {Strings.T("Не хватает навыков:")} {string.Join(", ", missing)}";
+                }
+            }
+            catch (Exception e) when (e is HttpRequestException or InvalidOperationException)
+            {
+                // The assignment already succeeded; checking it must not turn success into a failed write.
+                AssignmentNotice = Strings.T("Назначение сохранено. Не удалось проверить навыки.");
+            }
+        }
+        AssignmentChecked?.Invoke();
+    }
     public Task<T> Save<T>(HttpMethod method, string path, object value) => api.Save<T>(method, path, value);
     public Task Import(string format, Stream stream) => api.Import(format, stream);
 }

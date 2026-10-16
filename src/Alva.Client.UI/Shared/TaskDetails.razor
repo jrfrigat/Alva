@@ -31,6 +31,9 @@
         <FlareStack Gap="FlareSpacing.Medium">
             <FlareTextField Label="@(Strings.T("Название"))" @bind-Value="_model.Title" Required MaxLength="500" />
             <FlareTextArea Label="@(Strings.T("Описание и цели"))" @bind-Value="_model.Description" AutoGrow />
+            <SkillTagEditor Label="@(Strings.T("Необходимые навыки"))" @bind-Values="_model.RequiredSkills"
+                            Suggestions="Actors.SelectMany(a=>a.Skills).Concat(Tasks.SelectMany(t=>t.RequiredSkills)).Distinct(StringComparer.OrdinalIgnoreCase)" />
+            <SkillMatch Required="_model.RequiredSkills" Person="@(Actors.FirstOrDefault(a=>a.Id==(Item.ResolvedPersonId ?? Item.AssignmentTargetId)))" />
             <FlareGrid MinColumnWidth="min(100%,12rem)">
                 <FlareSelect TValue="string" Label="@(Strings.T("Статус"))" Items="Statuses" ItemLabel="Labels.Status" @bind-Value="_model.Status" />
                 <FlareSelect TValue="Guid?" Label="@(Strings.T("Проект"))" Items="Projects.Select(x => (Guid?)x.Id)" ItemLabel="ProjectName" NullOption="@(Strings.T("Текучка"))" @bind-Value="_model.ProjectId" />
@@ -205,7 +208,8 @@
     public bool Dirty => _model.Id == Item.Id && (_model.Title != Item.Title || _model.Description != Item.Description
         || _model.Status != Item.Status || _model.ProjectId != Item.ProjectId || _model.ParentId != Item.ParentId
         || _model.EstimateHours != Item.EstimateHours || _model.Deadline != Item.Deadline
-        || _model.StartDate != Item.StartDate || _model.EndDate != Item.EndDate);
+        || _model.StartDate != Item.StartDate || _model.EndDate != Item.EndDate
+        || !_model.RequiredSkills.SequenceEqual(Item.RequiredSkills));
 
     // Ссылки, меню и Back/Forward: несохранённые правки уходят только после явного согласия.
     private async Task ConfirmLeave(LocationChangingContext context)
@@ -244,8 +248,10 @@
     /// <summary>Кандидаты одного вида. У людей — загрузка за окно спринта (или 14 дней).</summary>
     private RenderFragment Candidates(string kind) => __builder =>
     {
-        var list = Actors.Where(a => a.Kind == kind && (string.IsNullOrWhiteSpace(_assignSearch) || a.Name.Contains(_assignSearch, StringComparison.OrdinalIgnoreCase))).ToArray();
-        var recommended = kind == "Person" ? list.Where(a => _load.ContainsKey(a.Id) && _load[a.Id].Available > 0).OrderBy(a => Percent(a.Id)).FirstOrDefault()?.Id : null;
+        var list = Actors.Where(a => a.Kind == kind && (string.IsNullOrWhiteSpace(_assignSearch) || a.Name.Contains(_assignSearch, StringComparison.OrdinalIgnoreCase)))
+            .OrderBy(a => kind == "Person" ? SkillMath.Missing(_model.RequiredSkills, a.Skills).Length : 0)
+            .ThenBy(a => _load.ContainsKey(a.Id) ? Percent(a.Id) : int.MaxValue).ThenBy(a=>a.Name).ToArray();
+        var recommended = kind == "Person" ? list.Where(a => SkillMath.Compatible(_model.RequiredSkills, a.Skills) && _load.ContainsKey(a.Id) && _load[a.Id].Available > 0).OrderBy(a => Percent(a.Id)).FirstOrDefault()?.Id : null;
         <div class="alva-assign__list">
             <FlareTextField @bind-Value="_assignSearch" Immediate Clearable Placeholder="@($"Поиск по команде {Session.TeamName}…")" AriaLabel="@(Strings.T("Поиск кандидата"))">
                 <AdornmentStart><FlareIconView Value="@MaterialDesign3Icons.Regular.Search" Size="18px" /></AdornmentStart>
@@ -266,6 +272,8 @@
                                 <span class="alva-candidate__body">
                                     <span class="alva-candidate__name">@actor.Name @if (actor.Id == recommended) { <AlvaStatusChip Tone="AlvaTone.Ok">@(Strings.T("Рекомендовано"))</AlvaStatusChip> }</span>
                                     <span class="alva-candidate__meta">@CandidateMeta(actor)</span>
+                                    @if (actor.Kind == "Person" && actor.Skills.Length > 0) { <span class="alva-candidate__meta">@(Strings.T("Навыки")): @string.Join(", ", actor.Skills)</span> }
+                                    <SkillMatch Required="_model.RequiredSkills" Person="actor" />
                                     @if (percent is not null)
                                     {
                                         <span class="alva-candidate__state alva-candidate__state--@tone.ToString().ToLowerInvariant()">
@@ -330,7 +338,7 @@
     {
         var m = _model;
         await Session.Save<TaskModel>(HttpMethod.Put, Session.TeamPath($"tasks/{m.Id}"),
-            new TaskRequest(m.Title, m.Description, m.Status, m.ProjectId, m.ParentId, m.EstimateHours, m.Deadline, m.StartDate, m.EndDate, m.Order, m.Version));
+            new TaskRequest(m.Title, m.Description, m.Status, m.ProjectId, m.ParentId, m.EstimateHours, m.Deadline, m.StartDate, m.EndDate, m.Order, m.Version, m.RequiredSkills));
         await Changed.InvokeAsync();
     });
 

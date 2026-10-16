@@ -31,7 +31,7 @@ public static class BalanceEndpoints
         var ids = people.Select(x => x.Id).ToArray();
         var roles = (await db.ActorRoles.AsNoTracking().Where(x => ids.Contains(x.ActorId)).ToListAsync()).ToLookup(x => x.ActorId, x => x.RoleId);
         var departments = (await db.ActorDepartments.AsNoTracking().Where(x => ids.Contains(x.ActorId)).ToListAsync()).ToLookup(x => x.ActorId, x => x.DepartmentId);
-        var persons = people.Select(x => new BalancePersonInput(x.Id, x.Name, [.. roles[x.Id]], [.. departments[x.Id]])).ToArray();
+        var persons = people.Select(x => new BalancePersonInput(x.Id, x.Name, [.. roles[x.Id]], [.. departments[x.Id]], x.Skills)).ToArray();
 
         var tasks = await db.Tasks.AsNoTracking().Where(x => x.TeamId == teamId && !x.Archived && x.Status != WorkStatus.Done && x.Status != WorkStatus.Cancelled).ToListAsync();
         var taskIds = tasks.Select(x => x.Id).ToArray();
@@ -40,7 +40,7 @@ public static class BalanceEndpoints
         {
             var assignment = assignments.GetValueOrDefault(x.Id);
             return new BalanceTaskInput(x.Id, x.Title, x.Status.ToString(), x.ParentId, x.EstimateHours,
-                x.StartDate, x.EndDate, x.Deadline, assignment?.TargetId, assignment?.ResolvedPersonId);
+                x.StartDate, x.EndDate, x.Deadline, assignment?.TargetId, assignment?.ResolvedPersonId, x.RequiredSkills);
         }).ToArray();
         var links = await db.Dependencies.AsNoTracking().Where(x => taskIds.Contains(x.SuccessorId))
             .Select(x => new BalanceLinkInput(x.PredecessorId, x.SuccessorId, x.Kind.ToString(), x.LagDays)).ToListAsync();

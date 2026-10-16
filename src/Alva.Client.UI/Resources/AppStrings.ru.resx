@@ -704,4 +704,12 @@
   <data name="символов" xml:space="preserve"><value>символов</value></data>
   <data name="Обзор" xml:space="preserve"><value>Обзор</value></data>
   <data name="Задачу изменил кто-то другой: ваши правки не сохранены. Данные перечитаны — перенесите нужное и сохраните снова." xml:space="preserve"><value>Задачу изменил кто-то другой: ваши правки не сохранены. Данные перечитаны — перенесите нужное и сохраните снова.</value></data>
+  <data name="Проверка навыков" xml:space="preserve"><value>Проверка навыков</value></data>
+  <data name="Навыки" xml:space="preserve"><value>Навыки</value></data>
+  <data name="Назначение сохранено. Не удалось проверить навыки." xml:space="preserve"><value>Назначение сохранено. Не удалось проверить навыки.</value></data>
+  <data name="Не хватает навыков:" xml:space="preserve"><value>Не хватает навыков:</value></data>
+  <data name="Необходимые навыки" xml:space="preserve"><value>Необходимые навыки</value></data>
+  <data name="Все необходимые навыки есть" xml:space="preserve"><value>Все необходимые навыки есть</value></data>
+  <data name="Укажите не более 50 навыков длиной до 80 символов." xml:space="preserve"><value>Укажите не более 50 навыков длиной до 80 символов.</value></data>
+  <data name="Введите навык и нажмите Enter. Тег можно удалить." xml:space="preserve"><value>Введите навык и нажмите Enter. Тег можно удалить.</value></data>
 </root>

@@ -166,6 +166,11 @@ public sealed class GanttData
     {
         var dates = Window(task) is { } w ? $"{w.Start:dd.MM}–{w.End:dd.MM}" : Strings.T(Strings.T("без дат"));
         var title = $"{task.Title} · {dates} · {Assignee(task)}";
+        if (Actor(task.ResolvedPersonId ?? task.AssignmentTargetId) is { Kind: "Person" } person)
+        {
+            var missing = SkillMath.Missing(task.RequiredSkills, person.Skills);
+            if (missing.Length > 0) title += $"\n{Strings.T("Не хватает навыков:")} {string.Join(", ", missing)}";
+        }
         if (ChildrenOf(task).Any()) title += "\nШтриховка — ожидание подзадач";
         return RiskOf(task) is { Severity: "High" or "Medium" } risk
             ? $"{title}\n{(risk.Severity == "High" ? Strings.T(Strings.T("Высокий")) : Strings.T(Strings.T("Средний")))} риск: {string.Join("; ", risk.Reasons)}"

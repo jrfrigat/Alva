@@ -40,6 +40,7 @@ public sealed class Sprint : Entity
 }
 public sealed class TaskCard : Entity
 {
+    public string[] RequiredSkills { get; set; } = [];
     public Guid TeamId { get; set; }
     public Guid? ProjectId { get; set; }
     public Guid? ParentId { get; set; }
@@ -66,6 +67,7 @@ public sealed class TaskSprint
 }
 public sealed class Actor : Entity
 {
+    public string[] Skills { get; set; } = [];
     public Guid TeamId { get; set; }
     public string Name { get; set; } = "";
     public ActorKind Kind { get; set; }
