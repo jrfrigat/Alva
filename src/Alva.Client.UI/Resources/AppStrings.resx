@@ -747,4 +747,15 @@
   <data name="Прогноз — день, когда оценка задачи наберётся рабочими часами её исполнителя с начала задачи. Не учтены другие задачи исполнителя, длительность зависимостей и уже сделанная часть работы." xml:space="preserve"><value>The forecast is the day the task&apos;s estimate is covered by its assignee&apos;s working hours from the task start. It does not account for the assignee&apos;s other tasks, dependency durations or work already done.</value></data>
   <data name="Последний срок задач:" xml:space="preserve"><value>Latest task deadline:</value></data>
   <data name="Последний срок задач" xml:space="preserve"><value>Latest task deadline</value></data>
+  <data name="Учтено задач:" xml:space="preserve"><value>Tasks considered:</value></data>
+  <data name="не участвовали:" xml:space="preserve"><value>left out:</value></data>
+  <data name="Почему задачи не участвовали" xml:space="preserve"><value>Why tasks were left out</value></data>
+  <data name="Среди учтённых задач улучшений нет. Задачи, которые расчёт не трогал, перечислены выше." xml:space="preserve"><value>No improvement among the tasks considered. The tasks the calculation did not touch are listed above.</value></data>
+  <data name="В работе — даты и исполнитель не меняются" xml:space="preserve"><value>In progress — dates and assignee stay</value></data>
+  <data name="Родительская — двигаются подзадачи" xml:space="preserve"><value>Parent task — its subtasks move</value></data>
+  <data name="Нет оценки" xml:space="preserve"><value>No estimate</value></data>
+  <data name="Нет назначения — ни человека, ни роли" xml:space="preserve"><value>Not assigned — no person or role</value></data>
+  <data name="Нет плановых дат" xml:space="preserve"><value>No planned dates</value></data>
+  <data name="Начинается до спринта" xml:space="preserve"><value>Starts before the sprint</value></data>
+  <data name="Окно задачи выходит за спринт" xml:space="preserve"><value>The task window goes beyond the sprint</value></data>
 </root>

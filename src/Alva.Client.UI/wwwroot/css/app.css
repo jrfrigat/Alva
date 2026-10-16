@@ -335,6 +335,9 @@ a.alva-matrix__name:hover{text-decoration:underline}
 .alva-plan-proposal{border-color:var(--flare-color-primary)}
 .alva-plan-proposal__actions{display:flex;flex-wrap:wrap;gap:.5rem;margin-left:auto}
 .alva-plan-proposal__metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,11rem),1fr));gap:.5rem}
+.alva-plan-proposal__scope{margin:.5rem 0 0;font-size:12px;color:var(--flare-color-on-surface-variant,var(--alva-on-surface-variant))}
+.alva-plan-proposal__excluded{font-size:12px;margin:.25rem 0}
+.alva-plan-proposal__excluded ul{margin:.25rem 0 0;padding-left:1.25rem}
 .alva-plan-metric{display:flex;flex-direction:column;gap:2px;padding:.5rem .75rem;border-radius:6px;background:var(--flare-color-surface-container-low)}
 .alva-plan-metric s{color:var(--flare-color-on-surface-variant)}
 .alva-plan-metric b{font-size:15px}

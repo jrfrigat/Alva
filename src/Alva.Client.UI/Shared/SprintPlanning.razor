@@ -78,9 +78,23 @@
                 </div>
             }
         </div>
+        @* Расчёт двигает не всё: задачи в работе, родительские, без оценки или назначения остаются как есть. *@
+        <p class="alva-plan-proposal__scope alva-num">@(Strings.T("Учтено задач:")) @proposal.Considered@(proposal.Excluded is { Length: > 0 } skipped ? $" · {Strings.T("не участвовали:")} {skipped.Length}" : "")</p>
+        @if (proposal.Excluded is { Length: > 0 } excluded)
+        {
+            <details class="alva-plan-proposal__excluded">
+                <summary>@(Strings.T("Почему задачи не участвовали"))</summary>
+                <ul>
+                    @foreach (var item in excluded)
+                    {
+                        <li @key="item.TaskId"><a href="tasks/@item.TaskId">@item.Title</a> — @Strings.T(item.Reason)</li>
+                    }
+                </ul>
+            </details>
+        }
         @if (proposal.Changes.Length == 0)
         {
-            <p class="alva-panel__subtitle">@(Strings.T("План уже сбалансирован в этом режиме — менять нечего."))</p>
+            <p class="alva-panel__subtitle">@(proposal.Excluded is { Length: > 0 } ? Strings.T("Среди учтённых задач улучшений нет. Задачи, которые расчёт не трогал, перечислены выше.") : Strings.T("План уже сбалансирован в этом режиме — менять нечего."))</p>
         }
         else
         {

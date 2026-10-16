@@ -140,4 +140,19 @@ public sealed class BalanceTests
         Assert.Equal([child.Id], problem.Tasks.Select(t => t.Id));
         Assert.True(problem.Background[0].Sum() > 0);   // остальное — фоновая загрузка Анны
     }
+
+    [Fact]
+    public void Tasks_the_balance_cannot_move_are_reported_with_a_reason()
+    {
+        var unassigned = new BalanceTaskInput(Guid.NewGuid(), "Без назначения", "Planned", null, 8, Start, Start.AddDays(1), null, null, null);
+        var started = new BalanceTaskInput(Guid.NewGuid(), "В работе", "InProgress", null, 8, Start, Start.AddDays(1), null, Role, Anna.Id);
+        var movable = Task("Обычная", 8, Start, Start.AddDays(1), Anna.Id);
+        var problem = Problem(BalanceModes.Gentle, [unassigned, started, movable]);
+
+        var proposal = BalanceMath.Proposal(problem, BalanceMath.Greedy(problem), BalanceMath.Heuristic);
+
+        Assert.Equal(1, proposal.Considered);
+        Assert.Equal("Нет назначения — ни человека, ни роли", proposal.Excluded!.Single(x => x.TaskId == unassigned.Id).Reason);
+        Assert.Equal("В работе — даты и исполнитель не меняются", proposal.Excluded!.Single(x => x.TaskId == started.Id).Reason);
+    }
 }

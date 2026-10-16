@@ -747,4 +747,15 @@
   <data name="Прогноз — день, когда оценка задачи наберётся рабочими часами её исполнителя с начала задачи. Не учтены другие задачи исполнителя, длительность зависимостей и уже сделанная часть работы." xml:space="preserve"><value>Прогноз — день, когда оценка задачи наберётся рабочими часами её исполнителя с начала задачи. Не учтены другие задачи исполнителя, длительность зависимостей и уже сделанная часть работы.</value></data>
   <data name="Последний срок задач:" xml:space="preserve"><value>Последний срок задач:</value></data>
   <data name="Последний срок задач" xml:space="preserve"><value>Последний срок задач</value></data>
+  <data name="Учтено задач:" xml:space="preserve"><value>Учтено задач:</value></data>
+  <data name="не участвовали:" xml:space="preserve"><value>не участвовали:</value></data>
+  <data name="Почему задачи не участвовали" xml:space="preserve"><value>Почему задачи не участвовали</value></data>
+  <data name="Среди учтённых задач улучшений нет. Задачи, которые расчёт не трогал, перечислены выше." xml:space="preserve"><value>Среди учтённых задач улучшений нет. Задачи, которые расчёт не трогал, перечислены выше.</value></data>
+  <data name="В работе — даты и исполнитель не меняются" xml:space="preserve"><value>В работе — даты и исполнитель не меняются</value></data>
+  <data name="Родительская — двигаются подзадачи" xml:space="preserve"><value>Родительская — двигаются подзадачи</value></data>
+  <data name="Нет оценки" xml:space="preserve"><value>Нет оценки</value></data>
+  <data name="Нет назначения — ни человека, ни роли" xml:space="preserve"><value>Нет назначения — ни человека, ни роли</value></data>
+  <data name="Нет плановых дат" xml:space="preserve"><value>Нет плановых дат</value></data>
+  <data name="Начинается до спринта" xml:space="preserve"><value>Начинается до спринта</value></data>
+  <data name="Окно задачи выходит за спринт" xml:space="preserve"><value>Окно задачи выходит за спринт</value></data>
 </root>

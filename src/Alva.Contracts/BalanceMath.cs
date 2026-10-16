@@ -21,7 +21,13 @@ public record BalanceChangeDto(Guid TaskId, string Title, Guid? FromPersonId, st
 
 /// <summary>Предложение автобаланса: изменения и метрики до и после. Ничего не сохранено.</summary>
 /// <param name="Status">Optimal — оптимум доказан; Feasible — лучшее за отведённое время; Heuristic — простой алгоритм.</param>
-public record BalanceProposalDto(string Mode, string Status, BalanceMetricsDto Before, BalanceMetricsDto After, BalanceChangeDto[] Changes, string? Note);
+/// <param name="Considered">Сколько задач спринта решатель мог двигать.</param>
+/// <param name="Excluded">Задачи спринта, которые он не трогал, и почему: без этого «менять нечего» звучит как «план готов».</param>
+public record BalanceProposalDto(string Mode, string Status, BalanceMetricsDto Before, BalanceMetricsDto After, BalanceChangeDto[] Changes, string? Note,
+    int Considered = 0, BalanceExcludedDto[]? Excluded = null);
+
+/// <summary>Задача спринта, которую автобаланс не двигал, и причина.</summary>
+public record BalanceExcludedDto(Guid TaskId, string Title, string Reason);
 
 /// <summary>Человек команды для автобаланса: роли и подкоманды определяют, какие задачи ему можно дать.</summary>
 public record BalancePersonInput(Guid Id, string Name, Guid[] Roles, Guid[] Departments, string[]? Skills = null);
@@ -82,7 +88,7 @@ public sealed record BalanceLink(int From, int To, string Kind, int Lag);
 /// ёмкость и фоновая загрузка людей — по этим дням в десятых долях часа.
 /// </summary>
 public sealed record BalanceProblem(string Mode, BalanceWeights Weights, DateOnly Start, int SprintDays, int Horizon,
-    BalancePersonInput[] People, int[][] Capacity, int[][] Background, int[][] Groups, BalanceTask[] Tasks, BalanceLink[] Links)
+    BalancePersonInput[] People, int[][] Capacity, int[][] Background, int[][] Groups, BalanceTask[] Tasks, BalanceLink[] Links, BalanceExcludedDto[]? Excluded = null)
 {
     public DateOnly Day(int offset) => Start.AddDays(offset);
 }
@@ -171,8 +177,21 @@ public static class BalanceMath
         var modelLinks = links.Where(l => taskIndex.ContainsKey(l.PredecessorId) && taskIndex.ContainsKey(l.SuccessorId))
             .Select(l => new BalanceLink(taskIndex[l.PredecessorId], taskIndex[l.SuccessorId], l.Kind.ToUpperInvariant(), l.LagDays)).ToArray();
 
-        return new BalanceProblem(mode, BalanceWeights.For(mode), sprintStart, sprintDays, horizon, [.. people], capacity, background, groups, tasks, modelLinks);
+        // Открытые задачи спринта, которые не двигаются: человеку нужно знать, что расчёт их не видел, и почему.
+        var excluded = openTasks.Where(t => !movableIds.Contains(t.Id) && t.Status is not ("Done" or "Cancelled") && SprintWindows.Overlaps(t.Start, t.End, sprintStart, sprintEnd))
+            .Select(t => new BalanceExcludedDto(t.Id, t.Title, ExclusionReason(t, parents, sprintStart))).ToArray();
+        return new BalanceProblem(mode, BalanceWeights.For(mode), sprintStart, sprintDays, horizon, [.. people], capacity, background, groups, tasks, modelLinks, excluded);
     }
+
+    // Почему задача спринта не двигается — в порядке условий Movable, чтобы причина совпадала с правилом.
+    private static string ExclusionReason(BalanceTaskInput t, HashSet<Guid> parents, DateOnly sprintStart) =>
+        t.Status == "InProgress" ? "В работе — даты и исполнитель не меняются"
+        : parents.Contains(t.Id) ? "Родительская — двигаются подзадачи"
+        : t.EstimateHours is not > 0 ? "Нет оценки"
+        : t.TargetId is null ? "Нет назначения — ни человека, ни роли"
+        : t.Start is not { } s || t.End is null ? "Нет плановых дат"
+        : s < sprintStart ? "Начинается до спринта"
+        : "Окно задачи выходит за спринт";
 
     // Кому можно дать задачу: назначенный человек; люди группы цели; в «Максимальном» — ещё люди с общей ролью.
     private static IEnumerable<int> Candidates(string mode, IReadOnlyList<BalancePersonInput> people, Guid target, bool targetIsGroup, int current)
@@ -320,7 +339,7 @@ public static class BalanceMath
                 problem.Day(from.Start), problem.Day(from.Start + from.Length - 1), problem.Day(to.Start), problem.Day(to.Start + to.Length - 1),
                 Reason(problem, task, from, to, before, after)));
         }
-        return new BalanceProposalDto(problem.Mode, status, before.Metrics, after.Metrics, [.. changes], note);
+        return new BalanceProposalDto(problem.Mode, status, before.Metrics, after.Metrics, [.. changes], note, problem.Tasks.Length, problem.Excluded ?? []);
     }
 
     private static string Reason(BalanceProblem problem, BalanceTask task, BalanceOption from, BalanceOption to, Evaluation before, Evaluation after)
