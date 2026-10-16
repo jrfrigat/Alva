@@ -44,7 +44,6 @@
   <data name="без срока" xml:space="preserve"><value>без срока</value></data>
   <data name="Без человека" xml:space="preserve"><value>Без человека</value></data>
   <data name="Бережно" xml:space="preserve"><value>Бережно</value></data>
-  <data name="Бесконечная декомпозиция (дерево задач)" xml:space="preserve"><value>Бесконечная декомпозиция (дерево задач)</value></data>
   <data name="Ближайшие дедлайны" xml:space="preserve"><value>Ближайшие дедлайны</value></data>
   <data name="Ближайший срыв" xml:space="preserve"><value>Ближайший срыв</value></data>
   <data name="Браузер запретил уведомления для Alva — разрешите их в настройках сайта." xml:space="preserve"><value>Браузер запретил уведомления для Alva — разрешите их в настройках сайта.</value></data>
@@ -260,14 +259,12 @@
   <data name="команда" xml:space="preserve"><value>Команда</value></data>
   <data name="Команда · Обзор" xml:space="preserve"><value>Команда · Обзор</value></data>
   <data name="Команды" xml:space="preserve"><value>Команды</value></data>
-  <data name="Команды (M:N):" xml:space="preserve"><value>Команды (M:N):</value></data>
   <data name="Команды · Alva" xml:space="preserve"><value>Команды · Alva</value></data>
   <data name="Команды и их спринты по проекту" xml:space="preserve"><value>Команды и их спринты по проекту</value></data>
   <data name="Команды проекта" xml:space="preserve"><value>Команды проекта</value></data>
   <data name="Конец горизонта" xml:space="preserve"><value>Конец горизонта</value></data>
   <data name="Конкретный исполнитель" xml:space="preserve"><value>Конкретный исполнитель</value></data>
   <data name="Корневая задача" xml:space="preserve"><value>Корневая задача</value></data>
-  <data name="Корпоративный реестр · M:N архитектура" xml:space="preserve"><value>Корпоративный реестр · M:N архитектура</value></data>
   <data name="Критический путь" xml:space="preserve"><value>Критический путь</value></data>
   <data name="Критичность:" xml:space="preserve"><value>Критичность:</value></data>
   <data name="Кто чем занят во времени: часы назначенной работы против доступных, перегрузки и отсутствия. Перетащите задачу на другую строку или нажмите Ctrl+↑/↓, чтобы переназначить; Ctrl+стрелка влево/вправо переносит даты." xml:space="preserve"><value>Кто чем занят во времени: часы назначенной работы против доступных, перегрузки и отсутствия. Перетащите задачу на другую строку или нажмите Ctrl+↑/↓, чтобы переназначить; Ctrl+стрелка влево/вправо переносит даты.</value></data>
@@ -520,7 +517,6 @@
   <data name="Резерв ёмкости:" xml:space="preserve"><value>Резерв ёмкости:</value></data>
   <data name="Резерва нет" xml:space="preserve"><value>Резерва нет</value></data>
   <data name="Рекомендовано" xml:space="preserve"><value>Рекомендовано</value></data>
-  <data name="Рекурсивное каскадирование оценок и исполнителей" xml:space="preserve"><value>Рекурсивное каскадирование оценок и исполнителей</value></data>
   <data name="Ресурс / подкоманда" xml:space="preserve"><value>Ресурс / подкоманда</value></data>
   <data name="Ресурсы · Ёмкость" xml:space="preserve"><value>Ресурсы · Ёмкость</value></data>
   <data name="Решатель OR-Tools: лучший план за отведённое время" xml:space="preserve"><value>Решатель OR-Tools: лучший план за отведённое время</value></data>
@@ -758,4 +754,8 @@
   <data name="Нет плановых дат" xml:space="preserve"><value>Нет плановых дат</value></data>
   <data name="Начинается до спринта" xml:space="preserve"><value>Начинается до спринта</value></data>
   <data name="Окно задачи выходит за спринт" xml:space="preserve"><value>Окно задачи выходит за спринт</value></data>
+  <data name="Проекты нескольких команд" xml:space="preserve"><value>Проекты нескольких команд</value></data>
+  <data name="Команды:" xml:space="preserve"><value>Команды:</value></data>
+  <data name="Проект нескольких команд." xml:space="preserve"><value>Проект нескольких команд.</value></data>
+  <data name="Суммарная оценка и исполнители подзадач" xml:space="preserve"><value>Суммарная оценка и исполнители подзадач</value></data>
 </root>

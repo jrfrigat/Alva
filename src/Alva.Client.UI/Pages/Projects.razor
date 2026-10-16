@@ -3,7 +3,7 @@
 @* Реестр проектов по макету p13: карточки проектов слева, выбранный проект справа — KPI,
    команды и их спринты, дерево задач (WBS). Статус проекта выводится из его задач. *@
 <PageTitle>@(Strings.T("Проекты · Alva"))</PageTitle>
-<AlvaPageHeader Category="@(Strings.T("Корпоративный реестр · M:N архитектура"))" Title="@(Strings.T("Проекты"))" Description="@(Strings.T("Реестр проектов и вовлечённость команд. Проекты объединяют задачи, исполняемые спринтами разных команд."))">
+<AlvaPageHeader Category="@(Strings.T("Проекты нескольких команд"))" Title="@(Strings.T("Проекты"))" Description="@(Strings.T("Реестр проектов и вовлечённость команд. Проекты объединяют задачи, исполняемые спринтами разных команд."))">
     <Actions><FlareButton Size="ButtonSize.Sm" OnClick="New" Disabled="@(Session.TeamId is null)"><LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.AddCircle" Size="18px" /></LeadingIcon><ChildContent>@(Strings.T("Новый проект"))</ChildContent></FlareButton></Actions>
 </AlvaPageHeader>
 <PageFeedback Loading="_busy" Error="@_error" />
@@ -54,7 +54,7 @@ else
                 <span class="alva-proj-card__name">@project.Name</span>
                 @if (!string.IsNullOrWhiteSpace(project.Description)) { <span class="alva-proj-card__desc">@project.Description</span> }
                 <span class="alva-proj-card__teams">
-                    <span class="alva-proj-card__teams-head"><span>@(Strings.T("Команды (M:N):"))</span><b>@project.TeamIds.Length @AlvaFormat.Plural(project.TeamIds.Length, Strings.T("команда"), Strings.T("команды"), Strings.T("команд"))</b></span>
+                    <span class="alva-proj-card__teams-head"><span>@(Strings.T("Команды:"))</span><b>@project.TeamIds.Length @AlvaFormat.Plural(project.TeamIds.Length, Strings.T("команда"), Strings.T("команды"), Strings.T("команд"))</b></span>
                     <span class="alva-proj-card__team-list">@string.Join(" · ", project.TeamIds.Select(TeamName))</span>
                 </span>
                 <span class="alva-loadbar__track"><span class="alva-loadbar__fill alva-loadbar__fill--info" style="width:@Pct(done, total)%"></span></span>
@@ -62,7 +62,7 @@ else
             </button>
         }
         @if (!Visible.Any()) { <FlareEmptyState Compact Title="@(Strings.T("Проектов нет"))" Description="@(Strings.T("Смените фильтр статуса."))" /> }
-        <div class="alva-proj-note"><FlareIconView Value="@MaterialDesign3Icons.Regular.Hub" Size="18px" /><span><b>M ↔ N модель данных.</b> @(Strings.T("Проект не привязан к одной команде: его задачи затягиваются разными командами в их спринты."))</span></div>
+        <div class="alva-proj-note"><FlareIconView Value="@MaterialDesign3Icons.Regular.Hub" Size="18px" /><span><b>@(Strings.T("Проект нескольких команд."))</b> @(Strings.T("Проект не привязан к одной команде: его задачи затягиваются разными командами в их спринты."))</span></div>
     </section>
 
     @if (Selected is { } p)

@@ -44,7 +44,6 @@
   <data name="без срока" xml:space="preserve"><value>no due date</value></data>
   <data name="Без человека" xml:space="preserve"><value>No assignee</value></data>
   <data name="Бережно" xml:space="preserve"><value>Gentle</value></data>
-  <data name="Бесконечная декомпозиция (дерево задач)" xml:space="preserve"><value>Endless decomposition (task tree)</value></data>
   <data name="Ближайшие дедлайны" xml:space="preserve"><value>Upcoming deadlines</value></data>
   <data name="Ближайший срыв" xml:space="preserve"><value>Nearest slippage</value></data>
   <data name="Браузер запретил уведомления для Alva — разрешите их в настройках сайта." xml:space="preserve"><value>The browser blocked notifications for Alva — allow them in the site settings.</value></data>
@@ -260,14 +259,12 @@
   <data name="команда" xml:space="preserve"><value>Team</value></data>
   <data name="Команда · Обзор" xml:space="preserve"><value>Team · Overview</value></data>
   <data name="Команды" xml:space="preserve"><value>Teams</value></data>
-  <data name="Команды (M:N):" xml:space="preserve"><value>Teams (M:N):</value></data>
   <data name="Команды · Alva" xml:space="preserve"><value>Teams · Alva</value></data>
   <data name="Команды и их спринты по проекту" xml:space="preserve"><value>Teams and their sprints per project</value></data>
   <data name="Команды проекта" xml:space="preserve"><value>Project teams</value></data>
   <data name="Конец горизонта" xml:space="preserve"><value>End of horizon</value></data>
   <data name="Конкретный исполнитель" xml:space="preserve"><value>Specific assignee</value></data>
   <data name="Корневая задача" xml:space="preserve"><value>Root task</value></data>
-  <data name="Корпоративный реестр · M:N архитектура" xml:space="preserve"><value>Corporate registry · M:N architecture</value></data>
   <data name="Критический путь" xml:space="preserve"><value>Critical path</value></data>
   <data name="Критичность:" xml:space="preserve"><value>Criticality:</value></data>
   <data name="Кто чем занят во времени: часы назначенной работы против доступных, перегрузки и отсутствия. Перетащите задачу на другую строку или нажмите Ctrl+↑/↓, чтобы переназначить; Ctrl+стрелка влево/вправо переносит даты." xml:space="preserve"><value>Who is busy and when: hours of assigned work versus available, overloads and absences. Drag a task to another row or press Ctrl+up/down to reassign; Ctrl+left/right moves the dates.</value></data>
@@ -520,7 +517,6 @@
   <data name="Резерв ёмкости:" xml:space="preserve"><value>Capacity reserve:</value></data>
   <data name="Резерва нет" xml:space="preserve"><value>No reserve</value></data>
   <data name="Рекомендовано" xml:space="preserve"><value>Recommended</value></data>
-  <data name="Рекурсивное каскадирование оценок и исполнителей" xml:space="preserve"><value>Recursive cascading of estimates and assignees</value></data>
   <data name="Ресурс / подкоманда" xml:space="preserve"><value>Resource / sub-team</value></data>
   <data name="Ресурсы · Ёмкость" xml:space="preserve"><value>Resources · Capacity</value></data>
   <data name="Решатель OR-Tools: лучший план за отведённое время" xml:space="preserve"><value>OR-Tools solver: the best plan within the time given</value></data>
@@ -758,4 +754,8 @@
   <data name="Нет плановых дат" xml:space="preserve"><value>No planned dates</value></data>
   <data name="Начинается до спринта" xml:space="preserve"><value>Starts before the sprint</value></data>
   <data name="Окно задачи выходит за спринт" xml:space="preserve"><value>The task window goes beyond the sprint</value></data>
+  <data name="Проекты нескольких команд" xml:space="preserve"><value>Projects of several teams</value></data>
+  <data name="Команды:" xml:space="preserve"><value>Teams:</value></data>
+  <data name="Проект нескольких команд." xml:space="preserve"><value>A project of several teams.</value></data>
+  <data name="Суммарная оценка и исполнители подзадач" xml:space="preserve"><value>Total estimate and subtask assignees</value></data>
 </root>
