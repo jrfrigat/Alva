@@ -81,7 +81,11 @@ public static class RiskMath
         return [.. result.OrderBy(x => x.Severity == "High" ? 0 : 1).ThenBy(x => x.ForecastDate).ThenBy(x => x.Title)];
     }
 
-    /// <summary>День, когда оценка наберётся доступными часами графика, начиная с <paramref name="start"/>; null — не набирается за два года.</summary>
+    /// <summary>
+    /// День, когда оценка наберётся доступными часами графика, начиная с <paramref name="start"/>; null — не набирается за два года.
+    /// Допущения: человек занят только этой задачей, предшественники не задерживают её начало, сделанная часть не вычитается.
+    /// Интерфейс показывает их рядом с прогнозом.
+    /// </summary>
     public static DateOnly? Forecast(CalendarDto calendar, decimal estimate, DateOnly start)
     {
         if (estimate <= 0) return start;

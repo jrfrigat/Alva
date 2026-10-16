@@ -744,4 +744,5 @@
   <data name="Выше в пуле" xml:space="preserve"><value>Move up in the pool</value></data>
   <data name="Ниже в пуле" xml:space="preserve"><value>Move down in the pool</value></data>
   <data name="Готовы к плану" xml:space="preserve"><value>Ready to plan</value></data>
+  <data name="Прогноз — день, когда оценка задачи наберётся рабочими часами её исполнителя с начала задачи. Не учтены другие задачи исполнителя, длительность зависимостей и уже сделанная часть работы." xml:space="preserve"><value>The forecast is the day the task&apos;s estimate is covered by its assignee&apos;s working hours from the task start. It does not account for the assignee&apos;s other tasks, dependency durations or work already done.</value></data>
 </root>
