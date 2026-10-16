@@ -294,7 +294,7 @@
 
     private string CandidateMeta(ActorModel actor)
     {
-        if (actor.Kind != "Person") return $"{Labels.Kind(actor.Kind)} · {Actors.Count(a => a.RoleIds.Contains(actor.Id) || a.DepartmentIds.Contains(actor.Id))} чел.";
+        if (actor.Kind != "Person") return $"{Labels.Kind(actor.Kind)} · {Actors.Count(a => a.Kind == "Person" && (a.RoleIds.Contains(actor.Id) || a.DepartmentIds.Contains(actor.Id)))} {Strings.T("чел.")}";
         var tags = Actors.Where(a => actor.RoleIds.Contains(a.Id) || actor.DepartmentIds.Contains(a.Id)).Select(a => a.Name).ToArray();
         return tags.Length > 0 ? string.Join(" / ", tags) : Strings.T("Участник команды");
     }

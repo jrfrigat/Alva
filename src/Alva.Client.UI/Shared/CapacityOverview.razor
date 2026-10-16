@@ -72,10 +72,10 @@
     </header>
     <div class="alva-heat-legend">
         <span class="alva-heat-legend__title">@(Strings.T("Тепловая шкала:"))</span>
-        <span><i class="alva-heat--under"></i>@(Strings.T("&lt;70% Недогруз"))</span>
+        <span><i class="alva-heat--under"></i>@(Strings.T("<70% Недогруз"))</span>
         <span><i class="alva-heat--balance"></i>@(Strings.T("70–100% Баланс"))</span>
         <span><i class="alva-heat--tension"></i>@(Strings.T("101–115% Напряжение"))</span>
-        <span><i class="alva-heat--critical"></i>@(Strings.T("&gt;115% Критичный перегруз"))</span>
+        <span><i class="alva-heat--critical"></i>@(Strings.T(">115% Критичный перегруз"))</span>
     </div>
     <div class="alva-matrix" role="table" aria-label="@(Strings.T("Распределение ёмкости"))" style="--alva-matrix-periods:@Math.Max(1, _periods.Length)">
         <div class="alva-matrix__head" role="row">
@@ -201,7 +201,7 @@
     private string? WorstName => VisiblePeople.Select(p => (p.Name, Gap: Overload(p.Id))).Concat(Vacancies.Select(v => (v.Name, Gap: Demand(v)))).Where(x => x.Gap > 0).OrderByDescending(x => x.Gap).Select(x => x.Name).FirstOrDefault();
     private string? FreestName => VisiblePeople.Select(p => (p.Name, Free: Available(p.Id) - Allocated(p.Id))).Where(x => x.Free > 0).OrderByDescending(x => x.Free).Select(x => $"{x.Name} (+{AlvaFormat.Hours(x.Free)} ч)").FirstOrDefault();
     private AlvaTone LoadTone => Pct(Planned, Fund) switch { > 100 => AlvaTone.Critical, >= 85 and <= 95 => AlvaTone.Ok, > 95 => AlvaTone.Warning, _ => AlvaTone.Info };
-    private string LoadLabel => Pct(Planned, Fund) switch { > 100 => "Перегруз", >= 85 and <= 95 => Strings.T("Оптимально"), > 95 => Strings.T("На пределе"), _ => Strings.T("Недогруз") };
+    private string LoadLabel => Pct(Planned, Fund) switch { > 100 => Strings.T("Перегруз"), >= 85 and <= 95 => Strings.T("Оптимально"), > 95 => Strings.T("На пределе"), _ => Strings.T("Недогруз") };
 
     private static int Pct(decimal part, decimal whole) => whole <= 0 ? (part > 0 ? 999 : 0) : (int)Math.Round(part / whole * 100);
     private static string Heat(int pct, decimal avail, decimal alloc) => avail <= 0 && alloc <= 0 ? "empty" : pct > 115 ? "critical" : pct > 100 ? "tension" : pct >= 70 ? "balance" : "under";

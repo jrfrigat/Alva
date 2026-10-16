@@ -4,8 +4,8 @@
   <resheader name="version"><value>2.0</value></resheader>
   <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
   <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
-  <data name="&amp;gt;115% Критичный перегруз" xml:space="preserve"><value>&amp;gt;115% Критичный перегруз</value></data>
-  <data name="&amp;lt;70% Недогруз" xml:space="preserve"><value>&amp;lt;70% Недогруз</value></data>
+  <data name="&gt;115% Критичный перегруз" xml:space="preserve"><value>&gt;115% Критичный перегруз</value></data>
+  <data name="&lt;70% Недогруз" xml:space="preserve"><value>&lt;70% Недогруз</value></data>
   <data name="+ Отсутствие / отпуск" xml:space="preserve"><value>+ Отсутствие / отпуск</value></data>
   <data name="Дерево задач" xml:space="preserve"><value>Дерево задач</value></data>
   <data name="→ не рассчитан" xml:space="preserve"><value>→ не рассчитан</value></data>
@@ -556,7 +556,7 @@
   <data name="Синхронно с задачами (2D)" xml:space="preserve"><value>Синхронно с задачами (2D)</value></data>
   <data name="Синхронный Гантт 2D" xml:space="preserve"><value>Синхронный Гантт 2D</value></data>
   <data name="Скачайте данные для резервной копии или работы в таблицах." xml:space="preserve"><value>Скачайте данные для резервной копии или работы в таблицах.</value></data>
-  <data name="Скорость &amp;amp; темп" xml:space="preserve"><value>Скорость &amp;amp; темп</value></data>
+  <data name="Скорость &amp; темп" xml:space="preserve"><value>Скорость &amp; темп</value></data>
   <data name="Следующая неделя" xml:space="preserve"><value>Следующая неделя</value></data>
   <data name="Следующий месяц" xml:space="preserve"><value>Следующий месяц</value></data>
   <data name="Следующий старт:" xml:space="preserve"><value>Следующий старт:</value></data>
@@ -758,4 +758,5 @@
   <data name="Команды:" xml:space="preserve"><value>Команды:</value></data>
   <data name="Проект нескольких команд." xml:space="preserve"><value>Проект нескольких команд.</value></data>
   <data name="Суммарная оценка и исполнители подзадач" xml:space="preserve"><value>Суммарная оценка и исполнители подзадач</value></data>
+  <data name="чел." xml:space="preserve"><value>чел.</value></data>
 </root>
