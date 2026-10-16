@@ -660,3 +660,14 @@ a.alva-matrix__name:hover{text-decoration:underline}
 .alva-gantt-zoom{display:flex;align-items:center;min-width:10rem;max-width:14rem;flex:1 1 10rem}
 .alva-gantt-zoom .flare-slider{width:100%}
 .alva-gantt .flare-gantt__segment.flare-gantt--kind-waiting{--flare-gantt-segment-bg:repeating-linear-gradient(135deg,color-mix(in srgb,#fff 55%,transparent) 0 4px,transparent 4px 8px)}
+
+/* Телефон: компактная шапка, полоса KPI доски вместо четырёх строк и плотные фильтры списка задач. */
+.alva-user--menu{border:0;background:none;padding:0;cursor:pointer}
+@media(max-width:600px){
+  .alva-appbar{gap:.5rem;padding-inline:0 .5rem}
+  .alva-team-chip{max-width:min(42vw,11rem)}
+  .alva-plan-kpis{display:flex;overflow-x:auto;gap:.375rem;scroll-snap-type:x proximity}
+  .alva-plan-kpi{flex:0 0 auto;min-width:9.5rem;padding:.375rem .5rem;scroll-snap-align:start}
+  .alva-task-filters > *{flex:1 1 calc(50% - .5rem) !important;min-width:0 !important}
+  .alva-task-filters > :first-child{flex-basis:100% !important}
+}

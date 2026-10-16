@@ -31,7 +31,7 @@ else
 @if(Session.TeamId is null) { <TeamRequired /> }
 else
 {
-<FlareStack Row Wrap Gap="FlareSpacing.Small">
+<FlareStack Row Wrap Gap="FlareSpacing.Small" Class="alva-task-filters">
     <FlareTextField Label="@(Strings.T("Поиск задач"))" @bind-Value="_search" @bind-Value:after="SaveListContext" Immediate Clearable Style="flex:2;min-width:min(100%,15rem)" />
     <FlareSelect TValue="Guid?" Label="@(Strings.T("Проект"))" Items="_projects.Select(x => (Guid?)x.Id)" ItemLabel="ProjectName" NullOption="@(Strings.T("Все проекты"))" @bind-Value="_projectFilter" @bind-Value:after="SaveListContext" Style="flex:1;min-width:12rem" />
     <FlareSelect TValue="string" Label="@(Strings.T("Статус"))" Items="_statuses" ItemLabel="Labels.Status" NullOption="@(Strings.T("Все статусы"))" @bind-Value="_statusFilter" @bind-Value:after="SaveListContext" Style="flex:1;min-width:12rem" />

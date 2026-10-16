@@ -22,6 +22,26 @@
                 <FlareIconView Value="@MaterialDesign3Icons.Regular.KeyboardArrowDown" Size="16px" Class="alva-team-chip__chevron" />
             </a>
             <FlareSpacer />
+            @if (_mobile && Session.User is not null)
+            {
+                @* На телефоне в шапке остаются колокольчик и аватар; язык, профиль и выход — в меню за аватаром,
+                   иначе «Выйти» обрезается, а имя команды исчезает. *@
+                <RiskBell />
+                <FlareMenu Anchor="MenuAnchor.BottomRight" AriaLabel="@(Strings.T("Профиль и настройки"))">
+                    <Activator>
+                        <button type="button" class="alva-user alva-user--menu" aria-label="@(Strings.T("Профиль и настройки"))">
+                            <span class="alva-user__avatar" aria-hidden="true"><FlareIconView Value="@MaterialDesign3Icons.Regular.Person" Size="18px" /></span>
+                        </button>
+                    </Activator>
+                    <ChildContent>
+                        <FlareMenuItem Href="settings">@Session.User.DisplayName</FlareMenuItem>
+                        <FlareMenuItem OnClick="ToggleCulture">@(Cultures.Current == "ru" ? "English" : "Русский")</FlareMenuItem>
+                        <FlareMenuItem OnClick="Logout">@(Strings.T("Выйти"))</FlareMenuItem>
+                    </ChildContent>
+                </FlareMenu>
+            }
+            else
+            {
             <FlareButton OnClick="ToggleCulture" Variant="ButtonVariant.Text" Size="ButtonSize.Sm" aria-label="Language" title="Language">@(Cultures.Current == "ru" ? "EN" : "RU")</FlareButton>
             @if (Session.User is not null)
             {
@@ -33,6 +53,7 @@
                 <FlareButton OnClick="Logout" Variant="ButtonVariant.Text" Size="ButtonSize.Sm">@(Strings.T("Выйти"))</FlareButton>
             }
             else { <FlareButton Href="login" Size="ButtonSize.Sm">@(Strings.T("Войти"))</FlareButton> }
+            }
         </div>
     </FlareLayoutAppBar>
     <FlareLayoutDrawer @bind-Open="_open" Variant="DrawerVariant.Responsive" Width="18rem" AriaLabel="@(Strings.T("Навигация"))">
