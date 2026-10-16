@@ -36,6 +36,7 @@
             <SkillMatch Required="_model.RequiredSkills" Person="@(Actors.FirstOrDefault(a=>a.Id==(Item.ResolvedPersonId ?? Item.AssignmentTargetId)))" />
             <FlareGrid MinColumnWidth="min(100%,12rem)">
                 <FlareSelect TValue="string" Label="@(Strings.T("Статус"))" Items="Statuses" ItemLabel="Labels.Status" @bind-Value="_model.Status" />
+                <FlareSelect TValue="string" Label="@(Strings.T("Приоритет"))" Items="Labels.Priorities" ItemLabel="Labels.Priority" @bind-Value="_model.Priority" />
                 <FlareSelect TValue="Guid?" Label="@(Strings.T("Проект"))" Items="Projects.Select(x => (Guid?)x.Id)" ItemLabel="ProjectName" NullOption="@(Strings.T("Текучка"))" @bind-Value="_model.ProjectId" />
                 <FlareSelect TValue="Guid?" Label="@(Strings.T("Спринт (по датам)"))" Items="Sprints.OrderBy(x => x.StartDate).Select(x => (Guid?)x.Id)" ItemLabel="SprintName" NullOption="@(Strings.T("Бэклог — без дат"))" Value="SprintDates.First(_model, Sprints)" ValueChanged="id => SprintDates.Place(_model, Sprints.FirstOrDefault(s => s.Id == id))" HelperText="@SprintDates.Hint(_model, Sprints)" />
                 <FlareSelect TValue="Guid?" Label="@(Strings.T("Родительская задача"))" Items="Tasks.Where(x => x.Id != Item.Id).Select(x => (Guid?)x.Id)" ItemLabel="TaskName" NullOption="@(Strings.T("Корневая задача"))" @bind-Value="_model.ParentId" Searchable />
@@ -208,7 +209,7 @@
     public bool Dirty => _model.Id == Item.Id && (_model.Title != Item.Title || _model.Description != Item.Description
         || _model.Status != Item.Status || _model.ProjectId != Item.ProjectId || _model.ParentId != Item.ParentId
         || _model.EstimateHours != Item.EstimateHours || _model.Deadline != Item.Deadline
-        || _model.StartDate != Item.StartDate || _model.EndDate != Item.EndDate
+        || _model.StartDate != Item.StartDate || _model.EndDate != Item.EndDate || _model.Priority != Item.Priority
         || !_model.RequiredSkills.SequenceEqual(Item.RequiredSkills));
 
     // Ссылки, меню и Back/Forward: несохранённые правки уходят только после явного согласия.
@@ -338,7 +339,7 @@
     {
         var m = _model;
         await Session.Save<TaskModel>(HttpMethod.Put, Session.TeamPath($"tasks/{m.Id}"),
-            new TaskRequest(m.Title, m.Description, m.Status, m.ProjectId, m.ParentId, m.EstimateHours, m.Deadline, m.StartDate, m.EndDate, m.Order, m.Version, m.RequiredSkills));
+            new TaskRequest(m.Title, m.Description, m.Status, m.ProjectId, m.ParentId, m.EstimateHours, m.Deadline, m.StartDate, m.EndDate, m.Order, m.Version, m.RequiredSkills, m.Priority));
         await Changed.InvokeAsync();
     });
 

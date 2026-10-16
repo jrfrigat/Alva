@@ -40,7 +40,7 @@ public static class BalanceEndpoints
         {
             var assignment = assignments.GetValueOrDefault(x.Id);
             return new BalanceTaskInput(x.Id, x.Title, x.Status.ToString(), x.ParentId, x.EstimateHours,
-                x.StartDate, x.EndDate, x.Deadline, assignment?.TargetId, assignment?.ResolvedPersonId, x.RequiredSkills);
+                x.StartDate, x.EndDate, x.Deadline, assignment?.TargetId, assignment?.ResolvedPersonId, x.RequiredSkills, x.Priority.ToString());
         }).ToArray();
         var links = await db.Dependencies.AsNoTracking().Where(x => taskIds.Contains(x.SuccessorId))
             .Select(x => new BalanceLinkInput(x.PredecessorId, x.SuccessorId, x.Kind.ToString(), x.LagDays)).ToListAsync();

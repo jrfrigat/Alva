@@ -47,6 +47,7 @@ else
                что и строка: так перед переходом запоминаются фильтры и позиция списка. Обёртка гасит всплытие
                и отменяет собственную навигацию ссылки, чтобы не было второй. *@
             <span @onclick:stopPropagation="true" @onclick="() => Open(task)" @onclick:preventDefault="true"><FlareLink Href="@($"tasks/{task!.Id}")">@task.Title</FlareLink></span><AlvaStatusChip Tone="AlvaTones.Status(task.Status)">@Labels.Status(task.Status)</AlvaStatusChip>
+            @if(task.Priority is "High" or "Critical") { <AlvaStatusChip Tone="AlvaTones.Priority(task.Priority)">@Labels.Priority(task.Priority)</AlvaStatusChip> }
             @if(task.EstimateHours.HasValue) { <FlareText Typo="TypographyScale.LabelSmall">@task.EstimateHours ч</FlareText> }
         </FlareStack></ItemTemplate>
     </FlareDataTree>
@@ -62,6 +63,7 @@ else
                     Suggestions="_actors.SelectMany(a=>a.Skills).Concat(_tasks.SelectMany(t=>t.RequiredSkills)).Distinct(StringComparer.OrdinalIgnoreCase)" />
     <FlareGrid MinColumnWidth="min(100%,12rem)">
         <FlareSelect TValue="string" Label="@(Strings.T("Статус"))" Items="_statuses" ItemLabel="Labels.Status" @bind-Value="_editing.Status" />
+        <FlareSelect TValue="string" Label="@(Strings.T("Приоритет"))" Items="Labels.Priorities" ItemLabel="Labels.Priority" @bind-Value="_editing.Priority" />
         <FlareSelect TValue="Guid?" Label="@(Strings.T("Проект"))" Items="_projects.Select(x => (Guid?)x.Id)" ItemLabel="ProjectName" NullOption="@(Strings.T("Текучка"))" @bind-Value="_editing.ProjectId" />
         <FlareSelect TValue="Guid?" Label="@(Strings.T("Спринт (по датам)"))" Items="_sprints.OrderBy(x => x.StartDate).Select(x => (Guid?)x.Id)" ItemLabel="SprintName" NullOption="@(Strings.T("Бэклог — без дат"))" Value="SprintDates.First(_editing, _sprints)" ValueChanged="id => SprintDates.Place(_editing, _sprints.FirstOrDefault(s => s.Id == id))" HelperText="@SprintDates.Hint(_editing, _sprints)" />
         <FlareSelect TValue="Guid?" Label="@(Strings.T("Родительская задача"))" Items="_tasks.Where(x => x.Id != _editing.Id).Select(x => (Guid?)x.Id)" ItemLabel="TaskName" NullOption="@(Strings.T("Корневая задача"))" @bind-Value="_editing.ParentId" Searchable />
@@ -166,7 +168,7 @@ else
     // Закрытие редактора возвращает фокус на кнопку, которой его открыли, а не роняет его на body.
     private async Task Close(){Hide();StateHasChanged();if(_newButton is not null) await _newButton.FocusAsync();}
     private Task Save()=>Run(async()=>{
-        var model=_editing!;var request=new TaskRequest(model.Title,model.Description,model.Status,model.ProjectId,model.ParentId,model.EstimateHours,model.Deadline,model.StartDate,model.EndDate,model.Order,model.Id==Guid.Empty?null:model.Version,model.RequiredSkills);
+        var model=_editing!;var request=new TaskRequest(model.Title,model.Description,model.Status,model.ProjectId,model.ParentId,model.EstimateHours,model.Deadline,model.StartDate,model.EndDate,model.Order,model.Id==Guid.Empty?null:model.Version,model.RequiredSkills,model.Priority);
         var saved=await Session.Save<TaskModel>(model.Id==Guid.Empty?HttpMethod.Post:HttpMethod.Put,Session.TeamPath("tasks"+(model.Id==Guid.Empty?"":$"/{model.Id}")),request);
         if(model.AssignmentTargetId.HasValue)await Session.Send(HttpMethod.Put,Session.TeamPath($"tasks/{saved.Id}/assignment"),new AssignmentRequest(model.AssignmentTargetId.Value,model.ResolvedPersonId));
         else if(model.Id!=Guid.Empty && _tasks.Any(t=>t.Id==model.Id && t.AssignmentTargetId.HasValue))await Session.Send(HttpMethod.Delete,Session.TeamPath($"tasks/{saved.Id}/assignment"),new{});

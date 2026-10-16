@@ -69,7 +69,7 @@ public static class BalanceSolver
         for (var o = 0; o < problem.Tasks[t].Options.Length; o++)
         {
             var option = problem.Tasks[t].Options[o];
-            var cost = w.LateDay * option.LateDays + w.Overflow * option.OverflowTenths
+            var cost = w.LateDay * option.LateDays * problem.Tasks[t].Weight + w.Overflow * option.OverflowTenths
                 + (option.Person < 0 ? w.Unassigned * problem.Tasks[t].Tenths : 0) + (o == 0 ? 0 : w.Change);
             if (cost != 0) objective.AddTerm(z[t][o], cost);
         }

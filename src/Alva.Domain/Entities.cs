@@ -3,6 +3,7 @@ namespace Alva.Domain;
 public abstract class Entity { public Guid Id { get; set; } = Guid.NewGuid(); }
 public enum ActorKind { Person, Department, Role }
 public enum WorkStatus { Backlog, Planned, InProgress, Done, Cancelled }
+public enum TaskPriority { Low, Normal, High, Critical }
 public enum SprintStatus { Planned, Active, Completed }
 public enum DependencyKind { FS, SS, FF, SF }
 
@@ -62,6 +63,10 @@ public sealed class TaskCard : Entity
     public DateOnly? StartDate { get; set; }
     public DateOnly? EndDate { get; set; }
     public int Order { get; set; }
+    /// <summary>Ценность работы для команды: по ней упорядочивается пул и автобаланс держит важное в сроке.</summary>
+    public TaskPriority Priority { get; set; } = TaskPriority.Normal;
+    /// <summary>Место в ручном порядке пула; без него задача идёт после упорядоченных.</summary>
+    public int? BacklogRank { get; set; }
     public bool Archived { get; set; }
     public long Version { get; set; } = 1;
 }

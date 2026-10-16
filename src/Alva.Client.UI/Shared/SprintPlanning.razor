@@ -135,12 +135,18 @@
                         <div class="alva-plan-card__top">
                             <a class="alva-plan-card__code" href="@($"tasks/{task.Id}")">@AlvaFormat.Code(task.Id)</a>
                             <span class="alva-project-chip">@ProjectName(task.ProjectId)</span>
+                            @if (task.Priority != "Normal") { <AlvaStatusChip Tone="AlvaTones.Priority(task.Priority)">@Labels.Priority(task.Priority)</AlvaStatusChip> }
                             <span class="alva-plan-card__est alva-num"><FlareIconView Value="@MaterialDesign3Icons.Regular.Schedule" Size="15px" /> @(task.EstimateHours.HasValue ? $"{AlvaFormat.Hours(task.EstimateHours.Value)} ч" : "—")</span>
                         </div>
                         <div class="alva-plan-card__title">@task.Title</div>
                         <div class="alva-plan-card__bottom">
                             <AlvaAssignee Task="task" Actors="_actors" />
                             <span class="alva-plan-card__deadline alva-num">@(task.Deadline.HasValue ? task.Deadline.Value.ToString("d MMM") : Strings.T("Без дедлайна"))</span>
+                            @if (!Ready(task)) { <span class="alva-plan-card__unready" title="@(Strings.T("Нужны оценка и исполнитель или роль"))">@(Strings.T("Не готова"))</span> }
+                            <span class="alva-plan-card__rank">
+                                <FlareIconButton Icon="@MaterialDesign3Icons.Regular.ArrowUpward" Size="ButtonSize.Sm" AriaLabel="@($"{Strings.T("Выше в пуле")}: {task.Title}")" Disabled="@(_busy || task == Pool.First())" OnClick="() => Rerank(task, -1)" />
+                                <FlareIconButton Icon="@MaterialDesign3Icons.Regular.ArrowDownward" Size="ButtonSize.Sm" AriaLabel="@($"{Strings.T("Ниже в пуле")}: {task.Title}")" Disabled="@(_busy || task == Pool.Last())" OnClick="() => Rerank(task, 1)" />
+                            </span>
                             <FlareButton Size="ButtonSize.Sm" Variant="ButtonVariant.Tonal" Disabled="_busy" OnClick="() => Move(task, true)">@(Strings.T("В спринт"))</FlareButton>
                         </div>
                     </FlareDraggable>
@@ -254,8 +260,11 @@
 
     private IEnumerable<SprintModel> Choices => Sprints.Where(s => s.Status != "Completed" || s.Id == Sprint.Id).OrderBy(s => s.StartDate);
     private string SprintLabel(Guid id) => Sprints.FirstOrDefault(s => s.Id == id) is { } s ? $"{s.Name} ({s.StartDate:d MMM}–{s.EndDate:d MMM})" : "";
-    // Пул — задачи без плановых дат: в спринт задачу ставят её даты.
-    private IEnumerable<TaskModel> Pool => Tasks.Where(t => !t.Planned && t.Status is not ("Done" or "Cancelled")).OrderBy(t => t.Deadline ?? DateOnly.MaxValue);
+    // Пул — задачи без плановых дат: в спринт задачу ставят её даты. Порядок — ручной ранг команды, затем приоритет и срок.
+    private IEnumerable<TaskModel> Pool => Tasks.Where(t => !t.Planned && t.Status is not ("Done" or "Cancelled"))
+        .OrderBy(t => t.BacklogRank ?? int.MaxValue).ThenByDescending(t => Array.IndexOf(Labels.Priorities, t.Priority)).ThenBy(t => t.Deadline ?? DateOnly.MaxValue);
+    /// <summary>Готова к плану: оценена и назначена на человека, роль или подкоманду — её можно ставить в спринт без уточнений.</summary>
+    private static bool Ready(TaskModel t) => t.EstimateHours > 0 && t.AssignmentTargetId is not null;
     // Задачи спринта считаются один раз на набор задач и спринт: доска спрашивает о них в каждой строке баланса.
     private TaskModel[] InSprint => _inSprint.Tasks == Tasks && _inSprint.Sprint == Sprint.Id ? _inSprint.Value
         : (_inSprint = (Tasks, Sprint.Id, Tasks.Where(t => t.SprintIds.Contains(Sprint.Id) && t.Status != "Cancelled").OrderBy(t => t.Order).ToArray())).Value;
@@ -271,11 +280,12 @@
     private IEnumerable<(string Key, string Label)> PoolFilters =>
         new[] { ("all", Strings.T("Все")) }
         .Concat(_projects.Where(p => Pool.Any(t => t.ProjectId == p.Id)).Select(p => (p.Id.ToString(), p.Name)))
-        .Concat(new[] { ("routine", Strings.T("Текучка")), ("unassigned", Strings.T("Без исполнителя")), ("role", Strings.T("С ролью")) });
+        .Concat(new[] { ("ready", Strings.T("Готовы к плану")), ("routine", Strings.T("Текучка")), ("unassigned", Strings.T("Без исполнителя")), ("role", Strings.T("С ролью")) });
 
     private bool Matches(TaskModel t, string key) => key switch
     {
         "all" => true,
+        "ready" => Ready(t),
         "routine" => t.ProjectId is null,
         "unassigned" => Assignees.Person(t, _actors) is null,
         "role" => t.ResolvedPersonId is null && _actors.FirstOrDefault(a => a.Id == t.AssignmentTargetId)?.Kind is "Role" or "Department",
@@ -431,6 +441,18 @@
         });
         _balancing = false;
     }
+
+    /// <summary>Сдвигает задачу в ручном порядке пула и сохраняет весь порядок одной записью.</summary>
+    private Task Rerank(TaskModel task, int by) => Run(async () =>
+    {
+        var order = Pool.ToList();
+        var at = order.IndexOf(task);
+        if (at < 0 || at + by < 0 || at + by >= order.Count) return;
+        order.RemoveAt(at);
+        order.Insert(at + by, task);
+        await Session.Send(HttpMethod.Put, Session.TeamPath("tasks/backlog-order"), new BacklogOrderRequest([.. order.Select(t => t.Id)]));
+        await Refresh();
+    });
 
     private void Choose(Guid taskId, bool on)
     {

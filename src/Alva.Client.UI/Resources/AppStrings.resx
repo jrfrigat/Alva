@@ -735,4 +735,13 @@
   <data name="В следующий спринт" xml:space="preserve"><value>To the next sprint</value></data>
   <data name="Вернуть в пул" xml:space="preserve"><value>Back to the pool</value></data>
   <data name="Отметить готовой" xml:space="preserve"><value>Mark as done</value></data>
+  <data name="Приоритет" xml:space="preserve"><value>Priority</value></data>
+  <data name="Низкий" xml:space="preserve"><value>Low</value></data>
+  <data name="Обычный" xml:space="preserve"><value>Normal</value></data>
+  <data name="Критичный" xml:space="preserve"><value>Critical</value></data>
+  <data name="Нужны оценка и исполнитель или роль" xml:space="preserve"><value>Needs an estimate and an assignee or role</value></data>
+  <data name="Не готова" xml:space="preserve"><value>Not ready</value></data>
+  <data name="Выше в пуле" xml:space="preserve"><value>Move up in the pool</value></data>
+  <data name="Ниже в пуле" xml:space="preserve"><value>Move down in the pool</value></data>
+  <data name="Готовы к плану" xml:space="preserve"><value>Ready to plan</value></data>
 </root>

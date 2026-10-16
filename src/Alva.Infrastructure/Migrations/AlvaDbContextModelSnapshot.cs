@@ -338,6 +338,9 @@ namespace Alva.Infrastructure.Migrations
                     b.Property<bool>("Archived")
                         .HasColumnType("boolean");
 
+                    b.Property<int?>("BacklogRank")
+                        .HasColumnType("integer");
+
                     b.Property<DateOnly?>("Deadline")
                         .HasColumnType("date");
 
@@ -358,6 +361,9 @@ namespace Alva.Infrastructure.Migrations
 
                     b.Property<Guid?>("ParentId")
                         .HasColumnType("uuid");
+
+                    b.Property<int>("Priority")
+                        .HasColumnType("integer");
 
                     b.Property<Guid?>("ProjectId")
                         .HasColumnType("uuid");

@@ -28,7 +28,7 @@ public record BalancePersonInput(Guid Id, string Name, Guid[] Roles, Guid[] Depa
 
 /// <summary>Открытая задача команды. Start и End — уже окно с датами спринта; Deadline — срок задачи.</summary>
 public record BalanceTaskInput(Guid Id, string Title, string Status, Guid? ParentId, decimal? EstimateHours,
-    DateOnly? Start, DateOnly? End, DateOnly? Deadline, Guid? TargetId, Guid? ResolvedPersonId, string[]? RequiredSkills = null);
+    DateOnly? Start, DateOnly? End, DateOnly? Deadline, Guid? TargetId, Guid? ResolvedPersonId, string[]? RequiredSkills = null, string Priority = "Normal");
 
 /// <summary>Связь задач: тип FS, SS, FF или SF и лаг в днях.</summary>
 public record BalanceLinkInput(Guid PredecessorId, Guid SuccessorId, string Kind, int LagDays);
@@ -53,13 +53,14 @@ public static class BalanceModes
     };
 }
 
-/// <summary>Цена единицы каждой метрики в целевой функции; часы считаются в десятых долях.</summary>
+/// <summary>Цена единицы каждой метрики в целевой функции; часы считаются в десятых долях. День просрочки ещё умножается
+/// на вес приоритета задачи (BalanceMath.PriorityWeight): у обычной задачи он 2, поэтому LateDay — половина цены дня.</summary>
 public sealed record BalanceWeights(long Overload, long Peak, long LateDay, long Overflow, long LinkDay, long Spread, long Unassigned, long Change)
 {
     public static BalanceWeights For(string mode) => mode switch
     {
-        BalanceModes.Deadlines => new(Overload: 10, Peak: 3, LateDay: 400, Overflow: 20, LinkDay: 600, Spread: 0, Unassigned: 2, Change: 30),
-        BalanceModes.Maximum => new(Overload: 10, Peak: 5, LateDay: 150, Overflow: 10, LinkDay: 300, Spread: 2, Unassigned: 3, Change: 20),
+        BalanceModes.Deadlines => new(Overload: 10, Peak: 3, LateDay: 200, Overflow: 20, LinkDay: 600, Spread: 0, Unassigned: 2, Change: 30),
+        BalanceModes.Maximum => new(Overload: 10, Peak: 5, LateDay: 75, Overflow: 10, LinkDay: 300, Spread: 2, Unassigned: 3, Change: 20),
         _ => new(Overload: 10, Peak: 3, LateDay: 0, Overflow: 0, LinkDay: 0, Spread: 1, Unassigned: 2, Change: 150)
     };
 }
@@ -70,7 +71,8 @@ public sealed record BalanceWeights(long Overload, long Peak, long LateDay, long
 public sealed record BalanceOption(int Person, int Start, int Length, int[] Load, int LateDays, int OverflowTenths);
 
 /// <summary>Задача, которую автобаланс может двигать. Вариант 0 — текущий план.</summary>
-public sealed record BalanceTask(Guid Id, string Title, int Tenths, Guid? TargetId, bool TargetIsGroup, int? Deadline, BalanceOption[] Options);
+/// <param name="Weight">Вес просрочки по приоритету: важную задачу решатель удерживает в сроке охотнее.</param>
+public sealed record BalanceTask(Guid Id, string Title, int Tenths, Guid? TargetId, bool TargetIsGroup, int? Deadline, BalanceOption[] Options, int Weight = 2);
 
 /// <summary>Связь двигаемых задач по их индексам.</summary>
 public sealed record BalanceLink(int From, int To, string Kind, int Lag);
@@ -96,6 +98,9 @@ public static class BalanceMath
     public const string Heuristic = "Heuristic";
 
     private const int Tenth = 10;
+
+    /// <summary>Вес дня просрочки по приоритету задачи: Low 1, Normal 2, High 4, Critical 6.</summary>
+    public static int PriorityWeight(string? priority) => priority switch { "Low" => 1, "High" => 4, "Critical" => 6, _ => 2 };
 
     /// <summary>
     /// Собирает задачу. Двигаются задачи спринта: открытые и не «В работе», листовые, с оценкой, окном внутри спринта и назначением.
@@ -159,7 +164,7 @@ public static class BalanceMath
             foreach (var person in candidates)
             foreach (var s in starts)
                 if (person != current || s != start) options.Add(Option(person, s));
-            return new BalanceTask(t.Id, t.Title, tenths, t.TargetId, targetIsGroup, deadline, [.. options]);
+            return new BalanceTask(t.Id, t.Title, tenths, t.TargetId, targetIsGroup, deadline, [.. options], PriorityWeight(t.Priority));
         }).ToArray();
 
         var taskIndex = tasks.Select((t, i) => (t.Id, i)).ToDictionary(x => x.Id, x => x.i);
@@ -217,12 +222,13 @@ public static class BalanceMath
     {
         var people = problem.People.Length;
         var load = problem.Background.Select(row => (int[])row.Clone()).ToArray();
-        long unassigned = 0, overflow = 0, late = 0, changes = 0;
+        long unassigned = 0, overflow = 0, late = 0, lateCost = 0, changes = 0;
         for (var t = 0; t < problem.Tasks.Length; t++)
         {
             var option = problem.Tasks[t].Options[choice[t]];
             if (choice[t] != 0) changes++;
             late += option.LateDays;
+            lateCost += (long)option.LateDays * problem.Tasks[t].Weight;
             overflow += option.OverflowTenths;
             if (option.Person < 0) { unassigned += problem.Tasks[t].Tenths; continue; }
             for (var d = 0; d < problem.Horizon; d++) load[option.Person][d] += option.Load[d];
@@ -245,7 +251,7 @@ public static class BalanceMath
         var overload = overByPerson.Sum();
         var peak = overByPerson.DefaultIfEmpty(0).Max();
         var w = problem.Weights;
-        var objective = w.Overload * overload + w.Peak * peak + w.LateDay * late + w.Overflow * overflow + w.LinkDay * linkDays
+        var objective = w.Overload * overload + w.Peak * peak + w.LateDay * lateCost + w.Overflow * overflow + w.LinkDay * linkDays
             + w.Spread * spread + w.Unassigned * unassigned + w.Change * changes;
         var metrics = new BalanceMetricsDto(Hours(overload), Hours(peak), (int)late, Hours(overflow), (int)linkDays, Hours(spread), Hours(unassigned), (int)changes);
         return new Evaluation(metrics, objective, load, overByPerson, freeByPerson);

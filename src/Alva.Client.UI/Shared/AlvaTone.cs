@@ -14,6 +14,8 @@ public enum AlvaTone
 /// <summary>Сопоставление доменных значений с тональностью чипа Alva.</summary>
 public static class AlvaTones
 {
+    public static AlvaTone Priority(string? value) => value switch { "Critical" => AlvaTone.Critical, "High" => AlvaTone.Warning, _ => AlvaTone.Neutral };
+
     public static AlvaTone Status(string? value) => value switch
     {
         "Done" => AlvaTone.Ok,

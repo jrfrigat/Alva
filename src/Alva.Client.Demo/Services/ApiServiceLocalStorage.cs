@@ -265,7 +265,7 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
         var people = store.Actors.Where(a => a.TeamId == teamId && a.Kind == "Person").ToArray();
         var persons = people.Select(p => new BalancePersonInput(p.Id, p.Name, p.RoleIds, p.DepartmentIds, p.Skills)).ToArray();
         var tasks = OpenTasks(store, teamId).Select(x => new BalanceTaskInput(x.Task.Id, x.Task.Title, x.Task.Status, x.Task.ParentId,
-            x.Task.EstimateHours, x.Start, x.End, x.Task.Deadline, x.Task.AssignmentTargetId, x.Task.ResolvedPersonId, x.Task.RequiredSkills)).ToArray();
+            x.Task.EstimateHours, x.Start, x.End, x.Task.Deadline, x.Task.AssignmentTargetId, x.Task.ResolvedPersonId, x.Task.RequiredSkills, x.Task.Priority)).ToArray();
         var links = TeamDependencies(store, teamId).Select(d => new BalanceLinkInput(d.PredecessorId, d.SuccessorId, d.Kind, d.LagDays)).ToArray();
         var problem = BalanceMath.Build(mode, sprintId, sprint.StartDate, sprint.EndDate, persons, id => CalendarOf(store, people.First(p => p.Id == id)), tasks, links);
         return BalanceMath.Proposal(problem, BalanceMath.Greedy(problem), BalanceMath.Heuristic, "Demo: простой поиск без решателя OR-Tools.");
@@ -328,6 +328,11 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
             case ["api", "teams", _, "actors", var id]:
                 if (method == HttpMethod.Delete) { store.Actors.RemoveAll(a => a.Id == Id(id)); store.Calendars.RemoveAll(c => c.ActorId == Id(id)); }
                 else UpdateActor(store, Id(id), value);
+                break;
+            case ["api", "teams", var bt, "tasks", "backlog-order"]:
+                var order = Read<BacklogOrderRequest>(value).TaskIds;
+                for (var i = 0; i < order.Length; i++)
+                    if (store.Tasks.FirstOrDefault(t => t.Id == order[i] && t.TeamId == Id(bt)) is { } ranked) ranked.BacklogRank = i;
                 break;
             case ["api", "teams", _, "tasks", "dependencies", var dependency]:
                 store.Dependencies.RemoveAll(d => d.Id == Id(dependency));
@@ -441,7 +446,7 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
             {
                 Id = Guid.NewGuid(), TeamId = teamId, ProjectId = request.ProjectId, ParentId = request.ParentId,
                 Title = request.Title, Description = request.Description, Status = request.Status, EstimateHours = request.EstimateHours,
-                Deadline = request.Deadline, StartDate = request.StartDate, EndDate = request.EndDate, Order = request.Order, Version = 1, RequiredSkills = skills
+                Deadline = request.Deadline, StartDate = request.StartDate, EndDate = request.EndDate, Order = request.Order, Version = 1, RequiredSkills = skills, Priority = request.Priority ?? "Normal"
             };
             store.Tasks.Add(created);
             AddHistory(store, created.Id, "Задача создана");
@@ -459,6 +464,7 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
         task.StartDate = request.StartDate;
         task.EndDate = request.EndDate;
         task.Order = request.Order;
+        if (request.Priority is { } priority) task.Priority = priority;
         if (request.RequiredSkills is not null) task.RequiredSkills = skills;
         task.Version++;
         AddHistory(store, task.Id, $"Изменена (статус {Labels.Status(task.Status)})");

@@ -47,6 +47,10 @@ public sealed class TaskModel
     public DateOnly? EffectiveDeadline { get; set; }
     /// <summary>Спринты, с которыми пересекаются плановые даты задачи (по началу спринта); пусто — задача в бэклоге.</summary>
     public Guid[] SprintIds { get; set; } = [];
+    /// <summary>Приоритет: Low, Normal, High, Critical.</summary>
+    public string Priority { get; set; } = "Normal";
+    /// <summary>Место в ручном порядке пула; без него — после упорядоченных задач.</summary>
+    public int? BacklogRank { get; set; }
     /// <summary>У задачи есть плановые даты — она в плане, а не в бэклоге.</summary>
     [System.Text.Json.Serialization.JsonIgnore] public bool Planned => StartDate is not null || EndDate is not null;
 }
@@ -91,5 +95,7 @@ public record RiskInfo(Guid TaskId, string Title, string Severity, string[] Reas
 public static class Labels
 {
     public static string Status(string value) => value switch { "Backlog" => Strings.T(Strings.T("В пуле")), "Planned" => Strings.T(Strings.T("Запланирована")), "InProgress" => Strings.T(Strings.T("В работе")), "Done" => Strings.T(Strings.T("Готова")), "Cancelled" => Strings.T(Strings.T("Отменена")), "Active" => Strings.T(Strings.T("Активный")), "Completed" => Strings.T(Strings.T("Завершён")), _ => value };
+    public static readonly string[] Priorities = ["Low", "Normal", "High", "Critical"];
+    public static string Priority(string value) => value switch { "Low" => Strings.T("Низкий"), "High" => Strings.T("Высокий"), "Critical" => Strings.T("Критичный"), _ => Strings.T("Обычный") };
     public static string Kind(string value) => value switch { "Person" => Strings.T(Strings.T("Человек")), "Department" => Strings.T(Strings.T("Подкоманда")), "Role" => Strings.T(Strings.T("Роль")), _ => value };
 }

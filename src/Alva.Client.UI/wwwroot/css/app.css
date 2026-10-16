@@ -396,6 +396,8 @@ a.alva-matrix__name:hover{text-decoration:underline}
 .alva-plan-card__title{font-size:15px;font-weight:500;line-height:20px;color:var(--flare-color-on-surface,var(--alva-on-surface))}
 .alva-plan-card__bottom{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem}
 .alva-plan-card__deadline{margin-left:auto;font-size:12px;color:var(--flare-color-on-surface-variant,var(--alva-on-surface-variant))}
+.alva-plan-card__unready{font-size:11px;font-weight:600;color:var(--flare-color-error,var(--alva-critical))}
+.alva-plan-card__rank{display:inline-flex}
 .alva-plan-hint{display:flex;align-items:center;justify-content:center;gap:6px;padding:.5rem;border-radius:6px;background:var(--flare-color-surface-container-low,#eff4ff);font-size:12px;font-weight:600;color:var(--flare-color-on-surface,var(--alva-on-surface))}
 .alva-plan-side{display:flex;flex-direction:column;gap:1rem;min-width:0}
 .alva-skills{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,12rem),1fr));gap:.5rem}

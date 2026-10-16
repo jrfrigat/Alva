@@ -39,7 +39,18 @@ public static class TaskEndpoints
             await db.SaveChangesAsync();
             return (await List(db, teamId)).Single(x => x.Id == task.Id);
         });
-        group.MapPut("/{taskId:guid}/move", async (Guid teamId, Guid taskId, MoveTaskRequest request, ClaimsPrincipal user, AlvaDbContext db) =>
+        // Ручной порядок пула: ранги переписываются по списку одной записью, чтобы порядок не разъехался между клиентами.
+        group.MapPut("/backlog-order", async (Guid teamId, BacklogOrderRequest request, ClaimsPrincipal user, AlvaDbContext db) =>
+        {
+            await AccessControl.RequireTeam(db, user, teamId, "tasks", "edit");
+            var ids = (request.TaskIds ?? []).Distinct().ToArray();
+            var tasks = await db.Tasks.Where(x => x.TeamId == teamId && !x.Archived && ids.Contains(x.Id)).ToDictionaryAsync(x => x.Id);
+            if (tasks.Count != ids.Length) throw new ApiException(404, "Задача не найдена.");
+            for (var i = 0; i < ids.Length; i++) tasks[ids[i]].BacklogRank = i;
+            await db.SaveChangesAsync();
+            return Results.NoContent();
+        });
+        group.MapPut("/{taskId:guid}/move",async (Guid teamId, Guid taskId, MoveTaskRequest request, ClaimsPrincipal user, AlvaDbContext db) =>
         {
             await AccessControl.RequireTeam(db, user, teamId, "tasks", "edit");
             var task = await Find(db, teamId, taskId);
@@ -167,6 +178,8 @@ public static class TaskEndpoints
         if (title.Length is 0 or > 500) throw new ApiException(400, "Название задачи должно содержать от 1 до 500 символов.");
         if (!Enum.TryParse<WorkStatus>(request.Status, true, out var status) || !Enum.IsDefined(status)) throw new ApiException(400, "Неизвестный статус задачи.");
         if (request.EstimateHours is { } estimate && (estimate < 0 || estimate > 100000)) throw new ApiException(400, "Оценка должна быть неотрицательной.");
+        TaskPriority? priority = null;
+        if (request.Priority is { } text) priority = Enum.TryParse<TaskPriority>(text, true, out var parsed) && Enum.IsDefined(parsed) ? parsed : throw new ApiException(400, "Неизвестный приоритет задачи.");
         if (request.ProjectId is { } projectId && !await db.ProjectTeams.AnyAsync(x => x.TeamId == teamId && x.ProjectId == projectId)) throw new ApiException(400, "Проект не связан с командой.");
         await ValidateParent(db, teamId, task, request.ParentId);
         try { if (request.RequiredSkills is not null) task.RequiredSkills = SkillMath.Normalize(request.RequiredSkills); }
@@ -174,6 +187,7 @@ public static class TaskEndpoints
         task.Title = title; task.Description = request.Description ?? ""; task.Status = status;
         task.ProjectId = request.ProjectId; task.ParentId = request.ParentId;
         task.EstimateHours = request.EstimateHours; task.Deadline = request.Deadline; task.StartDate = request.StartDate; task.EndDate = request.EndDate; task.Order = request.Order;
+        if (priority is { } value) task.Priority = value;
     }
 
     private static async Task ValidateParent(AlvaDbContext db, Guid teamId, TaskCard task, Guid? parentId)
@@ -206,7 +220,7 @@ public static class TaskEndpoints
         {
             assignments.TryGetValue(x.Id, out var assignment);
             Guid[] inSprints = [.. sprints[x.Id]];
-            return new TaskDto(x.Id, x.TeamId, x.ProjectId, x.ParentId, x.Title, x.Description, x.Status.ToString(), x.EstimateHours, x.Deadline, x.StartDate, x.EndDate, x.Order, assignment?.TargetId, assignment?.ResolvedPersonId, x.Version, estimates.GetValueOrDefault(x.Id), deadlines.GetValueOrDefault(x.Id), inSprints, x.RequiredSkills);
+            return new TaskDto(x.Id, x.TeamId, x.ProjectId, x.ParentId, x.Title, x.Description, x.Status.ToString(), x.EstimateHours, x.Deadline, x.StartDate, x.EndDate, x.Order, assignment?.TargetId, assignment?.ResolvedPersonId, x.Version, estimates.GetValueOrDefault(x.Id), deadlines.GetValueOrDefault(x.Id), inSprints, x.RequiredSkills, x.Priority.ToString(), x.BacklogRank);
         }).ToArray();
     }
 
