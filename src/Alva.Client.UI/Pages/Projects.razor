@@ -58,7 +58,7 @@ else
                     <span class="alva-proj-card__team-list">@string.Join(" · ", project.TeamIds.Select(TeamName))</span>
                 </span>
                 <span class="alva-loadbar__track"><span class="alva-loadbar__fill alva-loadbar__fill--info" style="width:@Pct(done, total)%"></span></span>
-                <span class="alva-proj-card__foot alva-num"><span><b>@Pct(done, total)%</b> (@tasks.Count(t => t.Status == "Done") / @tasks.Length @AlvaFormat.Plural(tasks.Length, "задача", Strings.T("задачи"), Strings.T("задач")))</span><span>Релиз: @(ReleaseOf(project)?.ToString("d MMM yyyy") ?? "—")</span></span>
+                <span class="alva-proj-card__foot alva-num"><span><b>@Pct(done, total)%</b> (@tasks.Count(t => t.Status == "Done") / @tasks.Length @AlvaFormat.Plural(tasks.Length, "задача", Strings.T("задачи"), Strings.T("задач")))</span><span>@(Strings.T("Последний срок задач:")) @(LatestDeadline(project)?.ToString("d MMM yyyy") ?? "—")</span></span>
             </button>
         }
         @if (!Visible.Any()) { <FlareEmptyState Compact Title="@(Strings.T("Проектов нет"))" Description="@(Strings.T("Смените фильтр статуса."))" /> }
@@ -73,7 +73,7 @@ else
         var (teamDone, teamTotal) = Hours(tasks);
         var closed = p.TeamIds.Count(_closedTeams.Contains);
         var sprints = SprintsOf(p);
-        var release = ReleaseOf(p);
+        var latest = LatestDeadline(p);
         var risks = _risks.Count(r => tasks.Any(t => t.Id == r.TaskId));
         <section class="alva-proj-detail" aria-label="@p.Name">
             <div class="alva-panel">
@@ -94,7 +94,7 @@ else
                         @if (closed > 0) { <small class="alva-kpi__note">@(Strings.T("Без команд, к которым нет доступа:")) @closed</small> }</div>
                     <div class="alva-proj-kpi"><span class="alva-kpi__label">@(Strings.T("Трудозатраты"))</span><span class="alva-proj-kpi__value alva-num">@AlvaFormat.Hours(total) ч</span><small class="alva-num">Закрыто: @AlvaFormat.Hours(done) ч / Остаток: @AlvaFormat.Hours(total - done) ч</small></div>
                     <div class="alva-proj-kpi"><span class="alva-kpi__label">@(Strings.T("Активные спринты"))</span><span class="alva-proj-kpi__value alva-proj-kpi__value--primary alva-num">@sprints.Count(s => s.Status == "Active") @AlvaFormat.Plural(sprints.Count(s => s.Status == "Active"), Strings.T("спринт"), Strings.T("спринта"), Strings.T("спринтов"))</span><small class="alva-num">@all.Count(t => t.Status == "InProgress") @AlvaFormat.Plural(all.Count(t => t.Status == "InProgress"), Strings.T("задача"), Strings.T("задачи"), Strings.T("задач")) @(Strings.T("сейчас в работе"))</small></div>
-                    <div class="alva-proj-kpi"><span class="alva-kpi__label">@(Strings.T("Дедлайн / релиз"))</span><span class="alva-proj-kpi__value alva-num">@(release?.ToString("d MMM") ?? "—")</span><small class="alva-num">@(release is { } r ? $"{r:yyyy} (осталось {Math.Max(0, r.DayNumber - DateOnly.FromDateTime(DateTime.Today).DayNumber)} дн.)" : Strings.T("Дедлайны не заданы"))</small>@if (risks > 0) { <small class="alva-kpi__alert">@risks @AlvaFormat.Plural(risks, Strings.T("риск"), Strings.T("риска"), Strings.T("рисков")) по задачам</small> }</div>
+                    <div class="alva-proj-kpi"><span class="alva-kpi__label">@(Strings.T("Последний срок задач"))</span><span class="alva-proj-kpi__value alva-num">@(latest?.ToString("d MMM") ?? "—")</span><small class="alva-num">@(latest is { } r ? $"{r:yyyy} (осталось {Math.Max(0, r.DayNumber - DateOnly.FromDateTime(DateTime.Today).DayNumber)} дн.)" : Strings.T("Дедлайны не заданы"))</small>@if (risks > 0) { <small class="alva-kpi__alert">@risks @AlvaFormat.Plural(risks, Strings.T("риск"), Strings.T("риска"), Strings.T("рисков")) по задачам</small> }</div>
                 </div>
             </div>
 
@@ -181,7 +181,8 @@ else
     private (decimal Done, decimal Total) HoursOf(ProjectModel p) => Hours(ProjectTasks(p));
     private static (decimal Done, decimal Total) Hours(TaskModel[] tasks) =>
         (tasks.Where(t => t.Status == "Done").Sum(t => t.EstimateHours ?? 0), tasks.Sum(t => t.EstimateHours ?? 0));
-    private DateOnly? ReleaseOf(ProjectModel p) => ProjectTasks(p).Where(t => t.Deadline.HasValue).Select(t => t.Deadline).Max();
+    /// <summary>Самый поздний срок задач проекта. Это не релиз: отдельной сущности поставки в Alva пока нет.</summary>
+    private DateOnly? LatestDeadline(ProjectModel p) => ProjectTasks(p).Where(t => t.Deadline.HasValue).Select(t => t.Deadline).Max();
     private SprintModel[] SprintsOf(ProjectModel p) => _sprints.Where(s => TasksOf(p).Any(t => t.SprintIds.Contains(s.Id))).OrderBy(s => s.StartDate).ToArray();
     private static int Pct(decimal part, decimal whole) => whole <= 0 ? 0 : (int)Math.Round(part / whole * 100);
     private string TeamName(Guid id) => Session.Teams.FirstOrDefault(t => t.Id == id)?.Name ?? (id == Session.TeamId ? Session.TeamName : Strings.T("Другая команда"));
