@@ -5,9 +5,10 @@ namespace Alva.Contracts;
 /// человек, <paramref name="TargetName"/> — роль или подкоманда, если человек ещё не выбран.
 /// </summary>
 public record RiskTask(Guid Id, Guid? ParentId, string Title, decimal? EstimateHours, DateOnly? Start, DateOnly? End, DateOnly? Deadline,
-    Guid? PersonId, string? PersonName, string? TargetName);
+    Guid? PersonId, string? PersonName, string? TargetName, string Status = "Planned", decimal? RemainingHours = null,
+    string Priority = "Normal", int? BacklogRank = null);
 
-public record RiskDependency(Guid PredecessorId, Guid SuccessorId);
+public record RiskDependency(Guid PredecessorId, Guid SuccessorId, string Kind = "FS", int LagDays = 0);
 
 /// <summary>
 /// Риски сдвига сроков и их причины, общие для API и demo. Перегрузка и доступность считаются теми же
@@ -20,14 +21,7 @@ public static class RiskMath
     public static RiskDto[] Assess(IReadOnlyCollection<RiskTask> tasks, IEnumerable<RiskDependency> dependencies, Func<Guid, CalendarDto> calendarOf, DateOnly today)
     {
         var children = tasks.Where(t => t.ParentId is not null).ToLookup(t => t.ParentId!.Value);
-        var estimates = new Dictionary<Guid, decimal>();
         var deadlines = new Dictionary<Guid, DateOnly?>();
-        decimal Estimate(RiskTask task)
-        {
-            if (estimates.TryGetValue(task.Id, out var cached)) return cached;
-            estimates[task.Id] = 0m;
-            return estimates[task.Id] = task.EstimateHours ?? children[task.Id].Sum(Estimate);
-        }
         DateOnly? Deadline(RiskTask task)
         {
             if (deadlines.TryGetValue(task.Id, out var cached)) return cached;
@@ -40,15 +34,19 @@ public static class RiskMath
 
         // Нагрузка людей по дням — та же, что в ёмкости: собственные оценки задач по их окнам.
         var load = new Dictionary<(Guid, DateOnly), decimal>();
-        foreach (var task in tasks)
+        foreach (var task in tasks.Where(t => t.Status is not ("Done" or "Cancelled")))
             if (task.PersonId is { } person && CapacityMath.Window(task.Start, task.End, task.Deadline) is { } window)
                 foreach (var (day, hours) in CapacityMath.Spread(CalendarOf(person), task.EstimateHours ?? 0m, window.Start, window.End))
                     load[(person, day)] = load.GetValueOrDefault((person, day)) + hours;
 
-        var open = tasks.Select(t => t.Id).ToHashSet();
-        var waiting = dependencies.Where(d => open.Contains(d.PredecessorId)).Select(d => d.SuccessorId).ToHashSet();
+        var links = dependencies.ToArray();
+        var forecasts = ForecastMath.Build(tasks.Select(t => new ForecastWork(t.Id, t.ParentId, t.PersonId, t.Status,
+            t.EstimateHours, t.RemainingHours, t.Start, t.End, t.Deadline, t.Priority, t.BacklogRank)).ToArray(),
+            links.Select(d => new ForecastLink(d.PredecessorId, d.SuccessorId, d.Kind, d.LagDays)), CalendarOf, today);
+        var open = tasks.Where(t => t.Status is not ("Done" or "Cancelled")).Select(t => t.Id).ToHashSet();
+        var waiting = links.Where(d => open.Contains(d.PredecessorId)).Select(d => d.SuccessorId).ToHashSet();
         var result = new List<RiskDto>();
-        foreach (var task in tasks)
+        foreach (var task in tasks.Where(t => open.Contains(t.Id)))
         {
             var reasons = new List<string>();
             if (task.PersonId is null) reasons.Add(task.TargetName is { } target ? $"Требуется человек: {target}" : "Нет исполнителя");
@@ -56,7 +54,9 @@ public static class RiskMath
             var calendar = task.PersonId is { } assignee ? CalendarOf(assignee) : CapacityMath.DefaultCalendar(task.Id);
             var window = CapacityMath.Window(task.Start, task.End, task.Deadline);
             var deadline = Deadline(task);
-            var forecast = Forecast(calendar, Estimate(task), window is { } span && span.Start > today ? span.Start : today);
+            var prediction = forecasts[task.Id];
+            var forecast = prediction.Finish;
+            if (forecast is null) reasons.AddRange(prediction.Reasons);
             if (deadline is { } passed && passed < today) reasons.Add("Срок прошёл");
             else if (deadline is { } due && forecast > due) reasons.Add("Прогноз позже срока");
 
@@ -76,7 +76,7 @@ public static class RiskMath
             if (reasons.Count == 0) continue;
 
             var severe = deadline is { } limit && (limit < today || forecast is { } date && date.DayNumber - limit.DayNumber > 3);
-            result.Add(new RiskDto(task.Id, task.Title, severe ? "High" : "Medium", [.. reasons], forecast));
+            result.Add(new RiskDto(task.Id, task.Title, severe ? "High" : "Medium", [.. reasons], forecast, prediction.Reasons));
         }
         return [.. result.OrderBy(x => x.Severity == "High" ? 0 : 1).ThenBy(x => x.ForecastDate).ThenBy(x => x.Title)];
     }

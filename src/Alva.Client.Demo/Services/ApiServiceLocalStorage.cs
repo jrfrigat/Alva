@@ -200,8 +200,8 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
         store.Calendars.FirstOrDefault(c => c.ActorId == actorId) ?? CapacityMath.DefaultCalendar(actorId);
 
     /// <summary>Открытые задачи команды с плановым окном — датами задачи (как в API).</summary>
-    private static IEnumerable<(TaskModel Task, DateOnly? Start, DateOnly? End)> OpenTasks(DemoStore store, Guid teamId) =>
-        store.Tasks.Where(t => t.TeamId == teamId && t.Status is not ("Done" or "Cancelled")).Select(t => (t, t.StartDate, t.EndDate));
+    private static IEnumerable<(TaskModel Task, DateOnly? Start, DateOnly? End)> OpenTasks(DemoStore store, Guid teamId, bool includeClosed = false) =>
+        store.Tasks.Where(t => t.TeamId == teamId && (includeClosed || t.Status is not ("Done" or "Cancelled"))).Select(t => (t, t.StartDate, t.EndDate));
 
     /// <summary>Открытые задачи с плановыми датами: только они занимают людей; бэклог в ёмкость не входит (как в API).</summary>
     private static IEnumerable<(TaskModel Task, DateOnly? Start, DateOnly? End)> PlannedTasks(DemoStore store, Guid teamId) =>
@@ -242,13 +242,13 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
     private static RiskDto[] Risks(DemoStore store, Guid teamId, DateOnly today)
     {
         var actors = store.Actors.ToDictionary(a => a.Id);
-        var tasks = OpenTasks(store, teamId).Select(x =>
+        var tasks = OpenTasks(store, teamId, includeClosed: true).Select(x =>
         {
             var person = PersonOf(store, x.Task) is { } id ? actors.GetValueOrDefault(id) : null;
             var target = person is null && x.Task.AssignmentTargetId is { } targetId ? actors.GetValueOrDefault(targetId)?.Name : null;
-            return new RiskTask(x.Task.Id, x.Task.ParentId, x.Task.Title, x.Task.EstimateHours, x.Start, x.End, x.Task.Deadline, person?.Id, person?.Name, target);
+            return new RiskTask(x.Task.Id, x.Task.ParentId, x.Task.Title, x.Task.EstimateHours, x.Start, x.End, x.Task.Deadline, person?.Id, person?.Name, target, x.Task.Status, x.Task.RemainingHours, x.Task.Priority, x.Task.BacklogRank);
         }).ToArray();
-        var dependencies = store.Dependencies.Select(d => new RiskDependency(d.PredecessorId, d.SuccessorId));
+        var dependencies = store.Dependencies.Select(d => new RiskDependency(d.PredecessorId, d.SuccessorId, d.Kind, d.LagDays));
         return RiskMath.Assess(tasks, dependencies, id => CalendarOf(store, actors[id]), today);
     }
 

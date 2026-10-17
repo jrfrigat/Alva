@@ -74,6 +74,17 @@ public sealed class ForecastMathTests
         Assert.Equal(Monday.AddDays(1), result[next.Id].Finish);
     }
     [Fact]
+    public void Parent_constraints_delay_children_and_do_not_change_the_plan()
+    {
+        var predecessor = Work() with { PersonId = Guid.NewGuid() };
+        var parent = Work(100) with { PersonId = null };
+        var child = Work() with { ParentId = parent.Id };
+        var result = Build([predecessor, parent, child], [new(predecessor.Id, parent.Id)]);
+        Assert.Equal(Monday.AddDays(1), result[child.Id].Start);
+        Assert.Equal(result[child.Id].Finish, result[parent.Id].Finish);
+        Assert.Equal(Monday, child.Start);
+    }
+    [Fact]
     public void Done_work_does_not_consume_capacity_and_known_dates_can_satisfy_links()
     {
         var done = Work(100, "Done") with { End = Monday.AddDays(-1) }; var next = Work();

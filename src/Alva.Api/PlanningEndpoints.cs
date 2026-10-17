@@ -293,9 +293,9 @@ public static class PlanningEndpoints
     }
 
     /// <summary>Открытые задачи команды с первым назначением (если есть) и плановым окном — датами задачи.</summary>
-    private static async Task<List<(TaskCard Task, Assignment? Assignment, DateOnly? Start, DateOnly? End)>> OpenWork(AlvaDbContext db, Guid teamId)
+    private static async Task<List<(TaskCard Task, Assignment? Assignment, DateOnly? Start, DateOnly? End)>> OpenWork(AlvaDbContext db, Guid teamId, bool includeClosed = false)
     {
-        var tasks = await db.Tasks.AsNoTracking().Where(x => x.TeamId == teamId && !x.Archived && x.Status != WorkStatus.Done && x.Status != WorkStatus.Cancelled).ToListAsync();
+        var tasks = await db.Tasks.AsNoTracking().Where(x => x.TeamId == teamId && !x.Archived && (includeClosed || (x.Status != WorkStatus.Done && x.Status != WorkStatus.Cancelled))).ToListAsync();
         var taskIds = tasks.Select(x => x.Id).ToArray();
         var assignments = (await db.Assignments.AsNoTracking().Where(x => taskIds.Contains(x.TaskId)).ToListAsync()).ToDictionary(x => x.TaskId);
         return [.. tasks.Select(task => (task, assignments.GetValueOrDefault(task.Id), task.StartDate, task.EndDate))];
@@ -352,14 +352,14 @@ public static class PlanningEndpoints
     {
         var (people, calendarOf) = await PeopleCalendars(db, teamId);
         var targets = await db.Actors.AsNoTracking().Where(x => x.TeamId == teamId && !x.Archived && x.Kind != ActorKind.Person).ToDictionaryAsync(x => x.Id, x => x.Name);
-        var work = await OpenWork(db, teamId);
+        var work = await OpenWork(db, teamId, includeClosed: true);
         var ids = work.Select(x => x.Task.Id).ToArray();
-        var dependencies = await db.Dependencies.AsNoTracking().Where(x => ids.Contains(x.SuccessorId)).Select(x => new RiskDependency(x.PredecessorId, x.SuccessorId)).ToListAsync();
+        var dependencies = await db.Dependencies.AsNoTracking().Where(x => ids.Contains(x.SuccessorId)).Select(x => new RiskDependency(x.PredecessorId, x.SuccessorId, x.Kind.ToString(), x.LagDays)).ToListAsync();
         var tasks = work.Select(x =>
         {
             var person = x.Assignment is null ? null : ResolvePerson(x.Assignment, people);
             var target = x.Assignment is not null && person is null ? targets.GetValueOrDefault(x.Assignment.TargetId) : null;
-            return new RiskTask(x.Task.Id, x.Task.ParentId, x.Task.Title, x.Task.EstimateHours, x.Start, x.End, x.Task.Deadline, person?.Id, person?.Name, target);
+            return new RiskTask(x.Task.Id, x.Task.ParentId, x.Task.Title, x.Task.EstimateHours, x.Start, x.End, x.Task.Deadline, person?.Id, person?.Name, target, x.Task.Status.ToString(), x.Task.RemainingHours, x.Task.Priority.ToString(), x.Task.BacklogRank);
         }).ToArray();
         return RiskMath.Assess(tasks, dependencies, calendarOf, DateOnly.FromDateTime(DateTime.Today));
     }

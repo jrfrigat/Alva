@@ -22,8 +22,9 @@ public sealed class RiskMathTests
     {
         var risks = Assess(Week(), Task("Без назначения", 4m, Monday, Monday, null, assigned: false), Task("На роль", 4m, Monday, Monday, null, assigned: false, role: "Backend"));
 
-        Assert.Equal(["Нет исполнителя"], risks.Single(x => x.Title == "Без назначения").Reasons);
-        Assert.Equal(["Требуется человек: Backend"], risks.Single(x => x.Title == "На роль").Reasons);
+        Assert.Contains("Нет исполнителя", risks.Single(x => x.Title == "Без назначения").Reasons);
+        Assert.Contains("Требуется человек: Backend", risks.Single(x => x.Title == "На роль").Reasons);
+        Assert.All(risks, r => Assert.Null(r.ForecastDate));
     }
 
     [Fact]
@@ -83,7 +84,21 @@ public sealed class RiskMathTests
         var second = Task("Потом", 4m, Monday.AddDays(1), Monday.AddDays(1), null);
         var risks = RiskMath.Assess([first, second], [new RiskDependency(first.Id, second.Id), new RiskDependency(Guid.NewGuid(), first.Id)], _ => Week(), Friday);
 
-        Assert.Equal(["Зависимость не завершена"], Assert.Single(risks).Reasons);
+        Assert.Contains(ForecastMath.MissingDependency, risks.Single(r => r.TaskId == first.Id).Reasons);
+        Assert.Contains("Зависимость не завершена", risks.Single(r => r.TaskId == second.Id).Reasons);
+        Assert.All(risks, r => Assert.Null(r.ForecastDate));
+    }
+
+    [Fact]
+    public void Risks_use_shared_queue_remaining_and_completed_predecessors()
+    {
+        var done = Task("Done", 100m, Friday.AddDays(-1), Friday.AddDays(-1), null) with { Status = "Done" };
+        var first = Task("First", 100m, Friday, Friday, Friday) with { Status = "InProgress", RemainingHours = 8, Priority = "High" };
+        var next = Task("Next", 8m, Friday, Friday, Friday);
+        var result = RiskMath.Assess([done, first, next], [new(done.Id, first.Id)], _ => Week(), Friday);
+        Assert.DoesNotContain(result, r => r.TaskId == done.Id);
+        Assert.Equal(Monday, result.Single(r => r.TaskId == next.Id).ForecastDate);
+        Assert.DoesNotContain("Зависимость не завершена", result.Single(r => r.TaskId == first.Id).Reasons);
     }
 
     [Fact]
