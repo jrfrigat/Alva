@@ -179,6 +179,8 @@ public static class TaskEndpoints
         if (!Enum.TryParse<WorkStatus>(request.Status, true, out var status) || !Enum.IsDefined(status)) throw new ApiException(400, "Неизвестный статус задачи.");
         if (request.EstimateHours is { } estimate && (estimate < 0 || estimate > 100000)) throw new ApiException(400, "Оценка должна быть неотрицательной.");
         TaskPriority? priority = null;
+        if (request.SetRemainingHours && request.RemainingHours is < 0 or > 100000) throw new ApiException(400, "Остаток должен быть от 0 до 100000 часов.");
+        if (request.SetRemainingHours) task.RemainingHours = request.RemainingHours;
         if (request.Priority is { } text) priority = Enum.TryParse<TaskPriority>(text, true, out var parsed) && Enum.IsDefined(parsed) ? parsed : throw new ApiException(400, "Неизвестный приоритет задачи.");
         if (request.ProjectId is { } projectId && !await db.ProjectTeams.AnyAsync(x => x.TeamId == teamId && x.ProjectId == projectId)) throw new ApiException(400, "Проект не связан с командой.");
         await ValidateParent(db, teamId, task, request.ParentId);
@@ -220,7 +222,7 @@ public static class TaskEndpoints
         {
             assignments.TryGetValue(x.Id, out var assignment);
             Guid[] inSprints = [.. sprints[x.Id]];
-            return new TaskDto(x.Id, x.TeamId, x.ProjectId, x.ParentId, x.Title, x.Description, x.Status.ToString(), x.EstimateHours, x.Deadline, x.StartDate, x.EndDate, x.Order, assignment?.TargetId, assignment?.ResolvedPersonId, x.Version, estimates.GetValueOrDefault(x.Id), deadlines.GetValueOrDefault(x.Id), inSprints, x.RequiredSkills, x.Priority.ToString(), x.BacklogRank);
+            return new TaskDto(x.Id, x.TeamId, x.ProjectId, x.ParentId, x.Title, x.Description, x.Status.ToString(), x.EstimateHours, x.Deadline, x.StartDate, x.EndDate, x.Order, assignment?.TargetId, assignment?.ResolvedPersonId, x.Version, estimates.GetValueOrDefault(x.Id), deadlines.GetValueOrDefault(x.Id), inSprints, x.RequiredSkills, x.Priority.ToString(), x.BacklogRank, x.RemainingHours);
         }).ToArray();
     }
 

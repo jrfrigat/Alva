@@ -184,6 +184,7 @@ public static class DataTransfer
                 case Project x: Name(id, x.Name); if (x.WorkspaceId == Guid.Empty) Error(id, "workspaceId", "Пространство источника обязательно."); break;
                 case Sprint x: Team(id, x.TeamId); Name(id, x.Name); Dates(id, x.StartDate, x.EndDate); break;
                 case TaskCard x:
+                    if (x.RemainingHours is < 0 or > 100000) Error(id, "remainingHours", "Остаток должен быть от 0 до 100000 часов.");
                     ValidateSkills(id, x.RequiredSkills);
                     Team(id, x.TeamId); Name(id, x.Title); Ref<Project>(id, x.ProjectId, "projectId", true); Ref<Sprint>(id, legacy.GetValueOrDefault(id), "sprintId", true); Ref<TaskCard>(id, x.ParentId, "parentId", true);
                     if (x.ParentId == id) Error(id, "parentId", "Задача не может быть собственным родителем.");

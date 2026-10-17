@@ -440,6 +440,7 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
     private static TaskModel SaveTask(DemoStore store, Guid teamId, Guid? id, object value)
     {
         var request = Read<TaskRequest>(value);
+        if (request.SetRemainingHours && request.RemainingHours is < 0 or > 100000) throw new InvalidOperationException("Остаток должен быть от 0 до 100000 часов.");
         string[] skills;
         try { skills = SkillMath.Normalize(request.RequiredSkills); }
         catch (ArgumentException) { throw new InvalidOperationException("Укажите не более 50 навыков длиной до 80 символов."); }
@@ -449,6 +450,7 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
             {
                 Id = Guid.NewGuid(), TeamId = teamId, ProjectId = request.ProjectId, ParentId = request.ParentId,
                 Title = request.Title, Description = request.Description, Status = request.Status, EstimateHours = request.EstimateHours,
+                RemainingHours = request.SetRemainingHours ? request.RemainingHours : null,
                 Deadline = request.Deadline, StartDate = request.StartDate, EndDate = request.EndDate, Order = request.Order, Version = 1, RequiredSkills = skills, Priority = request.Priority ?? "Normal"
             };
             store.Tasks.Add(created);
@@ -463,6 +465,7 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
         task.Description = request.Description;
         task.Status = request.Status;
         task.EstimateHours = request.EstimateHours;
+        if (request.SetRemainingHours) task.RemainingHours = request.RemainingHours;
         task.Deadline = request.Deadline;
         task.StartDate = request.StartDate;
         task.EndDate = request.EndDate;

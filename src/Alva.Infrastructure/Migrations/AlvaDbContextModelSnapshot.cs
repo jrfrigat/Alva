@@ -368,6 +368,10 @@ namespace Alva.Infrastructure.Migrations
                     b.Property<Guid?>("ProjectId")
                         .HasColumnType("uuid");
 
+                    b.Property<decimal?>("RemainingHours")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("numeric(12,2)");
+
                     b.PrimitiveCollection<string[]>("RequiredSkills")
                         .IsRequired()
                         .HasColumnType("text[]");

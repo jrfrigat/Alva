@@ -34,6 +34,7 @@ public sealed class TaskModel
     public string Description { get; set; } = "";
     public string Status { get; set; } = "Backlog";
     public decimal? EstimateHours { get; set; }
+    public decimal? RemainingHours { get; set; }
     public DateOnly? Deadline { get; set; }
     public DateOnly? StartDate { get; set; }
     public DateOnly? EndDate { get; set; }

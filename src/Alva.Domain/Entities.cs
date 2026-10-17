@@ -59,6 +59,8 @@ public sealed class TaskCard : Entity
     public string Description { get; set; } = "";
     public WorkStatus Status { get; set; }
     public decimal? EstimateHours { get; set; }
+    /// <summary>Фактическая оценка оставшейся работы; null — остаток неизвестен, 0 — работы не осталось.</summary>
+    public decimal? RemainingHours { get; set; }
     public DateOnly? Deadline { get; set; }
     public DateOnly? StartDate { get; set; }
     public DateOnly? EndDate { get; set; }
