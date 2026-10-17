@@ -56,6 +56,19 @@ public sealed class TaskDetailsDraftTests : UiTestBase
     }
 
     [Fact]
+    public void Remaining_work_is_saved_explicitly_and_marks_the_draft_dirty()
+    {
+        var cut = Page();
+        Field(cut, "Остаток, часы").Change("0");
+        Assert.True(cut.FindComponent<TaskDetails>().Instance.Dirty);
+        TaskRequest? sent = null;
+        Api.OnSend = (_, _, value) => { sent = value as TaskRequest; return null; };
+        Button(cut, "Сохранить").Click();
+        cut.WaitForAssertion(() => Assert.NotNull(sent));
+        Assert.True(sent!.SetRemainingHours);
+        Assert.Equal(0m, sent.RemainingHours);
+    }
+    [Fact]
     public void Without_changes_the_page_leaves_without_asking()
     {
         var cut = Page();

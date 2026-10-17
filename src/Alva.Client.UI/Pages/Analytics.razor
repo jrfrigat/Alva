@@ -72,7 +72,9 @@ else
             <div class="alva-risk-table__row" role="row" @key="risk.TaskId">
                 <span role="cell" class="alva-risk-table__task"><a href="@($"tasks/{risk.TaskId}")">@risk.Title</a><span class="alva-num">@AlvaFormat.Code(risk.TaskId)</span></span>
                 <span role="cell"><AlvaStatusChip Tone="AlvaTones.Severity(risk.Severity)">@(risk.Severity == "High" ? Strings.T("Высокий") : Strings.T("Средний"))</AlvaStatusChip></span>
-                <span role="cell" class="alva-risk-table__reasons">@foreach (var reason in risk.Reasons) { <span class="alva-chip alva-chip--@Tone(KindOf(reason))">@reason</span> }</span>
+                <span role="cell" class="alva-risk-table__reasons">@foreach (var reason in risk.Reasons) { <span class="alva-chip alva-chip--@Tone(KindOf(reason))">@Strings.T(reason)</span> }
+                    @foreach (var note in (risk.ForecastNotes ?? []).Except(risk.Reasons)) { <span>@Strings.T(note)</span> }
+                </span>
                 <span role="cell" class="alva-risk-table__person">
                     @if (task?.ResolvedPersonId is { } personId && Actor(personId) is { } person)
                     {
@@ -88,8 +90,7 @@ else
         }
         @if (!Visible.Any()) { <div class="alva-sprint-table__empty">@(Strings.T("По этим условиям рисков нет. Смените фильтр или поиск."))</div> }
     </div>
-    @* Прогноз — оценка одной задачи на графике её исполнителя; честнее сказать, чего он не знает, чем выдавать дату за точную. *@
-    <p class="alva-risk-panel__note">@(Strings.T("Прогноз — день, когда оценка задачи наберётся рабочими часами её исполнителя с начала задачи. Не учтены другие задачи исполнителя, длительность зависимостей и уже сделанная часть работы."))</p>
+    <p class="alva-risk-panel__note">@(Strings.T("Прогноз учитывает остаток работы, общую очередь исполнителя во всех проектах команды, календарь и зависимости. Порядок: приоритет, позиция в бэклоге, срок. Горизонт — 730 дней. Неизвестный остаток начатой задачи делает очередь неопределённой. Для остальных задач без остатка используется исходная оценка; для завершённых предшественников — плановые даты. Ограничения родителей наследуются всеми подзадачами, поэтому прогноз консервативный и не обещает оптимального расписания. Загрузка из других команд не учитывается. Плановые даты не меняются."))</p>
 </section>
 }
 }

@@ -9,6 +9,20 @@ namespace Alva.Client.UI.Tests;
 public sealed class DemoSkillsTests
 {
     [Fact]
+    public async Task Remaining_work_survives_reload_and_older_updates_in_demo()
+    {
+        var storage = new Storage();
+        var api = new ApiServiceLocalStorage(storage);
+        await api.Initialize();
+        var task = await api.Save<TaskModel>(HttpMethod.Post, api.TeamPath("tasks"), new TaskRequest("Remaining", RemainingHours: 3, SetRemainingHours: true));
+        await api.Save<TaskModel>(HttpMethod.Put, api.TeamPath($"tasks/{task.Id}"), new TaskRequest("Renamed"));
+        var reload = new ApiServiceLocalStorage(storage);
+        await reload.Initialize();
+        Assert.Equal(3m, (await reload.Get<TaskModel[]>(reload.TeamPath("tasks"))).Single(t => t.Id == task.Id).RemainingHours);
+        await reload.Save<TaskModel>(HttpMethod.Put, reload.TeamPath($"tasks/{task.Id}"), new TaskRequest("Cleared", SetRemainingHours: true));
+        Assert.Null((await reload.Get<TaskModel[]>(reload.TeamPath("tasks"))).Single(t => t.Id == task.Id).RemainingHours);
+    }
+    [Fact]
     public async Task Demo_skills_survive_reload_and_partial_task_updates()
     {
         var storage=new Storage();

@@ -759,4 +759,16 @@
   <data name="Проект нескольких команд." xml:space="preserve"><value>A project of several teams.</value></data>
   <data name="Суммарная оценка и исполнители подзадач" xml:space="preserve"><value>Total estimate and subtask assignees</value></data>
   <data name="чел." xml:space="preserve"><value>people</value></data>
+  <data name="Остаток, часы" xml:space="preserve"><value>Remaining work, hours</value></data>
+  <data name="Для начатой задачи пустое поле означает неизвестный остаток; 0 — работа закончена." xml:space="preserve"><value>For work in progress, leave blank if remaining work is unknown; 0 means no work remains.</value></data>
+  <data name="Неизвестен остаток работы" xml:space="preserve"><value>Remaining work is unknown</value></data>
+  <data name="Для прогноза нужен конкретный исполнитель" xml:space="preserve"><value>A specific person is required for the forecast</value></data>
+  <data name="Очередь исполнителя содержит неопределённую работу" xml:space="preserve"><value>The queue includes unknown work</value></data>
+  <data name="Не определены даты предшественника" xml:space="preserve"><value>Predecessor dates are unknown</value></data>
+  <data name="Предшественник недоступен для расчёта" xml:space="preserve"><value>The predecessor is unavailable for forecasting</value></data>
+  <data name="Цикл зависимостей или иерархии" xml:space="preserve"><value>Dependency or hierarchy cycle</value></data>
+  <data name="Недостаточно ёмкости на горизонте прогноза" xml:space="preserve"><value>Insufficient capacity within the forecast horizon</value></data>
+  <data name="Остаток принят равным исходной оценке" xml:space="preserve"><value>Remaining work is assumed to equal the original estimate</value></data>
+  <data name="Для завершённой задачи использованы плановые даты" xml:space="preserve"><value>Planned dates are used for completed work</value></data>
+  <data name="Прогноз учитывает остаток работы, общую очередь исполнителя во всех проектах команды, календарь и зависимости. Порядок: приоритет, позиция в бэклоге, срок. Горизонт — 730 дней. Неизвестный остаток начатой задачи делает очередь неопределённой. Для остальных задач без остатка используется исходная оценка; для завершённых предшественников — плановые даты. Ограничения родителей наследуются всеми подзадачами, поэтому прогноз консервативный и не обещает оптимального расписания. Загрузка из других команд не учитывается. Плановые даты не меняются." xml:space="preserve"><value>The forecast uses remaining work, a shared queue across all projects in this team, calendars and dependencies. Order: priority, backlog position, deadline. Horizon: 730 days. Unknown remaining work on an active task makes the queue uncertain. Other tasks fall back to their original estimate; completed predecessors use planned dates. Parent constraints are inherited by every child, so the forecast is conservative and does not promise an optimal schedule. Work in other teams is excluded. Planned dates are unchanged.</value></data>
 </root>

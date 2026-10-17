@@ -41,6 +41,7 @@
                 <FlareSelect TValue="Guid?" Label="@(Strings.T("Спринт (по датам)"))" Items="Sprints.OrderBy(x => x.StartDate).Select(x => (Guid?)x.Id)" ItemLabel="SprintName" NullOption="@(Strings.T("Бэклог — без дат"))" Value="SprintDates.First(_model, Sprints)" ValueChanged="id => SprintDates.Place(_model, Sprints.FirstOrDefault(s => s.Id == id))" HelperText="@SprintDates.Hint(_model, Sprints)" />
                 <FlareSelect TValue="Guid?" Label="@(Strings.T("Родительская задача"))" Items="Tasks.Where(x => x.Id != Item.Id).Select(x => (Guid?)x.Id)" ItemLabel="TaskName" NullOption="@(Strings.T("Корневая задача"))" @bind-Value="_model.ParentId" Searchable />
                 <FlareNumericField TValue="decimal?" Label="@(Strings.T("Оценка, часы"))" @bind-Value="_model.EstimateHours" Min="0" />
+                <FlareNumericField TValue="decimal?" Label="@(Strings.T("Остаток, часы"))" @bind-Value="_model.RemainingHours" Min="0" Max="100000" HelperText="@(Strings.T("Для начатой задачи пустое поле означает неизвестный остаток; 0 — работа закончена."))" />
                 <FlareDatePicker Label="@(Strings.T("Дедлайн"))" @bind-Value="_model.Deadline" />
                 <FlareDatePicker Label="@(Strings.T("Начало"))" @bind-Value="_model.StartDate" />
                 <FlareDatePicker Label="@(Strings.T("Окончание"))" @bind-Value="_model.EndDate" />
@@ -208,7 +209,7 @@
     /// Esc, не теряя работу.</summary>
     public bool Dirty => _model.Id == Item.Id && (_model.Title != Item.Title || _model.Description != Item.Description
         || _model.Status != Item.Status || _model.ProjectId != Item.ProjectId || _model.ParentId != Item.ParentId
-        || _model.EstimateHours != Item.EstimateHours || _model.Deadline != Item.Deadline
+        || _model.RemainingHours != Item.RemainingHours || _model.EstimateHours != Item.EstimateHours || _model.Deadline != Item.Deadline
         || _model.StartDate != Item.StartDate || _model.EndDate != Item.EndDate || _model.Priority != Item.Priority
         || !_model.RequiredSkills.SequenceEqual(Item.RequiredSkills));
 
@@ -339,7 +340,7 @@
     {
         var m = _model;
         await Session.Save<TaskModel>(HttpMethod.Put, Session.TeamPath($"tasks/{m.Id}"),
-            new TaskRequest(m.Title, m.Description, m.Status, m.ProjectId, m.ParentId, m.EstimateHours, m.Deadline, m.StartDate, m.EndDate, m.Order, m.Version, m.RequiredSkills, m.Priority));
+            new TaskRequest(m.Title, m.Description, m.Status, m.ProjectId, m.ParentId, m.EstimateHours, m.Deadline, m.StartDate, m.EndDate, m.Order, m.Version, m.RequiredSkills, m.Priority, RemainingHours: m.RemainingHours, SetRemainingHours: true));
         await Changed.InvokeAsync();
     });
 
