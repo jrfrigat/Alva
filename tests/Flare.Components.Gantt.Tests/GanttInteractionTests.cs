@@ -24,6 +24,10 @@ public sealed class GanttInteractionTests : GanttTestBase
 
     private static IElement Bar(IRenderedComponent<FlareGantt> cut, string key) => cut.Find($".flare-gantt__bar[data-key='{key}']");
 
+    // Жест отслеживает JS пакета; проверяем публичный callback с теми же данными, что передаёт браузер.
+    private static Task Drag(IRenderedComponent<FlareGantt> cut, string key, GanttEditAction action, int units, string? row = null) =>
+        cut.InvokeAsync(() => cut.Instance.BarDragged(cut.Find(".flare-gantt__body").GetAttribute("data-panel")!, key, action.ToString(), units, row));
+
     [Fact]
     public void Ctrl_arrow_moves_one_unit_and_pushes_successors()
     {
@@ -35,20 +39,18 @@ public sealed class GanttInteractionTests : GanttTestBase
         var change = Assert.Single(seen);
         Assert.Equal(GanttEditAction.Move, change.Action);
         Assert.Equal([new GanttChange("a", GanttSpan.FromDays(Day(1), Day(2))), new GanttChange("b", GanttSpan.FromDays(Day(3), Day(4)))], change.Changes);
-        Assert.Contains("a перенесён: 13.10.2026 – 14.10.2026.", cut.Find("[role=status]").TextContent);
+        Assert.Contains("a перенесен: 13.10.2026 – 14.10.2026.", cut.Find("[role=status]").TextContent);
     }
 
     [Fact]
-    public void Ctrl_shift_arrow_resizes_the_end_and_never_inverts()
+    public async Task Ctrl_shift_arrow_resizes_the_end_and_never_inverts()
     {
         var seen = new List<GanttChangeEventArgs>();
         var cut = Editable(seen, links: []);
 
         Bar(cut, "a").KeyDown(new KeyboardEventArgs { Key = "ArrowRight", CtrlKey = true, ShiftKey = true });
         Bar(cut, "b").KeyDown(new KeyboardEventArgs { Key = "ArrowLeft", CtrlKey = true, ShiftKey = true });
-        cut.Find(".flare-gantt__bar[data-key='a'] .flare-gantt__handle--start").PointerDown(new PointerEventArgs { ClientX = 0, Button = 0 });
-        cut.Find(".flare-gantt__body").PointerMove(new PointerEventArgs { ClientX = 200 });
-        cut.Find(".flare-gantt__body").PointerUp(new PointerEventArgs { ClientX = 200 });
+        await Drag(cut, "a", GanttEditAction.ResizeStart, 5);
 
         Assert.Equal(GanttEditAction.ResizeEnd, seen[0].Action);
         Assert.Equal(GanttSpan.FromDays(Day(0), Day(2)), seen[0].Changes[0].Span);
@@ -87,19 +89,11 @@ public sealed class GanttInteractionTests : GanttTestBase
     }
 
     [Fact]
-    public void Pointer_drag_previews_and_commits_whole_units()
+    public async Task Pointer_drag_commits_whole_units_and_suppresses_the_following_click()
     {
         var seen = new List<GanttChangeEventArgs>();
         var cut = Editable(seen, links: []);
-        var body = cut.Find(".flare-gantt__body");
-
-        Bar(cut, "a").PointerDown(new PointerEventArgs { ClientX = 100, ClientY = 10, Button = 0 });
-        body.PointerMove(new PointerEventArgs { ClientX = 185, ClientY = 12 });
-
-        Assert.Contains("flare-gantt__bar--preview", Bar(cut, "a").ClassList);
-        Assert.Contains("left:80px", Bar(cut, "a").ParentElement!.GetAttribute("style"));
-
-        cut.Find(".flare-gantt__body").PointerUp(new PointerEventArgs { ClientX = 185, ClientY = 12 });
+        await Drag(cut, "a", GanttEditAction.Move, 2);
         Bar(cut, "a").Click(); // the click that follows a drag does not select
 
         var change = Assert.Single(seen);
@@ -109,33 +103,27 @@ public sealed class GanttInteractionTests : GanttTestBase
     }
 
     [Fact]
-    public void Pointer_drag_down_changes_the_row_and_the_end_handle_resizes()
+    public async Task Pointer_drag_down_changes_the_row_and_the_end_handle_resizes()
     {
         var seen = new List<GanttChangeEventArgs>();
         var cut = Editable(seen, links: []);
 
-        Bar(cut, "a").PointerDown(new PointerEventArgs { ClientX = 10, ClientY = 15, Button = 0 });
-        cut.Find(".flare-gantt__body").PointerMove(new PointerEventArgs { ClientX = 10, ClientY = 45 });
-        cut.Find(".flare-gantt__body").PointerUp(new PointerEventArgs { ClientX = 10, ClientY = 45 });
+        await Drag(cut, "a", GanttEditAction.Move, 0, "r2");
         Assert.Equal("r2", seen[0].Changes[0].RowKey);
 
-        cut.Find(".flare-gantt__bar[data-key='b'] .flare-gantt__handle--end").PointerDown(new PointerEventArgs { ClientX = 0, Button = 0 });
-        cut.Find(".flare-gantt__body").PointerMove(new PointerEventArgs { ClientX = 80 });
-        cut.Find(".flare-gantt__body").PointerUp(new PointerEventArgs { ClientX = 80 });
+        await Drag(cut, "b", GanttEditAction.ResizeEnd, 2);
         Assert.Equal(GanttEditAction.ResizeEnd, seen[1].Action);
         Assert.Equal(GanttSpan.FromDays(Day(2), Day(5)), seen[1].Changes[0].Span);
     }
 
     [Fact]
-    public void Leaving_the_surface_cancels_the_gesture()
+    public async Task A_gesture_for_another_panel_or_an_unknown_action_is_ignored()
     {
         var seen = new List<GanttChangeEventArgs>();
         var cut = Editable(seen);
 
-        Bar(cut, "a").PointerDown(new PointerEventArgs { ClientX = 0, Button = 0 });
-        cut.Find(".flare-gantt__body").PointerMove(new PointerEventArgs { ClientX = 120 });
-        cut.Find(".flare-gantt__body").PointerLeave(new PointerEventArgs());
-        cut.Find(".flare-gantt__body").PointerUp(new PointerEventArgs { ClientX = 120 });
+        await cut.InvokeAsync(() => cut.Instance.BarDragged("other-panel", "a", "Move", 3, null));
+        await cut.InvokeAsync(() => cut.Instance.BarDragged(cut.Find(".flare-gantt__body").GetAttribute("data-panel")!, "a", "Unknown", 3, null));
 
         Assert.Empty(seen);
         Assert.Empty(cut.FindAll(".flare-gantt__bar--preview"));
@@ -158,8 +146,8 @@ public sealed class GanttInteractionTests : GanttTestBase
 
         var refusal = Assert.Single(rejected);
         Assert.Equal(GanttValidationCode.Cycle, refusal.Validation.Code);
-        Assert.Equal("Связь создаёт цикл: c → a → b → c.", refusal.Message);
-        Assert.Equal("Связь создаёт цикл: C → A → B → C.", GanttTexts.Russian.Describe(refusal.Validation, key => key.ToUpperInvariant()));
+        Assert.Equal("Связь создает цикл: c → a → b → c.", refusal.Message);
+        Assert.Equal("Связь создает цикл: C → A → B → C.", GanttTexts.For(new System.Globalization.CultureInfo("ru-RU")).Describe(refusal.Validation, key => key.ToUpperInvariant()));
         Assert.Equal(refusal.Message, cut.Find("[role=status]").TextContent);
 
         Bar(cut, "a").KeyDown(new KeyboardEventArgs { Key = "L" });

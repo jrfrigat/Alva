@@ -111,7 +111,7 @@ public sealed class GanttLayoutTests : GanttTestBase
     }
 
     [Fact]
-    public void Dragged_side_width_is_kept_and_reported()
+    public async Task Dragged_side_width_is_kept_and_reported()
     {
         string? reported = null;
         var cut = Chart(p => p.Add(x => x.Rows, OneRow), g => g
@@ -119,11 +119,11 @@ public sealed class GanttLayoutTests : GanttTestBase
             .Add(x => x.SideWidth, "12rem")
             .Add(x => x.SideWidthChanged, (string w) => reported = w));
 
-        Assert.NotNull(cut.Find(".flare-gantt__side-handle[role=separator]"));
-        cut.InvokeAsync(() => cut.Instance.SideResized(287.6));
+        Assert.NotNull(cut.Find(".flare-gantt__side-splitter[role=separator]"));
+        await cut.InvokeAsync(() => cut.FindComponent<FlareSplitter>().Instance.OnSplitChanged("288px"));
 
         Assert.Equal("288px", reported);
-        Assert.Contains("--flare-gantt-side:288px", cut.Find(".flare-gantt").GetAttribute("style"));
+        Assert.Contains("--_gantt-side:288px", cut.Find(".flare-gantt").GetAttribute("style"));
     }
 
     [Fact]
@@ -131,11 +131,11 @@ public sealed class GanttLayoutTests : GanttTestBase
     {
         var cut = Chart(p => p.Add(x => x.Rows, OneRow));
 
-        Assert.Empty(cut.FindAll(".flare-gantt__side-handle"));
+        Assert.Empty(cut.FindAll(".flare-gantt__side-splitter"));
     }
 
     [Fact]
-    public void Resizing_stops_at_the_span_the_item_must_cover()
+    public async Task Resizing_stops_at_the_span_the_item_must_cover()
     {
         var seen = new List<GanttChangeEventArgs>();
         var cover = GanttSpan.FromDays(Day(1), Day(4)); // дети начинаются раньше родителя и кончаются на день раньше
@@ -145,9 +145,7 @@ public sealed class GanttLayoutTests : GanttTestBase
 
         var bar = cut.Find(".flare-gantt__bar[data-key='p']");
         bar.KeyDown(new KeyboardEventArgs { Key = "ArrowLeft", CtrlKey = true, ShiftKey = true }); // конец 5 → 4: можно
-        cut.Find(".flare-gantt__bar[data-key='p'] .flare-gantt__handle--start").PointerDown(new PointerEventArgs { ClientX = 0, Button = 0 });
-        cut.Find(".flare-gantt__body").PointerMove(new PointerEventArgs { ClientX = 120 });
-        cut.Find(".flare-gantt__body").PointerUp(new PointerEventArgs { ClientX = 120 });
+        await cut.InvokeAsync(() => cut.Instance.BarDragged(cut.Find(".flare-gantt__body").GetAttribute("data-panel")!, "p", GanttEditAction.ResizeStart.ToString(), 3, null));
 
         Assert.Equal(GanttSpan.FromDays(Day(2), Day(4)), seen[0].Changes[0].Span);
         // Начало 2 и так позже начала детей (1) — тянуть вправо нельзя, полоса встаёт на начало покрытия.

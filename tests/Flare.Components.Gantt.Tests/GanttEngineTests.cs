@@ -223,7 +223,7 @@ public sealed class GanttGraphTests
         var cycle = GanttGraph.Validate(links, new GanttLink("c", "a"));
         Assert.Equal(GanttValidationCode.Cycle, cycle.Code);
         Assert.Equal(["c", "a", "b", "c"], cycle.Path);
-        Assert.Equal("Связь создаёт цикл: c → a → b → c.", GanttTexts.Russian.Describe(cycle));
+        Assert.Equal("Связь создает цикл: c → a → b → c.", GanttTexts.For(new System.Globalization.CultureInfo("ru-RU")).Describe(cycle));
 
         Assert.Equal(GanttValidationCode.SelfLink, GanttGraph.Validate(links, new GanttLink("a", "a")).Code);
         Assert.Equal(GanttValidationCode.Duplicate, GanttGraph.Validate(links, new GanttLink("a", "b")).Code);

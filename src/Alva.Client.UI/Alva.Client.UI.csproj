@@ -11,13 +11,12 @@
   <ItemGroup>
     <ProjectReference Include="..\Alva.Contracts\Alva.Contracts.csproj" />
     <ProjectReference Include="..\Alva.Theme.Alva\Alva.Theme.Alva.csproj" />
-    <!-- Диаграмма Ганта выращивается здесь как пакет Flare и потом переедет во Flare (STORY-21). -->
-    <ProjectReference Include="..\Flare.Components.Gantt\Flare.Components.Gantt.csproj" />
+    <PackageReference Include="Flare.Components.Gantt" Version="0.45.0" />
     <PackageReference Include="Microsoft.Extensions.Localization" Version="10.0.12" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.12" />
-    <PackageReference Include="Flare.Blazor" Version="0.44.0" />
-    <PackageReference Include="Flare.Theme.MaterialDesign3Expressive" Version="0.44.0" />
-    <PackageReference Include="Flare.Icons.MaterialDesign3.Svg" Version="0.44.0" />
+    <PackageReference Include="Flare.Blazor" Version="0.45.0" />
+    <PackageReference Include="Flare.Theme.MaterialDesign3Expressive" Version="0.45.0" />
+    <PackageReference Include="Flare.Icons.MaterialDesign3.Svg" Version="0.45.0" />
   </ItemGroup>
 
 </Project>

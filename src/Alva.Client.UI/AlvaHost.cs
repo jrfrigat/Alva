@@ -1,6 +1,7 @@
 using Alva.Theme.Alva;
 using Flare.Abstractions.Tokens;
 using Flare.Extensions;
+using Flare.Components.Gantt;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Microsoft.Extensions.DependencyInjection;
@@ -30,6 +31,7 @@ public static class AlvaHost
             // сам сохраняет его в localStorage и следует тёмной теме системы.
             options.DefaultMode = ThemeMode.Light;
         });
+        builder.Services.AddFlareGantt();
         builder.Services.AddScoped<Services.AlvaSession>();
         builder.Services.AddScoped<Services.RiskNotifications>();
         builder.Services.AddScoped<Services.GanttPreferences>();

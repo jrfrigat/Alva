@@ -2,6 +2,7 @@ using System.Globalization;
 using Alva.Client.Services;
 using Bunit;
 using Flare.Extensions;
+using Flare.Components.Gantt;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
@@ -19,6 +20,7 @@ public abstract class UiTestBase : BunitContext, IAsyncLifetime
         CultureInfo.CurrentCulture = CultureInfo.CurrentUICulture = new CultureInfo("ru-RU");
         CultureInfo.DefaultThreadCurrentCulture = CultureInfo.DefaultThreadCurrentUICulture = new CultureInfo("ru-RU");
         Services.AddFlare();
+        Services.AddFlareGantt();
         Services.AddLocalization();
         Services.AddScoped<CultureService>();
         Services.AddSingleton<IApiService>(Api);

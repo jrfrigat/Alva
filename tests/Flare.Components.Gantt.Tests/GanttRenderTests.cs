@@ -12,7 +12,7 @@ public sealed record Node(string Key, params Node[] Children);
 
 public sealed record Work(string Key, string Row, DateOnly Start, DateOnly End, string? Kind = null, double? Done = null);
 
-public abstract class GanttTestBase : BunitContext
+public abstract class GanttTestBase : BunitContext, IAsyncLifetime
 {
     protected static readonly DateOnly Monday = new(2026, 10, 12);
     protected static readonly CultureInfo Ru = new("ru-RU");
@@ -20,8 +20,12 @@ public abstract class GanttTestBase : BunitContext
     protected GanttTestBase()
     {
         Services.AddFlare();
+        Services.AddFlareGantt();
         JSInterop.Mode = JSRuntimeMode.Loose;
     }
+
+    Task IAsyncLifetime.InitializeAsync() => Task.CompletedTask;
+    async Task IAsyncLifetime.DisposeAsync() => await base.DisposeAsync();
 
     protected static DateOnly Day(int offset) => Monday.AddDays(offset);
 
@@ -238,7 +242,7 @@ public sealed class GanttRenderTests : GanttTestBase
 
         Assert.Empty(cut.FindAll("[role=rowheader]"));
         Assert.Empty(cut.FindAll(".flare-gantt__corner"));
-        Assert.Contains("--flare-gantt-side:0px", cut.Find(".flare-gantt").GetAttribute("style"));
+        Assert.Contains("--_gantt-side:0px", cut.Find(".flare-gantt").GetAttribute("style"));
         Assert.Contains("flare-gantt--compact", cut.Find(".flare-gantt").ClassList);
     }
 

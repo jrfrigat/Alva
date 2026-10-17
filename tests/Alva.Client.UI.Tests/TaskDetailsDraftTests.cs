@@ -43,16 +43,19 @@ public sealed class TaskDetailsDraftTests : UiTestBase
     }
 
     [Fact]
-    public void Confirming_the_loss_leaves_the_page()
+    public async Task Confirming_the_loss_leaves_the_page()
     {
         var cut = Page();
         EditTitle(cut);
 
         Navigation.NavigateTo("/tasks");
         cut.WaitForAssertion(() => Assert.NotNull(cut.Find("[role='alertdialog']")));
+        // Подтверждение завершает ожидание асинхронно; навигация не обязана вызывать новый рендер провайдера.
+        var navigated = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        Navigation.LocationChanged += (_, _) => navigated.TrySetResult();
         Button(cut, "Уйти без сохранения").Click();
-
-        cut.WaitForAssertion(() => Assert.EndsWith("/tasks", Navigation.Uri));
+        await navigated.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        Assert.EndsWith("/tasks", Navigation.Uri);
     }
 
     [Fact]
