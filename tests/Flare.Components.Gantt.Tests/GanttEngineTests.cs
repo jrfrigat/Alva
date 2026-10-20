@@ -59,8 +59,21 @@ public sealed class GanttAxisTests
         Assert.Equal(D(2026, 10, 12), ru.UnitOf(thursday).Start); // Monday
         Assert.Equal(D(2026, 10, 11), us.UnitOf(thursday).Start); // Sunday
         Assert.Equal(2, ru.Units, 6);
-        Assert.Equal("12.10", ru.Ticks()[0].Label);
+        Assert.Equal("12.10.2026", ru.Ticks()[0].Label);
+        Assert.Equal("10/11/2026", us.Ticks()[0].Label);
         Assert.Equal(4 / 7d, ru.Ticks()[0].Width, 6);           // the first week is clipped to Thu–Sun
+    }
+
+    [Fact]
+    public void Month_captions_use_the_axes_Gregorian_year_without_changing_the_callers_calendar()
+    {
+        var culture = new CultureInfo("th-TH");
+        var axis = new GanttAxis(new GanttSpan(D(2026, 10, 1), D(2026, 11, 1)), GanttScale.Day, culture);
+
+        Assert.Equal(31, axis.Units);
+        Assert.Contains("2026", Assert.Single(axis.MajorTicks()).Label);
+        Assert.DoesNotContain("2569", axis.MajorTicks()[0].Label);
+        Assert.IsType<ThaiBuddhistCalendar>(culture.DateTimeFormat.Calendar);
     }
 
     [Fact]

@@ -5,8 +5,8 @@
     <IsTestProject>true</IsTestProject>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Flare.Components.Gantt" Version="0.47.0" />
-    <PackageReference Include="Flare.Blazor" Version="0.47.0" />
+    <PackageReference Include="Flare.Components.Gantt" Version="0.48.0" />
+    <PackageReference Include="Flare.Blazor" Version="0.48.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.10.1" />
     <PackageReference Include="xunit" Version="2.9.3" />
     <PackageReference Include="xunit.runner.visualstudio" Version="4.0.0" PrivateAssets="all" />
