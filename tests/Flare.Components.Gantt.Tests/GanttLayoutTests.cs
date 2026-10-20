@@ -69,6 +69,27 @@ public sealed class GanttLayoutTests : GanttTestBase
     }
 
     [Fact]
+    public async Task A_dependency_leaves_the_virtual_window_with_its_hidden_row_and_returns_with_it()
+    {
+        var rows = Enumerable.Range(0, 200).Select(i => new Node($"r{i}")).ToArray();
+        var cut = Chart(p => p.Add(x => x.Rows, rows)
+            .Add(x => x.Items, new[] { new Work("a", "r80", Day(0), Day(1)), new Work("b", "r100", Day(2), Day(3)) })
+            .Add(x => x.Links, new[] { new GanttLink("a", "b") }), g => g.Add(x => x.Virtualize, true));
+        var panel = cut.Find(".flare-gantt__body").GetAttribute("data-panel")!;
+
+        await cut.InvokeAsync(() => cut.Instance.Visible([panel], [2400], [2700]));
+        Assert.Single(cut.FindAll("path.flare-gantt__link"));
+
+        await cut.InvokeAsync(() => cut.Instance.Visible([panel], [3300], [3600]));
+        Assert.Empty(cut.FindAll(".flare-gantt__row[data-row='r80']"));
+        Assert.Single(cut.FindAll(".flare-gantt__row[data-row='r100']"));
+        Assert.Empty(cut.FindAll("path.flare-gantt__link"));
+
+        await cut.InvokeAsync(() => cut.Instance.Visible([panel], [2400], [2700]));
+        Assert.Single(cut.FindAll("path.flare-gantt__link"));
+    }
+
+    [Fact]
     public void Virtualized_columns_are_drawn_only_near_the_visible_part_of_the_axis()
     {
         // 14 дней × 40 px = 560 px; видно 80 px с 240-го: рисуется окно 160–400 px, то есть дни 4–9.
