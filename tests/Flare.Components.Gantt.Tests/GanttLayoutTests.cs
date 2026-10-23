@@ -92,11 +92,12 @@ public sealed class GanttLayoutTests : GanttTestBase
     [Fact]
     public void Virtualized_columns_are_drawn_only_near_the_visible_part_of_the_axis()
     {
-        // 14 дней × 40 px = 560 px; видно 80 px с 240-го: рисуется окно 160–400 px, то есть дни 4–9.
+        // 14 дней × 40 px = 560 px. До отчёта браузера виртуализированная ось не рисует колонок вовсе;
+        // затем видно 80 px с 240-го: рисуется окно 160–400 px, то есть дни 4–9.
         var cut = Chart(p => p.Add(x => x.Rows, new[] { new Node("r") })
                 .Add(x => x.Items, new[] { new Work("early", "r", Day(0), Day(0)), new Work("late", "r", Day(12), Day(12)) }),
             g => g.Add(x => x.Virtualize, true));
-        Assert.Equal(14, cut.FindAll(".flare-gantt__scale-row:not(.flare-gantt__scale-row--major) .flare-gantt__tick").Count);
+        Assert.Empty(cut.FindAll(".flare-gantt__scale-row:not(.flare-gantt__scale-row--major) .flare-gantt__tick"));
 
         cut.InvokeAsync(() => cut.Instance.Horizontal(240, 80));
 

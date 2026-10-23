@@ -55,12 +55,17 @@ public sealed class GanttTaskPanelTests : UiTestBase
         cut.WaitForAssertion(() => Assert.Contains("Релиз", Panel(cut).TextContent));
     }
 
-    // Доска виртуализирует строки, поэтому сначала сообщаем ей размеры — иначе полос не будет вовсе.
+    // Доска виртуализирует строки и колонки, поэтому сначала сообщаем ей размеры и видимую часть оси —
+    // в bUnit эти вызовы, которые в браузере делает gantt.js, не приходят сами. Окно ставим на полосу
+    // задачи: виртуализированный Gantt рисует только колонки вокруг видимой части, а не всю ось.
     private IRenderedComponent<GanttTasks> Chart()
     {
         var cut = Render<GanttTasks>();
         cut.WaitForAssertion(() => Assert.NotEmpty(cut.FindAll(".alva-gantt")));
-        cut.FindComponent<FlareGantt>().Instance.Viewport(1200, 256);
+        var chart = cut.FindComponent<FlareGantt>().Instance;
+        cut.InvokeAsync(() => chart.Viewport(1200, 256));
+        var start = chart.X(_task.StartDate!.Value.ToDateTime(TimeOnly.MinValue));
+        cut.InvokeAsync(() => chart.Horizontal(Math.Max(0, start - 100), 400));
         cut.WaitForAssertion(() => Assert.NotEmpty(cut.FindAll("[role='button']")));
         return cut;
     }
