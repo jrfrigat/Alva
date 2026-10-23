@@ -90,7 +90,7 @@
 </FlareConfirmDialogProvider>
 @if (_mobile)
 {
-    <FlareBottomNav Position="BottomNavPosition.Fixed" AriaLabel="@(Strings.T("Основные разделы"))">
+    <FlareBottomNav Position="BottomNavPosition.Fixed" LabelMode="BottomNavLabelMode.Wrap" AriaLabel="@(Strings.T("Основные разделы"))">
         @foreach (var item in NavigationItems.Primary)
         {
             @* Короткая подпись помещается на телефоне; полное название остаётся подсказкой и доступным именем. *@
