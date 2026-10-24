@@ -172,6 +172,7 @@ public sealed class GanttData
             if (missing.Length > 0) title += $"\n{Strings.T("Не хватает навыков:")} {string.Join(", ", missing)}";
         }
         if (ChildrenOf(task).Any()) title += "\nШтриховка — ожидание подзадач";
+        if (task.DatesFixed) title += $"\n{Strings.T("Даты зафиксированы: задача не переносится")}";
         return RiskOf(task) is { Severity: "High" or "Medium" } risk
             ? $"{title}\n{(risk.Severity == "High" ? Strings.T(Strings.T("Высокий")) : Strings.T(Strings.T("Средний")))} риск: {string.Join("; ", risk.Reasons)}"
             : title;
@@ -223,6 +224,14 @@ public sealed class GanttData
                 if (!spans.ContainsKey(child.Id) && child.StartDate is not null && child.EndDate is not null && Span(child) is { } own)
                     spans[child.Id] = new GanttSpan(own.Start + shift, own.End + shift);
         }
+        // Фиксированная задача не двигается — ни сама, ни каскадом, ни вместе с родителем. Отказываем до
+        // первой отправки, чтобы серия PUT не сохранилась наполовину.
+        foreach (var (id, span) in spans)
+        {
+            var task = Tasks.First(t => t.Id == id);
+            if (task.DatesFixed && Span(task) != span) throw FixedError(task);
+        }
+        ValidateLinks(spans);
 
         foreach (var (id, span) in spans.OrderByDescending(s => Depth(Tasks.First(t => t.Id == s.Key))))
         {
@@ -241,12 +250,45 @@ public sealed class GanttData
         return args.Changes.Count > 1 ? $"Даты сохранены, сдвинуто последователей: {args.Changes.Count - 1}" : Strings.T(Strings.T("Даты сохранены"));
     }
 
+    /// <summary>Сообщение об отказе переноса фиксированной задачи.</summary>
+    public static InvalidOperationException FixedError(TaskModel task) =>
+        new(string.Format(Strings.T("Задача «{0}» с фиксированными датами не переносится. Снимите фиксацию в карточке задачи."), task.Title));
+
+    /// <summary>
+    /// Ручной жест не должен ухудшать связи, затрагивающие изменённые задачи: нарушение после не больше, чем до.
+    /// Улучшение разрешено — так существующие нарушения можно исправлять по шагам.
+    /// </summary>
+    private void ValidateLinks(IReadOnlyDictionary<Guid, GanttSpan> proposed)
+    {
+        (DateOnly Start, DateOnly End)? Own(TaskModel task) => Window(task);
+        (DateOnly Start, DateOnly End)? After(Guid id) => proposed.TryGetValue(id, out var span)
+            ? (DateOnly.FromDateTime(span.Start), DateOnly.FromDateTime(span.End).AddDays(-1))
+            : Tasks.FirstOrDefault(t => t.Id == id) is { } task ? Own(task) : null;
+        (DateOnly Start, DateOnly End)? Before(Guid id) => Tasks.FirstOrDefault(t => t.Id == id) is { } task ? Own(task) : null;
+        foreach (var dependency in Dependencies)
+        {
+            if (!proposed.ContainsKey(dependency.PredecessorId) && !proposed.ContainsKey(dependency.SuccessorId)) continue;
+            if (After(dependency.PredecessorId) is not { } afterPredecessor || After(dependency.SuccessorId) is not { } afterSuccessor) continue;
+            var after = DependencyWindows.Violation(dependency.Kind, dependency.LagDays, afterPredecessor, afterSuccessor);
+            var before = Before(dependency.PredecessorId) is { } beforePredecessor && Before(dependency.SuccessorId) is { } beforeSuccessor
+                ? DependencyWindows.Violation(dependency.Kind, dependency.LagDays, beforePredecessor, beforeSuccessor)
+                : 0;
+            if (after <= before) continue;
+            var otherId = proposed.ContainsKey(dependency.PredecessorId) ? dependency.SuccessorId : dependency.PredecessorId;
+            var other = Tasks.FirstOrDefault(t => t.Id == otherId);
+            throw new InvalidOperationException(string.Format(
+                Strings.T("Связь {0} с задачей «{1}» не позволяет так изменить даты: нарушение увеличится на {2} дн."),
+                dependency.Kind, other?.Title ?? "", after - before));
+        }
+    }
+
     /// <summary>
     /// Планирует задачу с началом в указанный день — она попадает в спринты, которые пересекают её новые даты. Длина — прежнее окно задачи, если у неё были свои даты,
     /// иначе по оценке: 8 часов на рабочий день, не меньше дня.
     /// </summary>
     public Task Place(AlvaSession session, TaskModel task, DateOnly start)
     {
+        if (task.DatesFixed) throw FixedError(task);
         DateOnly end;
         if (task is { StartDate: { } from, EndDate: { } to } && to >= from) end = start.AddDays(to.DayNumber - from.DayNumber);
         else
@@ -267,7 +309,9 @@ public sealed class GanttData
     /// </summary>
     public async Task Unplan(AlvaSession session, TaskModel task)
     {
-        foreach (var item in Descendants(task).Where(t => t.Planned).OrderByDescending(Depth).Append(task))
+        var items = Descendants(task).Where(t => t.Planned).OrderByDescending(Depth).Append(task).ToArray();
+        if (items.FirstOrDefault(t => t.DatesFixed) is { } fixedTask) throw FixedError(fixedTask);
+        foreach (var item in items)
             await Put(session, item, null, null);
     }
 

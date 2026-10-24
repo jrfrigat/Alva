@@ -264,10 +264,12 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
         var sprint = store.Sprints.FirstOrDefault(s => s.Id == sprintId) ?? throw new InvalidOperationException("Спринт не найден.");
         var people = store.Actors.Where(a => a.TeamId == teamId && a.Kind == "Person").ToArray();
         var persons = people.Select(p => new BalancePersonInput(p.Id, p.Name, p.RoleIds, p.DepartmentIds, p.Skills)).ToArray();
-        var tasks = OpenTasks(store, teamId).Select(x => new BalanceTaskInput(x.Task.Id, x.Task.Title, x.Task.Status, x.Task.ParentId,
-            x.Task.EstimateHours, x.Start, x.End, x.Task.Deadline, x.Task.AssignmentTargetId, x.Task.ResolvedPersonId, x.Task.RequiredSkills, x.Task.Priority)).ToArray();
+        // Готовые задачи тоже нужны как якоря связей; фоном они не станут — Build их исключает.
+        var tasks = OpenTasks(store, teamId, includeClosed: true).Select(x => new BalanceTaskInput(x.Task.Id, x.Task.Title, x.Task.Status, x.Task.ParentId,
+            x.Task.EstimateHours, x.Start, x.End, x.Task.Deadline, x.Task.AssignmentTargetId, x.Task.ResolvedPersonId, x.Task.RequiredSkills, x.Task.Priority, x.Task.DatesFixed)).ToArray();
         var links = TeamDependencies(store, teamId).Select(d => new BalanceLinkInput(d.PredecessorId, d.SuccessorId, d.Kind, d.LagDays)).ToArray();
         var problem = BalanceMath.Build(mode, sprintId, sprint.StartDate, sprint.EndDate, persons, id => CalendarOf(store, people.First(p => p.Id == id)), tasks, links);
+        if (problem.Infeasible is not null) return BalanceMath.Proposal(problem, [], BalanceMath.Infeasible);
         return BalanceMath.Proposal(problem, BalanceMath.Greedy(problem), BalanceMath.Heuristic, "Demo: простой поиск без решателя OR-Tools.");
     }
 
@@ -425,15 +427,68 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
     }
 
     /// <summary>Родитель охватывает детей — то же правило, что в API; версия предков не меняется.</summary>
-    private static void KeepParentsAroundChildren(DemoStore store, TaskModel task)
+    private static List<(TaskModel Task, DateOnly? Start, DateOnly? End)> KeepParentsAroundChildren(DemoStore store, TaskModel task)
     {
-        var dates = store.Tasks.Where(t => t.TeamId == task.TeamId).Select(t => new TaskDates(t.Id, t.ParentId, t.StartDate, t.EndDate)).ToArray();
-        foreach (var update in TaskWindows.Enforce(dates, task.Id))
+        var dates = store.Tasks.Where(t => t.TeamId == task.TeamId).Select(t => new TaskDates(t.Id, t.ParentId, t.StartDate, t.EndDate, t.DatesFixed)).ToArray();
+        var updates = TaskWindows.Enforce(dates, task.Id);
+        if (TaskWindows.Conflict(dates, updates) is { } blocked)
+        {
+            var title = store.Tasks.First(t => t.Id == blocked.Id).Title;
+            throw new InvalidOperationException($"Даты задачи «{title}» зафиксированы: изменение вышло за её окно. Снимите фиксацию, чтобы расширить окно.");
+        }
+        var widened = new List<(TaskModel, DateOnly?, DateOnly?)>();
+        foreach (var update in updates)
         {
             var entity = store.Tasks.First(t => t.Id == update.Id);
+            widened.Add((entity, entity.StartDate, entity.EndDate));
             entity.StartDate = update.Start;
             entity.EndDate = update.End;
             if (entity != task) AddHistory(store, entity.Id, "Сроки расширены под подзадачи");
+        }
+        return widened;
+    }
+
+    /// <summary>
+    /// Проверяет фиксацию, рамку родителя и связи по предлагаемым датам — до изменения store, чтобы отказ
+    /// не оставлял демо-данные наполовину изменёнными. Те же правила, что в API.
+    /// </summary>
+    private static void ValidateTaskDates(DemoStore store, TaskModel task, TaskRequest request, bool datesFixed)
+    {
+        var proposed = store.Tasks.Where(t => t.Id != task.Id && t.TeamId == task.TeamId)
+            .Select(t => new TaskDates(t.Id, t.ParentId, t.StartDate, t.EndDate, t.DatesFixed))
+            .Append(new TaskDates(task.Id, request.ParentId, request.StartDate, request.EndDate, datesFixed))
+            .ToArray();
+        var updates = TaskWindows.Enforce(proposed, task.Id);
+        if (TaskWindows.Conflict(proposed, updates) is { } blocked)
+        {
+            var title = store.Tasks.FirstOrDefault(t => t.Id == blocked.Id)?.Title ?? task.Title;
+            throw new InvalidOperationException($"Даты задачи «{title}» зафиксированы: изменение вышло за её окно. Снимите фиксацию, чтобы расширить окно.");
+        }
+        var windows = proposed.ToDictionary(t => t.Id, t => t.Window);
+        foreach (var update in updates) windows[update.Id] = (update.Start!.Value, update.End!.Value);
+        foreach (var affected in updates.Select(u => u.Id).Append(task.Id).Distinct())
+            ValidateLinks(store, affected, windows);
+    }
+
+    /// <summary>Правка дат не должна ухудшать связи задачи — то же правило, что в API.</summary>
+    private static void ValidateLinks(DemoStore store, Guid taskId, IReadOnlyDictionary<Guid, (DateOnly Start, DateOnly End)?> windows)
+    {
+        var links = store.Dependencies.Where(d => d.PredecessorId == taskId || d.SuccessorId == taskId).ToArray();
+        foreach (var link in links)
+        {
+            if (!windows.TryGetValue(link.PredecessorId, out var afterPredecessor) || afterPredecessor is not { } afterFrom) continue;
+            if (!windows.TryGetValue(link.SuccessorId, out var afterSuccessor) || afterSuccessor is not { } afterTo) continue;
+            var after = DependencyWindows.Violation(link.Kind, link.LagDays, afterFrom, afterTo);
+            var predecessor = store.Tasks.FirstOrDefault(t => t.Id == link.PredecessorId);
+            var successor = store.Tasks.FirstOrDefault(t => t.Id == link.SuccessorId);
+            var before = predecessor is not null && successor is not null
+                && SprintWindows.Window(predecessor.StartDate, predecessor.EndDate) is { } beforeFrom
+                && SprintWindows.Window(successor.StartDate, successor.EndDate) is { } beforeTo
+                ? DependencyWindows.Violation(link.Kind, link.LagDays, beforeFrom, beforeTo) : 0;
+            if (after <= before) continue;
+            var otherId = link.PredecessorId == taskId ? link.SuccessorId : link.PredecessorId;
+            var other = store.Tasks.FirstOrDefault(t => t.Id == otherId)?.Title ?? "";
+            throw new InvalidOperationException($"Связь {link.Kind} с задачей «{other}» не позволяет так изменить даты: нарушение увеличится на {after - before} дн.");
         }
     }
 
@@ -444,6 +499,9 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
         string[] skills;
         try { skills = SkillMath.Normalize(request.RequiredSkills); }
         catch (ArgumentException) { throw new InvalidOperationException("Укажите не более 50 навыков длиной до 80 символов."); }
+        var datesFixed = request.DatesFixed ?? false;
+        if (datesFixed && (request.StartDate is null || request.EndDate is null))
+            throw new InvalidOperationException("У задачи с фиксированными датами должны быть заданы начало и окончание.");
         if (id is not { } taskId)
         {
             var created = new TaskModel
@@ -451,14 +509,24 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
                 Id = Guid.NewGuid(), TeamId = teamId, ProjectId = request.ProjectId, ParentId = request.ParentId,
                 Title = request.Title, Description = request.Description, Status = request.Status, EstimateHours = request.EstimateHours,
                 RemainingHours = request.SetRemainingHours ? request.RemainingHours : null,
-                Deadline = request.Deadline, StartDate = request.StartDate, EndDate = request.EndDate, Order = request.Order, Version = 1, RequiredSkills = skills, Priority = request.Priority ?? "Normal"
+                Deadline = request.Deadline, StartDate = request.StartDate, EndDate = request.EndDate, Order = request.Order, Version = 1, RequiredSkills = skills, Priority = request.Priority ?? "Normal",
+                DatesFixed = datesFixed
             };
+            ValidateTaskDates(store, created, request, datesFixed);
             store.Tasks.Add(created);
             AddHistory(store, created.Id, "Задача создана");
             KeepParentsAroundChildren(store, created);
             return WithSprints(store, [created])[0];
         }
         var task = store.Tasks.FirstOrDefault(t => t.Id == taskId) ?? throw new InvalidOperationException("Задача не найдена.");
+        datesFixed = request.DatesFixed ?? task.DatesFixed;
+        if (datesFixed && (request.StartDate is null || request.EndDate is null))
+            throw new InvalidOperationException("У задачи с фиксированными датами должны быть заданы начало и окончание.");
+        if (datesFixed && task.StartDate is not null && task.EndDate is not null
+            && (request.StartDate != task.StartDate || request.EndDate != task.EndDate))
+            throw new InvalidOperationException("Даты задачи зафиксированы — переносить её нельзя. Снимите фиксацию, чтобы изменить даты.");
+        ValidateTaskDates(store, task, request, datesFixed);
+        var wasFixed = task.DatesFixed;
         task.ProjectId = request.ProjectId;
         task.ParentId = request.ParentId;
         task.Title = request.Title;
@@ -470,10 +538,12 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
         task.StartDate = request.StartDate;
         task.EndDate = request.EndDate;
         task.Order = request.Order;
+        task.DatesFixed = datesFixed;
         if (request.Priority is { } priority) task.Priority = priority;
         if (request.RequiredSkills is not null) task.RequiredSkills = skills;
         task.Version++;
         AddHistory(store, task.Id, $"Изменена (статус {Labels.Status(task.Status)})");
+        if (wasFixed != task.DatesFixed) AddHistory(store, task.Id, task.DatesFixed ? "Даты зафиксированы" : "Фиксация дат снята");
         KeepParentsAroundChildren(store, task);
         return WithSprints(store, [task])[0];
     }

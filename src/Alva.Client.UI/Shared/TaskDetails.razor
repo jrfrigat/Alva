@@ -38,14 +38,19 @@
                 <FlareSelect TValue="string" Label="@(Strings.T("Статус"))" Items="Statuses" ItemLabel="Labels.Status" @bind-Value="_model.Status" />
                 <FlareSelect TValue="string" Label="@(Strings.T("Приоритет"))" Items="Labels.Priorities" ItemLabel="Labels.Priority" @bind-Value="_model.Priority" />
                 <FlareSelect TValue="Guid?" Label="@(Strings.T("Проект"))" Items="Projects.Select(x => (Guid?)x.Id)" ItemLabel="ProjectName" NullOption="@(Strings.T("Текучка"))" @bind-Value="_model.ProjectId" />
-                <FlareSelect TValue="Guid?" Label="@(Strings.T("Спринт (по датам)"))" Items="Sprints.OrderBy(x => x.StartDate).Select(x => (Guid?)x.Id)" ItemLabel="SprintName" NullOption="@(Strings.T("Бэклог — без дат"))" Value="SprintDates.First(_model, Sprints)" ValueChanged="id => SprintDates.Place(_model, Sprints.FirstOrDefault(s => s.Id == id))" HelperText="@SprintDates.Hint(_model, Sprints)" />
+                <FlareSelect TValue="Guid?" Label="@(Strings.T("Спринт (по датам)"))" Items="Sprints.OrderBy(x => x.StartDate).Select(x => (Guid?)x.Id)" ItemLabel="SprintName" NullOption="@(Strings.T("Бэклог — без дат"))" Value="SprintDates.First(_model, Sprints)" ValueChanged="id => SprintDates.Place(_model, Sprints.FirstOrDefault(s => s.Id == id))" HelperText="@SprintDates.Hint(_model, Sprints)" Disabled="_model.DatesFixed" />
                 <FlareSelect TValue="Guid?" Label="@(Strings.T("Родительская задача"))" Items="Tasks.Where(x => x.Id != Item.Id).Select(x => (Guid?)x.Id)" ItemLabel="TaskName" NullOption="@(Strings.T("Корневая задача"))" @bind-Value="_model.ParentId" Searchable />
                 <FlareNumericField TValue="decimal?" Label="@(Strings.T("Оценка, часы"))" @bind-Value="_model.EstimateHours" Min="0" />
                 <FlareNumericField TValue="decimal?" Label="@(Strings.T("Остаток, часы"))" @bind-Value="_model.RemainingHours" Min="0" Max="100000" HelperText="@(Strings.T("Для начатой задачи пустое поле означает неизвестный остаток; 0 — работа закончена."))" />
                 <FlareDatePicker Label="@(Strings.T("Дедлайн"))" @bind-Value="_model.Deadline" />
-                <FlareDatePicker Label="@(Strings.T("Начало"))" @bind-Value="_model.StartDate" />
-                <FlareDatePicker Label="@(Strings.T("Окончание"))" @bind-Value="_model.EndDate" />
+                <FlareDatePicker Label="@(Strings.T("Начало"))" @bind-Value="_model.StartDate" Disabled="_model.DatesFixed" />
+                <FlareDatePicker Label="@(Strings.T("Окончание"))" @bind-Value="_model.EndDate" Disabled="_model.DatesFixed" />
             </FlareGrid>
+            <FlareStack Gap="FlareSpacing.Small">
+                <FlareSwitch @bind-Value="_model.DatesFixed" Label="@(Strings.T("Фиксированные даты — не переносить"))"
+                             Disabled="@(_model.StartDate is null || _model.EndDate is null)" />
+                <FlareText Typo="TypographyScale.BodySmall">@FixedHint</FlareText>
+            </FlareStack>
             <div class="alva-task__assignee">
                 <span class="alva-micro-label">@(Strings.T("Исполнитель"))</span>
                 <AlvaAssignee Task="Item" Actors="Actors" />
@@ -211,7 +216,7 @@
         || _model.Status != Item.Status || _model.ProjectId != Item.ProjectId || _model.ParentId != Item.ParentId
         || _model.RemainingHours != Item.RemainingHours || _model.EstimateHours != Item.EstimateHours || _model.Deadline != Item.Deadline
         || _model.StartDate != Item.StartDate || _model.EndDate != Item.EndDate || _model.Priority != Item.Priority
-        || !_model.RequiredSkills.SequenceEqual(Item.RequiredSkills));
+        || _model.DatesFixed != Item.DatesFixed || !_model.RequiredSkills.SequenceEqual(Item.RequiredSkills));
 
     // Ссылки, меню и Back/Forward: несохранённые правки уходят только после явного согласия.
     private async Task ConfirmLeave(LocationChangingContext context)
@@ -238,6 +243,13 @@
     }
 
     private static string Code(TaskModel task) => AlvaFormat.Code(task.Id);
+
+    /// <summary>Подсказка под переключателем: почему он недоступен или что включает.</summary>
+    private string FixedHint => _model.StartDate is null || _model.EndDate is null
+        ? Strings.T("Сначала задайте начало и окончание — тогда даты можно зафиксировать.")
+        : _model.DatesFixed
+            ? Strings.T("Даты зафиксированы: задача не переносится ни вручную, ни автобалансом.")
+            : Strings.T("Включите, чтобы запретить перенос задачи и изменение её дат.");
 
     /// <summary>Копия задачи из параметра: черновик карточки — отдельный объект, поэтому правки не трогают
     /// данные страницы, пока их не сохранили.</summary>
@@ -340,7 +352,7 @@
     {
         var m = _model;
         await Session.Save<TaskModel>(HttpMethod.Put, Session.TeamPath($"tasks/{m.Id}"),
-            new TaskRequest(m.Title, m.Description, m.Status, m.ProjectId, m.ParentId, m.EstimateHours, m.Deadline, m.StartDate, m.EndDate, m.Order, m.Version, m.RequiredSkills, m.Priority, RemainingHours: m.RemainingHours, SetRemainingHours: true));
+            new TaskRequest(m.Title, m.Description, m.Status, m.ProjectId, m.ParentId, m.EstimateHours, m.Deadline, m.StartDate, m.EndDate, m.Order, m.Version, m.RequiredSkills, m.Priority, RemainingHours: m.RemainingHours, SetRemainingHours: true, DatesFixed: m.DatesFixed));
         await Changed.InvokeAsync();
     });
 

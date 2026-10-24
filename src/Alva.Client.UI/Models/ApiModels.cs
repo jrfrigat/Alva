@@ -38,6 +38,8 @@ public sealed class TaskModel
     public DateOnly? Deadline { get; set; }
     public DateOnly? StartDate { get; set; }
     public DateOnly? EndDate { get; set; }
+    /// <summary>Даты зафиксированы: задача не переносится ни вручную, ни автобалансом.</summary>
+    public bool DatesFixed { get; set; }
     public int Order { get; set; }
     public Guid? AssignmentTargetId { get; set; }
     public Guid? ResolvedPersonId { get; set; }

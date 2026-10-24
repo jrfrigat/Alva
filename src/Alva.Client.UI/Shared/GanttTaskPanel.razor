@@ -57,6 +57,12 @@
     {
         <span class="alva-gantt-row__body">
             <a class="alva-gantt-row__title" href="tasks/@task.Id" title="@task.Title">@task.Title</a>
+            @if (task.DatesFixed)
+            {
+                <span class="alva-gantt-row__fixed" role="img" aria-label="@FixedLabel" title="@FixedLabel">
+                    <FlareIconView Value="@MaterialDesign3Icons.Regular.Lock" Size="14px" />
+                </span>
+            }
             <span class="alva-gantt-row__meta">@Data.Assignee(task) · @AlvaFormat.Hours(task.EffectiveEstimateHours) ч</span>
             <SkillMatch Required="task.RequiredSkills" Person="@(Data.Actor(task.ResolvedPersonId ?? task.AssignmentTargetId))" />
         </span>
@@ -77,7 +83,15 @@
         return ordered.Where(t => shown.Contains(t.Id));
     }
 
-    private static string? RowClass(TaskModel task) => GanttData.IsClosed(task) ? "alva-gantt-row--closed" : null;
+    private static string FixedLabel => Strings.T("Даты зафиксированы: задача не переносится");
+
+    private static string? RowClass(TaskModel task)
+    {
+        var classes = new List<string>(2);
+        if (GanttData.IsClosed(task)) classes.Add("alva-gantt-row--closed");
+        if (task.DatesFixed) classes.Add("alva-gantt-row--fixed");
+        return classes.Count == 0 ? null : string.Join(' ', classes);
+    }
 
     private IEnumerable<GanttMarker> DeadlineMarkers => Data.Tasks
         .Where(t => !GanttData.IsClosed(t) && (t.EffectiveDeadline ?? t.Deadline) is not null)
