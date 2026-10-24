@@ -594,10 +594,31 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
             if (!SprintCarry.Known(item.Action) || !decisions.TryAdd(item.TaskId, item.Action)) throw new InvalidOperationException("Неизвестное или повторное решение по задаче.");
         var open = store.Tasks.Where(t => t.TeamId == teamId && t.Status is not ("Done" or "Cancelled") && SprintWindows.Overlaps(t.StartDate, t.EndDate, sprint.StartDate, sprint.EndDate)).ToList();
         if (open.Any(t => !decisions.ContainsKey(t.Id))) throw new InvalidOperationException("Решите, что делать с каждой незавершённой задачей спринта.");
+        // Перенос в следующий спринт и возврат в пул меняют или очищают даты — фиксированную задачу так нельзя.
+        foreach (var task in open.Where(t => t.DatesFixed && (decisions[t.Id] is SprintCarry.Next or SprintCarry.Backlog)))
+            throw new InvalidOperationException($"Даты задачи «{task.Title}» зафиксированы — при закрытии спринта её нельзя перенести в следующий спринт или вернуть в пул. Снимите фиксацию заранее.");
         var next = decisions.ContainsValue(SprintCarry.Next)
             ? store.Sprints.FirstOrDefault(s => s.Id == request.NextSprintId && s.Id != sprintId && s.Status != "Completed" && store.SprintTeam.GetValueOrDefault(s.Id) == teamId)
               ?? throw new InvalidOperationException("Выберите незакрытый спринт команды для переноса.")
             : null;
+        // Итоговые окна после решений: конфликт фиксированного родителя ловим до изменения store.
+        var proposed = store.Tasks.Select(t =>
+        {
+            DateOnly? start = t.StartDate, end = t.EndDate;
+            var action = decisions.GetValueOrDefault(t.Id);
+            if (action == SprintCarry.Next) (start, end) = SprintCarry.Move(start, end, next!.StartDate);
+            else if (action == SprintCarry.Backlog) (start, end) = (null, null);
+            return new TaskDates(t.Id, t.ParentId, start, end, t.DatesFixed);
+        }).ToArray();
+        foreach (var task in open.Where(t => decisions[t.Id] != SprintCarry.Done))
+        {
+            var updates = TaskWindows.Enforce(proposed, task.Id);
+            if (TaskWindows.Conflict(proposed, updates) is { } blocked)
+            {
+                var title = store.Tasks.First(t => t.Id == blocked.Id).Title;
+                throw new InvalidOperationException($"Даты задачи «{title}» зафиксированы: изменение вышло за её окно. Снимите фиксацию, чтобы расширить окно.");
+            }
+        }
         foreach (var task in open.Where(t => decisions[t.Id] == SprintCarry.Done))
         {
             task.Status = "Done"; task.Version++;
@@ -632,9 +653,36 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
         {
             var task = store.Tasks.FirstOrDefault(t => t.Id == change.TaskId && t.TeamId == teamId) ?? throw new InvalidOperationException("Задача не найдена.");
             if (task.Version != change.Version) throw new InvalidOperationException("Задачи изменились после расчёта. Пересчитайте автобаланс.");
+            // Фиксируются даты, а не исполнитель: смена человека допустима, сдвиг — нет.
+            if (task.DatesFixed && (change.ToStart != task.StartDate || change.ToEnd != task.EndDate))
+                throw new InvalidOperationException("Даты задачи зафиксированы — автобаланс не может её перенести.");
             if (store.Actors.All(a => a.Id != change.ToPersonId || a.Kind != "Person")) throw new InvalidOperationException("Исполнитель должен быть человеком команды.");
             return (Task: task, Change: change);
         }).ToList();
+
+        // Предлагаемые окна и конфликты рамки — до изменения store, чтобы отказ не оставил данные наполовину.
+        var proposed = store.Tasks.ToDictionary(t => t.Id, t => new TaskDates(t.Id, t.ParentId, t.StartDate, t.EndDate, t.DatesFixed));
+        foreach (var (task, change) in changes)
+            proposed[task.Id] = new TaskDates(task.Id, task.ParentId, change.ToStart, change.ToEnd, task.DatesFixed);
+        var all = proposed.Values.ToArray();
+        var windows = all.ToDictionary(t => t.Id, t => t.Window);
+        var affected = changes.Select(c => c.Task.Id).ToHashSet();
+        foreach (var (task, _) in changes)
+        {
+            var updates = TaskWindows.Enforce(all, task.Id);
+            if (TaskWindows.Conflict(all, updates) is { } blocked)
+            {
+                var title = store.Tasks.First(t => t.Id == blocked.Id).Title;
+                throw new InvalidOperationException($"Даты задачи «{title}» зафиксированы: изменение вышло за её окно. Снимите фиксацию, чтобы расширить окно.");
+            }
+            foreach (var update in updates)
+            {
+                windows[update.Id] = (update.Start!.Value, update.End!.Value);
+                affected.Add(update.Id);
+            }
+        }
+        foreach (var id in affected) ValidateLinks(store, id, windows);
+
         foreach (var (task, change) in changes)
         {
             task.StartDate = change.ToStart; task.EndDate = change.ToEnd;
@@ -642,8 +690,9 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
             task.ResolvedPersonId = change.ToTargetId == change.ToPersonId ? null : change.ToPersonId;
             task.Version++;
             AddHistory(store, task.Id, "Применено предложение автобаланса");
-            KeepParentsAroundChildren(store, task);
         }
+        // Рамка родителя — после того как все даты уже итоговые: промежуточное состояние не должно расширять окна.
+        foreach (var (task, _) in changes) KeepParentsAroundChildren(store, task);
     }
 
 

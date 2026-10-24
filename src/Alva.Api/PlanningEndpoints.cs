@@ -248,6 +248,9 @@ public static class PlanningEndpoints
         var open = (await db.Tasks.Where(t => t.TeamId == teamId && !t.Archived && t.Status != WorkStatus.Done && t.Status != WorkStatus.Cancelled && (t.StartDate != null || t.EndDate != null)).ToListAsync())
             .Where(t => SprintWindows.Overlaps(t.StartDate, t.EndDate, sprint.StartDate, sprint.EndDate)).ToList();
         if (open.Any(t => !decisions.ContainsKey(t.Id))) throw new ApiException(400, "Решите, что делать с каждой незавершённой задачей спринта.");
+        // Перенос в следующий спринт и возврат в пул меняют или очищают даты — фиксированную задачу так нельзя.
+        foreach (var task in open.Where(t => t.DatesFixed && (decisions[t.Id] is SprintCarry.Next or SprintCarry.Backlog)))
+            throw new ApiException(400, $"Даты задачи «{task.Title}» зафиксированы — при закрытии спринта её нельзя перенести в следующий спринт или вернуть в пул. Снимите фиксацию заранее.");
         Sprint? next = null;
         if (decisions.Values.Contains(SprintCarry.Next))
             next = await db.Sprints.SingleOrDefaultAsync(x => x.TeamId == teamId && x.Id == request.NextSprintId && x.Id != sprintId && x.Status != SprintStatus.Completed)

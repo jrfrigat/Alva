@@ -67,6 +67,61 @@ public sealed class SprintCloseTests
     }
 
     [Fact]
+    public async Task A_fixed_task_cannot_be_carried_or_returned_to_the_pool()
+    {
+        var server = await ApiServer.Create(app => { app.MapPlanning(); app.MapTasks(); });
+        await using var _ = server;
+        var sprint = await Send<SprintDto>(server, HttpMethod.Post, "sprints", new SprintRequest("Спринт 1", "", Monday, Monday.AddDays(4), "Active"));
+        var next = await Send<SprintDto>(server, HttpMethod.Post, "sprints", new SprintRequest("Спринт 2", "", Monday.AddDays(7), Monday.AddDays(11)));
+        var fixedTask = await Send<TaskDto>(server, HttpMethod.Post, "tasks", new TaskRequest("Фикс", Status: "InProgress",
+            EstimateHours: 8, StartDate: Monday, EndDate: Monday.AddDays(1), DatesFixed: true));
+
+        var carried = await server.Client.PostAsJsonAsync(server.Team($"sprints/{sprint.Id}/close"),
+            new SprintCloseRequest([new(fixedTask.Id, SprintCarry.Next)], next.Id));
+        var pooled = await server.Client.PostAsJsonAsync(server.Team($"sprints/{sprint.Id}/close"),
+            new SprintCloseRequest([new(fixedTask.Id, SprintCarry.Backlog)]));
+
+        Assert.Equal(HttpStatusCode.BadRequest, carried.StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, pooled.StatusCode);
+        await server.WithDb(async db =>
+        {
+            Assert.Equal(SprintStatus.Active, (await db.Sprints.SingleAsync(s => s.Id == sprint.Id)).Status);
+            var stored = await db.Tasks.SingleAsync(t => t.Id == fixedTask.Id);
+            Assert.Equal((Monday, Monday.AddDays(1)), (stored.StartDate!.Value, stored.EndDate!.Value));
+        });
+
+        var closed = await Send<SprintDto>(server, HttpMethod.Post, $"sprints/{sprint.Id}/close",
+            new SprintCloseRequest([new(fixedTask.Id, SprintCarry.Done)]));
+        Assert.Equal("Completed", closed.Status);
+    }
+
+    [Fact]
+    public async Task A_fixed_parent_that_would_be_widened_rolls_the_close_back()
+    {
+        var server = await ApiServer.Create(app => { app.MapPlanning(); app.MapTasks(); });
+        await using var _ = server;
+        var sprint = await Send<SprintDto>(server, HttpMethod.Post, "sprints", new SprintRequest("Спринт 1", "", Monday, Monday.AddDays(4), "Active"));
+        var next = await Send<SprintDto>(server, HttpMethod.Post, "sprints", new SprintRequest("Спринт 2", "", Monday.AddDays(7), Monday.AddDays(11)));
+        var parent = await Send<TaskDto>(server, HttpMethod.Post, "tasks", new TaskRequest("Фикс-родитель", Status: "InProgress",
+            StartDate: Monday, EndDate: Monday.AddDays(4), DatesFixed: true));
+        var child = await Send<TaskDto>(server, HttpMethod.Post, "tasks", new TaskRequest("Ребёнок", Status: "InProgress",
+            ParentId: parent.Id, EstimateHours: 8, StartDate: Monday, EndDate: Monday.AddDays(1)));
+
+        var response = await server.Client.PostAsJsonAsync(server.Team($"sprints/{sprint.Id}/close"),
+            new SprintCloseRequest([new(parent.Id, SprintCarry.Done), new(child.Id, SprintCarry.Next)], next.Id));
+
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+        await server.WithDb(async db =>
+        {
+            Assert.Equal(SprintStatus.Active, (await db.Sprints.SingleAsync(s => s.Id == sprint.Id)).Status);
+            var storedParent = await db.Tasks.SingleAsync(t => t.Id == parent.Id);
+            Assert.Equal(WorkStatus.InProgress, storedParent.Status);
+            Assert.Equal(Monday.AddDays(4), storedParent.EndDate);
+            Assert.Equal(Monday.AddDays(1), (await db.Tasks.SingleAsync(t => t.Id == child.Id)).EndDate);
+        });
+    }
+
+    [Fact]
     public async Task A_parent_moved_with_its_subtask_leaves_the_closed_sprint()
     {
         var server = await ApiServer.Create(app => { app.MapPlanning(); app.MapTasks(); });
