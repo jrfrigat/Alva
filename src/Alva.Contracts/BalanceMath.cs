@@ -32,9 +32,10 @@ public record BalanceExcludedDto(Guid TaskId, string Title, string Reason);
 /// <summary>Человек команды для автобаланса: роли и подкоманды определяют, какие задачи ему можно дать.</summary>
 public record BalancePersonInput(Guid Id, string Name, Guid[] Roles, Guid[] Departments, string[]? Skills = null);
 
-/// <summary>Открытая задача команды. Start и End — уже окно с датами спринта; Deadline — срок задачи.</summary>
+/// <summary>Задача команды для автобаланса: двигаемая, фон или якорь связи. Start и End — окно задачи; Deadline — срок.</summary>
 public record BalanceTaskInput(Guid Id, string Title, string Status, Guid? ParentId, decimal? EstimateHours,
-    DateOnly? Start, DateOnly? End, DateOnly? Deadline, Guid? TargetId, Guid? ResolvedPersonId, string[]? RequiredSkills = null, string Priority = "Normal");
+    DateOnly? Start, DateOnly? End, DateOnly? Deadline, Guid? TargetId, Guid? ResolvedPersonId, string[]? RequiredSkills = null, string Priority = "Normal",
+    bool DatesFixed = false);
 
 /// <summary>Связь задач: тип FS, SS, FF или SF и лаг в днях.</summary>
 public record BalanceLinkInput(Guid PredecessorId, Guid SuccessorId, string Kind, int LagDays);
@@ -87,8 +88,10 @@ public sealed record BalanceLink(int From, int To, string Kind, int Lag);
 /// Задача оптимизации спринта. Дни — календарные от начала спринта до горизонта (конец спринта плюс самая длинная задача),
 /// ёмкость и фоновая загрузка людей — по этим дням в десятых долях часа.
 /// </summary>
+/// <param name="Infeasible">Почему допустимого плана нет ещё до решения; null — ограничения совместимы.</param>
 public sealed record BalanceProblem(string Mode, BalanceWeights Weights, DateOnly Start, int SprintDays, int Horizon,
-    BalancePersonInput[] People, int[][] Capacity, int[][] Background, int[][] Groups, BalanceTask[] Tasks, BalanceLink[] Links, BalanceExcludedDto[]? Excluded = null)
+    BalancePersonInput[] People, int[][] Capacity, int[][] Background, int[][] Groups, BalanceTask[] Tasks, BalanceLink[] Links, BalanceExcludedDto[]? Excluded = null,
+    string? Infeasible = null)
 {
     public DateOnly Day(int offset) => Start.AddDays(offset);
 }
@@ -102,6 +105,8 @@ public static class BalanceMath
     public const string Optimal = "Optimal";
     public const string Feasible = "Feasible";
     public const string Heuristic = "Heuristic";
+    /// <summary>Ограничения (фиксированные даты, связи с якорями или друг с другом) несовместимы.</summary>
+    public const string Infeasible = "Infeasible";
 
     private const int Tenth = 10;
 
@@ -110,7 +115,7 @@ public static class BalanceMath
 
     /// <summary>
     /// Собирает задачу. Двигаются задачи спринта: открытые и не «В работе», листовые, с оценкой, окном внутри спринта и назначением.
-    /// Остальная открытая работа — фоновая загрузка людей.
+    /// Остальная открытая работа — фоновая загрузка людей; готовые и задачи «в работе» с датами служат якорями связей.
     /// </summary>
     public static BalanceProblem Build(string mode, Guid sprintId, DateOnly sprintStart, DateOnly sprintEnd, IReadOnlyList<BalancePersonInput> people,
         Func<Guid, CalendarDto> calendarOf, IReadOnlyList<BalanceTaskInput> openTasks, IReadOnlyList<BalanceLinkInput> links)
@@ -137,7 +142,8 @@ public static class BalanceMath
         var calendars = people.Select(p => calendarOf(p.Id)).ToArray();
         var capacity = people.Select((_, i) => Enumerable.Range(0, horizon).Select(d => ToTenths(CapacityMath.Available(calendars[i], sprintStart.AddDays(d)))).ToArray()).ToArray();
         var movableIds = movable.Select(t => t.Id).ToHashSet();
-        var backgroundWork = openTasks.Where(t => !movableIds.Contains(t.Id) && PersonOf(t) is not null)
+        // Готовые и отменённые задачи не занимают будущую ёмкость, даже если пришли как якоря связей.
+        var backgroundWork = openTasks.Where(t => t.Status is not ("Done" or "Cancelled") && !movableIds.Contains(t.Id) && PersonOf(t) is not null)
             .Select(t => new CapacityWork(people[PersonOf(t)!.Value].Id, t.EstimateHours ?? 0m, t.Start, t.End, t.Deadline));
         var allocated = CapacityMath.Build(people.Select(p => (p.Id, p.Name)), calendarOf, backgroundWork, sprintStart, last)
             .ToLookup(c => c.ActorId);
@@ -162,7 +168,8 @@ public static class BalanceMath
             var targetIsGroup = !personIndex.ContainsKey(t.TargetId!.Value);
             var candidates = Candidates(mode, people, t.TargetId!.Value, targetIsGroup, current)
                 .Where(i => SkillMath.Compatible(t.RequiredSkills, people[i].Skills)).ToArray();
-            var starts = mode == BalanceModes.Gentle ? [start] : Enumerable.Range(0, sprintDays).Prepend(start).Distinct().ToArray();
+            // Фиксированная задача остаётся на своём дне начала при любом режиме; меняться может только человек.
+            var starts = t.DatesFixed || mode == BalanceModes.Gentle ? [start] : Enumerable.Range(0, sprintDays).Prepend(start).Distinct().ToArray();
             BalanceOption Option(int person, int s) =>
                 new(person, s, length, Spread(person >= 0 ? capacity[person] : null, tenths, s, length, horizon),
                     deadline is { } d ? Math.Max(0, s + length - 1 - d) : 0, OverflowOf(person >= 0 ? capacity[person] : null, tenths, s, length, sprintDays, horizon));
@@ -173,6 +180,53 @@ public static class BalanceMath
             return new BalanceTask(t.Id, t.Title, tenths, t.TargetId, targetIsGroup, deadline, [.. options], PriorityWeight(t.Priority));
         }).ToArray();
 
+        // Якоря — задачи вне модели с обеими датами. Связь с ними нельзя нарушить, поэтому варианты
+        // двигаемой задачи сразу ограничиваются допустимым окном; пустое окно — явная несовместимость.
+        var anchors = openTasks.Where(t => t.Status != "Cancelled" && t.Start is not null && t.End is not null)
+            .ToDictionary(t => t.Id, t => (Start: t.Start!.Value.DayNumber - sprintStart.DayNumber,
+                End: t.End!.Value.DayNumber - sprintStart.DayNumber + 1, t.Title));
+        var filtered = tasks.ToDictionary(t => t.Id, t => t.Options.ToList());
+        var movableById = movable.ToDictionary(t => t.Id);
+        string? infeasible = null;
+        foreach (var link in links)
+        {
+            var kind = link.Kind.ToUpperInvariant();
+            var fromInModel = filtered.ContainsKey(link.PredecessorId);
+            var toInModel = filtered.ContainsKey(link.SuccessorId);
+            if (fromInModel == toInModel) continue;
+            if (!fromInModel && anchors.TryGetValue(link.PredecessorId, out var from))
+            {
+                var task = movableById[link.SuccessorId];
+                var length = task.End!.Value.DayNumber - task.Start!.Value.DayNumber + 1;
+                var minStart = kind switch
+                {
+                    "SS" => from.Start + link.LagDays,
+                    "FF" => from.End + link.LagDays - length,
+                    "SF" => from.Start + link.LagDays - length,
+                    _ => from.End + link.LagDays
+                };
+                var kept = filtered[link.SuccessorId].Where(o => o.Start >= minStart).ToList();
+                if (kept.Count == 0) infeasible ??= $"Связь {kind} из «{from.Title}» в «{task.Title}» не оставляет допустимых дат.";
+                else filtered[link.SuccessorId] = kept;
+            }
+            else if (!toInModel && anchors.TryGetValue(link.SuccessorId, out var to))
+            {
+                var task = movableById[link.PredecessorId];
+                var length = task.End!.Value.DayNumber - task.Start!.Value.DayNumber + 1;
+                var maxStart = kind switch
+                {
+                    "SS" => to.Start - link.LagDays,
+                    "FF" => to.End - link.LagDays - length,
+                    "SF" => to.End - link.LagDays - length,
+                    _ => to.Start - link.LagDays - length
+                };
+                var kept = filtered[link.PredecessorId].Where(o => o.Start <= maxStart).ToList();
+                if (kept.Count == 0) infeasible ??= $"Связь {kind} из «{task.Title}» в «{to.Title}» не оставляет допустимых дат.";
+                else filtered[link.PredecessorId] = kept;
+            }
+        }
+        tasks = tasks.Select(t => t with { Options = filtered[t.Id].Count == 0 ? t.Options : [.. filtered[t.Id]] }).ToArray();
+
         var taskIndex = tasks.Select((t, i) => (t.Id, i)).ToDictionary(x => x.Id, x => x.i);
         var modelLinks = links.Where(l => taskIndex.ContainsKey(l.PredecessorId) && taskIndex.ContainsKey(l.SuccessorId))
             .Select(l => new BalanceLink(taskIndex[l.PredecessorId], taskIndex[l.SuccessorId], l.Kind.ToUpperInvariant(), l.LagDays)).ToArray();
@@ -180,7 +234,7 @@ public static class BalanceMath
         // Открытые задачи спринта, которые не двигаются: человеку нужно знать, что расчёт их не видел, и почему.
         var excluded = openTasks.Where(t => !movableIds.Contains(t.Id) && t.Status is not ("Done" or "Cancelled") && SprintWindows.Overlaps(t.Start, t.End, sprintStart, sprintEnd))
             .Select(t => new BalanceExcludedDto(t.Id, t.Title, ExclusionReason(t, parents, sprintStart))).ToArray();
-        return new BalanceProblem(mode, BalanceWeights.For(mode), sprintStart, sprintDays, horizon, [.. people], capacity, background, groups, tasks, modelLinks, excluded);
+        return new BalanceProblem(mode, BalanceWeights.For(mode), sprintStart, sprintDays, horizon, [.. people], capacity, background, groups, tasks, modelLinks, excluded, infeasible);
     }
 
     // Почему задача спринта не двигается — в порядке условий Movable, чтобы причина совпадала с правилом.
@@ -296,10 +350,17 @@ public static class BalanceMath
     public static int[] Greedy(BalanceProblem problem, int maxSteps = 200)
     {
         var choice = new int[problem.Tasks.Length];
-        var best = Evaluate(problem, choice).Objective;
+        // Несовместимые ограничения уже известны: запасной поиск не должен делать вид, что план возможен.
+        if (problem.Infeasible is not null) return choice;
+        // Жёсткие связи: сначала выравниваем нарушения, и только потом цель — так запасной поиск не
+        // остаётся на плане, который нарушает FS/SS/FF/SF, если исправимый вариант существует.
+        long ViolationDays() => problem.Links.Sum(link =>
+            Violation(link, problem.Tasks[link.From].Options[choice[link.From]], problem.Tasks[link.To].Options[choice[link.To]]));
+        long Score() => (ViolationDays() << 32) + Evaluate(problem, choice).Objective;
+        var best = Score();
         for (var step = 0; step < maxSteps; step++)
         {
-            (int Task, int Option, long Objective)? move = null;
+            (int Task, int Option, long Score)? move = null;
             for (var t = 0; t < problem.Tasks.Length; t++)
             {
                 var keep = choice[t];
@@ -307,14 +368,14 @@ public static class BalanceMath
                 {
                     if (o == keep) continue;
                     choice[t] = o;
-                    var objective = Evaluate(problem, choice).Objective;
-                    if (objective < (move?.Objective ?? best)) move = (t, o, objective);
+                    var score = Score();
+                    if (score < (move?.Score ?? best)) move = (t, o, score);
                 }
                 choice[t] = keep;
             }
             if (move is not { } m) break;
             choice[m.Task] = m.Option;
-            best = m.Objective;
+            best = m.Score;
         }
         return choice;
     }
@@ -322,6 +383,8 @@ public static class BalanceMath
     /// <summary>Предложение: что меняется против текущего плана, почему, и метрики до и после.</summary>
     public static BalanceProposalDto Proposal(BalanceProblem problem, IReadOnlyList<int> choice, string status, string? note = null)
     {
+        // У несовместимой задачи выбора нет: показываем текущий план и причину, а не нарушающий связи.
+        if (choice.Count != problem.Tasks.Length) choice = new int[problem.Tasks.Length];
         var before = Evaluate(problem, new int[problem.Tasks.Length]);
         var after = Evaluate(problem, choice);
         var changes = new List<BalanceChangeDto>();
@@ -339,7 +402,7 @@ public static class BalanceMath
                 problem.Day(from.Start), problem.Day(from.Start + from.Length - 1), problem.Day(to.Start), problem.Day(to.Start + to.Length - 1),
                 Reason(problem, task, from, to, before, after)));
         }
-        return new BalanceProposalDto(problem.Mode, status, before.Metrics, after.Metrics, [.. changes], note, problem.Tasks.Length, problem.Excluded ?? []);
+        return new BalanceProposalDto(problem.Mode, status, before.Metrics, after.Metrics, [.. changes], note ?? problem.Infeasible, problem.Tasks.Length, problem.Excluded ?? []);
     }
 
     private static string Reason(BalanceProblem problem, BalanceTask task, BalanceOption from, BalanceOption to, Evaluation before, Evaluation after)

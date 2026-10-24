@@ -13,6 +13,8 @@ public static class BalanceSolver
     public static (int[] Choice, string Status) Solve(BalanceProblem problem, TimeSpan limit)
     {
         if (problem.Tasks.Length == 0) return ([], BalanceMath.Optimal);
+        // Несовместимость, найденная при сборке (фиксированные даты против связей), не решается моделью.
+        if (problem.Infeasible is not null) return ([], BalanceMath.Infeasible);
         var model = new CpModel();
         var w = problem.Weights;
         var z = problem.Tasks.Select((t, ti) => t.Options.Select((_, oi) => model.NewBoolVar($"z{ti}_{oi}")).ToArray()).ToArray();
@@ -74,8 +76,7 @@ public static class BalanceSolver
             if (cost != 0) objective.AddTerm(z[t][o], cost);
         }
 
-        // Связи — мягкие: нарушение в днях ≥ требуемое − фактическое.
-        if (w.LinkDay > 0)
+        // Связи — жёсткие: план, нарушающий FS/SS/FF/SF с учётом лага, недопустим.
         {
             LinearExpr Start(int t) => LinearExpr.WeightedSum(z[t], problem.Tasks[t].Options.Select(o => (long)o.Start));
             LinearExpr End(int t) => LinearExpr.WeightedSum(z[t], problem.Tasks[t].Options.Select(o => (long)(o.Start + o.Length)));
@@ -88,9 +89,7 @@ public static class BalanceSolver
                     "SF" => Start(link.From) + link.Lag - End(link.To),
                     _ => End(link.From) + link.Lag - Start(link.To)
                 };
-                var violation = model.NewIntVar(0, problem.Horizon * 2L + Math.Abs(link.Lag), $"link{link.From}_{link.To}");
-                model.Add(violation >= gap);
-                objective.AddTerm(violation, w.LinkDay);
+                model.Add(gap <= 0);
             }
         }
 
@@ -119,6 +118,8 @@ public static class BalanceSolver
             StringParameters = $"max_time_in_seconds:{limit.TotalSeconds.ToString(System.Globalization.CultureInfo.InvariantCulture)} num_workers:8"
         };
         var status = solver.Solve(model);
+        // Противоречие ограничений — явный ответ: откат к плану, нарушающему связи, запрещён.
+        if (status == CpSolverStatus.Infeasible) return ([], BalanceMath.Infeasible);
         if (status is not (CpSolverStatus.Optimal or CpSolverStatus.Feasible))
             return (BalanceMath.Greedy(problem), BalanceMath.Heuristic);
         var choice = z.Select(options => Array.FindIndex(options, v => solver.BooleanValue(v))).Select(i => Math.Max(0, i)).ToArray();

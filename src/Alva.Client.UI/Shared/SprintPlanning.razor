@@ -94,7 +94,9 @@
         }
         @if (proposal.Changes.Length == 0)
         {
-            <p class="alva-panel__subtitle">@(proposal.Excluded is { Length: > 0 } ? Strings.T("Среди учтённых задач улучшений нет. Задачи, которые расчёт не трогал, перечислены выше.") : Strings.T("План уже сбалансирован в этом режиме — менять нечего."))</p>
+            <p class="alva-panel__subtitle">@(proposal.Status == BalanceMath.Infeasible
+                ? Strings.T("Допустимого плана нет: фиксированные даты и связи противоречат друг другу.")
+                : proposal.Excluded is { Length: > 0 } ? Strings.T("Среди учтённых задач улучшений нет. Задачи, которые расчёт не трогал, перечислены выше.") : Strings.T("План уже сбалансирован в этом режиме — менять нечего."))</p>
         }
         else
         {
@@ -238,6 +240,7 @@
     {
         BalanceMath.Optimal => Strings.T("Решатель OR-Tools: лучший план найден и доказан"),
         BalanceMath.Feasible => Strings.T("Решатель OR-Tools: лучший план за отведённое время"),
+        BalanceMath.Infeasible => Strings.T("Ограничения несовместимы: допустимого плана нет"),
         _ => Strings.T("Простой поиск")
     };
 

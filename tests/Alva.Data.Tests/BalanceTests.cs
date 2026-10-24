@@ -15,8 +15,8 @@ public sealed class BalanceTests
     private static readonly BalancePersonInput Boris = new(Guid.NewGuid(), "Борис", [Role], []);
     private static readonly TimeSpan Limit = TimeSpan.FromSeconds(5);
 
-    private static BalanceTaskInput Task(string title, decimal hours, DateOnly from, DateOnly to, Guid? person = null, DateOnly? deadline = null, Guid? target = null) =>
-        new(Guid.NewGuid(), title, "Planned", null, hours, from, to, deadline, target ?? Role, person);
+    private static BalanceTaskInput Task(string title, decimal hours, DateOnly from, DateOnly to, Guid? person = null, DateOnly? deadline = null, Guid? target = null, bool datesFixed = false) =>
+        new(Guid.NewGuid(), title, "Planned", null, hours, from, to, deadline, target ?? Role, person, DatesFixed: datesFixed);
 
     private static BalanceProblem Problem(string mode, BalanceTaskInput[] tasks, BalanceLinkInput[]? links = null, Func<Guid, CalendarDto>? calendars = null) =>
         BalanceMath.Build(mode, Sprint, Start, End, [Anna, Boris], calendars ?? CapacityMath.DefaultCalendar, tasks, links ?? []);
@@ -154,5 +154,104 @@ public sealed class BalanceTests
         Assert.Equal(1, proposal.Considered);
         Assert.Equal("Нет назначения — ни человека, ни роли", proposal.Excluded!.Single(x => x.TaskId == unassigned.Id).Reason);
         Assert.Equal("В работе — даты и исполнитель не меняются", proposal.Excluded!.Single(x => x.TaskId == started.Id).Reason);
+    }
+
+    [Fact]
+    public void A_fixed_task_keeps_its_start_but_may_change_person()
+    {
+        var fixedTask = Task("Фикс", 16, Start, Start.AddDays(1), Anna.Id, datesFixed: true);
+        var problem = Problem(BalanceModes.Maximum, [fixedTask]);
+        var index = Array.FindIndex(problem.Tasks, t => t.Id == fixedTask.Id);
+
+        Assert.All(problem.Tasks[index].Options, option => Assert.Equal(0, option.Start));
+        // В «Максимуме» доступен человек с общей ролью: даты те же, исполнитель может смениться.
+        Assert.Contains(problem.Tasks[index].Options, option => option.Person == Array.FindIndex(problem.People, p => p.Id == Boris.Id));
+
+        var (choice, status) = BalanceSolver.Solve(problem, Limit);
+        Assert.NotEqual(BalanceMath.Infeasible, status);
+        Assert.Equal(0, problem.Tasks[index].Options[choice[index]].Start);
+    }
+
+    [Theory]
+    [InlineData("FS")]
+    [InlineData("SS")]
+    [InlineData("FF")]
+    [InlineData("SF")]
+    public void Hard_links_hold_for_every_kind(string kind)
+    {
+        // Вторая задача стоит раньше первой — исходный план нарушает любую из четырёх связей.
+        var first = Task("Первая", 16, Start.AddDays(4), Start.AddDays(5), Anna.Id);
+        var second = Task("Вторая", 16, Start.AddDays(1), Start.AddDays(2), Boris.Id);
+        var problem = Problem(BalanceModes.Deadlines, [first, second],
+            [new BalanceLinkInput(first.Id, second.Id, kind, 0)]);
+
+        var (choice, status) = BalanceSolver.Solve(problem, Limit);
+        var proposal = BalanceMath.Proposal(problem, choice, status);
+
+        Assert.NotEqual(BalanceMath.Infeasible, status);
+        Assert.Equal(0, proposal.After.LinkViolationDays);
+    }
+
+    [Fact]
+    public void A_running_task_anchors_the_successor_even_though_it_does_not_move()
+    {
+        var running = new BalanceTaskInput(Guid.NewGuid(), "Идёт", "InProgress", null, 16,
+            Start.AddDays(4), Start.AddDays(5), null, Role, Anna.Id);
+        var successor = Task("После", 16, Start.AddDays(1), Start.AddDays(2), Boris.Id);
+        var problem = Problem(BalanceModes.Deadlines, [running, successor],
+            [new BalanceLinkInput(running.Id, successor.Id, "FS", 0)]);
+        var index = Array.FindIndex(problem.Tasks, t => t.Id == successor.Id);
+
+        Assert.Null(problem.Infeasible);
+        var (choice, _) = BalanceSolver.Solve(problem, Limit);
+
+        // Предшественник занимает 4–5-й дни, эксклюзивный конец — 6-й: последователь не раньше 6-го.
+        Assert.True(problem.Tasks[index].Options[choice[index]].Start >= 6);
+    }
+
+    [Fact]
+    public void Two_fixed_tasks_that_contradict_a_link_are_infeasible()
+    {
+        var first = Task("Фикс А", 16, Start, Start.AddDays(1), Anna.Id, datesFixed: true);
+        var second = Task("Фикс Б", 16, Start, Start.AddDays(1), Boris.Id, datesFixed: true);
+        var problem = Problem(BalanceModes.Deadlines, [first, second],
+            [new BalanceLinkInput(first.Id, second.Id, "FS", 0)]);
+
+        var (choice, status) = BalanceSolver.Solve(problem, Limit);
+        var proposal = BalanceMath.Proposal(problem, choice, status);
+
+        Assert.Equal(BalanceMath.Infeasible, status);
+        Assert.Empty(choice);
+        Assert.Empty(proposal.Changes);
+        Assert.Equal(proposal.Before.LinkViolationDays, proposal.After.LinkViolationDays);
+    }
+
+    [Fact]
+    public void A_fixed_task_that_cannot_satisfy_an_anchor_is_infeasible_before_solving()
+    {
+        var running = new BalanceTaskInput(Guid.NewGuid(), "Идёт", "InProgress", null, 16,
+            Start.AddDays(4), Start.AddDays(5), null, Role, Anna.Id);
+        var successor = Task("Фикс после", 16, Start.AddDays(1), Start.AddDays(2), Boris.Id, datesFixed: true);
+        var problem = Problem(BalanceModes.Deadlines, [running, successor],
+            [new BalanceLinkInput(running.Id, successor.Id, "FS", 0)]);
+
+        Assert.NotNull(problem.Infeasible);
+        var (choice, status) = BalanceSolver.Solve(problem, Limit);
+
+        Assert.Equal(BalanceMath.Infeasible, status);
+        Assert.Empty(choice);
+    }
+
+    [Fact]
+    public void Greedy_fixes_a_link_violation_even_though_the_objective_does_not_price_it()
+    {
+        var first = Task("Первая", 16, Start.AddDays(4), Start.AddDays(5), Anna.Id);
+        var second = Task("Вторая", 16, Start.AddDays(1), Start.AddDays(2), Boris.Id);
+        var problem = Problem(BalanceModes.Maximum, [first, second],
+            [new BalanceLinkInput(first.Id, second.Id, "FS", 0)]);
+
+        var proposal = BalanceMath.Proposal(problem, BalanceMath.Greedy(problem), BalanceMath.Heuristic);
+
+        Assert.Equal(0, proposal.After.LinkViolationDays);
     }
 }

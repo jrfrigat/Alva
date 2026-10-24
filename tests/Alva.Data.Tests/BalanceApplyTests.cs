@@ -51,6 +51,24 @@ public sealed class BalanceApplyTests
     }
 
     [Fact]
+    public async Task A_fixed_task_can_change_person_but_not_dates()
+    {
+        var (server, sprint, _, _, anna) = await Arrange();
+        await using var _ = server;
+        var fixedTask = await Send<TaskDto>(server, "tasks", new TaskRequest("Фикс", EstimateHours: 8,
+            StartDate: Monday, EndDate: Monday, DatesFixed: true));
+
+        var moved = await server.Client.PostAsJsonAsync(server.Team($"sprints/{sprint.Id}/balance/apply"), new BalanceApplyRequest(
+            [new(fixedTask.Id, fixedTask.Version, Monday.AddDays(1), Monday.AddDays(1), anna.Id, anna.Id)]));
+        Assert.Equal(HttpStatusCode.Conflict, moved.StatusCode);
+
+        var reassigned = await server.Client.PostAsJsonAsync(server.Team($"sprints/{sprint.Id}/balance/apply"), new BalanceApplyRequest(
+            [new(fixedTask.Id, fixedTask.Version, Monday, Monday, anna.Id, anna.Id)]));
+        Assert.Equal(HttpStatusCode.NoContent, reassigned.StatusCode);
+        await server.WithDb(async db => Assert.Equal(anna.Id, (await db.Assignments.SingleAsync(a => a.TaskId == fixedTask.Id)).TargetId));
+    }
+
+    [Fact]
     public async Task A_stale_task_version_rejects_the_whole_proposal()
     {
         var (server, sprint, first, second, anna) = await Arrange();
