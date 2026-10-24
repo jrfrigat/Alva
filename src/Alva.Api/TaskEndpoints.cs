@@ -22,7 +22,9 @@ public static class TaskEndpoints
             var task = new TaskCard { TeamId = teamId };
             db.Add(task);
             await Apply(db, teamId, task, request);
-            await KeepParentsAroundChildren(db, teamId, task, user.UserId());
+            var widened = await KeepParentsAroundChildren(db, teamId, task, user.UserId());
+            foreach (var (changed, start, end) in widened)
+                await ValidateLinks(db, teamId, changed, start, end);
             db.Add(new TaskHistory { TaskId = task.Id, UserId = user.UserId(), Summary = "Задача создана" });
             await db.SaveChangesAsync();
             return (await List(db, teamId)).Single(x => x.Id == task.Id);
@@ -32,8 +34,16 @@ public static class TaskEndpoints
             await AccessControl.RequireTeam(db, user, teamId, "tasks", "edit");
             var task = await Find(db, teamId, taskId);
             if (request.Version is { } version && version != task.Version) throw new ApiException(409, "Задача изменилась. Обновите данные.");
+            var wasFixed = task.DatesFixed;
+            var beforeStart = task.StartDate;
+            var beforeEnd = task.EndDate;
             await Apply(db, teamId, task, request);
-            await KeepParentsAroundChildren(db, teamId, task, user.UserId());
+            var widened = await KeepParentsAroundChildren(db, teamId, task, user.UserId());
+            await ValidateLinks(db, teamId, task, beforeStart, beforeEnd);
+            foreach (var (changed, start, end) in widened)
+                if (changed.Id != task.Id) await ValidateLinks(db, teamId, changed, start, end);
+            if (wasFixed != task.DatesFixed)
+                db.Add(new TaskHistory { TaskId = task.Id, UserId = user.UserId(), Summary = task.DatesFixed ? "Даты зафиксированы" : "Фиксация дат снята" });
             task.Version++;
             db.Add(new TaskHistory { TaskId = task.Id, UserId = user.UserId(), Summary = "Задача обновлена" });
             await db.SaveChangesAsync();
@@ -57,7 +67,9 @@ public static class TaskEndpoints
             if (request.Version != task.Version) throw new ApiException(409, "Задача изменилась. Обновите данные.");
             await ValidateParent(db, teamId, task, request.ParentId);
             task.ParentId = request.ParentId; task.Order = request.Order; task.Version++;
-            await KeepParentsAroundChildren(db, teamId, task, user.UserId());
+            var widened = await KeepParentsAroundChildren(db, teamId, task, user.UserId());
+            foreach (var (changed, start, end) in widened)
+                await ValidateLinks(db, teamId, changed, start, end);
             db.Add(new TaskHistory { TaskId = task.Id, UserId = user.UserId(), Summary = "Перемещена в дереве" });
             await db.SaveChangesAsync();
             return (await List(db, teamId)).Single(x => x.Id == task.Id);
@@ -155,18 +167,25 @@ public static class TaskEndpoints
     /// Родитель охватывает детей: после правки задачи она сама не уже потомков, а предки с датами — не уже её.
     /// Версию предков не меняем: это следствие чужой правки, и клиент, сохраняющий детей раньше родителя, не получит 409.
     /// </summary>
-    internal static async Task KeepParentsAroundChildren(AlvaDbContext db, Guid teamId, TaskCard task, Guid userId)
+    /// <returns>Задачи, которым правило расширило окно, и их даты до расширения — для проверки связей.</returns>
+    internal static async Task<List<(TaskCard Task, DateOnly? Start, DateOnly? End)>> KeepParentsAroundChildren(AlvaDbContext db, Guid teamId, TaskCard task, Guid userId)
     {
         var stored = await db.Tasks.Where(x => x.TeamId == teamId && !x.Archived && x.Id != task.Id).ToListAsync();
-        var dates = stored.Select(x => new TaskDates(x.Id, x.ParentId, x.StartDate, x.EndDate))
-            .Append(new TaskDates(task.Id, task.ParentId, task.StartDate, task.EndDate)).ToArray();
+        var dates = stored.Select(x => new TaskDates(x.Id, x.ParentId, x.StartDate, x.EndDate, x.DatesFixed))
+            .Append(new TaskDates(task.Id, task.ParentId, task.StartDate, task.EndDate, task.DatesFixed)).ToArray();
         var entities = stored.Append(task).ToDictionary(x => x.Id);
-        foreach (var update in TaskWindows.Enforce(dates, task.Id))
+        var updates = TaskWindows.Enforce(dates, task.Id);
+        if (TaskWindows.Conflict(dates, updates) is { } blocked)
+            throw new ApiException(409, $"Даты задачи «{entities[blocked.Id].Title}» зафиксированы: изменение вышло за её окно. Снимите фиксацию, чтобы расширить окно.");
+        var widened = new List<(TaskCard Task, DateOnly? Start, DateOnly? End)>();
+        foreach (var update in updates)
         {
             var entity = entities[update.Id];
+            widened.Add((entity, entity.StartDate, entity.EndDate));
             entity.StartDate = update.Start; entity.EndDate = update.End;
             if (entity != task) db.Add(new TaskHistory { TaskId = entity.Id, UserId = userId, Summary = "Сроки расширены под подзадачи" });
         }
+        return widened;
     }
 
     internal static async Task<TaskCard> Find(AlvaDbContext db, Guid teamId, Guid taskId) =>
@@ -182,6 +201,14 @@ public static class TaskEndpoints
         if (request.SetRemainingHours && request.RemainingHours is < 0 or > 100000) throw new ApiException(400, "Остаток должен быть от 0 до 100000 часов.");
         if (request.SetRemainingHours) task.RemainingHours = request.RemainingHours;
         if (request.Priority is { } text) priority = Enum.TryParse<TaskPriority>(text, true, out var parsed) && Enum.IsDefined(parsed) ? parsed : throw new ApiException(400, "Неизвестный приоритет задачи.");
+        // Фиксация требует обеих дат; пока задача зафиксирована, её окно не меняется. Снять фиксацию и
+        // перенести одной правкой можно — тогда итоговый признак уже false.
+        var datesFixed = request.DatesFixed ?? task.DatesFixed;
+        if (datesFixed && (request.StartDate is null || request.EndDate is null))
+            throw new ApiException(400, "У задачи с фиксированными датами должны быть заданы начало и окончание.");
+        if (datesFixed && task.StartDate is not null && task.EndDate is not null
+            && (request.StartDate != task.StartDate || request.EndDate != task.EndDate))
+            throw new ApiException(400, "Даты задачи зафиксированы — переносить её нельзя. Снимите фиксацию, чтобы изменить даты.");
         if (request.ProjectId is { } projectId && !await db.ProjectTeams.AnyAsync(x => x.TeamId == teamId && x.ProjectId == projectId)) throw new ApiException(400, "Проект не связан с командой.");
         await ValidateParent(db, teamId, task, request.ParentId);
         try { if (request.RequiredSkills is not null) task.RequiredSkills = SkillMath.Normalize(request.RequiredSkills); }
@@ -189,7 +216,39 @@ public static class TaskEndpoints
         task.Title = title; task.Description = request.Description ?? ""; task.Status = status;
         task.ProjectId = request.ProjectId; task.ParentId = request.ParentId;
         task.EstimateHours = request.EstimateHours; task.Deadline = request.Deadline; task.StartDate = request.StartDate; task.EndDate = request.EndDate; task.Order = request.Order;
+        task.DatesFixed = datesFixed;
         if (priority is { } value) task.Priority = value;
+    }
+
+    /// <summary>
+    /// Правка дат не должна ухудшать связи задачи: новое нарушение или рост старого отклоняются, а улучшение
+    /// разрешено — так уже существующие нарушения можно исправлять по шагам, не блокируя все правки.
+    /// </summary>
+    internal static async Task ValidateLinks(AlvaDbContext db, Guid teamId, TaskCard task, DateOnly? beforeStart, DateOnly? beforeEnd)
+    {
+        var links = await db.Dependencies.AsNoTracking().Where(x => x.PredecessorId == task.Id || x.SuccessorId == task.Id).ToListAsync();
+        if (links.Count == 0) return;
+        var ids = links.SelectMany(x => new[] { x.PredecessorId, x.SuccessorId }).Distinct().ToArray();
+        // Без AsNoTracking: в одной транзакции (автобаланс) вторая правка должна видеть первую.
+        var tasks = await db.Tasks.Where(x => x.TeamId == teamId && ids.Contains(x.Id)).ToArrayAsync();
+        var byId = tasks.ToDictionary(x => x.Id);
+        (DateOnly Start, DateOnly End)? After(TaskCard x) =>
+            x.Id == task.Id ? SprintWindows.Window(task.StartDate, task.EndDate) : SprintWindows.Window(x.StartDate, x.EndDate);
+        (DateOnly Start, DateOnly End)? Before(TaskCard x) =>
+            x.Id == task.Id ? SprintWindows.Window(beforeStart, beforeEnd) : SprintWindows.Window(x.StartDate, x.EndDate);
+        foreach (var link in links)
+        {
+            if (!byId.TryGetValue(link.PredecessorId, out var predecessor) || !byId.TryGetValue(link.SuccessorId, out var successor)) continue;
+            // Без дат хотя бы у одной стороны связи сравнивать нечего: окна, которое можно нарушить, нет.
+            if (After(predecessor) is not { } afterPredecessor || After(successor) is not { } afterSuccessor) continue;
+            var after = DependencyWindows.Violation(link.Kind.ToString(), link.LagDays, afterPredecessor, afterSuccessor);
+            var before = Before(predecessor) is { } beforePredecessor && Before(successor) is { } beforeSuccessor
+                ? DependencyWindows.Violation(link.Kind.ToString(), link.LagDays, beforePredecessor, beforeSuccessor)
+                : 0;
+            if (after <= before) continue;
+            var other = link.PredecessorId == task.Id ? successor : predecessor;
+            throw new ApiException(409, $"Связь {link.Kind} с задачей «{other.Title}» не позволяет так изменить даты: нарушение вырастет до {after} дн.");
+        }
     }
 
     private static async Task ValidateParent(AlvaDbContext db, Guid teamId, TaskCard task, Guid? parentId)
@@ -222,7 +281,7 @@ public static class TaskEndpoints
         {
             assignments.TryGetValue(x.Id, out var assignment);
             Guid[] inSprints = [.. sprints[x.Id]];
-            return new TaskDto(x.Id, x.TeamId, x.ProjectId, x.ParentId, x.Title, x.Description, x.Status.ToString(), x.EstimateHours, x.Deadline, x.StartDate, x.EndDate, x.Order, assignment?.TargetId, assignment?.ResolvedPersonId, x.Version, estimates.GetValueOrDefault(x.Id), deadlines.GetValueOrDefault(x.Id), inSprints, x.RequiredSkills, x.Priority.ToString(), x.BacklogRank, x.RemainingHours);
+            return new TaskDto(x.Id, x.TeamId, x.ProjectId, x.ParentId, x.Title, x.Description, x.Status.ToString(), x.EstimateHours, x.Deadline, x.StartDate, x.EndDate, x.Order, assignment?.TargetId, assignment?.ResolvedPersonId, x.Version, estimates.GetValueOrDefault(x.Id), deadlines.GetValueOrDefault(x.Id), inSprints, x.RequiredSkills, x.Priority.ToString(), x.BacklogRank, x.RemainingHours, x.DatesFixed);
         }).ToArray();
     }
 

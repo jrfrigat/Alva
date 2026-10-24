@@ -64,6 +64,47 @@ public sealed class TaskWindowsTests
     }
 
     [Fact]
+    public void A_fixed_ancestor_that_would_be_widened_is_a_conflict()
+    {
+        TaskDates[] tasks =
+        [
+            new(Parent, null, Oct(1), Oct(20), Fixed: true),
+            new(Child, Parent, Oct(5), Oct(25))
+        ];
+
+        var updates = TaskWindows.Enforce(tasks, Child);
+        var conflict = TaskWindows.Conflict(tasks, updates);
+
+        Assert.Equal(Parent, conflict?.Id);
+    }
+
+    [Fact]
+    public void A_fixed_task_itself_cannot_be_widened_by_its_child()
+    {
+        TaskDates[] tasks =
+        [
+            new(Parent, null, Oct(5), Oct(9), Fixed: true),
+            new(Child, Parent, Oct(3), Oct(12))
+        ];
+
+        var updates = TaskWindows.Enforce(tasks, Parent);
+
+        Assert.Equal(Parent, TaskWindows.Conflict(tasks, updates)?.Id);
+    }
+
+    [Fact]
+    public void No_conflict_when_the_fixed_window_already_covers_the_change()
+    {
+        TaskDates[] tasks =
+        [
+            new(Parent, null, Oct(1), Oct(20), Fixed: true),
+            new(Child, Parent, Oct(5), Oct(7))
+        ];
+
+        Assert.Null(TaskWindows.Conflict(tasks, TaskWindows.Enforce(tasks, Child)));
+    }
+
+    [Fact]
     public void Descendants_cover_grandchildren_and_survive_a_cycle()
     {
         TaskDates[] tasks =

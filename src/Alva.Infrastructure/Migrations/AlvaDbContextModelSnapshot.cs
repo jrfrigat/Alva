@@ -341,6 +341,9 @@ namespace Alva.Infrastructure.Migrations
                     b.Property<int?>("BacklogRank")
                         .HasColumnType("integer");
 
+                    b.Property<bool>("DatesFixed")
+                        .HasColumnType("boolean");
+
                     b.Property<DateOnly?>("Deadline")
                         .HasColumnType("date");
 

@@ -1,7 +1,8 @@
 namespace Alva.Contracts;
 
 /// <summary>Собственные даты задачи и её место в дереве — всё, что нужно правилу рамки родителя.</summary>
-public sealed record TaskDates(Guid Id, Guid? ParentId, DateOnly? Start, DateOnly? End)
+/// <param name="Fixed">Даты зафиксированы: правило рамки не имеет права их расширять.</param>
+public sealed record TaskDates(Guid Id, Guid? ParentId, DateOnly? Start, DateOnly? End, bool Fixed = false)
 {
     /// <summary>Окно по собственным датам; задача без дат окна не имеет — её полоса берётся от спринта или срока.</summary>
     public (DateOnly Start, DateOnly End)? Window => (Start ?? End, End ?? Start) is (DateOnly s, DateOnly e) ? (s <= e ? (s, e) : (e, s)) : null;
@@ -58,6 +59,16 @@ public static class TaskWindows
             window = wider;
         }
         return updates;
+    }
+
+    /// <summary>
+    /// Первое обновление <see cref="Enforce"/>, которое затронуло бы задачу с зафиксированными датами, или null.
+    /// Правило рамки может только расширять окно, поэтому любое обновление фиксированной задачи — конфликт.
+    /// </summary>
+    public static TaskDates? Conflict(IReadOnlyCollection<TaskDates> tasks, IReadOnlyList<TaskDates> updates)
+    {
+        var byId = tasks.ToDictionary(t => t.Id);
+        return updates.FirstOrDefault(update => byId.TryGetValue(update.Id, out var before) && before.Fixed);
     }
 
     private static (DateOnly Start, DateOnly End)? Union((DateOnly Start, DateOnly End)? a, (DateOnly Start, DateOnly End)? b) =>

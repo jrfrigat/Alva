@@ -189,6 +189,7 @@ public static class DataTransfer
                     Team(id, x.TeamId); Name(id, x.Title); Ref<Project>(id, x.ProjectId, "projectId", true); Ref<Sprint>(id, legacy.GetValueOrDefault(id), "sprintId", true); Ref<TaskCard>(id, x.ParentId, "parentId", true);
                     if (x.ParentId == id) Error(id, "parentId", "Задача не может быть собственным родителем.");
                     if (x.StartDate.HasValue && x.EndDate.HasValue) Dates(id, x.StartDate.Value, x.EndDate.Value);
+                    if (x.DatesFixed && (x.StartDate is null || x.EndDate is null)) Error(id, "datesFixed", "У фиксированной задачи должны быть заданы начало и окончание.");
                     if (x.Version < 1 || x.Order < 0) Error(id, "version/order", "Версия должна быть положительной, порядок — неотрицательным."); break;
                 case Actor x:
                     ValidateSkills(id, x.Skills);
