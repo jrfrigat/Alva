@@ -17,7 +17,7 @@ public static class SprintDates
 
     /// <summary>Подсказка под выбором: все спринты задачи, если их несколько.</summary>
     public static string? Hint(TaskModel task, IEnumerable<SprintModel> sprints) =>
-        Of(task, sprints).Select(s => s.Name).ToArray() is { Length: > 1 } names ? "Идёт в спринтах: " + string.Join(", ", names) : null;
+        Of(task, sprints).Select(s => s.Name).ToArray() is { Length: > 1 } names ? Strings.T("Идёт в спринтах: ") + string.Join(", ", names) : null;
 
     /// <summary>Ставит задаче окно спринта или, без спринта, снимает плановые даты.</summary>
     public static void Place(TaskModel task, SprintModel? sprint)

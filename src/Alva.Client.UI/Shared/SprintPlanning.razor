@@ -9,7 +9,7 @@
         <div class="alva-plan-head__picker">
             <FlareIconView Value="@MaterialDesign3Icons.Regular.CalendarMonth" Size="22px" Class="alva-panel__icon" />
             <FlareSelect TValue="Guid" Label="@(Strings.T("Спринт"))" Items="Choices.Select(s => s.Id)" ItemLabel="SprintLabel" Value="Sprint.Id" ValueChanged="Pick" />
-            <span class="alva-plan-head__horizon alva-num">Плановый горизонт: @AlvaFormat.WorkDays(Sprint.StartDate, Sprint.EndDate) рабочих смен · @AlvaFormat.Period(Sprint.StartDate, Sprint.EndDate)</span>
+            <span class="alva-plan-head__horizon alva-num">@(Strings.T("Плановый горизонт:")) @AlvaFormat.WorkDays(Sprint.StartDate, Sprint.EndDate) @(Strings.T("рабочих смен")) · @AlvaFormat.Period(Sprint.StartDate, Sprint.EndDate)</span>
         </div>
         <AlvaStatusChip Tone="@(Sprint.Status == "Planned" ? AlvaTone.Info : AlvaTones.Status(Sprint.Status))">@(Sprint.Status == "Planned" ? Strings.T("Черновик планирования") : Labels.Status(Sprint.Status))</AlvaStatusChip>
     </div>
@@ -46,8 +46,8 @@
     <div class="alva-plan-kpis">
         <div class="alva-plan-kpi"><span class="alva-kpi__label">@(Strings.T("Ёмкость команды"))</span><span class="alva-num"><b>@AlvaFormat.Hours(Capacity)</b> @(Strings.T("ч"))</span><FlareIconView Value="@MaterialDesign3Icons.Regular.Groups" Size="20px" /></div>
         <div class="alva-plan-kpi"><span class="alva-kpi__label">@(Strings.T("Запланировано в спринт"))</span><span class="alva-num"><b class="alva-plan-kpi__primary">@AlvaFormat.Hours(Planned)</b> @(Strings.T("ч")) <AlvaStatusChip Tone="@(Planned > Capacity ? AlvaTone.Critical : AlvaTone.Info)">@Pct(Planned, Capacity)%</AlvaStatusChip></span><FlareIconView Value="@MaterialDesign3Icons.Regular.FactCheck" Size="20px" /></div>
-        <div class="alva-plan-kpi"><span class="alva-kpi__label">@(Capacity >= Planned ? Strings.T("Резерв ёмкости") : Strings.T("Нехватка ёмкости"))</span><span class="alva-num"><b>@AlvaFormat.Hours(Math.Abs(Capacity - Planned))</b> ч @(Capacity >= Planned ? Strings.T("резерв") : Strings.T("сверх ёмкости"))</span><FlareIconView Value="@MaterialDesign3Icons.Regular.HourglassEmpty" Size="20px" /></div>
-        <div class="alva-plan-kpi @(Overtime > 0 ? "alva-plan-kpi--critical" : "")"><span class="alva-kpi__label">@(Strings.T("Превышение / овертайм"))</span><span class="alva-num"><b>@AlvaFormat.Hours(Overtime)</b> ч @if (OvertimePeople > 0) { <AlvaStatusChip Tone="AlvaTone.Critical">@OvertimePeople чел.</AlvaStatusChip> }</span><FlareIconView Value="@MaterialDesign3Icons.Regular.Warning" Size="20px" /></div>
+        <div class="alva-plan-kpi"><span class="alva-kpi__label">@(Capacity >= Planned ? Strings.T("Резерв ёмкости") : Strings.T("Нехватка ёмкости"))</span><span class="alva-num"><b>@AlvaFormat.Hours(Math.Abs(Capacity - Planned))</b> @(Strings.T("ч")) @(Capacity >= Planned ? Strings.T("резерв") : Strings.T("сверх ёмкости"))</span><FlareIconView Value="@MaterialDesign3Icons.Regular.HourglassEmpty" Size="20px" /></div>
+        <div class="alva-plan-kpi @(Overtime > 0 ? "alva-plan-kpi--critical" : "")"><span class="alva-kpi__label">@(Strings.T("Превышение / овертайм"))</span><span class="alva-num"><b>@AlvaFormat.Hours(Overtime)</b> @(Strings.T("ч")) @if (OvertimePeople > 0) { <AlvaStatusChip Tone="AlvaTone.Critical">@OvertimePeople @(Strings.T("чел."))</AlvaStatusChip> }</span><FlareIconView Value="@MaterialDesign3Icons.Regular.Warning" Size="20px" /></div>
     </div>
 </section>
 <PageFeedback Error="@_error" />
@@ -58,13 +58,13 @@
         <header class="alva-panel__header">
             <FlareIconView Value="@MaterialDesign3Icons.Regular.Balance" Size="20px" Class="alva-panel__icon" />
             <div>
-                <h2 class="alva-panel__title">Рекомендация автобаланса: @ModeName(proposal.Mode)</h2>
-                <p class="alva-panel__subtitle">@StatusText(proposal.Status)@(proposal.Note is { } note ? $" · {note}" : "") · Пунктир на Гантте — куда уйдут задачи. Ничего не сохранено, пока вы не примените.</p>
+                <h2 class="alva-panel__title">@(Strings.T("Рекомендация автобаланса:")) @ModeName(proposal.Mode)</h2>
+                <p class="alva-panel__subtitle">@StatusText(proposal.Status)@(proposal.Note is { } note ? $" · {note}" : "") · @(Strings.T("Пунктир на Гантте — куда уйдут задачи. Ничего не сохранено, пока вы не примените."))</p>
             </div>
             <div class="alva-plan-proposal__actions">
                 @if (proposal.Changes.Length > 0)
                 {
-                    <FlareButton Size="ButtonSize.Sm" Loading="_busy" Disabled="Chosen.Count == 0" OnClick="ApplyProposal">Применить выбранные (@Chosen.Count)</FlareButton>
+                    <FlareButton Size="ButtonSize.Sm" Loading="_busy" Disabled="Chosen.Count == 0" OnClick="ApplyProposal">@(Strings.T("Применить выбранные")) (@Chosen.Count)</FlareButton>
                 }
                 <FlareButton Size="ButtonSize.Sm" Variant="ButtonVariant.Outlined" Disabled="_busy" OnClick="RejectProposal">@(proposal.Changes.Length > 0 ? Strings.T("Отклонить") : Strings.T("Закрыть"))</FlareButton>
             </div>
@@ -105,7 +105,7 @@
                 {
                     <li class="alva-plan-change" @key="change.TaskId">
                         <FlareCheckbox TValue="bool" Value="_chosen.Contains(change.TaskId)" ValueChanged="(bool on) => Choose(change.TaskId, on)"
-                                       AriaLabel="@($"Применить изменение «{change.Title}»")" />
+                                       AriaLabel="@string.Format(Strings.T("Применить изменение «{0}»"), change.Title)" />
                         <div class="alva-plan-change__body">
                             <a class="alva-plan-change__title" href="tasks/@change.TaskId">@change.Title</a>
                             <span class="alva-plan-change__what alva-num">
@@ -152,7 +152,7 @@
                             <a class="alva-plan-card__code" href="@($"tasks/{task.Id}")">@AlvaFormat.Code(task.Id)</a>
                             <span class="alva-project-chip">@ProjectName(task.ProjectId)</span>
                             @if (task.Priority != "Normal") { <AlvaStatusChip Tone="AlvaTones.Priority(task.Priority)">@Labels.Priority(task.Priority)</AlvaStatusChip> }
-                            <span class="alva-plan-card__est alva-num"><FlareIconView Value="@MaterialDesign3Icons.Regular.Schedule" Size="15px" /> @(task.EstimateHours.HasValue ? $"{AlvaFormat.Hours(task.EstimateHours.Value)} ч" : "—")</span>
+                            <span class="alva-plan-card__est alva-num"><FlareIconView Value="@MaterialDesign3Icons.Regular.Schedule" Size="15px" /> @(task.EstimateHours.HasValue ? $"{AlvaFormat.Hours(task.EstimateHours.Value)} {Strings.T("ч")}" : "—")</span>
                         </div>
                         <div class="alva-plan-card__title">@task.Title</div>
                         <div class="alva-plan-card__bottom">
@@ -188,9 +188,9 @@
                     var pct = Pct(plan, avail);
                     var tone = avail <= 0 && plan > 0 ? AlvaTone.Critical : pct > 100 ? AlvaTone.Critical : pct > 85 ? AlvaTone.Info : AlvaTone.Ok;
                     <div class="alva-skill alva-skill--@tone.ToString().ToLowerInvariant()">
-                        <div class="alva-skill__head"><b>@role.Name</b><AlvaStatusChip Tone="tone">@(avail > 0 ? $"{pct}%" : Strings.T("нет людей")) @(tone == AlvaTone.Critical ? "Перегруз" : tone == AlvaTone.Info ? Strings.T("Оптимально") : Strings.T("Запас"))</AlvaStatusChip></div>
+                        <div class="alva-skill__head"><b>@role.Name</b><AlvaStatusChip Tone="tone">@(avail > 0 ? $"{pct}%" : Strings.T("нет людей")) @(tone == AlvaTone.Critical ? Strings.T("Перегруз") : tone == AlvaTone.Info ? Strings.T("Оптимально") : Strings.T("Запас"))</AlvaStatusChip></div>
                         <div class="alva-loadbar__track"><span class="alva-loadbar__fill alva-loadbar__fill--@tone.ToString().ToLowerInvariant()" style="width:@Math.Min(100, pct)%"></span></div>
-                        <div class="alva-skill__foot alva-num"><span>План: @AlvaFormat.Hours(plan) ч</span><span class="@(plan > avail ? "alva-kpi__alert" : "alva-kpi__aside--primary")">@(plan > avail ? $"Дефицит −{AlvaFormat.Hours(plan - avail)} ч" : $"Запас +{AlvaFormat.Hours(avail - plan)} ч") (дост. @AlvaFormat.Hours(avail) ч)</span></div>
+                        <div class="alva-skill__foot alva-num"><span>@(Strings.T("План:")) @AlvaFormat.Hours(plan) @(Strings.T("ч"))</span><span class="@(plan > avail ? "alva-kpi__alert" : "alva-kpi__aside--primary")">@(plan > avail ? string.Format(Strings.T("Дефицит −{0} ч"), AlvaFormat.Hours(plan - avail)) : string.Format(Strings.T("Запас +{0} ч"), AlvaFormat.Hours(avail - plan))) (@(Strings.T("дост.")) @AlvaFormat.Hours(avail) @(Strings.T("ч")))</span></div>
                     </div>
                 }
                 @if (!Skills.Any()) { <p class="alva-kpi__note">@(Strings.T("Добавьте роли людям, чтобы видеть баланс специальностей."))</p> }
@@ -247,7 +247,7 @@
     /// <summary>Метрики, которые есть до или после; дни и часы рядом, чтобы было видно, что улучшилось.</summary>
     private static IEnumerable<(string Label, decimal Before, decimal After, string Unit)> Metrics(BalanceProposalDto p) => new (string, decimal, decimal, string)[]
     {
-        ("Перегруз", p.Before.OverloadHours, p.After.OverloadHours, Strings.T("ч")),
+        (Strings.T("Перегруз"), p.Before.OverloadHours, p.After.OverloadHours, Strings.T("ч")),
         (Strings.T("Самый перегруженный"), p.Before.PeakOverloadHours, p.After.PeakOverloadHours, Strings.T("ч")),
         (Strings.T("Просрочка"), p.Before.LateDays, p.After.LateDays, Strings.T("дн.")),
         (Strings.T("Нарушение связей"), p.Before.LinkViolationDays, p.After.LinkViolationDays, Strings.T("дн.")),
@@ -391,7 +391,7 @@
                     if (GanttPeopleData.IsGroup(row)) throw new InvalidOperationException(GanttPeopleData.GroupRefusal);
                     var day = DateOnly.FromDateTime(cell.Span.Start);
                     if (GanttData.SprintAt(day, _gantt.PlanSprints(Sprint)) is null)
-                        throw new InvalidOperationException($"{day:d MMMM} не входит ни в один спринт — бросьте задачу на день внутри спринта.");
+                        throw new InvalidOperationException(string.Format(Strings.T("{0} не входит ни в один спринт — бросьте задачу на день внутри спринта."), day.ToString("d MMMM")));
                     await _gantt.Place(Session, task, day);
                     if (GanttPeopleData.IsRowKey(row)) await _people.Reassign(Session, task, row);
                 }

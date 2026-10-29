@@ -19,7 +19,7 @@
 
 <div class="alva-kpis">
     <section class="alva-kpi"><div class="alva-kpi__head"><div><span class="alva-kpi__label">@(Strings.T("Активный состав команды"))</span><span class="alva-num"><span class="alva-kpi__value">@People.Length</span> <span class="alva-kpi__unit">@AlvaFormat.Plural(People.Length, "person")</span></span></div><span class="alva-kpi__icon"><FlareIconView Value="@MaterialDesign3Icons.Regular.Badge" Size="18px" /></span></div><p class="alva-kpi__note">@(Strings.T("С рабочим графиком в этом месяце"))</p></section>
-    <section class="alva-kpi"><div class="alva-kpi__head"><div><span class="alva-kpi__label">@(Strings.T("Запланированные отсутствия"))</span><span class="alva-num"><span class="alva-kpi__value">@MonthAbsences.Count()</span> <span class="alva-kpi__unit">(−@AlvaFormat.Hours(AbsenceHours) ч)</span></span></div><span class="alva-kpi__icon"><FlareIconView Value="@MaterialDesign3Icons.Regular.BeachAccess" Size="18px" /></span></div><p class="alva-kpi__note">@(MonthAbsences.Any() && MonthAbsences.First() is var a ? $"{a.Name}: {a.Ex.From:d}–{a.Ex.To:d MMM}" : Strings.T("Отпусков в месяце нет"))</p></section>
+    <section class="alva-kpi"><div class="alva-kpi__head"><div><span class="alva-kpi__label">@(Strings.T("Запланированные отсутствия"))</span><span class="alva-num"><span class="alva-kpi__value">@MonthAbsences.Count()</span> <span class="alva-kpi__unit">(−@AlvaFormat.Hours(AbsenceHours) @(Strings.T("ч")))</span></span></div><span class="alva-kpi__icon"><FlareIconView Value="@MaterialDesign3Icons.Regular.BeachAccess" Size="18px" /></span></div><p class="alva-kpi__note">@(MonthAbsences.Any() && MonthAbsences.First() is var a ? $"{a.Name}: {a.Ex.From:d}–{a.Ex.To:d MMM}" : Strings.T("Отпусков в месяце нет"))</p></section>
     <section class="alva-kpi"><div class="alva-kpi__head"><div><span class="alva-kpi__label">@(Strings.T("Повторяющиеся встречи"))</span><span class="alva-num"><span class="alva-kpi__value">@AlvaFormat.Hours(MeetingsPerPerson)</span> <span class="alva-kpi__unit">@(Strings.T("ч / нед / чел."))</span></span></div><span class="alva-kpi__icon"><FlareIconView Value="@MaterialDesign3Icons.Regular.Groups" Size="18px" /></span></div><p class="alva-kpi__note">@(Strings.T("Вычеты из фокусного времени"))</p></section>
     <section class="alva-kpi"><div class="alva-kpi__head"><div><span class="alva-kpi__label alva-kpi__label--primary">@(Strings.T("Эффективный фонд команды"))</span><span class="alva-num"><span class="alva-kpi__value">@AlvaFormat.Hours(Effective)</span> <span class="alva-kpi__unit">@(Strings.T("чистых часов"))</span></span></div><span class="alva-kpi__icon"><FlareIconView Value="@MaterialDesign3Icons.Regular.Speed" Size="18px" /></span></div><p class="alva-kpi__note alva-num">@(Strings.T("из")) @AlvaFormat.Hours(NominalMonth) @(Strings.T("ч номинала")) (@Pct(Effective, NominalMonth)%)</p></section>
 </div>
@@ -27,7 +27,7 @@
 <div class="alva-capacity-bar">
     <span class="alva-capacity-bar__label"><FlareIconView Value="@MaterialDesign3Icons.Regular.FilterList" Size="16px" /> @(Strings.T("Фильтр инженера:"))</span>
     <div class="alva-quickfilter" role="group" aria-label="@(Strings.T("Фильтр инженера"))">
-        <button type="button" class="alva-quickfilter__item @(_focus is null ? "alva-quickfilter__item--active" : "")" aria-pressed="@(_focus is null)" @onclick="() => _focus = null">Все (@People.Length)</button>
+        <button type="button" class="alva-quickfilter__item @(_focus is null ? "alva-quickfilter__item--active" : "")" aria-pressed="@(_focus is null)" @onclick="() => _focus = null">@(Strings.T("Все")) (@People.Length)</button>
         @foreach (var person in People)
         {
             <button type="button" class="alva-quickfilter__item alva-quickfilter__item--person @(_focus == person.Id ? "alva-quickfilter__item--active" : "")" aria-pressed="@(_focus == person.Id)" @onclick="() => _focus = person.Id"><span class="alva-slot__mark" aria-hidden="true">@AlvaFormat.Initials(person.Name)</span>@person.Name</button>
@@ -62,7 +62,7 @@
                         @if (sprintStart is not null) { <span class="alva-day__event">@sprintStart.Name</span> }
                         @foreach (var away in absent.Take(2)) { <span class="alva-day__event alva-day__event--absence"><FlareIconView Value="@MaterialDesign3Icons.Regular.BeachAccess" Size="12px" /> @Short(away.Name)</span> }
                         @foreach (var o in overloaded.Take(1)) { <span class="alva-day__event alva-day__event--over"><FlareIconView Value="@MaterialDesign3Icons.Regular.Warning" Size="12px" /> @Short(o.ActorName) @Pct(o.AllocatedHours, o.AvailableHours)%</span> }
-                        <span class="alva-day__hours alva-num"><b>@AlvaFormat.Hours(avail) ч</b> @(overloaded.Length > 0 ? $"Дефицит −{AlvaFormat.Hours(overloaded.Sum(o => o.AllocatedHours - o.AvailableHours))} ч" : alloc > 0 ? $"занято {AlvaFormat.Hours(alloc)}" : Strings.T("доступно"))</span>
+                        <span class="alva-day__hours alva-num"><b>@AlvaFormat.Hours(avail) @(Strings.T("ч"))</b> @(overloaded.Length > 0 ? string.Format(Strings.T("Дефицит −{0} ч"), AlvaFormat.Hours(overloaded.Sum(o => o.AllocatedHours - o.AvailableHours))) : alloc > 0 ? $"{Strings.T("занято")} {AlvaFormat.Hours(alloc)}" : Strings.T("доступно"))</span>
                     }
                 </div>
             }
@@ -76,11 +76,11 @@
             <section class="alva-panel">
                 <div class="alva-person-card"><span class="alva-slot__mark alva-person-head__avatar" aria-hidden="true">@AlvaFormat.Initials(focused.Name)</span><div><b>@focused.Name</b><small>@string.Join(" / ", _actors.Where(a => focused.RoleIds.Contains(a.Id)).Select(a => a.Name).DefaultIfEmpty(Strings.T("Участник команды")))</small></div></div>
                 <div class="alva-calc">
-                    <div><span>@(Strings.T("Фонд месяца по графику"))</span><b class="alva-num">@AlvaFormat.Hours(NominalOf(focused.Id)) ч</b></div>
-                    <div class="alva-calc--info"><span>@(Strings.T("Встречи и вычеты"))</span><b class="alva-num">−@AlvaFormat.Hours(Math.Max(0, NominalOf(focused.Id) - mine.Sum(r => r.AvailableHours) - AbsenceOf(focused.Id))) ч</b></div>
-                    <div class="alva-calc--minus"><span>@(Strings.T("Отпуска"))</span><b class="alva-num">−@AlvaFormat.Hours(AbsenceOf(focused.Id)) ч</b></div>
-                    <div class="alva-calc--total"><span>@(Strings.T("Чистая ёмкость"))</span><b class="alva-num">@AlvaFormat.Hours(mine.Sum(r => r.AvailableHours)) ч</b></div>
-                    <div><span>@(Strings.T("Запланировано задач"))</span><b class="alva-num @(mine.Sum(r => r.AllocatedHours) > mine.Sum(r => r.AvailableHours) ? "alva-kpi__alert" : "")">@AlvaFormat.Hours(mine.Sum(r => r.AllocatedHours)) ч</b></div>
+                    <div><span>@(Strings.T("Фонд месяца по графику"))</span><b class="alva-num">@AlvaFormat.Hours(NominalOf(focused.Id)) @(Strings.T("ч"))</b></div>
+                    <div class="alva-calc--info"><span>@(Strings.T("Встречи и вычеты"))</span><b class="alva-num">−@AlvaFormat.Hours(Math.Max(0, NominalOf(focused.Id) - mine.Sum(r => r.AvailableHours) - AbsenceOf(focused.Id))) @(Strings.T("ч"))</b></div>
+                    <div class="alva-calc--minus"><span>@(Strings.T("Отпуска"))</span><b class="alva-num">−@AlvaFormat.Hours(AbsenceOf(focused.Id)) @(Strings.T("ч"))</b></div>
+                    <div class="alva-calc--total"><span>@(Strings.T("Чистая ёмкость"))</span><b class="alva-num">@AlvaFormat.Hours(mine.Sum(r => r.AvailableHours)) @(Strings.T("ч"))</b></div>
+                    <div><span>@(Strings.T("Запланировано задач"))</span><b class="alva-num @(mine.Sum(r => r.AllocatedHours) > mine.Sum(r => r.AvailableHours) ? "alva-kpi__alert" : "")">@AlvaFormat.Hours(mine.Sum(r => r.AllocatedHours)) @(Strings.T("ч"))</b></div>
                 </div>
                 <FlareStack Row Wrap>
                     <FlareButton Href="@($"capacity/{focused.Id}")" Size="ButtonSize.Sm">@(Strings.T("Персональный календарь"))</FlareButton>

@@ -16,8 +16,8 @@ else if (!_busy)
 {
 <div class="alva-kpis">
     <section class="alva-kpi">
-        <div class="alva-kpi__head"><div><span class="alva-kpi__label">@(Strings.T("Задач под риском"))</span><span class="alva-num"><span class="alva-kpi__value">@_risks.Length</span> <span class="alva-kpi__unit">из @OpenTasks открытых</span></span></div><span class="alva-kpi__icon"><FlareIconView Value="@MaterialDesign3Icons.Regular.Warning" Size="18px" /></span></div>
-        <p class="alva-kpi__note">@(_risks.Length == 0 ? (_tasks.Length == 0 ? Strings.T("Нет задач для оценки") : Strings.T("Все сроки держатся")) : $"{Pct(_risks.Length, OpenTasks)}% открытых задач")</p>
+        <div class="alva-kpi__head"><div><span class="alva-kpi__label">@(Strings.T("Задач под риском"))</span><span class="alva-num"><span class="alva-kpi__value">@_risks.Length</span> <span class="alva-kpi__unit">@(Strings.T("из")) @OpenTasks @(Strings.T("открытых"))</span></span></div><span class="alva-kpi__icon"><FlareIconView Value="@MaterialDesign3Icons.Regular.Warning" Size="18px" /></span></div>
+        <p class="alva-kpi__note">@(_risks.Length == 0 ? (_tasks.Length == 0 ? Strings.T("Нет задач для оценки") : Strings.T("Все сроки держатся")) : string.Format(Strings.T("{0}% открытых задач"), Pct(_risks.Length, OpenTasks)))</p>
     </section>
     <section class="alva-kpi @(High > 0 ? "alva-kpi--critical" : "")">
         <div class="alva-kpi__head"><div><span class="alva-kpi__label">@(Strings.T("Высокий уровень"))</span><span class="alva-num"><span class="alva-kpi__value">@High</span> <span class="alva-kpi__unit">@AlvaFormat.Plural(High, "task")</span></span></div><span class="alva-kpi__icon"><FlareIconView Value="@MaterialDesign3Icons.Regular.Error" Size="18px" /></span></div>
@@ -25,7 +25,7 @@ else if (!_busy)
     </section>
     <section class="alva-kpi">
         <div class="alva-kpi__head"><div><span class="alva-kpi__label">@(Strings.T("Ближайший срыв"))</span><span class="alva-kpi__title">@(Nearest?.Risk.Title ?? Strings.T("Не ожидается"))</span></div><span class="alva-kpi__icon"><FlareIconView Value="@MaterialDesign3Icons.Regular.EventBusy" Size="18px" /></span></div>
-        <p class="alva-kpi__note alva-num">@(Nearest is { } n ? $"Срок {n.Due:d MMM}, прогноз {n.Risk.ForecastDate:d MMM} (+{Slip(n.Risk)} дн.)" : _tasks.Length == 0 ? Strings.T("Нет задач для оценки") : Strings.T("Прогнозы укладываются в сроки"))</p>
+        <p class="alva-kpi__note alva-num">@(Nearest is { } n ? string.Format(Strings.T("Срок {0:d MMM}, прогноз {1:d MMM} (+{2} дн.)"), n.Due, n.Risk.ForecastDate!.Value, Slip(n.Risk)) : _tasks.Length == 0 ? Strings.T("Нет задач для оценки") : Strings.T("Прогнозы укладываются в сроки"))</p>
     </section>
     <section class="alva-kpi">
         <div class="alva-kpi__head"><div><span class="alva-kpi__label">@(Strings.T("Без человека"))</span><span class="alva-num"><span class="alva-kpi__value">@Count(RiskKind.Unassigned)</span> <span class="alva-kpi__unit">@AlvaFormat.Plural(Count(RiskKind.Unassigned), "task")</span></span></div><span class="alva-kpi__icon"><FlareIconView Value="@MaterialDesign3Icons.Regular.PersonSearch" Size="18px" /></span></div>
@@ -36,7 +36,7 @@ else if (!_busy)
 <div class="alva-capacity-bar">
     <span class="alva-capacity-bar__label"><FlareIconView Value="@MaterialDesign3Icons.Regular.FilterList" Size="16px" /> @(Strings.T("Причины:"))</span>
     <div class="alva-quickfilter" role="group" aria-label="@(Strings.T("Фильтр по причине"))">
-        <button type="button" class="alva-quickfilter__item @(_kind is null ? "alva-quickfilter__item--active" : "")" aria-pressed="@(_kind is null)" @onclick="() => _kind = null">Все (@_risks.Length)</button>
+        <button type="button" class="alva-quickfilter__item @(_kind is null ? "alva-quickfilter__item--active" : "")" aria-pressed="@(_kind is null)" @onclick="() => _kind = null">@(Strings.T("Все")) (@_risks.Length)</button>
         @foreach (var kind in Kinds.Where(k => Count(k) > 0))
         {
             <button type="button" class="alva-quickfilter__item @(_kind == kind ? "alva-quickfilter__item--active" : "")" aria-pressed="@(_kind == kind)" @onclick="() => _kind = kind">@Label(kind) (@Count(kind))</button>
@@ -96,7 +96,7 @@ else
                 </span>
                 <span role="cell" class="alva-risk-table__dates alva-num">
                     <span>@(DueOf(task) is { } due ? due.ToString("d MMM") : Strings.T("без срока"))</span>
-                    <span class="@(slip > 0 ? "alva-risk-table__slip" : "")">@(risk.ForecastDate is { } forecast ? $"→ {forecast:d MMM}" : Strings.T("→ не рассчитан"))@(slip > 0 ? $" (+{slip} дн.)" : "")</span>
+                    <span class="@(slip > 0 ? "alva-risk-table__slip" : "")">@(risk.ForecastDate is { } forecast ? $"→ {forecast:d MMM}" : Strings.T("→ не рассчитан"))@(slip > 0 ? string.Format(Strings.T(" (+{0} дн.)"), slip) : "")</span>
                 </span>
             </div>
         }

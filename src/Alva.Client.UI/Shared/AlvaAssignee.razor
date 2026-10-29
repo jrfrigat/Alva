@@ -10,7 +10,7 @@ else if (Person is not null)
     <span class="alva-slot"><span class="alva-slot__mark" aria-hidden="true">@AlvaFormat.Initials(Person.Name)</span><span class="alva-slot__text"><span class="alva-slot__name">@Person.Name</span>
         @if (Load is { } load)
         {
-            <span class="alva-slot__meta @(load > 100 ? "alva-slot__meta--critical" : "")">@load% ёмкости@(load > 100 ? " (перегрузка)" : "")</span>
+            <span class="alva-slot__meta @(load > 100 ? "alva-slot__meta--critical" : "")">@load% @(Strings.T("ёмкости"))@(load > 100 ? $" ({Strings.T("перегруз")})" : "")</span>
         }
         else
         {

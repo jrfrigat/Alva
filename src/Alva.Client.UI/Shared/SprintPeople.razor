@@ -20,27 +20,27 @@
             <FlareDraggable Payload="@(new PersonDrag(person.Id))" @key="person.Id"
                             Class="@($"alva-person-card alva-person-card--{row.Tone}{(focused ? " alva-person-card--focus" : "")}")">
                 <button type="button" class="alva-person-card__main" aria-pressed="@focused" @onclick="() => Toggle(person.Id)"
-                        title="@($"{person.Name}: назначено {AlvaFormat.Hours(row.Allocated)} ч из {AlvaFormat.Hours(row.Available)} ч")">
+                        title="@string.Format(Strings.T("{0}: назначено {1} ч из {2} ч"), person.Name, AlvaFormat.Hours(row.Allocated), AlvaFormat.Hours(row.Available))">
                     <span class="alva-slot__mark" aria-hidden="true">@AlvaFormat.Initials(person.Name)</span>
                     <span class="alva-person-card__who">
                         <b>@person.Name</b>
                         <small>@row.Roles</small>
                     </span>
                     <span class="alva-person-card__free alva-num">
-                        <b>@(row.Free >= 0 ? $"{AlvaFormat.Hours(row.Free)} ч" : $"−{AlvaFormat.Hours(-row.Free)} ч")</b>
-                        <small>@(row.Free >= 0 ? "свободно" : Strings.T("перегруз"))</small>
+                        <b>@(row.Free >= 0 ? $"{AlvaFormat.Hours(row.Free)} {Strings.T("ч")}" : $"−{AlvaFormat.Hours(-row.Free)} {Strings.T("ч")}")</b>
+                        <small>@(row.Free >= 0 ? Strings.T("свободно") : Strings.T("перегруз"))</small>
                         @if (Shift.GetValueOrDefault(person.Id) is var shift && shift != 0)
                         {
                             var after = row.Free - shift;
                             <small class="alva-person-card__after alva-person-card__after--@(shift > 0 ? "more" : "less")" title="@(Strings.T("Свободно после применения предложения"))">
-                                → @(after >= 0 ? $"{AlvaFormat.Hours(after)} ч" : $"−{AlvaFormat.Hours(-after)} ч")
+                                → @(after >= 0 ? $"{AlvaFormat.Hours(after)} {Strings.T("ч")}" : $"−{AlvaFormat.Hours(-after)} {Strings.T("ч")}")
                             </small>
                         }
                     </span>
                 </button>
                 <span class="alva-loadbar__track" aria-hidden="true"><span class="alva-loadbar__fill alva-loadbar__fill--@row.Tone" style="width:@Math.Min(100, row.Percent)%"></span></span>
                 <span class="alva-person-card__foot alva-num">
-                    <span>@row.Percent% · @AlvaFormat.Hours(row.Allocated) / @AlvaFormat.Hours(row.Available) ч</span>
+                    <span>@row.Percent% · @AlvaFormat.Hours(row.Allocated) / @AlvaFormat.Hours(row.Available) @(Strings.T("ч"))</span>
                     @foreach (var absence in row.Absences)
                     {
                         <span class="alva-person-card__absence">@absence</span>
@@ -94,7 +94,7 @@
             var j = i;
             // Соседние рабочие дни (через выходные тоже) — один диапазон.
             while (j + 1 < off.Length && Enumerable.Range(1, off[j + 1].DayNumber - off[j].DayNumber - 1).All(k => GanttData.IsWeekend(off[j].AddDays(k)))) j++;
-            ranges.Add(i == j ? $"{off[i]:d MMM}: нет в графике" : $"{off[i]:d}–{off[j]:d MMM}: нет в графике");
+            ranges.Add(i == j ? string.Format(Strings.T("{0:d MMM}: нет в графике"), off[i]) : string.Format(Strings.T("{0:d}–{1:d MMM}: нет в графике"), off[i], off[j]));
             i = j + 1;
         }
         return [.. ranges];

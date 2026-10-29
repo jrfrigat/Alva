@@ -64,7 +64,7 @@
         if (string.IsNullOrEmpty(email)) _errors[Field.Email] = Strings.T("Укажите электронную почту.");
         else if (!System.Net.Mail.MailAddress.TryCreate(email, out var parsed) || parsed.Address != email) _errors[Field.Email] = Strings.T("Почта указана в неверном формате, например: name@company.ru.");
         if (string.IsNullOrEmpty(_password)) _errors[Field.Password] = Strings.T("Введите пароль.");
-        else if (_register && _password.Length is < MinPassword or > MaxPassword) _errors[Field.Password] = $"Пароль должен содержать от {MinPassword} до {MaxPassword} символов.";
+        else if (_register && _password.Length is < MinPassword or > MaxPassword) _errors[Field.Password] = string.Format(Strings.T("Пароль должен содержать от {0} до {1} символов."), MinPassword, MaxPassword);
     }
 
     // Фокус — на первое поле с ошибкой в порядке формы.

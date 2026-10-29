@@ -70,12 +70,12 @@
             <span class="alva-task__summary-label">@(Strings.T("Суммарно:"))</span>
             <span class="alva-task__summary-value alva-num">
                 <FlareIconView Value="@MaterialDesign3Icons.Regular.Schedule" Size="16px" />
-                @AlvaFormat.Hours(Children.Sum(c => c.EstimateHours ?? 0)) ч (@Children.Length @AlvaFormat.Plural(Children.Length, "subtask"))
+                @AlvaFormat.Hours(Children.Sum(c => c.EstimateHours ?? 0)) @(Strings.T("ч")) (@Children.Length @AlvaFormat.Plural(Children.Length, "subtask"))
             </span>
             @if (Children.Where(c => c.Deadline.HasValue).Select(c => c.Deadline!.Value).DefaultIfEmpty().Max() is var last && last != default)
             {
                 <span class="alva-task__summary-sep" aria-hidden="true"></span>
-                <span class="alva-task__summary-date alva-num"><FlareIconView Value="@MaterialDesign3Icons.Regular.Event" Size="16px" /> до @last.ToString("d MMM yyyy")</span>
+                <span class="alva-task__summary-date alva-num"><FlareIconView Value="@MaterialDesign3Icons.Regular.Event" Size="16px" /> @(Strings.T("до")) @last.ToString("d MMM yyyy")</span>
             }
         </div>
         <div class="alva-subtasks" role="table" aria-label="@(Strings.T("Подзадачи"))">
@@ -92,7 +92,7 @@
                         <a class="alva-subtasks__title" href="@($"tasks/{child.Id}")" title="@child.Title">@child.Title</a>
                     </span>
                     <span role="cell"><AlvaAssignee Task="child" Actors="Actors" /></span>
-                    <span class="alva-subtasks__est alva-num" role="cell">@(child.EstimateHours.HasValue ? $"{AlvaFormat.Hours(child.EstimateHours.Value)} ч" : "—")</span>
+                    <span class="alva-subtasks__est alva-num" role="cell">@(child.EstimateHours.HasValue ? $"{AlvaFormat.Hours(child.EstimateHours.Value)} {Strings.T("ч")}" : "—")</span>
                 </div>
             }
             <div class="alva-subtasks__add">
@@ -107,7 +107,7 @@
     <section class="alva-panel">
         <header class="alva-panel__header">
             <FlareIconView Value="@MaterialDesign3Icons.Regular.History" Size="20px" Class="alva-panel__icon" />
-            <h2 class="alva-panel__title">История изменений (@_history.Length)</h2>
+            <h2 class="alva-panel__title">@(Strings.T("История изменений")) (@_history.Length)</h2>
         </header>
         @if (_history.Length == 0) { <FlareEmptyState Compact Title="@(Strings.T("Изменений пока нет"))" Description="@(Strings.T("Правки задачи появятся здесь."))" /> }
         @foreach (var entry in _history)
@@ -129,7 +129,7 @@
             <FlareIconView Value="@MaterialDesign3Icons.Regular.PersonAdd" Size="22px" Class="alva-panel__icon" />
             <div>
                 <div class="alva-assign__title">@(Strings.T("Назначение исполнителя"))</div>
-                <div class="alva-assign__task alva-num">@Code(Item)@(Item.EstimateHours.HasValue ? $" ({AlvaFormat.Hours(Item.EstimateHours.Value)}ч)" : "")</div>
+                <div class="alva-assign__task alva-num">@Code(Item)@(Item.EstimateHours.HasValue ? $" ({AlvaFormat.Hours(Item.EstimateHours.Value)}{Strings.T("ч")})" : "")</div>
             </div>
         </div>
     </HeaderContent>
@@ -187,7 +187,7 @@
     {
         get
         {
-            yield return new("Задачи", "tasks");
+            yield return new(Strings.T("Задачи"), "tasks");
             if (Projects.FirstOrDefault(p => p.Id == Item.ProjectId) is { } project) yield return new(project.Name, "projects");
             if (Sprints.FirstOrDefault(s => Item.SprintIds.Contains(s.Id)) is { } sprint) yield return new(sprint.Name, $"sprints/{sprint.Id}");
             yield return new(Code(Item));
@@ -267,12 +267,12 @@
             .ThenBy(a => _load.ContainsKey(a.Id) ? Percent(a.Id) : int.MaxValue).ThenBy(a=>a.Name).ToArray();
         var recommended = kind == "Person" ? list.Where(a => SkillMath.Compatible(_model.RequiredSkills, a.Skills) && _load.ContainsKey(a.Id) && _load[a.Id].Available > 0).OrderBy(a => Percent(a.Id)).FirstOrDefault()?.Id : null;
         <div class="alva-assign__list">
-            <FlareTextField @bind-Value="_assignSearch" Immediate Clearable Placeholder="@($"Поиск по команде {Session.TeamName}…")" AriaLabel="@(Strings.T("Поиск кандидата"))">
+            <FlareTextField @bind-Value="_assignSearch" Immediate Clearable Placeholder="@string.Format(Strings.T("Поиск по команде {0}…"), Session.TeamName)" AriaLabel="@(Strings.T("Поиск кандидата"))">
                 <AdornmentStart><FlareIconView Value="@MaterialDesign3Icons.Regular.Search" Size="18px" /></AdornmentStart>
             </FlareTextField>
-            <div class="alva-assign__caption"><span>Кандидаты команды (@list.Length)</span>@if (kind == "Person") { <span>@(Strings.T("Ёмкость периода"))</span> }</div>
+            <div class="alva-assign__caption"><span>@(Strings.T("Кандидаты команды")) (@list.Length)</span>@if (kind == "Person") { <span>@(Strings.T("Ёмкость периода"))</span> }</div>
             @if (list.Length == 0) { <FlareEmptyState Compact Title="@(Strings.T("Никого не найдено"))" Description="@(Strings.T("Добавьте участников в разделе «Команда»."))" /> }
-            <FlareRadioGroup TValue="Guid?" @bind-Value="_assignTarget" Label="@($"Кандидаты: {Labels.Kind(kind)}")" Class="alva-assign__group">
+            <FlareRadioGroup TValue="Guid?" @bind-Value="_assignTarget" Label="@string.Format(Strings.T("Кандидаты: {0}"), Labels.Kind(kind))" Class="alva-assign__group">
                 @foreach (var actor in list)
                 {
                     var percent = kind == "Person" && _load.ContainsKey(actor.Id) ? Percent(actor.Id) : (int?)null;
@@ -291,7 +291,7 @@
                                     @if (percent is not null)
                                     {
                                         <span class="alva-candidate__state alva-candidate__state--@tone.ToString().ToLowerInvariant()">
-                                            @(percent > 100 ? $"Перегружен (дефицит {AlvaFormat.Hours(-reserve)}ч)" : percent > 80 ? $"Оптимально (резерв +{AlvaFormat.Hours(reserve)}ч)" : $"Свободен (резерв +{AlvaFormat.Hours(reserve)}ч)")
+                                            @(percent > 100 ? string.Format(Strings.T("Перегружен (дефицит {0}ч)"), AlvaFormat.Hours(-reserve)) : percent > 80 ? string.Format(Strings.T("Оптимально (резерв +{0}ч)"), AlvaFormat.Hours(reserve)) : string.Format(Strings.T("Свободен (резерв +{0}ч)"), AlvaFormat.Hours(reserve)))
                                         </span>
                                     }
                                     @if (actor.Id == Item.AssignmentTargetId || actor.Id == Item.ResolvedPersonId) { <span class="alva-candidate__current">@(Strings.T("Текущий исполнитель"))</span> }

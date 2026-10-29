@@ -25,7 +25,7 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
     public TeamInfo[] Teams { get; private set; } = [];
     public Guid? WorkspaceId { get; private set; }
     public Guid? TeamId { get; private set; }
-    public string TeamName => Teams.FirstOrDefault(t => t.Id == TeamId)?.Name ?? "Выбрать команду";
+    public string TeamName => Teams.FirstOrDefault(t => t.Id == TeamId)?.Name ?? Strings.T("Выбрать команду");
     public bool Initialized { get; private set; }
 
     /// <summary>Разбор JSON/CSV/XLSX и выгрузка живут на сервере; демо хранит данные только в этом браузере.</summary>
@@ -103,7 +103,7 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
     public Task Import(string format, Stream stream) => throw new NotSupportedException(DemoTransferNote);
 
     /// <summary>Почему в демо нет импорта и экспорта — показывается на странице «Данные» до выбора файла.</summary>
-    internal const string DemoTransferNote = "В демо данные хранятся только в этом браузере: импорт и экспорт файлов работают в версии Alva с сервером.";
+    internal static string DemoTransferNote => Strings.T("В демо данные хранятся только в этом браузере: импорт и экспорт файлов работают в версии Alva с сервером.");
 
     public async Task<T> Get<T>(string path)
     {

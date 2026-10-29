@@ -63,7 +63,7 @@
                     <FlareIconView Value="@MaterialDesign3Icons.Regular.Lock" Size="14px" />
                 </span>
             }
-            <span class="alva-gantt-row__meta">@Data.Assignee(task) · @AlvaFormat.Hours(task.EffectiveEstimateHours) ч</span>
+            <span class="alva-gantt-row__meta">@Data.Assignee(task) · @AlvaFormat.Hours(task.EffectiveEstimateHours) @(Strings.T("ч"))</span>
             <SkillMatch Required="task.RequiredSkills" Person="@(Data.Actor(task.ResolvedPersonId ?? task.AssignmentTargetId))" />
         </span>
         @if (RowActions is not null) { @RowActions(task) }

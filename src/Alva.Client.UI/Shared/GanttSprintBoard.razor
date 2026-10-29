@@ -7,7 +7,7 @@
     <header class="alva-panel__header">
         <FlareIconView Value="@MaterialDesign3Icons.Regular.WaterfallChart" Size="20px" Class="alva-panel__icon" />
         <div>
-            <h2 class="alva-panel__title">Синхронный Гантт 2D: @SprintCount @AlvaFormat.Plural(SprintCount, "sprint") на оси</h2>
+            <h2 class="alva-panel__title">@string.Format(Strings.T("Синхронный Гантт 2D: {0} на оси"), $"{SprintCount} {AlvaFormat.Plural(SprintCount, "sprint")}")</h2>
             <p class="alva-panel__subtitle">@(Strings.T("Бросьте задачу на день — она попадёт в спринт этого дня и получит срок; на строку человека — ещё и исполнителя. Человека — на полосу."))</p>
         </div>
         <GanttLegend Class="alva-plan-gantt__legend" Items="BoardKey">
@@ -33,7 +33,7 @@
                     <Header>@(Strings.T("Проекция 1: задачи спринтов"))</Header>
                     <RowActions Context="task">
                         <FlareIconButton Icon="@MaterialDesign3Icons.Regular.Close" Size="ButtonSize.Sm" Tooltip="@UnplanHint(task)"
-                                         AriaLabel="@($"Вернуть «{task.Title}» в бэклог")" OnClick="() => OnUnplan.InvokeAsync(task)" />
+                                         AriaLabel="@string.Format(Strings.T("Вернуть «{0}» в бэклог"), task.Title)" OnClick="() => OnUnplan.InvokeAsync(task)" />
                     </RowActions>
                 </GanttTaskPanel>
                 <GanttPeoplePanel People="People" Range="Range" Focus="Focus" OnChange="OnPeopleChange" OnLinkCreate="OnLinkCreate" OnLinkRejected="OnLinkRejected"
@@ -113,7 +113,7 @@
     {
         new("sprint", Strings.T("Выбранный спринт"), GanttLegendShape.Region),
         new("sprint-other", Strings.T("Другие спринты"), GanttLegendShape.Region),
-        new("overload", "Перегруз", GanttLegendShape.Cell)
+        new("overload", Strings.T("Перегруз"), GanttLegendShape.Cell)
     }.Concat(Suggested.Count > 0 ? [new GanttLegendItem("suggested", Strings.T("Предложение"), GanttLegendShape.Suggested)] : []);
 
     private static bool IsTask(object? payload) => payload is TaskDrag;

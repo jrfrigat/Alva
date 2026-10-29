@@ -374,7 +374,6 @@
   <data name="Пароль" xml:space="preserve"><value>Password</value></data>
   <data name="Первый спринт начинается с цели" xml:space="preserve"><value>The first sprint starts with a goal</value></data>
   <data name="перегруз" xml:space="preserve"><value>overload</value></data>
-  <data name="Перегрузка" xml:space="preserve"><value>Overload</value></data>
   <data name="Перейти в спринт" xml:space="preserve"><value>Go to the sprint</value></data>
   <data name="Перетащите задачу на Гантт — на день или на строку человека. Сюда — чтобы вернуть в бэклог." xml:space="preserve"><value>Drag a task onto the Gantt — onto a day or onto a person's row. Here — to return it to the backlog.</value></data>
   <data name="Перетащите человека на задачу, чтобы назначить. Клик — показать на Гантте." xml:space="preserve"><value>Drag a person onto a task to assign. Click — to show it on the Gantt.</value></data>
@@ -838,4 +837,116 @@
   <data name="plural.week.few" xml:space="preserve"><value>weeks</value></data>
   <data name="plural.week.many" xml:space="preserve"><value>weeks</value></data>
   <data name="plural.week.one" xml:space="preserve"><value>week</value></data>
+  <data name=" (+{0} дн.)" xml:space="preserve"><value> (+{0} d)</value></data>
+  <data name=" (день {0} из {1})" xml:space="preserve"><value> (day {0} of {1})</value></data>
+  <data name=" · Дедлайн: {0:d MMM}" xml:space="preserve"><value> · Deadline: {0:d MMM}</value></data>
+  <data name=" · до {0:d MMM}" xml:space="preserve"><value> · due {0:d MMM}</value></data>
+  <data name=" · под риском" xml:space="preserve"><value> · at risk</value></data>
+  <data name="— с проекцией на ёмкость спринтов." xml:space="preserve"><value>— projected onto sprint capacity.</value></data>
+  <data name="(+{0} ч)" xml:space="preserve"><value>(+{0} h)</value></data>
+  <data name=", вакансий: {0}" xml:space="preserve"><value>, vacancies: {0}</value></data>
+  <data name="{0:d MMM}: нет в графике" xml:space="preserve"><value>{0:d MMM}: not scheduled</value></data>
+  <data name="{0:d}–{1:d MMM}: нет в графике" xml:space="preserve"><value>{0:d}–{1:d MMM}: not scheduled</value></data>
+  <data name="{0} (+{1} ч)" xml:space="preserve"><value>{0} (+{1} h)</value></data>
+  <data name="{0} (осталось {1} дн.)" xml:space="preserve"><value>{0} ({1} d left)</value></data>
+  <data name="{0} / {1} ч" xml:space="preserve"><value>{0} / {1} h</value></data>
+  <data name="{0} · {1} ч без человека" xml:space="preserve"><value>{0} · {1} h without a person</value></data>
+  <data name="{0} не входит ни в один спринт — бросьте задачу на день внутри спринта." xml:space="preserve"><value>{0} is not in any sprint — drop the task on a day inside a sprint.</value></data>
+  <data name="−{0} ч" xml:space="preserve"><value>−{0} h</value></data>
+  <data name="{0}% открытых задач" xml:space="preserve"><value>{0}% of open tasks</value></data>
+  <data name="{0}: {1} ч" xml:space="preserve"><value>{0}: {1} h</value></data>
+  <data name="{0}: {1} ч без человека" xml:space="preserve"><value>{0}: {1} h without a person</value></data>
+  <data name="{0}: назначено {1} ч из {2} ч" xml:space="preserve"><value>{0}: {1} h assigned out of {2} h</value></data>
+  <data name="{0}: отсутствует" xml:space="preserve"><value>{0}: absent</value></data>
+  <data name="{0}: рабочий день" xml:space="preserve"><value>{0}: working day</value></data>
+  <data name="Alva не видит рисков срыва по задачам спринта." xml:space="preserve"><value>Alva sees no deadline risks in the sprint's tasks.</value></data>
+  <data name="Velocity (команда)" xml:space="preserve"><value>Velocity (team)</value></data>
+  <data name="в" xml:space="preserve"><value>in</value></data>
+  <data name="в перегрузе" xml:space="preserve"><value>overloaded</value></data>
+  <data name="В работе:" xml:space="preserve"><value>In progress:</value></data>
+  <data name="Вернуть «{0}» в бэклог" xml:space="preserve"><value>Return “{0}” to the backlog</value></data>
+  <data name="Все подкоманды" xml:space="preserve"><value>All sub-teams</value></data>
+  <data name="Вычет:" xml:space="preserve"><value>Deduction:</value></data>
+  <data name="График" xml:space="preserve"><value>Schedule</value></data>
+  <data name="График подкоманды" xml:space="preserve"><value>Sub-team schedule</value></data>
+  <data name="График подкоманды «{0}»" xml:space="preserve"><value>Sub-team schedule: “{0}”</value></data>
+  <data name="Даты сохранены, сдвинуто последователей: {0}" xml:space="preserve"><value>Dates saved; {0} successors moved</value></data>
+  <data name="Дефицит −{0} ч" xml:space="preserve"><value>Deficit −{0} h</value></data>
+  <data name="Дефицит периода: −{0} ч" xml:space="preserve"><value>Period deficit: −{0} h</value></data>
+  <data name="Дефицит: −{0} ч" xml:space="preserve"><value>Deficit: −{0} h</value></data>
+  <data name="для" xml:space="preserve"><value>for</value></data>
+  <data name="до" xml:space="preserve"><value>due</value></data>
+  <data name="дост." xml:space="preserve"><value>avail.</value></data>
+  <data name="еженедельно" xml:space="preserve"><value>weekly</value></data>
+  <data name="ёмкости" xml:space="preserve"><value>capacity</value></data>
+  <data name="Завершено:" xml:space="preserve"><value>Completed:</value></data>
+  <data name="Задач:" xml:space="preserve"><value>Tasks:</value></data>
+  <data name="Задачи на неделе" xml:space="preserve"><value>Tasks this week</value></data>
+  <data name="Закрыто {0} ч, в работе {1} ч из {2} ч" xml:space="preserve"><value>Closed {0} h, in progress {1} h of {2} h</value></data>
+  <data name="Закрыто {0} ч, в работе {1} ч, остаток {2} ч" xml:space="preserve"><value>Closed {0} h, in progress {1} h, remaining {2} h</value></data>
+  <data name="Запас +{0} ч" xml:space="preserve"><value>Reserve +{0} h</value></data>
+  <data name="Запланированные спринты" xml:space="preserve"><value>Planned sprints</value></data>
+  <data name="Запрос не выполнен ({0})." xml:space="preserve"><value>The request failed ({0}).</value></data>
+  <data name="Идёт в спринтах: " xml:space="preserve"><value>Runs in sprints: </value></data>
+  <data name="История изменений" xml:space="preserve"><value>Change history</value></data>
+  <data name="Кандидаты команды" xml:space="preserve"><value>Team candidates</value></data>
+  <data name="Кандидаты: {0}" xml:space="preserve"><value>Candidates: {0}</value></data>
+  <data name="Людей:" xml:space="preserve"><value>People:</value></data>
+  <data name="Набрано" xml:space="preserve"><value>Planned</value></data>
+  <data name="Недели" xml:space="preserve"><value>Weeks</value></data>
+  <data name="Недельный фонд:" xml:space="preserve"><value>Weekly fund:</value></data>
+  <data name="Неделя {0}" xml:space="preserve"><value>Week {0}</value></data>
+  <data name="Номинал по графику" xml:space="preserve"><value>Nominal schedule</value></data>
+  <data name="нужный темп" xml:space="preserve"><value>required pace</value></data>
+  <data name="овертайм" xml:space="preserve"><value>overtime</value></data>
+  <data name="Оптимально (резерв +{0}ч)" xml:space="preserve"><value>Optimal (reserve +{0} h)</value></data>
+  <data name="Осталось" xml:space="preserve"><value>Remaining</value></data>
+  <data name="Остаток:" xml:space="preserve"><value>Remaining:</value></data>
+  <data name="открытых" xml:space="preserve"><value>open</value></data>
+  <data name="Оценка:" xml:space="preserve"><value>Estimate:</value></data>
+  <data name="Пароль должен содержать от {0} до {1} символов." xml:space="preserve"><value>The password must contain from {0} to {1} characters.</value></data>
+  <data name="Перегружен (дефицит {0}ч)" xml:space="preserve"><value>Overloaded (deficit {0} h)</value></data>
+  <data name="Перегрузка: −{0} ч" xml:space="preserve"><value>Overload: −{0} h</value></data>
+  <data name="План:" xml:space="preserve"><value>Plan:</value></data>
+  <data name="Плановый горизонт:" xml:space="preserve"><value>Planning horizon:</value></data>
+  <data name="по задачам" xml:space="preserve"><value>across tasks</value></data>
+  <data name="под риском" xml:space="preserve"><value>at risk</value></data>
+  <data name="под риском срыва срока:" xml:space="preserve"><value>at risk of missing the deadline:</value></data>
+  <data name="Поиск по команде {0}…" xml:space="preserve"><value>Search the team {0}…</value></data>
+  <data name="Показано:" xml:space="preserve"><value>Shown:</value></data>
+  <data name="Применить выбранные" xml:space="preserve"><value>Apply selected</value></data>
+  <data name="Применить изменение «{0}»" xml:space="preserve"><value>Apply the change “{0}”</value></data>
+  <data name="Применить к" xml:space="preserve"><value>Apply to</value></data>
+  <data name="Проекция 2: дорожки ресурсов и ёмкость (часы)" xml:space="preserve"><value>View 2: resource lanes and capacity (hours)</value></data>
+  <data name="Пунктир на Гантте — куда уйдут задачи. Ничего не сохранено, пока вы не примените." xml:space="preserve"><value>The dashed line on the Gantt shows where tasks will move. Nothing is saved until you apply.</value></data>
+  <data name="раб." xml:space="preserve"><value>work.</value></data>
+  <data name="раб. дн." xml:space="preserve"><value>work days</value></data>
+  <data name="раб. дней" xml:space="preserve"><value>work days</value></data>
+  <data name="Рабочая неделя" xml:space="preserve"><value>Work week</value></data>
+  <data name="Рабочие часы, выходные, отпуска и повторяющиеся нерабочие интервалы" xml:space="preserve"><value>Working hours, days off, vacations and recurring non-working periods</value></data>
+  <data name="рабочих смен" xml:space="preserve"><value>work shifts</value></data>
+  <data name="Развёртка:" xml:space="preserve"><value>Spread:</value></data>
+  <data name="Резерв периода: +{0} ч" xml:space="preserve"><value>Period reserve: +{0} h</value></data>
+  <data name="Резерв: +{0} ч" xml:space="preserve"><value>Reserve: +{0} h</value></data>
+  <data name="Рекомендация автобаланса:" xml:space="preserve"><value>Auto-balance recommendation:</value></data>
+  <data name="риск:" xml:space="preserve"><value>risk:</value></data>
+  <data name="с риском" xml:space="preserve"><value>with risk</value></data>
+  <data name="Свободен (резерв +{0}ч)" xml:space="preserve"><value>Free (reserve +{0} h)</value></data>
+  <data name="Сводный баланс рабочего фонда, утилизация по подкомандам и ресурсные дефициты на горизонте" xml:space="preserve"><value>Combined work fund balance, sub-team utilization and resource deficits over the horizon</value></data>
+  <data name="Сеанс завершён. Войдите в Alva." xml:space="preserve"><value>The session has ended. Sign in to Alva.</value></data>
+  <data name="Синхронный Гантт 2D: {0} на оси" xml:space="preserve"><value>Synchronous 2D Gantt: {0} on the axis</value></data>
+  <data name="Средняя закрытая оценка за" xml:space="preserve"><value>Average closed estimate over</value></data>
+  <data name="Срок {0:d MMM}, прогноз {1:d MMM} (+{2} дн.)" xml:space="preserve"><value>Due {0:d MMM}, forecast {1:d MMM} (+{2} d)</value></data>
+  <data name="Старт через" xml:space="preserve"><value>Starts in</value></data>
+  <data name="Требуется: {0}" xml:space="preserve"><value>Required: {0}</value></data>
+  <data name="Удалить «{0}»" xml:space="preserve"><value>Delete “{0}”</value></data>
+  <data name="Удалить вычет «{0}»" xml:space="preserve"><value>Delete deduction “{0}”</value></data>
+  <data name="Финиш:" xml:space="preserve"><value>Finish:</value></data>
+  <data name="Фонд:" xml:space="preserve"><value>Fund:</value></data>
+  <data name="ч/день" xml:space="preserve"><value>h/day</value></data>
+  <data name="ч/нед" xml:space="preserve"><value>h/week</value></data>
+  <data name="Часы: {0}" xml:space="preserve"><value>Hours: {0}</value></data>
+  <data name="Штриховка — ожидание подзадач" xml:space="preserve"><value>Hatching — waiting for subtasks</value></data>
+  <data name="Перегрузка" xml:space="preserve"><value>Overload</value></data>
+  <data name="Язык" xml:space="preserve"><value>Language</value></data>
 </root>

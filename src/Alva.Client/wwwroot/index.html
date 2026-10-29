@@ -1,10 +1,36 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <base href="/" />
-  <title>Alva — планирование команды</title>
+  <title>Alva — team planning</title>
+  <script>
+    (function () {
+      function language() {
+        try {
+          var saved = localStorage.getItem('alva-culture');
+          if (saved) return saved.toLowerCase().indexOf('ru') === 0 ? 'ru' : 'en';
+        } catch (e) { }
+        return (navigator.language || 'en').toLowerCase().indexOf('ru') === 0 ? 'ru' : 'en';
+      }
+      function apply() {
+        var lang = language();
+        var ru = lang === 'ru';
+        document.documentElement.lang = lang;
+        document.title = ru ? 'Alva — планирование команды' : 'Alva — team planning';
+        var manifest = document.querySelector('link[rel="manifest"]');
+        if (manifest) manifest.setAttribute('href', ru ? 'manifest.ru.webmanifest' : 'manifest.webmanifest');
+        var splash = document.getElementById('flare-splash');
+        if (splash) splash.textContent = ru ? 'Загружаем Alva…' : 'Loading Alva…';
+        var error = document.getElementById('blazor-error-ui');
+        if (error) error.innerHTML = ru
+          ? 'Не удалось загрузить приложение. <a href=".">Перезагрузить</a>'
+          : 'Failed to load the application. <a href=".">Reload</a>';
+      }
+      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', apply); else apply();
+    })();
+  </script>
   <script src="_content/Flare.Components/js/flare-bootstrap.js" data-default-theme="alva" data-default-mode="light" data-default-palette="alva-sapphire"></script>
   <link href="_content/Flare.Components/css/flare-components.css" rel="stylesheet" />
   <link href="_content/Flare.Components.Gantt/css/gantt.css" rel="stylesheet" />
@@ -18,8 +44,8 @@
   <script type="importmap"></script>
 </head>
 <body>
-  <div id="app"><div id="flare-splash" role="status">Загружаем Alva…</div></div>
-  <div id="blazor-error-ui" role="alert">Не удалось загрузить приложение. <a href=".">Перезагрузить</a></div>
+  <div id="app"><div id="flare-splash" role="status">Loading Alva…</div></div>
+  <div id="blazor-error-ui" role="alert">Failed to load the application. <a href=".">Reload</a></div>
   <script src="_framework/blazor.webassembly.js"></script>
   <script>if ('serviceWorker' in navigator) navigator.serviceWorker.register('service-worker.js');</script>
 </body>

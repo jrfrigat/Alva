@@ -42,7 +42,7 @@
             }
             else
             {
-            <FlareButton OnClick="ToggleCulture" Variant="ButtonVariant.Text" Size="ButtonSize.Sm" aria-label="Language" title="Language">@(Cultures.Current == "ru" ? "EN" : "RU")</FlareButton>
+            <FlareButton OnClick="ToggleCulture" Variant="ButtonVariant.Text" Size="ButtonSize.Sm" aria-label="@(Strings.T("Язык"))" title="@(Strings.T("Язык"))">@(Cultures.Current == "ru" ? "EN" : "RU")</FlareButton>
             @if (Session.User is not null)
             {
                 <RiskBell />

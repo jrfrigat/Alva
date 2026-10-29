@@ -4,17 +4,17 @@
     <section class="alva-kpi">
         <div class="alva-kpi__head">
             <div><span class="alva-kpi__label">@(Strings.T("Текущий цикл"))</span><span class="alva-kpi__title">@(Active?.Name ?? Strings.T("Нет активного"))</span></div>
-            @if (Active is not null) { <AlvaStatusChip Tone="AlvaTone.Info">День @DayOf(Active) из @AlvaFormat.WorkDays(Active.StartDate, Active.EndDate)</AlvaStatusChip> }
+            @if (Active is not null) { <AlvaStatusChip Tone="AlvaTone.Info">@(Strings.T("День")) @DayOf(Active) @(Strings.T("из")) @AlvaFormat.WorkDays(Active.StartDate, Active.EndDate)</AlvaStatusChip> }
         </div>
         @if (Active is not null)
         {
             var (done, total) = Hours(Active);
-            <div class="alva-kpi__value-row"><span class="alva-kpi__value alva-num">@Percent(done, total)%</span><span class="alva-kpi__aside alva-num">@AlvaFormat.Hours(done) ч / @AlvaFormat.Hours(total) ч</span></div>
+            <div class="alva-kpi__value-row"><span class="alva-kpi__value alva-num">@Percent(done, total)%</span><span class="alva-kpi__aside alva-num">@AlvaFormat.Hours(done) @(Strings.T("ч")) / @AlvaFormat.Hours(total) @(Strings.T("ч"))</span></div>
             <FlareProgressLinear Value="@Percent(done, total)" aria-label="@(Strings.T("Закрыто часов спринта"))" />
             <div class="alva-kpi__foot">
-                @if (RisksOf(Active).Length > 0) { <span class="alva-kpi__alert"><FlareIconView Value="@MaterialDesign3Icons.Regular.Warning" Size="15px" /> @RisksOf(Active).Length @AlvaFormat.Plural(RisksOf(Active).Length, "task") под риском</span> }
+                @if (RisksOf(Active).Length > 0) { <span class="alva-kpi__alert"><FlareIconView Value="@MaterialDesign3Icons.Regular.Warning" Size="15px" /> @RisksOf(Active).Length @AlvaFormat.Plural(RisksOf(Active).Length, "task") @(Strings.T("под риском"))</span> }
                 else { <span>@(Strings.T("Рисков нет"))</span> }
-                <span class="alva-num">Финиш: @Active.EndDate.ToString("d MMM")</span>
+                <span class="alva-num">@(Strings.T("Финиш:")) @Active.EndDate.ToString("d MMM")</span>
             </div>
         }
         else { <p class="alva-kpi__empty">@(Strings.T("Запустите запланированный спринт, чтобы следить за ходом цикла."))</p> }
@@ -22,7 +22,7 @@
 
     <section class="alva-kpi">
         <div class="alva-kpi__head">
-            <div><span class="alva-kpi__label">@(Strings.T("Скорость & темп"))</span><span class="alva-kpi__title">Velocity (команда)</span></div>
+            <div><span class="alva-kpi__label">@(Strings.T("Скорость & темп"))</span><span class="alva-kpi__title">@(Strings.T("Velocity (команда)"))</span></div>
             <span class="alva-kpi__icon"><FlareIconView Value="@MaterialDesign3Icons.Regular.Speed" Size="18px" /></span>
         </div>
         @if (Velocity is { } v)
@@ -31,7 +31,7 @@
                 <span><span class="alva-kpi__value alva-num">@AlvaFormat.Hours(v.Current)</span> <span class="alva-kpi__unit">@(Strings.T("ч / нед"))</span></span>
                 @if (v.Trend is { } trend) { <AlvaStatusChip Tone="@(trend >= 0 ? AlvaTone.Ok : AlvaTone.Critical)">@(trend >= 0 ? "+" : "")@trend%</AlvaStatusChip> }
             </div>
-            <p class="alva-kpi__note">Средняя закрытая оценка за @v.Count @AlvaFormat.Plural(v.Count, "sprint")</p>
+            <p class="alva-kpi__note">@(Strings.T("Средняя закрытая оценка за")) @v.Count @AlvaFormat.Plural(v.Count, "sprint")</p>
         }
         else { <p class="alva-kpi__empty">@(Strings.T("Темп появится после первого завершённого спринта."))</p> }
     </section>
@@ -44,13 +44,13 @@
         @if (Active is not null && _capacity.TryGetValue(Active.Id, out var cap) && cap.Available > 0)
         {
             <div class="alva-kpi__value-row">
-                <span><span class="alva-kpi__value alva-num">@Percent(cap.Allocated, cap.Available)%</span> <span class="alva-kpi__unit alva-num">(@AlvaFormat.Hours(cap.Allocated) / @AlvaFormat.Hours(cap.Available) ч)</span></span>
-                <span class="alva-kpi__aside alva-kpi__aside--primary alva-num">Резерв @AlvaFormat.Hours(Math.Max(0, cap.Available - cap.Allocated)) ч</span>
+                <span><span class="alva-kpi__value alva-num">@Percent(cap.Allocated, cap.Available)%</span> <span class="alva-kpi__unit alva-num">(@AlvaFormat.Hours(cap.Allocated) / @AlvaFormat.Hours(cap.Available) @(Strings.T("ч")))</span></span>
+                <span class="alva-kpi__aside alva-kpi__aside--primary alva-num">@(Strings.T("Резерв")) @AlvaFormat.Hours(Math.Max(0, cap.Available - cap.Allocated)) @(Strings.T("ч"))</span>
             </div>
             <FlareProgressLinear Value="@Math.Min(100, Percent(cap.Allocated, cap.Available))" aria-label="@(Strings.T("Загрузка команды"))" />
             <div class="alva-kpi__foot">
-                @if (cap.Overloaded > 0) { <span class="alva-kpi__alert">@cap.Overloaded @AlvaFormat.Plural(cap.Overloaded, "person") в перегрузе</span> } else { <span>@(Strings.T("Без перегрузок"))</span> }
-                <span class="alva-num">Людей: @cap.People</span>
+                @if (cap.Overloaded > 0) { <span class="alva-kpi__alert">@cap.Overloaded @AlvaFormat.Plural(cap.Overloaded, "person") @(Strings.T("в перегрузе"))</span> } else { <span>@(Strings.T("Без перегрузок"))</span> }
+                <span class="alva-num">@(Strings.T("Людей:")) @cap.People</span>
             </div>
         }
         else { <p class="alva-kpi__empty">@(Strings.T("Нужен активный спринт и рабочие графики людей."))</p> }
@@ -109,9 +109,9 @@
             <div class="alva-iteration__main">
                 <div class="alva-iteration__chips">
                     <AlvaStatusChip Tone="AlvaTone.Ok">@(Strings.T("В работе"))</AlvaStatusChip>
-                    <AlvaStatusChip Tone="AlvaTone.Info">День @DayOf(sprint) из @AlvaFormat.WorkDays(sprint.StartDate, sprint.EndDate) · Осталось @DaysLeft(sprint) раб. @AlvaFormat.Plural(DaysLeft(sprint), "day")</AlvaStatusChip>
+                    <AlvaStatusChip Tone="AlvaTone.Info">@(Strings.T("День")) @DayOf(sprint) @(Strings.T("из")) @AlvaFormat.WorkDays(sprint.StartDate, sprint.EndDate) · @(Strings.T("Осталось")) @DaysLeft(sprint) @(Strings.T("раб.")) @AlvaFormat.Plural(DaysLeft(sprint), "day")</AlvaStatusChip>
                 </div>
-                <span class="alva-iteration__dates alva-num"><FlareIconView Value="@MaterialDesign3Icons.Regular.Schedule" Size="15px" /> @AlvaFormat.Period(sprint.StartDate, sprint.EndDate) (@AlvaFormat.WorkDays(sprint.StartDate, sprint.EndDate) раб. дней)</span>
+                <span class="alva-iteration__dates alva-num"><FlareIconView Value="@MaterialDesign3Icons.Regular.Schedule" Size="15px" /> @AlvaFormat.Period(sprint.StartDate, sprint.EndDate) (@AlvaFormat.WorkDays(sprint.StartDate, sprint.EndDate) @(Strings.T("раб. дней")))</span>
                 <h3 class="alva-iteration__title">@sprint.Name</h3>
                 @if (!string.IsNullOrWhiteSpace(sprint.Goal)) { <p class="alva-iteration__goal">@sprint.Goal</p> }
                 <div class="alva-iteration__line">
@@ -119,17 +119,17 @@
                     @foreach (var (name, share) in ProjectShares(tasks, sprint)) { <span class="alva-project-chip"><span class="alva-project-chip__dot" aria-hidden="true"></span>@name (@share%)</span> }
                 </div>
                 <div class="alva-iteration__line">
-                    <span class="alva-iteration__label">Команда (@PeopleOf(tasks).Length):</span>
+                    <span class="alva-iteration__label">@(Strings.T("Команда")) (@PeopleOf(tasks).Length):</span>
                     <span class="alva-avatars">@foreach (var person in PeopleOf(tasks)) { <span class="alva-slot__mark" title="@person.Name">@AlvaFormat.Initials(person.Name)</span> }</span>
                     @if (tasks.Count(t => Assignees.Person(t, _actors) is null) is > 0 and var unassigned) { <span class="alva-iteration__hint">@(Strings.T("Без исполнителя:")) @unassigned</span> }
                 </div>
             </div>
             <div class="alva-iteration__side">
                 <div class="alva-iteration__progress-head"><span>@(Strings.T("Прогресс выполнения спринта"))</span><span class="alva-iteration__percent alva-num">@Percent(done, total)%</span></div>
-                <div class="alva-stacked" role="img" aria-label="@($"Закрыто {AlvaFormat.Hours(done)} ч, в работе {AlvaFormat.Hours(inWork)} ч из {AlvaFormat.Hours(total)} ч")">
+                <div class="alva-stacked" role="img" aria-label="@string.Format(Strings.T("Закрыто {0} ч, в работе {1} ч из {2} ч"), AlvaFormat.Hours(done), AlvaFormat.Hours(inWork), AlvaFormat.Hours(total))">
                     <span class="alva-stacked__done" style="width:@Percent(done, total)%"></span><span class="alva-stacked__work" style="width:@Percent(inWork, total)%"></span>
                 </div>
-                <div class="alva-iteration__legend alva-num"><span>Закрыто: @AlvaFormat.Hours(done) ч</span><span>В работе: @AlvaFormat.Hours(inWork) ч</span><span>Остаток: @AlvaFormat.Hours(total - done) ч / @AlvaFormat.Hours(total) ч</span></div>
+                <div class="alva-iteration__legend alva-num"><span>@(Strings.T("Закрыто:")) @AlvaFormat.Hours(done) @(Strings.T("ч"))</span><span>@(Strings.T("В работе:")) @AlvaFormat.Hours(inWork) @(Strings.T("ч"))</span><span>@(Strings.T("Остаток:")) @AlvaFormat.Hours(total - done) @(Strings.T("ч")) / @AlvaFormat.Hours(total) @(Strings.T("ч"))</span></div>
                 <div class="alva-iteration__stats">
                     <div><span>@(Strings.T("Всего"))</span><b class="alva-num">@tasks.Length</b></div>
                     <div class="alva-iteration__stat--info"><span>@(Strings.T("В работе"))</span><b class="alva-num">@tasks.Count(t => t.Status == "InProgress")</b></div>
@@ -139,7 +139,7 @@
                 @if (risks.Length > 0)
                 {
                     <div class="alva-iteration__risks">
-                        <span class="alva-iteration__risks-title"><FlareIconView Value="@MaterialDesign3Icons.Regular.Error" Size="16px" /> @risks.Length @AlvaFormat.Plural(risks.Length, "task") под риском срыва срока:</span>
+                        <span class="alva-iteration__risks-title"><FlareIconView Value="@MaterialDesign3Icons.Regular.Error" Size="16px" /> @risks.Length @AlvaFormat.Plural(risks.Length, "task") @(Strings.T("под риском срыва срока:"))</span>
                         <ul>
                             @foreach (var risk in risks.Take(3))
                             {
@@ -175,7 +175,7 @@
 
 @if (Show("Planned") && Visible("Planned").Any())
 {
-    <h2 class="alva-section-title"><FlareIconView Value="@MaterialDesign3Icons.Regular.EventAvailable" Size="18px" /> Запланированные спринты (@Visible("Planned").Count())</h2>
+    <h2 class="alva-section-title"><FlareIconView Value="@MaterialDesign3Icons.Regular.EventAvailable" Size="18px" /> @(Strings.T("Запланированные спринты")) (@Visible("Planned").Count())</h2>
     <div class="alva-sprint-cards">
         @foreach (var sprint in Visible("Planned"))
         {
@@ -185,17 +185,17 @@
             <section class="alva-sprint-card" @key="sprint.Id">
                 <div class="alva-sprint-card__head">
                     <span class="alva-sprint-card__dates alva-num"><FlareIconView Value="@MaterialDesign3Icons.Regular.Event" Size="15px" /> @AlvaFormat.Period(sprint.StartDate, sprint.EndDate)</span>
-                    @if (available > 0) { <AlvaStatusChip Tone="@(total > available ? AlvaTone.Critical : AlvaTone.Ok)">Набрано @Percent(total, available)%</AlvaStatusChip> }
+                    @if (available > 0) { <AlvaStatusChip Tone="@(total > available ? AlvaTone.Critical : AlvaTone.Ok)">@(Strings.T("Набрано")) @Percent(total, available)%</AlvaStatusChip> }
                 </div>
                 <h3 class="alva-sprint-card__title">@sprint.Name</h3>
                 @if (!string.IsNullOrWhiteSpace(sprint.Goal)) { <p class="alva-sprint-card__goal">@sprint.Goal</p> }
                 <div class="alva-sprint-card__balance">
-                    <div class="alva-sprint-card__balance-row"><span>@(Strings.T("Баланс ёмкости команды:"))</span><b class="alva-num">@AlvaFormat.Hours(total) ч набрано / @(available > 0 ? $"{AlvaFormat.Hours(available)} ч доступно" : Strings.T("график не задан"))</b></div>
+                    <div class="alva-sprint-card__balance-row"><span>@(Strings.T("Баланс ёмкости команды:"))</span><b class="alva-num">@AlvaFormat.Hours(total) @(Strings.T("ч")) @(Strings.T("набрано")) / @(available > 0 ? $"{AlvaFormat.Hours(available)} {Strings.T("ч")} {Strings.T("доступно")}" : Strings.T("график не задан"))</b></div>
                     <FlareProgressLinear Value="@(available > 0 ? Math.Min(100, Percent(total, available)) : 0)" aria-label="@(Strings.T("Набрано от доступного"))" />
                     <span class="alva-sprint-card__count">@tasks.Length @AlvaFormat.Plural(tasks.Length, "taskIncluded")</span>
                 </div>
                 <div class="alva-sprint-card__footer">
-                    <span class="alva-num">Старт через @Math.Max(0, sprint.StartDate.DayNumber - Today.DayNumber) дн.</span>
+                    <span class="alva-num">@(Strings.T("Старт через")) @Math.Max(0, sprint.StartDate.DayNumber - Today.DayNumber) @(Strings.T("дн."))</span>
                     <FlareButton Href="@($"sprints/{sprint.Id}/plan")" Size="ButtonSize.Sm">
                         <ChildContent>@(Strings.T("Открыть планирование"))</ChildContent>
                         <TrailingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.ArrowForward" Size="16px" /></TrailingIcon>
@@ -222,9 +222,9 @@
                 <span role="cell">
                     @if (open <= 0) { <AlvaStatusChip Tone="AlvaTone.Ok">@(Strings.T("Завершён"))</AlvaStatusChip> }
                     else { <AlvaStatusChip Tone="AlvaTone.Warning">@(Strings.T("Не закрыто")) @AlvaFormat.Hours(open) @(Strings.T("ч"))</AlvaStatusChip> }
-                    @if (sprint.Commitment is { } committed && sprint.Result is { } closed) { <span class="alva-archive__meta alva-num">@(Strings.T("Обязательство")) @AlvaFormat.Hours(committed.Hours) ч → @(Strings.T("итог")) @AlvaFormat.Hours(closed.Hours) ч</span> }
+                    @if (sprint.Commitment is { } committed && sprint.Result is { } closed) { <span class="alva-archive__meta alva-num">@(Strings.T("Обязательство")) @AlvaFormat.Hours(committed.Hours) @(Strings.T("ч")) → @(Strings.T("итог")) @AlvaFormat.Hours(closed.Hours) @(Strings.T("ч"))</span> }
                 </span>
-                <span role="cell" class="alva-archive__yield"><span class="alva-num">@AlvaFormat.Hours(done) ч / @AlvaFormat.Hours(total) ч</span><FlareProgressLinear Value="@Percent(done, total)" aria-label="@(Strings.T("Выработка"))" /></span>
+                <span role="cell" class="alva-archive__yield"><span class="alva-num">@AlvaFormat.Hours(done) @(Strings.T("ч")) / @AlvaFormat.Hours(total) @(Strings.T("ч"))</span><FlareProgressLinear Value="@Percent(done, total)" aria-label="@(Strings.T("Выработка"))" /></span>
                 <span role="cell" class="alva-num"><b>@AlvaFormat.Hours(WeeklyPace(sprint))</b> @(Strings.T("ч / нед"))</span>
             </div>
         }

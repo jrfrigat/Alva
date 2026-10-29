@@ -86,7 +86,7 @@ else if (_data is not null && _people is not null)
         new("demand", Strings.T("Нужен человек"), GanttLegendShape.Cell)
     ];
 
-    private static readonly RenderFragment PeopleHeader = @<span>Проекция 2: дорожки ресурсов и ёмкость (часы)</span>;
+    private static readonly RenderFragment PeopleHeader = @<span>@(Strings.T("Проекция 2: дорожки ресурсов и ёмкость (часы)"))</span>;
 
     private static DateOnly Today => DateOnly.FromDateTime(DateTime.Today);
     private SprintModel? Sprint => _data?.Sprint(_sprintId);

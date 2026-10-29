@@ -4,7 +4,7 @@
 @page "/my-work"
 @inject AlvaSession Session
 @inject NavigationManager Navigation
-<PageTitle>@(Current is null ? "Задачи" : Current.Title) · Alva</PageTitle>
+<PageTitle>@(Current is null ? Strings.T("Задачи") : Current.Title) · Alva</PageTitle>
 @if (Current is not null)
 {
     <PageFeedback Error="@_error" Loading="_busy" />
@@ -48,7 +48,7 @@ else
                и отменяет собственную навигацию ссылки, чтобы не было второй. *@
             <span @onclick:stopPropagation="true" @onclick="() => Open(task)" @onclick:preventDefault="true"><FlareLink Href="@($"tasks/{task!.Id}")">@task.Title</FlareLink></span><AlvaStatusChip Tone="AlvaTones.Status(task.Status)">@Labels.Status(task.Status)</AlvaStatusChip>
             @if(task.Priority is "High" or "Critical") { <AlvaStatusChip Tone="AlvaTones.Priority(task.Priority)">@Labels.Priority(task.Priority)</AlvaStatusChip> }
-            @if(task.EstimateHours.HasValue) { <FlareText Typo="TypographyScale.LabelSmall">@task.EstimateHours ч</FlareText> }
+            @if(task.EstimateHours.HasValue) { <FlareText Typo="TypographyScale.LabelSmall">@task.EstimateHours @(Strings.T("ч"))</FlareText> }
         </FlareStack></ItemTemplate>
     </FlareDataTree>
     }

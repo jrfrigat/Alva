@@ -109,24 +109,25 @@ public sealed class GanttPeopleData
             var children = people.Where(p => GroupOf(p) == group).Select(PersonRow)
                 .Concat(roles.Where(r => GroupOfRole(r) == group).Select(RoleRow)).ToArray();
             if (children.Length == 0) continue;
-            var name = group is { } id ? Data.Actor(id)!.Name : Strings.T(Strings.T("Без подкоманды"));
+            var name = group is { } id ? Data.Actor(id)!.Name : Strings.T("Без подкоманды");
             var count = children.Count(c => c.Kind == "person");
             rows.Add(new PeopleRow(GroupKey(group), "group", name, $"{count} {AlvaFormat.Plural(count, "person")}", Data.Actor(group), children));
         }
-        rows.Add(new PeopleRow(Pool, "pool", Strings.T(Strings.T("Не назначено")), Strings.T(Strings.T("Задачи без исполнителя")), null, []));
+        rows.Add(new PeopleRow(Pool, "pool", Strings.T("Не назначено"), Strings.T("Задачи без исполнителя"), null, []));
         return rows;
     }
 
     private PeopleRow PersonRow(ActorModel person)
     {
         var rows = _capacityOf[person.Id].ToArray();
-        var roles = string.Join(" / ", Data.Actors.Where(a => person.RoleIds.Contains(a.Id)).Select(a => a.Name).DefaultIfEmpty(Strings.T(Strings.T("Участник команды"))));
-        var load = $"{AlvaFormat.Hours(rows.Sum(r => r.AllocatedHours))} / {AlvaFormat.Hours(rows.Sum(r => r.AvailableHours))} ч";
+        var roles = string.Join(" / ", Data.Actors.Where(a => person.RoleIds.Contains(a.Id)).Select(a => a.Name).DefaultIfEmpty(Strings.T("Участник команды")));
+        var load = string.Format(Strings.T("{0} / {1} ч"), AlvaFormat.Hours(rows.Sum(r => r.AllocatedHours)), AlvaFormat.Hours(rows.Sum(r => r.AvailableHours)));
         return new PeopleRow(PersonKey(person.Id), "person", person.Name, $"{roles} · {load}", person, []);
     }
 
     private PeopleRow RoleRow(ActorModel role) =>
-        new(RoleKey(role.Id), "role", $"Требуется: {role.Name}", $"{Labels.Kind(role.Kind)} · {AlvaFormat.Hours(Demand(role.Id))} ч без человека", role, []);
+        new(RoleKey(role.Id), "role", string.Format(Strings.T("Требуется: {0}"), role.Name),
+            string.Format(Strings.T("{0} · {1} ч без человека"), Labels.Kind(role.Kind), AlvaFormat.Hours(Demand(role.Id))), role, []);
 
     // Группа человека и роли — тем же правилом, что в обзоре ёмкости: первая подкоманда человека, подкоманда-родитель роли.
     private Guid? GroupOf(ActorModel person) => person.DepartmentIds.FirstOrDefault(id => _departments.Any(d => d.Id == id)) is var id && id != Guid.Empty ? id : null;
@@ -162,13 +163,13 @@ public sealed class GanttPeopleData
                 var days = _capacityOf[row.Actor!.Id].Where(c => c.Date >= from && c.Date <= to).ToArray();
                 var available = days.Sum(d => d.AvailableHours);
                 var allocated = days.Sum(d => d.AllocatedHours);
-                var title = $"{row.Name}: назначено {AlvaFormat.Hours(allocated)} ч из {AlvaFormat.Hours(available)} ч";
+                var title = string.Format(Strings.T("{0}: назначено {1} ч из {2} ч"), row.Name, AlvaFormat.Hours(allocated), AlvaFormat.Hours(available));
                 if (available == 0 && allocated == 0)
                 {
                     // Выходные — фон оси; пустой рабочий период у человека с графиком — отсутствие.
                     if (Enumerable.Range(0, to.DayNumber - from.DayNumber + 1).All(i => GanttData.IsWeekend(from.AddDays(i)))) continue;
                     if (!_capacityOf[row.Actor!.Id].Any(c => c.AvailableHours > 0)) continue;
-                    yield return new GanttCell(row.Key, span, "absence", "—", $"{row.Name}: отсутствует");
+                    yield return new GanttCell(row.Key, span, "absence", "—", string.Format(Strings.T("{0}: отсутствует"), row.Name));
                     continue;
                 }
                 var kind = allocated > available ? "overload" : allocated == 0 ? "free" : "load";
@@ -177,13 +178,14 @@ public sealed class GanttPeopleData
             else if (row.Kind == "role")
             {
                 var hours = _demandOf[row.Actor!.Id].Where(d => d.Date >= from && d.Date <= to).Sum(d => d.Hours);
-                if (hours > 0) yield return new GanttCell(row.Key, span, "demand", Hours(hours, scale), $"{row.Name}: {AlvaFormat.Hours(hours)} ч без человека");
+                if (hours > 0) yield return new GanttCell(row.Key, span, "demand", Hours(hours, scale),
+                    string.Format(Strings.T("{0}: {1} ч без человека"), row.Name, AlvaFormat.Hours(hours)));
             }
         }
     }
 
     // В дне места только на число; неделе и месяцу хватает на единицу измерения.
-    private static string Hours(decimal hours, GanttScale scale) => scale == GanttScale.Day ? AlvaFormat.Hours(hours) : $"{AlvaFormat.Hours(hours)} ч";
+    private static string Hours(decimal hours, GanttScale scale) => scale == GanttScale.Day ? AlvaFormat.Hours(hours) : $"{AlvaFormat.Hours(hours)} {Strings.T("ч")}";
 
     /// <summary>Единицы оси, обрезанные окном: дни, недели с понедельника или календарные месяцы.</summary>
     private static IEnumerable<(DateOnly From, DateOnly To)> Units(GanttScale scale, DateOnly first, DateOnly last)
@@ -212,12 +214,12 @@ public sealed class GanttPeopleData
         if (primary?.RowKey is { } row && IsGroup(row)) throw new InvalidOperationException(GroupRefusal);
         await Data.Save(session, args.Changes);
         if (primary?.RowKey is not { } target || Data.Task(args.ItemKey) is not { } task)
-            return args.Changes.Count > 1 ? $"Даты сохранены, сдвинуто последователей: {args.Changes.Count - 1}" : Strings.T(Strings.T("Даты сохранены"));
+            return args.Changes.Count > 1 ? string.Format(Strings.T("Даты сохранены, сдвинуто последователей: {0}"), args.Changes.Count - 1) : Strings.T("Даты сохранены");
         await Reassign(session, task, target);
-        return target == Pool ? Strings.T(Strings.T("Назначение снято")) : Strings.T(Strings.T("Задача переназначена"));
+        return target == Pool ? Strings.T("Назначение снято") : Strings.T("Задача переназначена");
     }
 
-    public static readonly string GroupRefusal = Strings.T(Strings.T("Задачу нельзя назначить на группу — выберите человека или роль."));
+    public static readonly string GroupRefusal = Strings.T("Задачу нельзя назначить на группу — выберите человека или роль.");
 
     /// <summary>Строка проекции людей, а не ключ задачи: человек, роль, группа или «Не назначено».</summary>
     public static bool IsRowKey(string key) => key == Pool || key.Length > 2 && key[1] == ':';
@@ -231,7 +233,7 @@ public sealed class GanttPeopleData
         var path = session.TeamPath($"tasks/{task.Id}/assignment");
         if (rowKey == Pool) return session.Send(HttpMethod.Delete, path, new { });
         if (IsGroup(rowKey)) throw new InvalidOperationException(GroupRefusal);
-        var actor = Data.Actor(Guid.ParseExact(rowKey[2..], "N")) ?? throw new InvalidOperationException(Strings.T(Strings.T("Исполнитель не найден.")));
+        var actor = Data.Actor(Guid.ParseExact(rowKey[2..], "N")) ?? throw new InvalidOperationException(Strings.T("Исполнитель не найден."));
         if (actor.Kind != "Person") return session.Send(HttpMethod.Put, path, new AssignmentRequest(actor.Id));
         var keep = Data.Actor(task.AssignmentTargetId) is { Kind: not "Person" } target
             && (actor.RoleIds.Contains(target.Id) || actor.DepartmentIds.Contains(target.Id));

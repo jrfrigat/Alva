@@ -6,15 +6,15 @@
     <div class="alva-page-header__text">
         @if (IsDepartment)
         {
-            <FlareBreadcrumb Items="@(new BreadcrumbItem[] { new("Команда", "team"), new(Strings.T("Подкоманды"), "team/departments"), new(Actor!.Name), new("График подкоманды") })" Separator="›" AriaLabel="@(Strings.T("Путь к редактору"))" />
-            <h1 class="alva-page-header__title">График подкоманды «@Actor.Name»</h1>
+            <FlareBreadcrumb Items="@(new BreadcrumbItem[] { new(Strings.T("Команда"), "team"), new(Strings.T("Подкоманды"), "team/departments"), new(Actor!.Name), new(Strings.T("График подкоманды")) })" Separator="›" AriaLabel="@(Strings.T("Путь к редактору"))" />
+            <h1 class="alva-page-header__title">@string.Format(Strings.T("График подкоманды «{0}»"), Actor.Name)</h1>
             <p class="alva-page-header__desc">@(Strings.T("Общие нерабочие дни и повторяющиеся встречи подкоманды. Они вычитаются из ёмкости всех её участников и вложенных подкоманд поверх их личных графиков."))</p>
         }
         else
         {
             <FlareBreadcrumb Items="@(new BreadcrumbItem[] { new(Strings.T("Ёмкость"), "capacity"), new(Strings.T("Графики людей"), "capacity/people"), new(Person?.Name ?? Strings.T("Сотрудник"), $"capacity/{ActorId}"), new(Strings.T("Редактор графика")) })" Separator="›" AriaLabel="@(Strings.T("Путь к редактору"))" />
             <h1 class="alva-page-header__title">@(Strings.T("Редактор рабочего графика"))</h1>
-            <p class="alva-page-header__desc">Рабочие часы, выходные, отпуска и повторяющиеся нерабочие интервалы @(Person is null ? "" : $"для {Person.Name}") — с проекцией на ёмкость спринтов.</p>
+            <p class="alva-page-header__desc">@(Strings.T("Рабочие часы, выходные, отпуска и повторяющиеся нерабочие интервалы")) @(Person is null ? "" : $"{Strings.T("для")} {Person.Name}") @(Strings.T("— с проекцией на ёмкость спринтов."))</p>
         }
     </div>
     @if (!IsDepartment)
@@ -39,7 +39,7 @@
                 <FlareCheckbox TValue="bool" Value="_applyTo.Contains(person.Id)" ValueChanged="(bool on) => Toggle(person.Id, on)">@person.Name</FlareCheckbox>
             }
         </div>
-        <FlareStack Row><FlareButton Size="ButtonSize.Sm" Loading="_busy" Disabled="@(_applyTo.Count == 0)" OnClick="Apply">Применить к @_applyTo.Count @AlvaFormat.Plural(_applyTo.Count, "employee")</FlareButton></FlareStack>
+        <FlareStack Row><FlareButton Size="ButtonSize.Sm" Loading="_busy" Disabled="@(_applyTo.Count == 0)" OnClick="Apply">@(Strings.T("Применить к")) @_applyTo.Count @AlvaFormat.Plural(_applyTo.Count, "employee")</FlareButton></FlareStack>
     </section>
 }
 
@@ -50,9 +50,9 @@
         @if (!IsDepartment)
         {
         <section class="alva-panel">
-            <header class="alva-panel__header"><FlareIconView Value="@MaterialDesign3Icons.Regular.EditCalendar" Size="20px" Class="alva-panel__icon" /><div><h2 class="alva-panel__title">Рабочая неделя @(Person?.Name)</h2><p class="alva-panel__subtitle">@(Strings.T("Базовый цикл рабочей недели и часовой пояс"))</p></div></header>
+            <header class="alva-panel__header"><FlareIconView Value="@MaterialDesign3Icons.Regular.EditCalendar" Size="20px" Class="alva-panel__icon" /><div><h2 class="alva-panel__title">@(Strings.T("Рабочая неделя")) @(Person?.Name)</h2><p class="alva-panel__subtitle">@(Strings.T("Базовый цикл рабочей недели и часовой пояс"))</p></div></header>
             <div class="alva-schedule__meta">
-                <span class="alva-chip alva-chip--info alva-num">Недельный фонд: @AlvaFormat.Hours(_hours.Sum()) ч</span>
+                <span class="alva-chip alva-chip--info alva-num">@(Strings.T("Недельный фонд:")) @AlvaFormat.Hours(_hours.Sum()) @(Strings.T("ч"))</span>
                 <FlareTextField Label="@(Strings.T("Часовой пояс IANA"))" @bind-Value="_timeZone" HelperText="@(Strings.T("Например, Europe/Moscow"))" />
             </div>
             <div class="alva-week" role="table" aria-label="@(Strings.T("Рабочие часы по дням недели"))">
@@ -63,10 +63,10 @@
                     var blocks = BlocksOn(day);
                     <div class="alva-week__row @(_hours[day] == 0 ? "alva-week__row--off" : "")" role="row" @key="day">
                         <span role="cell" class="alva-week__day"><span class="alva-week__abbr">@Abbr[day]</span>@DayNames[day]</span>
-                        <span role="cell" class="alva-week__cell"><span class="alva-week__label">@(Strings.T("Рабочий"))</span><FlareSwitch Value="@(_hours[day] > 0)" ValueChanged="(bool on) => _hours[day] = on ? (_lastHours[day] > 0 ? _lastHours[day] : 8) : Remember(day)" Label="@($"{DayNames[day]}: рабочий день")" /></span>
-                        <span role="cell" class="alva-week__cell"><span class="alva-week__label">@(Strings.T("Часов в день"))</span>@if (_hours[day] > 0) { <FlareNumericField TValue="decimal" Value="_hours[day]" ValueChanged="(decimal v) => _hours[day] = v" Min="0" Max="24" Step="0.5" Suffix="@(Strings.T("ч"))" InputAttributes="@(new Dictionary<string, object> { ["aria-label"] = $"Часы: {DayNames[day]}" })" Size="FieldSize.Sm" /> } else { <span class="alva-week__muted">@(Strings.T("Выходной день"))</span> }</span>
-                        <span role="cell" class="alva-week__cell alva-num alva-week__muted"><span class="alva-week__label">@(Strings.T("Вычеты"))</span>@(blocks > 0 ? $"−{AlvaFormat.Hours(blocks)} ч" : "—")</span>
-                        <span role="cell" class="alva-week__cell alva-num alva-week__net"><span class="alva-week__label">@(Strings.T("Чистые часы"))</span>@AlvaFormat.Hours(Math.Max(0, _hours[day] - blocks)) ч</span>
+                        <span role="cell" class="alva-week__cell"><span class="alva-week__label">@(Strings.T("Рабочий"))</span><FlareSwitch Value="@(_hours[day] > 0)" ValueChanged="(bool on) => _hours[day] = on ? (_lastHours[day] > 0 ? _lastHours[day] : 8) : Remember(day)" Label="@string.Format(Strings.T("{0}: рабочий день"), DayNames[day])" /></span>
+                        <span role="cell" class="alva-week__cell"><span class="alva-week__label">@(Strings.T("Часов в день"))</span>@if (_hours[day] > 0) { <FlareNumericField TValue="decimal" Value="_hours[day]" ValueChanged="(decimal v) => _hours[day] = v" Min="0" Max="24" Step="0.5" Suffix="@(Strings.T("ч"))" InputAttributes="@(new Dictionary<string, object> { ["aria-label"] = string.Format(Strings.T("Часы: {0}"), DayNames[day]) })" Size="FieldSize.Sm" /> } else { <span class="alva-week__muted">@(Strings.T("Выходной день"))</span> }</span>
+                        <span role="cell" class="alva-week__cell alva-num alva-week__muted"><span class="alva-week__label">@(Strings.T("Вычеты"))</span>@(blocks > 0 ? string.Format(Strings.T("−{0} ч"), AlvaFormat.Hours(blocks)) : "—")</span>
+                        <span role="cell" class="alva-week__cell alva-num alva-week__net"><span class="alva-week__label">@(Strings.T("Чистые часы"))</span>@AlvaFormat.Hours(Math.Max(0, _hours[day] - blocks)) @(Strings.T("ч"))</span>
                     </div>
                 }
             </div>
@@ -76,15 +76,15 @@
         <section class="alva-panel">
             <header class="alva-panel__header alva-panel__header--split">
                 <div class="alva-panel__header"><FlareIconView Value="@MaterialDesign3Icons.Regular.EventRepeat" Size="20px" Class="alva-panel__icon" /><div><h2 class="alva-panel__title">@(Strings.T("Повторяющиеся вычеты"))</h2><p class="alva-panel__subtitle">@(Strings.T("Регулярные встречи и церемонии, которые исключаются из фокусного времени"))</p></div></div>
-                <span class="alva-chip alva-chip--info alva-num">Вычет: −@AlvaFormat.Hours(_calendar.RecurringBlocks.Sum(b => b.Hours)) ч / нед</span>
+                <span class="alva-chip alva-chip--info alva-num">@(Strings.T("Вычет:")) −@AlvaFormat.Hours(_calendar.RecurringBlocks.Sum(b => b.Hours)) @(Strings.T("ч / нед"))</span>
             </header>
             @foreach (var block in _calendar.RecurringBlocks.OrderBy(b => (b.DayOfWeek + 6) % 7))
             {
                 <div class="alva-deduct" @key="block.Id">
                     <span class="alva-deduct__icon"><FlareIconView Value="@MaterialDesign3Icons.Regular.Groups" Size="18px" /></span>
-                    <span class="alva-deduct__text"><b>@block.Name</b><small>@DayNames[(block.DayOfWeek + 6) % 7] · еженедельно</small></span>
-                    <span class="alva-chip alva-chip--info alva-num">@AlvaFormat.Hours(block.Hours) ч/нед</span>
-                    <FlareIconButton Icon="@MaterialDesign3Icons.Regular.Delete" Size="ButtonSize.Sm" Tooltip="@(Strings.T("Удалить вычет"))" AriaLabel="@($"Удалить вычет «{block.Name}»")" OnClick="() => DeleteBlock(block.Id)" />
+                    <span class="alva-deduct__text"><b>@block.Name</b><small>@DayNames[(block.DayOfWeek + 6) % 7] · @(Strings.T("еженедельно"))</small></span>
+                    <span class="alva-chip alva-chip--info alva-num">@AlvaFormat.Hours(block.Hours) @(Strings.T("ч/нед"))</span>
+                    <FlareIconButton Icon="@MaterialDesign3Icons.Regular.Delete" Size="ButtonSize.Sm" Tooltip="@(Strings.T("Удалить вычет"))" AriaLabel="@string.Format(Strings.T("Удалить вычет «{0}»"), block.Name)" OnClick="() => DeleteBlock(block.Id)" />
                 </div>
             }
             <div class="alva-inline-form">
@@ -103,8 +103,8 @@
                     <div class="alva-exception @(ex.AvailableHours == 0 ? "alva-exception--off" : "")" @key="ex.Id">
                         <span class="alva-exception__kind">@(ex.AvailableHours == 0 ? Strings.T("Нерабочий период") : Strings.T("Сокращённый период"))</span>
                         <b class="alva-num">@(ex.From == ex.To ? ex.From.ToString("d MMMM") : $"{ex.From:d MMM} — {ex.To:d MMM}")</b>
-                        <span>@ex.Reason (@AlvaFormat.Hours(ex.AvailableHours) ч/день)</span>
-                        <FlareIconButton Icon="@MaterialDesign3Icons.Regular.Delete" Size="ButtonSize.Sm" Tooltip="@(Strings.T("Удалить период"))" AriaLabel="@($"Удалить «{ex.Reason}»")" OnClick="() => DeleteException(ex.Id)" />
+                        <span>@ex.Reason (@AlvaFormat.Hours(ex.AvailableHours) @(Strings.T("ч/день")))</span>
+                        <FlareIconButton Icon="@MaterialDesign3Icons.Regular.Delete" Size="ButtonSize.Sm" Tooltip="@(Strings.T("Удалить период"))" AriaLabel="@string.Format(Strings.T("Удалить «{0}»"), ex.Reason)" OnClick="() => DeleteException(ex.Id)" />
                     </div>
                 }
                 @if (_calendar.Exceptions.Length == 0) { <p class="alva-kpi__note">@(Strings.T("Отпусков и праздников не задано."))</p> }
@@ -139,10 +139,10 @@
                 <span class="alva-ring__value alva-num">@AlvaFormat.Hours(Net)</span><span class="alva-ring__label">@(Strings.T("чистых часов"))</span><span class="alva-ring__pct alva-num">@Pct(Net, Nominal)@(Strings.T("% от номинала"))</span>
             </div>
             <div class="alva-calc">
-                <div><span>Номинал по графику (@AlvaFormat.WorkDays(Today, Today.AddDays(13)) раб. дн.)</span><b class="alva-num">@AlvaFormat.Hours(Nominal) ч</b></div>
-                <div class="alva-calc--minus"><span>@(Strings.T("Отпуска и праздники"))</span><b class="alva-num">−@AlvaFormat.Hours(ExceptionLoss) ч</b></div>
-                <div class="alva-calc--info"><span>@(Strings.T("Регулярные вычеты"))</span><b class="alva-num">−@AlvaFormat.Hours(BlockLoss) ч</b></div>
-                <div class="alva-calc--total"><span>@(Strings.T("Фонд на 2 недели"))</span><b class="alva-num">~@AlvaFormat.Hours(Net) ч</b></div>
+                <div><span>@(Strings.T("Номинал по графику")) (@AlvaFormat.WorkDays(Today, Today.AddDays(13)) @(Strings.T("раб. дн.")))</span><b class="alva-num">@AlvaFormat.Hours(Nominal) @(Strings.T("ч"))</b></div>
+                <div class="alva-calc--minus"><span>@(Strings.T("Отпуска и праздники"))</span><b class="alva-num">−@AlvaFormat.Hours(ExceptionLoss) @(Strings.T("ч"))</b></div>
+                <div class="alva-calc--info"><span>@(Strings.T("Регулярные вычеты"))</span><b class="alva-num">−@AlvaFormat.Hours(BlockLoss) @(Strings.T("ч"))</b></div>
+                <div class="alva-calc--total"><span>@(Strings.T("Фонд на 2 недели"))</span><b class="alva-num">~@AlvaFormat.Hours(Net) @(Strings.T("ч"))</b></div>
             </div>
             @if (Dirty) { <p class="alva-kpi__note">@(Strings.T("Расчёт по сохранённому графику; новые часы учтутся после сохранения."))</p> }
         </section>
