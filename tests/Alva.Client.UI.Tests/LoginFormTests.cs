@@ -41,6 +41,7 @@ public sealed class LoginFormTests : UiTestBase
         Assert.Equal("Укажите название пространства.", ErrorOf(cut, "Название рабочего пространства"));
         Assert.Equal("Укажите электронную почту.", ErrorOf(cut, "Электронная почта"));
         Assert.Equal("Введите пароль.", ErrorOf(cut, "Пароль"));
+        Assert.Equal("Повторите пароль.", ErrorOf(cut, "Повторите пароль"));
         Assert.Empty(Api.Authentications);
         // Фокус уходит на первое поле с ошибкой — после yield внутри формы.
         cut.WaitForAssertion(() => JSInterop.VerifyFocusAsyncInvoke());
@@ -86,6 +87,7 @@ public sealed class LoginFormTests : UiTestBase
         Field(cut, "Название рабочего пространства").Change("Продукт");
         Field(cut, "Электронная почта").Change("anna@company.ru");
         Field(cut, "Пароль").Change("достаточно-длинный");
+        Field(cut, "Повторите пароль").Change("достаточно-длинный");
 
         Submit(cut);
 
@@ -121,4 +123,120 @@ public sealed class LoginFormTests : UiTestBase
         Assert.Null(ErrorOf(cut, "Электронная почта"));
         Assert.Single(Api.Authentications);
     }
+
+    [Fact]
+    public void The_password_can_be_shown_and_hidden_without_losing_focus()
+    {
+        var cut = Page();
+        Assert.Equal("password", Field(cut, "Пароль").GetAttribute("type"));
+
+        Button(cut, "Показать пароль").Click();
+
+        cut.WaitForAssertion(() => Assert.Equal("text", Field(cut, "Пароль").GetAttribute("type")));
+        Assert.NotNull(Button(cut, "Скрыть пароль"));
+        JSInterop.VerifyFocusAsyncInvoke();
+
+        Button(cut, "Скрыть пароль").Click();
+        cut.WaitForAssertion(() => Assert.Equal("password", Field(cut, "Пароль").GetAttribute("type")));
+    }
+
+    [Fact]
+    public void Several_errors_are_summarized_and_each_item_focuses_its_field()
+    {
+        var cut = Page(register: true);
+        Submit(cut);
+
+        cut.WaitForAssertion(() => Assert.Contains("Укажите имя.", cut.Find(".alva-form-errors").TextContent));
+        var summary = cut.Find(".alva-form-errors");
+        Assert.Equal("-1", summary.GetAttribute("tabindex"));
+        Assert.Contains("Укажите название пространства.", summary.TextContent);
+        Assert.Contains("Повторите пароль.", summary.TextContent);
+        cut.WaitForAssertion(() => Assert.True(FocusCalls() > 0));
+        var before = FocusCalls();
+
+        summary.QuerySelectorAll("button").First(b => b.TextContent.Contains("Укажите название пространства.")).Click();
+
+        cut.WaitForAssertion(() => Assert.True(FocusCalls() > before));
+    }
+
+    [Fact]
+    public void Registration_requires_the_same_password_twice()
+    {
+        var cut = Page(register: true);
+        Field(cut, "Ваше имя").Change("Анна");
+        Field(cut, "Название рабочего пространства").Change("Продукт");
+        Field(cut, "Электронная почта").Change("anna@company.ru");
+        Field(cut, "Пароль").Change("достаточно-длинный");
+        Field(cut, "Повторите пароль").Change("другой-достаточно-длинный");
+
+        Submit(cut);
+
+        Assert.Equal("Пароли не совпадают.", ErrorOf(cut, "Повторите пароль"));
+        Assert.Empty(Api.Authentications);
+    }
+
+    [Fact]
+    public void A_returning_user_opens_the_overview_without_choosing_a_team_again()
+    {
+        Api.SelectedTeamId = Guid.NewGuid();
+        var cut = Page();
+        Field(cut, "Электронная почта").Change("anna@company.ru");
+        Field(cut, "Пароль").Change("пароль");
+
+        Submit(cut);
+
+        cut.WaitForAssertion(() => Assert.EndsWith("/", Navigation.Uri));
+        Assert.Single(Api.Authentications);
+    }
+
+    [Fact]
+    public void A_user_without_a_team_opens_the_workspace_choice()
+    {
+        Api.SelectedTeamId = null;
+        var cut = Page();
+        Field(cut, "Электронная почта").Change("anna@company.ru");
+        Field(cut, "Пароль").Change("пароль");
+
+        Submit(cut);
+
+        cut.WaitForAssertion(() => Assert.EndsWith("/workspaces", Navigation.Uri));
+    }
+
+    [Fact]
+    public void After_login_the_user_returns_to_the_page_that_asked_for_it()
+    {
+        Navigation.NavigateTo("/login?returnUrl=tasks");
+        var cut = Render<Login>();
+        Field(cut, "Электронная почта").Change("anna@company.ru");
+        Field(cut, "Пароль").Change("пароль");
+
+        Submit(cut);
+
+        cut.WaitForAssertion(() => Assert.EndsWith("/tasks", Navigation.Uri));
+    }
+
+    [Theory]
+    [InlineData("https%3A%2F%2Fevil.example%2Fsteal")]
+    [InlineData("%2F%2Fevil.example%2Fsteal")]
+    public void An_external_return_url_is_ignored(string encoded)
+    {
+        Navigation.NavigateTo($"/login?returnUrl={encoded}");
+        var cut = Render<Login>();
+        Field(cut, "Электронная почта").Change("anna@company.ru");
+        Field(cut, "Пароль").Change("пароль");
+
+        Submit(cut);
+
+        cut.WaitForAssertion(() => Assert.EndsWith("/", Navigation.Uri));
+        Assert.DoesNotContain("evil.example", Navigation.Uri);
+    }
+
+    [Fact]
+    public void The_login_explains_how_to_recover_a_password()
+    {
+        Assert.Contains("администратору рабочего пространства", Page().Markup);
+        Assert.DoesNotContain("администратору рабочего пространства", Page(register: true).Markup);
+    }
+
+    private int FocusCalls() => JSInterop.Invocations.Count(i => i.Identifier.EndsWith("focus", StringComparison.OrdinalIgnoreCase));
 }

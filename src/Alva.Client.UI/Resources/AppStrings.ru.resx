@@ -372,6 +372,12 @@
   <data name="Пайплайн" xml:space="preserve"><value>Пайплайн</value></data>
   <data name="Параметры спринта" xml:space="preserve"><value>Параметры спринта</value></data>
   <data name="Пароль" xml:space="preserve"><value>Пароль</value></data>
+  <data name="Показать пароль" xml:space="preserve"><value>Показать пароль</value></data>
+  <data name="Скрыть пароль" xml:space="preserve"><value>Скрыть пароль</value></data>
+  <data name="Повторите пароль" xml:space="preserve"><value>Повторите пароль</value></data>
+  <data name="Повторите пароль." xml:space="preserve"><value>Повторите пароль.</value></data>
+  <data name="Пароли не совпадают." xml:space="preserve"><value>Пароли не совпадают.</value></data>
+  <data name="Забыли пароль? Обратитесь к администратору рабочего пространства — восстановление по ссылке пока недоступно." xml:space="preserve"><value>Забыли пароль? Обратитесь к администратору рабочего пространства — восстановление по ссылке пока недоступно.</value></data>
   <data name="Первый спринт начинается с цели" xml:space="preserve"><value>Первый спринт начинается с цели</value></data>
   <data name="перегруз" xml:space="preserve"><value>перегруз</value></data>
   <data name="Перейти в спринт" xml:space="preserve"><value>Перейти в спринт</value></data>

@@ -8,6 +8,8 @@ public sealed class FakeApi : IApiService
 {
     private readonly List<(string Prefix, Func<string, object> Answer)> _gets = [];
 
+    public FakeApi() => SelectedTeamId = TeamGuid;
+
     public Guid TeamGuid { get; } = Guid.NewGuid();
     /// <summary>Все отправки, включая упавшие.</summary>
     public List<(HttpMethod Method, string Path, object Value)> Sent { get; } = [];
@@ -23,7 +25,9 @@ public sealed class FakeApi : IApiService
     public SpaceInfo[] Workspaces => [];
     public TeamInfo[] Teams { get; set; } = [];
     public Guid? WorkspaceId => Guid.Empty;
-    public Guid? TeamId => TeamGuid;
+    /// <summary>Команда, восстановленная после входа; null — пользователь ещё не выбрал команду.</summary>
+    public Guid? SelectedTeamId { get; set; }
+    public Guid? TeamId => SelectedTeamId;
     public string TeamName => "Команда";
     public bool Initialized => true;
     public bool SupportsDataTransfer { get; set; } = true;

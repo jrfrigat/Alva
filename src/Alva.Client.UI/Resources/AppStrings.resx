@@ -372,6 +372,12 @@
   <data name="Пайплайн" xml:space="preserve"><value>Pipeline</value></data>
   <data name="Параметры спринта" xml:space="preserve"><value>Sprint settings</value></data>
   <data name="Пароль" xml:space="preserve"><value>Password</value></data>
+  <data name="Показать пароль" xml:space="preserve"><value>Show password</value></data>
+  <data name="Скрыть пароль" xml:space="preserve"><value>Hide password</value></data>
+  <data name="Повторите пароль" xml:space="preserve"><value>Repeat password</value></data>
+  <data name="Повторите пароль." xml:space="preserve"><value>Repeat the password.</value></data>
+  <data name="Пароли не совпадают." xml:space="preserve"><value>Passwords do not match.</value></data>
+  <data name="Забыли пароль? Обратитесь к администратору рабочего пространства — восстановление по ссылке пока недоступно." xml:space="preserve"><value>Forgot your password? Contact the workspace administrator: reset by link is not available yet.</value></data>
   <data name="Первый спринт начинается с цели" xml:space="preserve"><value>The first sprint starts with a goal</value></data>
   <data name="перегруз" xml:space="preserve"><value>overload</value></data>
   <data name="Перейти в спринт" xml:space="preserve"><value>Go to the sprint</value></data>
