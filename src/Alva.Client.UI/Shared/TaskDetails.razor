@@ -249,7 +249,7 @@
         _model = Fresh();
         _quickTitle = null;
         try { _history = await Session.Get<HistoryDto[]>(Session.TeamPath($"tasks/{Item.Id}/history")); }
-        catch (Exception e) when (e is HttpRequestException or InvalidOperationException) { _error = e.Message; }
+        catch (Exception e) when (e is HttpRequestException or InvalidOperationException) { _error = PageFeedback.Describe(e); }
     }
 
     private static string Code(TaskModel task) => AlvaFormat.Code(task.Id);
@@ -454,7 +454,7 @@
             if (Changed.HasDelegate) await Changed.InvokeAsync();
             else { _model = Fresh(); _adoptFresh = false; }
         }
-        catch (Exception e) when (e is HttpRequestException or InvalidOperationException) { _error = e.Message; }
+        catch (Exception e) when (e is HttpRequestException or InvalidOperationException) { _error = PageFeedback.Describe(e); }
         finally { _busy = false; }
     }
 }

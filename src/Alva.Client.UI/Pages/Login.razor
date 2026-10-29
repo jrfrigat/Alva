@@ -130,9 +130,10 @@
             // Вернувшийся пользователь уже выбрал команду: обзор открывается сразу, без лишнего шага.
             Navigation.NavigateTo(_returnUrl ?? (Session.TeamId is not null ? "/" : "workspaces"));
         }
-        // Занятая почта — ошибка конкретного поля; остальные ответы сервера — общая сводка.
-        catch (HttpRequestException error) when (_register && error.StatusCode == System.Net.HttpStatusCode.Conflict) { _errors[Field.Email] = error.Message; await FocusFirstError(); }
-        catch (Exception error) when (error is HttpRequestException or InvalidOperationException) { _error = error.Message; }
+        // Занятая почта — ошибка конкретного поля; неверный вход — своя подсказка, а не «сессия истекла».
+        catch (HttpRequestException error) when (_register && error.StatusCode == System.Net.HttpStatusCode.Conflict) { _errors[Field.Email] = Strings.T("Аккаунт с этой почтой уже существует."); await FocusFirstError(); }
+        catch (HttpRequestException error) when (!_register && error.StatusCode == System.Net.HttpStatusCode.Unauthorized) { _error = Strings.T("Неверный email или пароль, либо вход временно заблокирован."); }
+        catch (Exception error) when (error is HttpRequestException or InvalidOperationException) { _error = PageFeedback.Describe(error); }
         finally { _busy = false; }
     }
 

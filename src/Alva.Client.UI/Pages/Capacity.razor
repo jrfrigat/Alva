@@ -7,7 +7,7 @@
 @* Раздел «Ёмкость»: обзор (p14), командный календарь (p15), календарь сотрудника (p15.1) и
    редактор рабочего графика (p16). *@
 <PageTitle>@Title · Alva</PageTitle>
-@if (!_ready || _error is not null) { <PageFeedback Loading="!_ready" Error="@_error" /> }
+@if (!_ready || _error is not null) { <PageFeedback Loading="!_ready" Error="@_error" OnRetry="Retry" /> }
 else if (Session.TeamId is null) { <TeamRequired /> }
 else if (ActorId is { } id && Schedule) { <ScheduleEditor ActorId="id" /> }
 else if (ActorId is { } person) { <PersonCalendar ActorId="person" /> }
@@ -24,10 +24,12 @@ else { <CapacityOverview /> }
     private bool _ready;
     private string? _error;
 
+    private Task Retry() { _error = null; _ready = false; return OnInitializedAsync(); }
+
     protected override async Task OnInitializedAsync()
     {
         try { await Session.Initialize(); }
-        catch (Exception e) when (e is HttpRequestException or InvalidOperationException) { _error = e.Message; }
+        catch (Exception e) when (e is HttpRequestException or InvalidOperationException) { _error = PageFeedback.Describe(e); }
         finally { _ready = true; }
     }
 }

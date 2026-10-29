@@ -287,7 +287,7 @@
             _load = rows.GroupBy(r => r.ActorId).ToDictionary(g => g.Key, g => (g.Sum(r => r.AvailableHours), g.Sum(r => r.AllocatedHours)));
             _loadedFor = Sprint.Id;
         }
-        catch (Exception e) when (e is HttpRequestException or InvalidOperationException or NotSupportedException) { _error = e.Message; }
+        catch (Exception e) when (e is HttpRequestException or InvalidOperationException or NotSupportedException) { _error = PageFeedback.Describe(e); }
     }
 
     private Task Edit() => OnEdit.InvokeAsync();
@@ -303,7 +303,7 @@
             _closing = false;
             await Changed.InvokeAsync();
         }
-        catch (Exception e) when (e is HttpRequestException or InvalidOperationException) { _error = e.Message; }
+        catch (Exception e) when (e is HttpRequestException or InvalidOperationException) { _error = PageFeedback.Describe(e); }
         finally { _busy = false; }
     }
 }

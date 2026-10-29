@@ -35,7 +35,7 @@ public sealed class DataPageTests : UiTestBase
 
         Button(cut, "Импортировать").Click();
 
-        cut.WaitForAssertion(() => Assert.Contains("Импорт не поддерживается", cut.Markup));
+        cut.WaitForAssertion(() => Assert.Contains("Не удалось выполнить действие. Повторите.", cut.Markup));
         Assert.DoesNotContain("Данные импортированы", cut.Markup);
     }
 

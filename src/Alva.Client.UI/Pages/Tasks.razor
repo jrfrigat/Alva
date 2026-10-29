@@ -10,7 +10,7 @@
 <NavigationLock OnBeforeInternalNavigation="ConfirmLeave" ConfirmExternalNavigation="IsDirty" />
 @if (Current is not null)
 {
-    <PageFeedback Error="@_error" Loading="_busy" />
+    <PageFeedback Error="@_error" Loading="_busy" OnRetry="Load" />
     @* Esc закрывает карточку и возвращает к списку с прежними фильтрами; несохранённые правки не
        выбрасываются — их держит сама карточка, и тогда Esc не делает ничего. Обёртка принимает фокус при
        открытии задачи, в том числе по Enter из списка, чтобы фокус не падал на body. *@
@@ -22,7 +22,7 @@ else if (TaskId.HasValue)
 {
     @* Ссылка на конкретную задачу никогда не превращается в список: пока грузится — прогресс, ошибка — ошибка,
        а если задачи нет — так и сказано. *@
-    <PageFeedback Error="@_error" Loading="_busy" />
+    <PageFeedback Error="@_error" Loading="_busy" OnRetry="Load" />
     @if (_loaded) { <UnavailableState Title="@(Strings.T("Задача не найдена или недоступна"))" BackHref="tasks" BackLabel="@(Strings.T("К задачам"))" /> }
 }
 else
@@ -30,7 +30,7 @@ else
 <AlvaPageHeader Category="@(Strings.T("Планирование · Задачи"))" Title="@PageHeading" Description="@(Strings.T("Пул задач команды: дерево, статусы и назначения."))">
     <Actions><FlareButton @ref="_newButton" OnClick="NewTask" Disabled="@(Session.TeamId is null)" Size="ButtonSize.Sm">@(Strings.T("Новая задача"))</FlareButton></Actions>
 </AlvaPageHeader>
-<PageFeedback Error="@_error" Loading="_busy" />
+<PageFeedback Error="@_error" Loading="_busy" OnRetry="Load" />
 @if(Session.TeamId is null) { <TeamRequired /> }
 else
 {

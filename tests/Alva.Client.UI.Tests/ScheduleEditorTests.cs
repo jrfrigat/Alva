@@ -124,7 +124,7 @@ public sealed class ScheduleEditorTests : UiTestBase
         EditDraft(cut);
         Api.OnSend = (_, _, _) => new HttpRequestException("Сервер недоступен");
         Button(cut, "Удалить вычет «Планёрка»").Click();
-        cut.WaitForAssertion(() => Assert.Contains("Сервер недоступен", cut.Markup));
+        cut.WaitForAssertion(() => Assert.Contains("Не удалось связаться с сервером", cut.Markup));
         AssertDraftKept(cut);
     }
 

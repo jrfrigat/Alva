@@ -311,6 +311,6 @@
             }
             _loadedFor = open;
         }
-        catch (Exception e) when (e is HttpRequestException or InvalidOperationException or NotSupportedException) { _error = e.Message; }
+        catch (Exception e) when (e is HttpRequestException or InvalidOperationException or NotSupportedException) { _error = PageFeedback.Describe(e); }
     }
 }

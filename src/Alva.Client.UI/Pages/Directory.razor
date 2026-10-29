@@ -10,7 +10,7 @@
 <AlvaPageHeader Category="@Category" Title="@Title">
     <Actions><FlareButton Size="ButtonSize.Sm" OnClick="New" Disabled="@(Session.TeamId is null)">@(Strings.T("Добавить"))</FlareButton></Actions>
 </AlvaPageHeader>
-<PageFeedback Loading="_busy" Error="@_error" />
+<PageFeedback Loading="_busy" Error="@_error" OnRetry="Load" />
 <EditorStatus Dirty="IsDirty" Saving="_busy" Saved="_saved" />
 @if(Session.TeamId is null) { <TeamRequired /> }
 else
@@ -67,7 +67,7 @@ else
     private string Title=>Kind=="Role"?Strings.T("Роли команды"):Kind=="Department"?Strings.T("Подкоманды"):Strings.T("Люди команды");
     private string Category=>Kind=="Role"?Strings.T("Реестр · Роли"):Kind=="Department"?Strings.T("Реестр · Подкоманды"):Strings.T("Реестр · Люди");
     protected override async Task OnParametersSetAsync(){Close();await Load();}
-    private async Task Run(Func<Task> action){_busy=true;_error=null;try{await action();}catch(Exception e) when(e is HttpRequestException or InvalidOperationException){_error=e.Message;}finally{_busy=false;}}
+    private async Task Run(Func<Task> action){_busy=true;_error=null;try{await action();}catch(Exception e) when(e is HttpRequestException or InvalidOperationException){_error=PageFeedback.Describe(e);}finally{_busy=false;}}
     private Task Load()=>Run(async()=>{await Session.Initialize();if(Session.TeamId is null)return;_actors=await Session.Get<ActorModel[]>(Session.TeamPath("actors"));await LoadSkillSuggestions();});
     private async Task LoadSkillSuggestions()
     {

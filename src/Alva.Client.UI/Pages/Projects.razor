@@ -10,7 +10,7 @@
 <AlvaPageHeader Category="@(Strings.T("Проекты нескольких команд"))" Title="@(Strings.T("Проекты"))" Description="@(Strings.T("Реестр проектов и вовлечённость команд. Проекты объединяют задачи, исполняемые спринтами разных команд."))">
     <Actions><FlareButton Size="ButtonSize.Sm" OnClick="New" Disabled="@(Session.TeamId is null)"><LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.AddCircle" Size="18px" /></LeadingIcon><ChildContent>@(Strings.T("Новый проект"))</ChildContent></FlareButton></Actions>
 </AlvaPageHeader>
-<PageFeedback Loading="_busy" Error="@_error" />
+<PageFeedback Loading="_busy" Error="@_error" OnRetry="Load" />
 <EditorStatus Dirty="IsDirty" Saving="_busy" Saved="_saved" />
 @if (Session.TeamId is null) { <TeamRequired /> }
 else
@@ -237,7 +237,7 @@ else
     {
         _busy = true; _error = null;
         try { await action(); }
-        catch (Exception e) when (e is HttpRequestException or InvalidOperationException or NotSupportedException) { _error = e.Message; }
+        catch (Exception e) when (e is HttpRequestException or InvalidOperationException or NotSupportedException) { _error = PageFeedback.Describe(e); }
         finally { _busy = false; }
     }
 

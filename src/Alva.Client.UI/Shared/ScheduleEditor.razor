@@ -29,7 +29,7 @@
     </div>
     }
 </section>
-<PageFeedback Error="@_error" />
+<PageFeedback Error="@_error" OnRetry="() => LoadCalendar()" />
 @if (_saved) { <FlareAlert Severity="AlertSeverity.Success" Title="@(Strings.T("График сохранён"))">@(Strings.T("Ёмкость пересчитана по новому графику."))</FlareAlert> }
 
 @if (_applyOpen && !IsDepartment)
@@ -321,7 +321,7 @@
     {
         _busy = true; _error = null;
         try { await action(); }
-        catch (Exception e) when (e is HttpRequestException or InvalidOperationException or NotSupportedException) { _error = e.Message; }
+        catch (Exception e) when (e is HttpRequestException or InvalidOperationException or NotSupportedException) { _error = PageFeedback.Describe(e); }
         finally { _busy = false; }
     }
 }

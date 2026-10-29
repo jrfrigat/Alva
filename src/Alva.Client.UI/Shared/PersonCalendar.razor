@@ -24,7 +24,7 @@
         </div>
     </div>
 </section>
-<PageFeedback Error="@_error" Loading="_busy" />
+<PageFeedback Error="@_error" Loading="_busy" OnRetry="LoadWeek" />
 
 <div class="alva-kpis alva-kpis--five">
     <section class="alva-kpi"><span class="alva-kpi__label">@(Strings.T("Номинал недели"))</span><span class="alva-num"><span class="alva-kpi__value">@AlvaFormat.Hours(WeekNominal)</span> <span class="alva-kpi__unit">@(Strings.T("часов"))</span></span><p class="alva-kpi__note">@(Strings.T("По графику:")) @Pattern</p></section>
@@ -176,7 +176,7 @@
     {
         _busy = true; _error = null;
         try { await action(); }
-        catch (Exception e) when (e is HttpRequestException or InvalidOperationException or NotSupportedException) { _error = e.Message; }
+        catch (Exception e) when (e is HttpRequestException or InvalidOperationException or NotSupportedException) { _error = PageFeedback.Describe(e); }
         finally { _busy = false; }
     }
 }

@@ -15,7 +15,7 @@
         @if (Focus is { } f) { <FlareButton Href="@($"capacity/{f.Id}/schedule")" Size="ButtonSize.Sm"><LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.EventBusy" Size="18px" /></LeadingIcon><ChildContent>@(Strings.T("+ Отсутствие / отпуск"))</ChildContent></FlareButton> }
     </div>
 </section>
-<PageFeedback Error="@_error" Loading="_busy" />
+<PageFeedback Error="@_error" Loading="_busy" OnRetry="Load" />
 
 <div class="alva-kpis">
     <section class="alva-kpi"><div class="alva-kpi__head"><div><span class="alva-kpi__label">@(Strings.T("Активный состав команды"))</span><span class="alva-num"><span class="alva-kpi__value">@People.Length</span> <span class="alva-kpi__unit">@AlvaFormat.Plural(People.Length, "person")</span></span></div><span class="alva-kpi__icon"><FlareIconView Value="@MaterialDesign3Icons.Regular.Badge" Size="18px" /></span></div><p class="alva-kpi__note">@(Strings.T("С рабочим графиком в этом месяце"))</p></section>
@@ -141,7 +141,9 @@
     private static int Pct(decimal part, decimal whole) => whole <= 0 ? 0 : (int)Math.Round(part / whole * 100);
     private static string Short(string name) => name.Split(' ') is [var first, var last, ..] ? $"{first[0]}. {last}" : name;
 
-    protected override Task OnInitializedAsync() => Run(async () =>
+    protected override Task OnInitializedAsync() => Load();
+
+    private Task Load() => Run(async () =>
     {
         _actors = await Session.Get<ActorModel[]>(Session.TeamPath("actors"));
         _sprints = await Session.Get<SprintModel[]>(Session.TeamPath("sprints"));
@@ -169,7 +171,7 @@
     {
         _busy = true; _error = null;
         try { await action(); }
-        catch (Exception e) when (e is HttpRequestException or InvalidOperationException or NotSupportedException) { _error = e.Message; }
+        catch (Exception e) when (e is HttpRequestException or InvalidOperationException or NotSupportedException) { _error = PageFeedback.Describe(e); }
         finally { _busy = false; }
     }
 }

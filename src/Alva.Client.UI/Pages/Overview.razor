@@ -4,7 +4,7 @@
 <AlvaPageHeader Category="@(Strings.T("Команда · Обзор"))" Title="@Session.TeamName" Description="@(Strings.T("Планы команды, ближайшие сроки и работа под риском."))">
     <Actions><FlareButton Href="tasks" Size="ButtonSize.Sm">@(Strings.T("К задачам"))</FlareButton></Actions>
 </AlvaPageHeader>
-<PageFeedback Error="@_error" Loading="_busy" />
+<PageFeedback Error="@_error" Loading="_busy" OnRetry="Load" />
 @if(Session.TeamId is null){<TeamRequired />}
 else
 {
@@ -31,5 +31,6 @@ else
 }
 @code {
     private TaskModel[] _tasks=[];private SprintModel[] _sprints=[];private RiskDto[] _risks=[];private bool _busy;private string? _error;
-    protected override async Task OnInitializedAsync(){_busy=true;try{await Session.Initialize();if(Session.TeamId is null)return;_tasks=await Session.Get<TaskModel[]>(Session.TeamPath("tasks"));_sprints=await Session.Get<SprintModel[]>(Session.TeamPath("sprints"));_risks=await Session.Get<RiskDto[]>(Session.TeamPath("risks"));}catch(Exception e) when(e is HttpRequestException or InvalidOperationException){_error=e.Message;}finally{_busy=false;}}
+    protected override Task OnInitializedAsync() => Load();
+    private async Task Load(){_busy=true;_error=null;try{await Session.Initialize();if(Session.TeamId is null)return;_tasks=await Session.Get<TaskModel[]>(Session.TeamPath("tasks"));_sprints=await Session.Get<SprintModel[]>(Session.TeamPath("sprints"));_risks=await Session.Get<RiskDto[]>(Session.TeamPath("risks"));}catch(Exception e) when(e is HttpRequestException or InvalidOperationException){_error=PageFeedback.Describe(e);}finally{_busy=false;}}
 }

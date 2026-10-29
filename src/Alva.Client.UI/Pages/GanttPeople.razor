@@ -14,7 +14,7 @@
         <p class="alva-page-header__desc">@(Strings.T("Кто чем занят во времени: часы назначенной работы против доступных, перегрузки и отсутствия. Перетащите задачу на другую строку или нажмите Ctrl+↑/↓, чтобы переназначить; Ctrl+стрелка влево/вправо переносит даты."))</p>
     </div>
 </section>
-<PageFeedback Loading="_busy" Error="@_error" />
+<PageFeedback Loading="_busy" Error="@_error" OnRetry="() => Reload()" />
 @if (Session.TeamId is null) { <TeamRequired /> }
 else if (_data is not null && _people is not null)
 {
@@ -174,7 +174,7 @@ else if (_data is not null && _people is not null)
             else _range = new GanttSpan(_range.Start < SprintRange.Start ? _range.Start : SprintRange.Start, _range.End > SprintRange.End ? _range.End : SprintRange.End);
             _people = await GanttPeopleData.Load(Session, _data, _range);
         }
-        catch (Exception e) when (e is HttpRequestException or InvalidOperationException) { _error = e.Message; }
+        catch (Exception e) when (e is HttpRequestException or InvalidOperationException) { _error = PageFeedback.Describe(e); }
         finally { _busy = false; }
     }
 
@@ -183,14 +183,14 @@ else if (_data is not null && _people is not null)
     {
         _range = SprintRange;
         try { _people = await GanttPeopleData.Load(Session, _data!, _range); }
-        catch (Exception e) when (e is HttpRequestException or InvalidOperationException) { _error = e.Message; }
+        catch (Exception e) when (e is HttpRequestException or InvalidOperationException) { _error = PageFeedback.Describe(e); }
     }
 
     private async Task Change(GanttChangeEventArgs args)
     {
         _error = null;
         try { _notice = await _people!.Apply(Session, args); }
-        catch (Exception e) when (e is HttpRequestException or InvalidOperationException) { args.Cancel = true; _error = e.Message; }
+        catch (Exception e) when (e is HttpRequestException or InvalidOperationException) { args.Cancel = true; _error = PageFeedback.Describe(e); }
         await Reload();
     }
 
@@ -202,7 +202,7 @@ else if (_data is not null && _people is not null)
             await _data!.AddLink(Session, args.Link);
             _notice = Strings.T("Связь добавлена");
         }
-        catch (Exception e) when (e is HttpRequestException or InvalidOperationException) { args.Cancel = true; _error = e.Message; }
+        catch (Exception e) when (e is HttpRequestException or InvalidOperationException) { args.Cancel = true; _error = PageFeedback.Describe(e); }
         await Reload();
     }
 

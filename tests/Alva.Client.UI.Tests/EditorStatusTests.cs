@@ -61,7 +61,8 @@ public sealed class EditorStatusTests : UiTestBase
 
         Button(cut, "Сохранить").Click();
 
-        cut.WaitForAssertion(() => Assert.Contains("Сервер недоступен.", cut.Find(".flare-alert").TextContent));
+        cut.WaitForAssertion(() => Assert.Contains("Не удалось связаться с сервером", cut.Find(".flare-alert").TextContent));
+        Assert.DoesNotContain("Сервер недоступен.", cut.Markup);
         Assert.DoesNotContain("Сохранено", cut.Markup);
     }
 }

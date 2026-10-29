@@ -45,7 +45,7 @@ public sealed class QuickAddTests : UiTestBase
         Input(cut).Input("Вёрстка");
 
         Input(cut).KeyDown(new KeyboardEventArgs { Key = "Enter" });
-        cut.WaitForAssertion(() => Assert.Contains("Сервер недоступен", cut.Markup));
+        cut.WaitForAssertion(() => Assert.Contains("Не удалось связаться с сервером", cut.Markup));
         Assert.Equal("Вёрстка", Input(cut).GetAttribute("value"));
 
         Api.OnSend = (_, _, _) => null;

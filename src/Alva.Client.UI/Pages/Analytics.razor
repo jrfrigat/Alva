@@ -10,7 +10,7 @@
         <p class="alva-page-header__desc">@(Strings.T("Какие задачи могут не успеть и почему: перегрузка и отпуска исполнителей, работа без человека, просроченные сроки и незакрытые зависимости."))</p>
     </div>
 </section>
-<PageFeedback Loading="_busy" Error="@_error" />
+<PageFeedback Loading="_busy" Error="@_error" OnRetry="Load" />
 @if (Session.TeamId is null) { <TeamRequired /> }
 else if (!_busy)
 {
@@ -196,8 +196,10 @@ else
         _search = null;
     }
 
-    protected override async Task OnInitializedAsync()
+    protected override Task OnInitializedAsync() => Load();
+    private async Task Load()
     {
+        _busy = true; _error = null;
         try
         {
             await Session.Initialize();
@@ -206,7 +208,7 @@ else
             _tasks = await Session.Get<TaskModel[]>(Session.TeamPath("tasks"));
             _actors = await Session.Get<ActorModel[]>(Session.TeamPath("actors"));
         }
-        catch (Exception e) when (e is HttpRequestException or InvalidOperationException) { _error = e.Message; }
+        catch (Exception e) when (e is HttpRequestException or InvalidOperationException) { _error = PageFeedback.Describe(e); }
         finally { _busy = false; }
     }
 }

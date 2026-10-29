@@ -8,7 +8,7 @@
 <NavigationLock OnBeforeInternalNavigation="ConfirmLeave" ConfirmExternalNavigation="IsDirty" />
 <PageTitle>@(Strings.T("Настройки · Alva"))</PageTitle>
 <FlareText Element="h1" Typo="TypographyScale.HeadlineLarge">@(Strings.T("Настройки"))</FlareText>
-<PageFeedback Error="@_error" Loading="_busy" />
+<PageFeedback Error="@_error" Loading="_busy" OnRetry="Reload" />
 <EditorStatus Dirty="IsDirty" Saving="_busy" Saved="_saved" />
 @if (_formErrors.Count > 0) { <div class="alva-form-errors" role="alert" tabindex="-1" @ref="_errorSummary"><b>@(Strings.T("Проверьте выделенные поля."))</b>@foreach (var error in _formErrors) { <div>@error</div> }</div> }
 <FlareGrid MinColumnWidth="min(100%,24rem)">
@@ -55,7 +55,8 @@
     private async Task ToggleBrowser(bool value){var permission=await Notifications.SetBrowserNotifications(value);_permissionNote=value&&!Notifications.BrowserNotifications?permission switch{"denied"=>Strings.T("Браузер запретил уведомления для Alva — разрешите их в настройках сайта."),"unsupported"=>Strings.T("Этот браузер не поддерживает уведомления."),_=>Strings.T("Разрешение не выдано.")}:null;}
     private static string ModeLabel(ThemeMode mode)=>mode switch{ThemeMode.Auto=>Strings.T("Как на устройстве"),ThemeMode.Light=>Strings.T("Светлый"),ThemeMode.Dark=>Strings.T("Тёмный"),_=>Strings.T("Высокая контрастность")};
     protected override async Task OnInitializedAsync(){await Run(async()=>{await Session.Initialize();_displayName=Session.User?.DisplayName;if(Session.WorkspaceId.HasValue){var spaces=await Session.Get<WorkspaceDto[]>("api/workspaces");var space=spaces.First(x=>x.Id==Session.WorkspaceId);_spaceName=space.Name;_permissions=space.EnforcePermissions;_members=await Session.Get<MemberDto[]>($"api/workspaces/{Session.WorkspaceId}/members");}});Snapshot();}
-    private async Task Run(Func<Task> action){_busy=true;_error=null;try{await action();}catch(Exception e) when(e is HttpRequestException or InvalidOperationException){_error=e.Message;}finally{_busy=false;}}
+    private async Task Run(Func<Task> action){_busy=true;_error=null;try{await action();}catch(Exception e) when(e is HttpRequestException or InvalidOperationException){_error=PageFeedback.Describe(e);}finally{_busy=false;}}
+    private Task Reload() => OnInitializedAsync();
     private async Task SaveProfile()
     {
         _nameError=null;_formErrors.Clear();

@@ -2,7 +2,7 @@
 @inject AlvaSession Session
 <PageTitle>@(Strings.T("Данные · Alva"))</PageTitle>
 <FlareText Element="h1" Typo="TypographyScale.HeadlineLarge">@(Strings.T("Импорт и экспорт"))</FlareText>
-<PageFeedback Loading="_busy" Error="@_error" />
+<PageFeedback Loading="_busy" Error="@_error" OnRetry="Reload" />
 @if (_formErrors.Count > 0) { <div class="alva-form-errors" role="alert" tabindex="-1" @ref="_errorSummary"><b>@(Strings.T("Проверьте выделенные поля."))</b>@foreach (var error in _formErrors) { <div>@error</div> }</div> }
 @if(Session.TeamId is null){<TeamRequired />}
 else
@@ -18,7 +18,8 @@ else
     private static readonly string[] Formats=["json","csv","xlsx"];private string _format="json";private IBrowserFile? _file;private bool _busy,_success;private string? _error;
     private string? _fileError; private readonly List<string> _formErrors=[]; private ElementReference _errorSummary;
     [CascadingParameter] public FlareConfirmDialogProvider? Confirm { get; set; }
-    protected override async Task OnInitializedAsync(){try{await Session.Initialize();}catch(Exception e) when(e is HttpRequestException or InvalidOperationException){_error=e.Message;}}
+    protected override async Task OnInitializedAsync(){_error=null;try{await Session.Initialize();}catch(Exception e) when(e is HttpRequestException or InvalidOperationException){_error=PageFeedback.Describe(e);}}
+    private Task Reload() => OnInitializedAsync();
     private void SelectFiles(IReadOnlyList<IBrowserFile> files){_file=files.FirstOrDefault();_success=false;}
     // Успех показывается только после того, как импорт действительно прошёл; любая ошибка — включая неподдерживаемую операцию — без «успеха».
     private async Task Import()
@@ -34,7 +35,7 @@ else
             Strings.T("Импортировать"))) return;
         _busy=true;_success=false;_error=null;
         try{await using var stream=_file.OpenReadStream(10*1024*1024);await Session.Import(_format,stream);_success=true;}
-        catch(Exception e) when(e is HttpRequestException or InvalidOperationException or IOException or NotSupportedException){_error=e.Message;}
+        catch(Exception e) when(e is HttpRequestException or InvalidOperationException or IOException or NotSupportedException){_error=PageFeedback.Describe(e);}
         finally{_busy=false;}
     }
 }

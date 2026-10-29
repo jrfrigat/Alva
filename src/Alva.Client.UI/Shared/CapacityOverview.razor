@@ -40,7 +40,7 @@
     </div>
     <FlareCheckbox TValue="bool" @bind-Value="_highlight" Label="@(Strings.T("Показывать перегрузы (>100%)"))" Class="alva-capacity-bar__check" />
 </div>
-<PageFeedback Error="@_error" Loading="_busy" />
+<PageFeedback Error="@_error" Loading="_busy" OnRetry="Load" />
 
 <div class="alva-kpis">
     <section class="alva-kpi">
@@ -239,9 +239,11 @@
         }
     }
 
-    protected override async Task OnInitializedAsync()
+    protected override Task OnInitializedAsync() => Load();
+
+    private async Task Load()
     {
-        _busy = true;
+        _busy = true; _error = null;
         try
         {
             _actors = await Session.Get<ActorModel[]>(Session.TeamPath("actors"));
@@ -249,7 +251,7 @@
             _sprints = await Session.Get<SprintModel[]>(Session.TeamPath("sprints"));
             await LoadPeriods();
         }
-        catch (Exception e) when (e is HttpRequestException or InvalidOperationException or NotSupportedException) { _error = e.Message; }
+        catch (Exception e) when (e is HttpRequestException or InvalidOperationException or NotSupportedException) { _error = PageFeedback.Describe(e); }
         finally { _busy = false; }
     }
 
@@ -258,7 +260,7 @@
         _mode = mode;
         _busy = true;
         try { await LoadPeriods(); }
-        catch (Exception e) when (e is HttpRequestException or InvalidOperationException or NotSupportedException) { _error = e.Message; }
+        catch (Exception e) when (e is HttpRequestException or InvalidOperationException or NotSupportedException) { _error = PageFeedback.Describe(e); }
         finally { _busy = false; }
     }
 

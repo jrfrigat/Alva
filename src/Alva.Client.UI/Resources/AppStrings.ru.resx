@@ -1002,4 +1002,16 @@
   <data name="Сохранение…" xml:space="preserve"><value>Сохранение…</value></data>
   <data name="Сохранено" xml:space="preserve"><value>Сохранено</value></data>
   <data name="Есть несохранённые изменения" xml:space="preserve"><value>Есть несохранённые изменения</value></data>
+  <data name="Повторить" xml:space="preserve"><value>Повторить</value></data>
+  <data name="Сессия истекла. Войдите снова." xml:space="preserve"><value>Сессия истекла. Войдите снова.</value></data>
+  <data name="Проверьте введённые данные." xml:space="preserve"><value>Проверьте введённые данные.</value></data>
+  <data name="Запись не найдена: возможно, её уже удалили." xml:space="preserve"><value>Запись не найдена: возможно, её уже удалили.</value></data>
+  <data name="Данные уже изменились. Обновите страницу и повторите." xml:space="preserve"><value>Данные уже изменились. Обновите страницу и повторите.</value></data>
+  <data name="Слишком много запросов. Подождите и повторите." xml:space="preserve"><value>Слишком много запросов. Подождите и повторите.</value></data>
+  <data name="Сервер не смог выполнить действие. Повторите позже." xml:space="preserve"><value>Сервер не смог выполнить действие. Повторите позже.</value></data>
+  <data name="Не удалось связаться с сервером. Проверьте соединение и повторите." xml:space="preserve"><value>Не удалось связаться с сервером. Проверьте соединение и повторите.</value></data>
+  <data name="Сервер не ответил вовремя. Повторите." xml:space="preserve"><value>Сервер не ответил вовремя. Повторите.</value></data>
+  <data name="Не удалось выполнить действие. Повторите." xml:space="preserve"><value>Не удалось выполнить действие. Повторите.</value></data>
+  <data name="Неверный email или пароль, либо вход временно заблокирован." xml:space="preserve"><value>Неверный email или пароль, либо вход временно заблокирован.</value></data>
+  <data name="Аккаунт с этой почтой уже существует." xml:space="preserve"><value>Аккаунт с этой почтой уже существует.</value></data>
 </root>

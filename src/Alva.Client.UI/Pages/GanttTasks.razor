@@ -13,7 +13,7 @@
         <p class="alva-page-header__desc">@(Strings.T("Иерархия работ во времени: окна задач и спринтов, сроки, зависимости и риск. Перетащите полосу или нажмите Ctrl+стрелку, чтобы перенести даты; L — связать с другой задачей."))</p>
     </div>
 </section>
-<PageFeedback Loading="_busy" Error="@_error" />
+<PageFeedback Loading="_busy" Error="@_error" OnRetry="Reload" />
 @if (Session.TeamId is null) { <TeamRequired /> }
 else if (_data is not null)
 {
@@ -139,7 +139,7 @@ else if (_data is not null)
                 _projects = await Session.Get<ProjectModel[]>(Session.TeamPath("projects"));
             }
         }
-        catch (Exception e) when (e is HttpRequestException or InvalidOperationException) { _error = e.Message; }
+        catch (Exception e) when (e is HttpRequestException or InvalidOperationException) { _error = PageFeedback.Describe(e); }
         finally { _busy = false; }
     }
 
@@ -177,7 +177,7 @@ else if (_data is not null)
         {
             _notice = await _data!.Apply(Session, args);
         }
-        catch (Exception e) when (e is HttpRequestException or InvalidOperationException) { args.Cancel = true; _error = e.Message; }
+        catch (Exception e) when (e is HttpRequestException or InvalidOperationException) { args.Cancel = true; _error = PageFeedback.Describe(e); }
         await Reload();
     }
 
@@ -189,7 +189,7 @@ else if (_data is not null)
             await _data!.AddLink(Session, args.Link);
             _notice = Strings.T("Связь добавлена");
         }
-        catch (Exception e) when (e is HttpRequestException or InvalidOperationException) { args.Cancel = true; _error = e.Message; }
+        catch (Exception e) when (e is HttpRequestException or InvalidOperationException) { args.Cancel = true; _error = PageFeedback.Describe(e); }
         await Reload();
     }
 

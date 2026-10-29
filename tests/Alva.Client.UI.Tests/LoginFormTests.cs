@@ -91,7 +91,7 @@ public sealed class LoginFormTests : UiTestBase
 
         Submit(cut);
 
-        cut.WaitForAssertion(() => Assert.Equal("Аккаунт с этим email уже существует.", ErrorOf(cut, "Электронная почта")));
+        cut.WaitForAssertion(() => Assert.Equal("Аккаунт с этой почтой уже существует.", ErrorOf(cut, "Электронная почта")));
         Assert.DoesNotContain("Не удалось выполнить действие", cut.Markup);
     }
 
@@ -109,8 +109,8 @@ public sealed class LoginFormTests : UiTestBase
 
     [Theory]
     [InlineData(HttpStatusCode.Unauthorized, "Неверный email или пароль, либо вход временно заблокирован.")]
-    [InlineData(HttpStatusCode.InternalServerError, "Запрос не выполнен (500).")]
-    public void Other_server_refusals_go_to_the_summary_with_the_server_text(HttpStatusCode status, string message)
+    [InlineData(HttpStatusCode.InternalServerError, "Сервер не смог выполнить действие. Повторите позже.")]
+    public void Other_server_refusals_go_to_the_summary_with_a_clear_text(HttpStatusCode status, string message)
     {
         Api.OnAuthenticate = _ => new HttpRequestException(message, null, status);
         var cut = Page();

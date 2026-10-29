@@ -1,14 +1,35 @@
-@if (!string.IsNullOrEmpty(Error)) { <FlareAlert Severity="AlertSeverity.Error" Title="@(Strings.T("Не удалось выполнить действие"))">@Error</FlareAlert> }
+@if (!string.IsNullOrEmpty(Error))
+{
+    <FlareAlert Severity="AlertSeverity.Error" Title="@(Strings.T("Не удалось выполнить действие"))">
+        <FlareStack Gap="FlareSpacing.Small">
+            <span>@Error</span>
+            @if (OnRetry.HasDelegate) { <FlareButton Size="ButtonSize.Sm" Variant="ButtonVariant.Tonal" OnClick="Retry">@(Strings.T("Повторить"))</FlareButton> }
+        </FlareStack>
+    </FlareAlert>
+}
 @if (Loading) { <FlareProgressLinear Value="null" aria-label="@(Strings.T("Загрузка данных"))" /> }
 @code {
     [Parameter] public string? Error { get; set; }
     [Parameter] public bool Loading { get; set; }
+    [Parameter] public EventCallback OnRetry { get; set; }
+
+    private Task Retry() => OnRetry.HasDelegate ? OnRetry.InvokeAsync() : Task.CompletedTask;
 
     /// <summary>
-    /// Текст ошибки для страницы: отказ в доступе называется прямо, а не сырым ответом сервера — так он не путается
-    /// ни с «не найдено», ни с поломкой.
+    /// Текст ошибки для страницы: класс ошибки называется понятными словами, а не сырым ответом сервера.
+    /// 403 объясняет, что делать; 404 говорит, что запись исчезла; 409 — что данные уже изменились.
     /// </summary>
-    public static string Describe(Exception error) => error is HttpRequestException { StatusCode: System.Net.HttpStatusCode.Forbidden }
-        ? Strings.T("Нет доступа: у вашей роли нет прав на эти данные. Попросите владельца пространства выдать доступ.")
-        : error.Message;
+    public static string Describe(Exception error) => error switch
+    {
+        HttpRequestException { StatusCode: System.Net.HttpStatusCode.Unauthorized } => Strings.T("Сессия истекла. Войдите снова."),
+        HttpRequestException { StatusCode: System.Net.HttpStatusCode.Forbidden } => Strings.T("Нет доступа: у вашей роли нет прав на эти данные. Попросите владельца пространства выдать доступ."),
+        HttpRequestException { StatusCode: System.Net.HttpStatusCode.NotFound } => Strings.T("Запись не найдена: возможно, её уже удалили."),
+        HttpRequestException { StatusCode: System.Net.HttpStatusCode.Conflict } => Strings.T("Данные уже изменились. Обновите страницу и повторите."),
+        HttpRequestException { StatusCode: System.Net.HttpStatusCode.TooManyRequests } => Strings.T("Слишком много запросов. Подождите и повторите."),
+        HttpRequestException { StatusCode: System.Net.HttpStatusCode.BadRequest } => Strings.T("Проверьте введённые данные."),
+        HttpRequestException { StatusCode: { } status } when (int)status >= 500 => Strings.T("Сервер не смог выполнить действие. Повторите позже."),
+        HttpRequestException => Strings.T("Не удалось связаться с сервером. Проверьте соединение и повторите."),
+        TimeoutException or TaskCanceledException => Strings.T("Сервер не ответил вовремя. Повторите."),
+        _ => Strings.T("Не удалось выполнить действие. Повторите.")
+    };
 }

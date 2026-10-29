@@ -335,7 +335,7 @@
             _loadedFor = Sprint.Id;
             await Refresh(tasks: false);
         }
-        catch (Exception e) when (e is HttpRequestException or InvalidOperationException or NotSupportedException) { _error = e.Message; }
+        catch (Exception e) when (e is HttpRequestException or InvalidOperationException or NotSupportedException) { _error = PageFeedback.Describe(e); }
     }
 
     /// <summary>После правки: задачи страницы, ёмкость спринта и данные Гантта — всё, что показывает доска. Предложение автобаланса устаревает.</summary>
@@ -421,7 +421,7 @@
     {
         _error = null;
         try { await save(); }
-        catch (Exception e) when (e is HttpRequestException or InvalidOperationException or NotSupportedException) { args.Cancel = true; _error = e.Message; }
+        catch (Exception e) when (e is HttpRequestException or InvalidOperationException or NotSupportedException) { args.Cancel = true; _error = PageFeedback.Describe(e); }
         try { await Refresh(); }
         catch (Exception e) when (e is HttpRequestException or InvalidOperationException or NotSupportedException) { _error ??= e.Message; }
     }
@@ -512,7 +512,7 @@
     {
         _busy = true; _error = null;
         try { await action(); }
-        catch (Exception e) when (e is HttpRequestException or InvalidOperationException or NotSupportedException) { _error = e.Message; }
+        catch (Exception e) when (e is HttpRequestException or InvalidOperationException or NotSupportedException) { _error = PageFeedback.Describe(e); }
         finally { _busy = false; }
     }
 }

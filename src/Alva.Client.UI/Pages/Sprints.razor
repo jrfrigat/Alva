@@ -14,7 +14,7 @@
     <Actions><FlareButton @ref="_newButton" Size="ButtonSize.Sm" OnClick="New" Disabled="@(Session.TeamId is null)">@(Strings.T("Новый спринт"))</FlareButton></Actions>
 </AlvaPageHeader>
 }
-<PageFeedback Loading="_busy" Error="@_error" />
+<PageFeedback Loading="_busy" Error="@_error" OnRetry="Load" />
 @if(Session.TeamId is null){<TeamRequired />}
 else
 {

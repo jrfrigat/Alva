@@ -3,7 +3,7 @@
 @inject NavigationManager Navigation
 <PageTitle>@(Strings.T("Команды · Alva"))</PageTitle>
 <FlareText Element="h1" Typo="TypographyScale.HeadlineLarge">@(Strings.T("Рабочее пространство"))</FlareText>
-<PageFeedback Loading="_busy" Error="@_error" />
+<PageFeedback Loading="_busy" Error="@_error" OnRetry="Reload" />
 <EditorStatus Saved="_saved" Saving="_busy" />
 @if (Session.User is null) { <TeamRequired /> }
 else
@@ -27,7 +27,8 @@ else
 @code {
     private string? _spaceName, _teamName, _error; private bool _busy, _saved;
     protected override async Task OnInitializedAsync() => await Run(Session.Initialize);
-    private async Task Run(Func<Task> action) { _busy=true; _error=null; try { await action(); } catch(Exception e) when(e is HttpRequestException or InvalidOperationException) { _error=e.Message; } finally { _busy=false; } }
+    private Task Reload() => OnInitializedAsync();
+    private async Task Run(Func<Task> action) { _busy=true; _error=null; try { await action(); } catch(Exception e) when(e is HttpRequestException or InvalidOperationException) { _error=PageFeedback.Describe(e); } finally { _busy=false; } }
     private Task SelectWorkspace(Guid id) => Run(() => Session.SelectWorkspace(id));
     private Task SelectTeam(Guid id) => Run(async () => { await Session.SelectTeam(id); Navigation.NavigateTo(AppRoutes.Home); });
     private Task CreateSpace() => Run(async () => { await Session.Send(HttpMethod.Post,"api/workspaces",new { name=_spaceName }); _spaceName=null; await Session.LoadWorkspaces(); _saved=true; });
