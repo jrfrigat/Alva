@@ -690,3 +690,19 @@ a.alva-chip:hover,a.alva-chip:focus-visible{text-decoration:underline}
 .alva-form-errors:focus{outline:2px solid var(--alva-critical);outline-offset:2px}
 .alva-form-errors b{display:block;margin-bottom:.25rem}
 .alva-field-error{color:var(--alva-critical-text)}
+
+/* TASK-144: на сенсорном экране цели не меньше 44px, текст не мельче 12px, поля — 16px,
+   чтобы iOS не увеличивал страницу. Desktop-плотность не меняется: правила только в media. */
+@media (pointer:coarse){
+  .flare-btn,.flare-icon-button,.flare-tab,.flare-menu-item,.flare-bottom-nav-item,.flare-nav-link,.alva-quickfilter__item,.alva-segmented__item{min-height:44px}
+  .flare-btn--icon-only,.flare-icon-button{min-width:44px}
+  .alva-quickfilter__item,.alva-segmented__item{padding:10px 12px}
+  .alva-matrix__name,.alva-subtasks__title,.alva-archive__name,.alva-risk-table__reasons a,a.alva-chip{position:relative}
+  .alva-matrix__name::after,.alva-subtasks__title::after,.alva-archive__name::after,.alva-risk-table__reasons a::after,a.alva-chip::after{content:"";position:absolute;inset:-12px -8px}
+}
+@media(max-width:767px){
+  .alva-chip{font-size:12px;line-height:16px;padding:3px 7px}
+  .alva-micro-label,.alva-kpi__label,.alva-kpi__aside,.alva-kpi__foot,.alva-slot__meta,.alva-history__time,.alva-candidate__meta,.alva-candidate__current,.alva-iteration__legend,.alva-sprint-card__count,.alva-archive__meta,.alva-sprint-table__meta,.alva-capacity-bar__label,.alva-heat,.alva-heat__note,.alva-matrix__group-name small,.alva-matrix__group-total,.alva-plan-head__horizon,.alva-quickfilter__item,.alva-segmented__item{font-size:12px}
+  .alva-page-header__desc,.alva-panel__subtitle,.alva-kpi__note,.alva-chart-summary,.alva-form-errors,.alva-risk-panel__details{font-size:13px;line-height:18px}
+  input,select,textarea{font-size:16px}
+}
