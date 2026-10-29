@@ -7,7 +7,7 @@
     <header class="alva-panel__header">
         <FlareIconView Value="@MaterialDesign3Icons.Regular.WaterfallChart" Size="20px" Class="alva-panel__icon" />
         <div>
-            <h2 class="alva-panel__title">Синхронный Гантт 2D: @SprintCount @AlvaFormat.Plural(SprintCount, Strings.T("спринт"), Strings.T("спринта"), Strings.T("спринтов")) на оси</h2>
+            <h2 class="alva-panel__title">Синхронный Гантт 2D: @SprintCount @AlvaFormat.Plural(SprintCount, "sprint") на оси</h2>
             <p class="alva-panel__subtitle">@(Strings.T("Бросьте задачу на день — она попадёт в спринт этого дня и получит срок; на строку человека — ещё и исполнителя. Человека — на полосу."))</p>
         </div>
         <GanttLegend Class="alva-plan-gantt__legend" Items="BoardKey">

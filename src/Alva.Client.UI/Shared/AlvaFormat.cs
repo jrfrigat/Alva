@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace Alva.Client.Shared;
 
 /// <summary>Общие подписи экранов Alva: часы, инициалы, склонения и рабочие дни.</summary>
@@ -10,9 +12,18 @@ public static class AlvaFormat
     public static string Initials(string name) =>
         string.Concat(name.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(w => char.ToUpperInvariant(w[0])));
 
-    /// <summary>Русское склонение по числу: 1 задача, 2 задачи, 5 задач.</summary>
-    public static string Plural(int n, string one, string few, string many) =>
-        n % 100 is >= 11 and <= 14 ? many : (n % 10) switch { 1 => one, >= 2 and <= 4 => few, _ => many };
+    /// <summary>
+    /// Склонение по числу: в русском 1 задача, 2 задачи, 5 задач; в остальных языках —
+    /// one для единицы и other для всего остального. Формы лежат в ресурсах
+    /// <c>plural.&lt;noun&gt;.one|few|many</c>.
+    /// </summary>
+    public static string Plural(int n, string noun)
+    {
+        var form = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ru"
+            ? n % 100 is >= 11 and <= 14 ? "many" : (n % 10) switch { 1 => "one", >= 2 and <= 4 => "few", _ => "many" }
+            : n == 1 ? "one" : "many";
+        return Strings.T($"plural.{noun}.{form}");
+    }
 
     /// <summary>Рабочие дни (Пн–Пт) от <paramref name="from"/> до <paramref name="to"/> включительно.</summary>
     public static int WorkDays(DateOnly from, DateOnly to)

@@ -39,7 +39,7 @@
                 <FlareCheckbox TValue="bool" Value="_applyTo.Contains(person.Id)" ValueChanged="(bool on) => Toggle(person.Id, on)">@person.Name</FlareCheckbox>
             }
         </div>
-        <FlareStack Row><FlareButton Size="ButtonSize.Sm" Loading="_busy" Disabled="@(_applyTo.Count == 0)" OnClick="Apply">Применить к @_applyTo.Count @AlvaFormat.Plural(_applyTo.Count, Strings.T("сотруднику"), Strings.T("сотрудникам"), Strings.T("сотрудникам"))</FlareButton></FlareStack>
+        <FlareStack Row><FlareButton Size="ButtonSize.Sm" Loading="_busy" Disabled="@(_applyTo.Count == 0)" OnClick="Apply">Применить к @_applyTo.Count @AlvaFormat.Plural(_applyTo.Count, "employee")</FlareButton></FlareStack>
     </section>
 }
 

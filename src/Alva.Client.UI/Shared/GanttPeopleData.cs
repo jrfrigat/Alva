@@ -111,7 +111,7 @@ public sealed class GanttPeopleData
             if (children.Length == 0) continue;
             var name = group is { } id ? Data.Actor(id)!.Name : Strings.T(Strings.T("Без подкоманды"));
             var count = children.Count(c => c.Kind == "person");
-            rows.Add(new PeopleRow(GroupKey(group), "group", name, $"{count} {AlvaFormat.Plural(count, "человек", Strings.T(Strings.T("человека")), "человек")}", Data.Actor(group), children));
+            rows.Add(new PeopleRow(GroupKey(group), "group", name, $"{count} {AlvaFormat.Plural(count, "person")}", Data.Actor(group), children));
         }
         rows.Add(new PeopleRow(Pool, "pool", Strings.T(Strings.T("Не назначено")), Strings.T(Strings.T("Задачи без исполнителя")), null, []));
         return rows;

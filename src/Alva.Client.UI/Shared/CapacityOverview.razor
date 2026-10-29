@@ -48,7 +48,7 @@
 <div class="alva-kpis">
     <section class="alva-kpi">
         <div class="alva-kpi__head"><div><span class="alva-kpi__label">@(Strings.T("Доступный фонд (номинал)"))</span><span class="alva-num"><span class="alva-kpi__value">@AlvaFormat.Hours(Fund)</span> <span class="alva-kpi__unit">@(Strings.T("чел/час"))</span></span></div><span class="alva-kpi__icon"><FlareIconView Value="@MaterialDesign3Icons.Regular.CalendarMonth" Size="18px" /></span></div>
-        <div class="alva-kpi__foot"><span>@_periods.Length @PeriodWord(_periods.Length)</span><span class="alva-kpi__aside--primary">@VisiblePeople.Length @AlvaFormat.Plural(VisiblePeople.Length, "человек", Strings.T("человека"), "человек")</span></div>
+        <div class="alva-kpi__foot"><span>@_periods.Length @PeriodWord(_periods.Length)</span><span class="alva-kpi__aside--primary">@VisiblePeople.Length @AlvaFormat.Plural(VisiblePeople.Length, "person")</span></div>
     </section>
     <section class="alva-kpi">
         <div class="alva-kpi__head"><div><span class="alva-kpi__label">@(Strings.T("Запланированная нагрузка"))</span><span class="alva-num"><span class="alva-kpi__value">@AlvaFormat.Hours(Planned)</span> <span class="alva-kpi__unit">ч (@Pct(Planned, Fund)%)</span></span></div><AlvaStatusChip Tone="LoadTone">@LoadLabel</AlvaStatusChip></div>
@@ -91,7 +91,7 @@
             var groupFund = people.Sum(p => Available(p.Id));
             var groupBalance = groupFund - people.Sum(p => Allocated(p.Id)) - roles.Sum(r => Demand(r));
             <div class="alva-matrix__group" role="row">
-                <span role="cell" class="alva-matrix__group-name"><FlareIconView Value="@MaterialDesign3Icons.Regular.KeyboardArrowDown" Size="18px" /> @group.Name <small>(@people.Length @AlvaFormat.Plural(people.Length, "человек", Strings.T("человека"), "человек")@(roles.Length > 0 ? $", вакансий: {roles.Length}" : ""))</small></span>
+                <span role="cell" class="alva-matrix__group-name"><FlareIconView Value="@MaterialDesign3Icons.Regular.KeyboardArrowDown" Size="18px" /> @group.Name <small>(@people.Length @AlvaFormat.Plural(people.Length, "person")@(roles.Length > 0 ? $", вакансий: {roles.Length}" : ""))</small></span>
                 <span role="cell" class="alva-matrix__group-total @(groupBalance < 0 ? "alva-matrix__group-total--critical" : "")">@(groupBalance < 0 ? $"Дефицит периода: −{AlvaFormat.Hours(-groupBalance)} ч" : $"Резерв периода: +{AlvaFormat.Hours(groupBalance)} ч") · Фонд: @AlvaFormat.Hours(groupFund) ч</span>
             </div>
             @foreach (var person in people)
@@ -134,7 +134,7 @@
         }
         @if (!VisiblePeople.Any() && !Vacancies.Any()) { <div class="alva-sprint-table__empty">@(Strings.T("Нет людей с рабочими графиками за горизонт."))</div> }
     </div>
-    <footer class="alva-sprint-tasks__foot"><span>Показано: @VisiblePeople.Length @AlvaFormat.Plural(VisiblePeople.Length, "человек", Strings.T("человека"), "человек") в @Groups.Count(g => VisiblePeople.Any(p => GroupOf(p) == g.Id)) @AlvaFormat.Plural(Groups.Count(g => VisiblePeople.Any(p => GroupOf(p) == g.Id)), Strings.T("подкоманде"), Strings.T("подкомандах"), Strings.T("подкомандах"))</span><span>@(Strings.T("Фонд — по рабочим графикам людей с учётом отпусков и блоков"))</span></footer>
+    <footer class="alva-sprint-tasks__foot"><span>Показано: @VisiblePeople.Length @AlvaFormat.Plural(VisiblePeople.Length, "person") в @Groups.Count(g => VisiblePeople.Any(p => GroupOf(p) == g.Id)) @AlvaFormat.Plural(Groups.Count(g => VisiblePeople.Any(p => GroupOf(p) == g.Id)), "subteam")</span><span>@(Strings.T("Фонд — по рабочим графикам людей с учётом отпусков и блоков"))</span></footer>
 </section>
 
 @if (_periods.Length > 0)
@@ -210,9 +210,9 @@
         avail <= 0 && alloc <= 0 ? Strings.T("Нет графика") : alloc > avail ? $"Перегрузка: −{AlvaFormat.Hours(alloc - avail)} ч" : alloc == avail ? Strings.T("Полный баланс") : $"Резерв: +{AlvaFormat.Hours(avail - alloc)} ч";
     private string PeriodWord(int n) => _mode switch
     {
-        "sprints" => AlvaFormat.Plural(n, Strings.T("спринт"), Strings.T("спринта"), Strings.T("спринтов")),
-        "weeks" => AlvaFormat.Plural(n, Strings.T("неделя"), Strings.T("недели"), Strings.T("недель")),
-        _ => AlvaFormat.Plural(n, Strings.T("день"), Strings.T("дня"), Strings.T("дней"))
+        "sprints" => AlvaFormat.Plural(n, "sprint"),
+        "weeks" => AlvaFormat.Plural(n, "week"),
+        _ => AlvaFormat.Plural(n, "day")
     };
 
     private ChartData Forecast => new(

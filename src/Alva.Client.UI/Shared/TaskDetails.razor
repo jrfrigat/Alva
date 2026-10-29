@@ -70,7 +70,7 @@
             <span class="alva-task__summary-label">@(Strings.T("Суммарно:"))</span>
             <span class="alva-task__summary-value alva-num">
                 <FlareIconView Value="@MaterialDesign3Icons.Regular.Schedule" Size="16px" />
-                @AlvaFormat.Hours(Children.Sum(c => c.EstimateHours ?? 0)) ч (@Children.Length @AlvaFormat.Plural(Children.Length, Strings.T("подзадача"), Strings.T("подзадачи"), Strings.T("подзадач")))
+                @AlvaFormat.Hours(Children.Sum(c => c.EstimateHours ?? 0)) ч (@Children.Length @AlvaFormat.Plural(Children.Length, "subtask"))
             </span>
             @if (Children.Where(c => c.Deadline.HasValue).Select(c => c.Deadline!.Value).DefaultIfEmpty().Max() is var last && last != default)
             {
