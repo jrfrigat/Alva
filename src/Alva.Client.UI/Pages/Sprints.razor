@@ -2,9 +2,12 @@
 @page "/sprints/plan"
 @page "/sprints/{SprintId:guid}"
 @page "/sprints/{SprintId:guid}/plan"
+@implements IDisposable
 @inject AlvaSession Session
 @inject NavigationManager Navigation
+@inject DraftGuard Drafts
 <PageTitle>@(Planning ? Strings.T("Планирование") : Current?.Name ?? Strings.T("Спринты")) · Alva</PageTitle>
+<NavigationLock OnBeforeInternalNavigation="ConfirmLeave" ConfirmExternalNavigation="IsDirty" />
 @if(SprintId is null && !Planning)
 {
 <AlvaPageHeader Category="@(Strings.T("Планирование · Спринты"))" Title="@(Strings.T("Спринты команды"))" Description="@(Strings.T("Цели, сроки и состав спринтов команды."))">
@@ -40,6 +43,10 @@ else if(_loaded){<UnavailableState Title="@(Strings.T("Спринт не най�
 @code {
     [Parameter]public Guid? SprintId{get;set;}
     private SprintModel[] _sprints=[];private TaskModel[] _tasks=[];private SprintModel? _editing;private DateOnly? _start,_end;private bool _busy,_loaded;private string? _error;private readonly string[] _statuses=["Planned","Active","Completed"];
+    private string? _editingSnapshot; private IDisposable? _draft;
+    [CascadingParameter] public FlareConfirmDialogProvider? Confirm { get; set; }
+    internal bool IsDirty => _editing is not null && DraftSnapshot.Of(_editing, _start, _end) != _editingSnapshot;
+    protected override void OnInitialized() => _draft = Drafts.Track(() => IsDirty);
     private bool Planning => AppRoutes.Current(Navigation).EndsWith("/plan", StringComparison.Ordinal);
     private SprintModel? Current => SprintId.HasValue ? _sprints.FirstOrDefault(s=>s.Id==SprintId) : null;
     /// <summary>Спринт доски: указанный в адресе (без подмены, если его нет), иначе активный, иначе ближайший запланированный.</summary>
@@ -47,18 +54,28 @@ else if(_loaded){<UnavailableState Title="@(Strings.T("Спринт не най�
     protected override async Task OnParametersSetAsync(){_editing=null;await Load();}
     private async Task Run(Func<Task> action){_busy=true;_error=null;try{await action();}catch(Exception e) when(e is HttpRequestException or InvalidOperationException){_error=PageFeedback.Describe(e);}finally{_busy=false;}}
     private Task Load()=>Run(async()=>{await Session.Initialize();if(Session.TeamId is null)return;_sprints=await Session.Get<SprintModel[]>(Session.TeamPath("sprints"));_tasks=await Session.Get<TaskModel[]>(Session.TeamPath("tasks"));_loaded=true;});
-    private void New(){_editing=new SprintModel();_start=_editing.StartDate;_end=_editing.EndDate;}
-    private void Edit(SprintModel sprint){_editing=new SprintModel{Id=sprint.Id,Name=sprint.Name,Goal=sprint.Goal,StartDate=sprint.StartDate,EndDate=sprint.EndDate,Status=sprint.Status};_start=sprint.StartDate;_end=sprint.EndDate;}
+    private void New(){_editing=new SprintModel();_start=_editing.StartDate;_end=_editing.EndDate;_editingSnapshot=DraftSnapshot.Of(_editing,_start,_end);}
+    private void Edit(SprintModel sprint){_editing=new SprintModel{Id=sprint.Id,Name=sprint.Name,Goal=sprint.Goal,StartDate=sprint.StartDate,EndDate=sprint.EndDate,Status=sprint.Status};_start=sprint.StartDate;_end=sprint.EndDate;_editingSnapshot=DraftSnapshot.Of(_editing,_start,_end);}
     private FlareButton? _newButton,_emptyNewButton;private SprintPlanning? _planning;
     // Закрытие редактора возвращает фокус на кнопку, которой его открыли: «Параметры спринта» на доске или «Новый спринт».
     private async Task Close()
     {
-        var existing=_editing?.Id is { } id && id!=Guid.Empty;_editing=null;StateHasChanged();
+        if (!await DraftPrompt.CanDiscardAsync(Confirm, IsDirty)) return;
+        var existing=_editing?.Id is { } id && id!=Guid.Empty;_editing=null;_editingSnapshot=null;StateHasChanged();
         if(existing && _planning is not null) await _planning.FocusParams();
         // Ссылки @ref не обнуляются при смене маршрута, поэтому кнопку выбирает то, что сейчас на экране.
         else if((Planning ? PlanSprint is null ? _emptyNewButton : null : SprintId is null ? _newButton : null) is { } button) await button.FocusAsync();
     }
-    /// <summary>Доска изменила спринт или задачи: открытая форма параметров устарела.</summary>
-    private Task Reload(){_editing=null;return Load();}
+    /// <summary>Доска изменила спринт или задачи: открытая форма параметров устарела, но черновик не теряем.</summary>
+    private Task Reload(){if(!IsDirty){_editing=null;_editingSnapshot=null;}return Load();}
+
+    private async Task ConfirmLeave(LocationChangingContext context)
+    {
+        if (!IsDirty) return;
+        if (!await DraftPrompt.CanDiscardAsync(Confirm, true)) { context.PreventNavigation(); return; }
+        _editing=null; _editingSnapshot=null;
+    }
+
+    public void Dispose() => _draft?.Dispose();
     private Task Save()=>Run(async()=>{var s=_editing!;var saved=await Session.Save<SprintModel>(s.Id==Guid.Empty?HttpMethod.Post:HttpMethod.Put,Session.TeamPath("sprints"+(s.Id==Guid.Empty?"":$"/{s.Id}")),new SprintRequest(s.Name,s.Goal,_start!.Value,_end!.Value,s.Status));_sprints=await Session.Get<SprintModel[]>(Session.TeamPath("sprints"));_editing=null;Navigation.NavigateTo($"sprints/{saved.Id}/plan");});
 }

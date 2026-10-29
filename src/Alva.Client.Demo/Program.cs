@@ -9,6 +9,7 @@ AlvaHost.Configure(builder);
 builder.Services.AddScoped<IApiService, ApiServiceLocalStorage>();
 builder.Services.AddLocalization();
 builder.Services.AddScoped<CultureService>();
+builder.Services.AddScoped<DraftGuard>();
 var host = builder.Build();
 await host.Services.GetRequiredService<CultureService>().InitializeAsync();
 await host.RunAsync();

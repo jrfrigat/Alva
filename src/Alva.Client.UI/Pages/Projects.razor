@@ -1,8 +1,11 @@
 @page "/projects"
+@implements IDisposable
 @inject AlvaSession Session
+@inject DraftGuard Drafts
 @* Реестр проектов по макету p13: карточки проектов слева, выбранный проект справа — KPI,
    команды и их спринты, дерево задач (WBS). Статус проекта выводится из его задач. *@
 <PageTitle>@(Strings.T("Проекты · Alva"))</PageTitle>
+<NavigationLock OnBeforeInternalNavigation="ConfirmLeave" ConfirmExternalNavigation="IsDirty" />
 <AlvaPageHeader Category="@(Strings.T("Проекты нескольких команд"))" Title="@(Strings.T("Проекты"))" Description="@(Strings.T("Реестр проектов и вовлечённость команд. Проекты объединяют задачи, исполняемые спринтами разных команд."))">
     <Actions><FlareButton Size="ButtonSize.Sm" OnClick="New" Disabled="@(Session.TeamId is null)"><LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.AddCircle" Size="18px" /></LeadingIcon><ChildContent>@(Strings.T("Новый проект"))</ChildContent></FlareButton></Actions>
 </AlvaPageHeader>
@@ -30,7 +33,7 @@ else
     @foreach (var team in Session.Teams) { <FlareCheckbox TValue="bool" Value="_project.TeamIds.Contains(team.Id)" ValueChanged="(bool value) => ToggleTeam(team.Id, value)">@team.Name</FlareCheckbox> }
     <FlareStack Row Wrap>
         <FlareButton Loading="_busy" OnClick="SaveProject" Disabled="@(string.IsNullOrWhiteSpace(_project.Name))">@(Strings.T("Сохранить"))</FlareButton>
-        <FlareButton Variant="ButtonVariant.Text" OnClick="() => _project = null">@(Strings.T("Закрыть"))</FlareButton>
+        <FlareButton Variant="ButtonVariant.Text" OnClick="CloseProject">@(Strings.T("Закрыть"))</FlareButton>
         @if (_project.Id != Guid.Empty) { <FlareButton Variant="ButtonVariant.Text" Color="FlareColor.Error" OnClick="ArchiveProject">@(Strings.T("Архивировать"))</FlareButton> }
     </FlareStack>
 </FlareStack></FlareCardContent></FlareCard>
@@ -163,6 +166,9 @@ else
     private readonly Dictionary<Guid, TaskModel[]> _teamTasks = [];
     private readonly HashSet<Guid> _closedTeams = [];
     private ProjectModel? _project;
+    private string? _projectSnapshot; private IDisposable? _draft;
+    [CascadingParameter] public FlareConfirmDialogProvider? Confirm { get; set; }
+    internal bool IsDirty => _project is not null && DraftSnapshot.Of(_project) != _projectSnapshot;
     private Guid? _selected;
     private string _filter = "all";
     private string? _error, _wbsSearch;
@@ -210,7 +216,7 @@ else
     /// <summary>Проект, выбранный по ссылке (например, после создания задачи из него).</summary>
     [SupplyParameterFromQuery(Name = "project")] public Guid? ProjectParam { get; set; }
 
-    protected override async Task OnInitializedAsync() { _selected = ProjectParam; await Load(); }
+    protected override async Task OnInitializedAsync() { _draft = Drafts.Track(() => IsDirty); _selected = ProjectParam; await Load(); }
 
     private async Task Run(Func<Task> action)
     {
@@ -240,22 +246,36 @@ else
         }
     });
 
-    private void New() => _project = new ProjectModel { TeamIds = [Session.TeamId!.Value] };
-    private void Edit(ProjectModel model) => _project = new ProjectModel { Id = model.Id, Name = model.Name, Description = model.Description, TeamIds = [.. model.TeamIds] };
+    private void New() { _project = new ProjectModel { TeamIds = [Session.TeamId!.Value] }; _projectSnapshot = DraftSnapshot.Of(_project); }
+    private void Edit(ProjectModel model) { _project = new ProjectModel { Id = model.Id, Name = model.Name, Description = model.Description, TeamIds = [.. model.TeamIds] }; _projectSnapshot = DraftSnapshot.Of(_project); }
+    private async Task CloseProject()
+    {
+        if (!await DraftPrompt.CanDiscardAsync(Confirm, IsDirty)) return;
+        _project = null; _projectSnapshot = null;
+    }
+
+    private async Task ConfirmLeave(LocationChangingContext context)
+    {
+        if (!IsDirty) return;
+        if (!await DraftPrompt.CanDiscardAsync(Confirm, true)) { context.PreventNavigation(); return; }
+        _project = null; _projectSnapshot = null;
+    }
+
+    public void Dispose() => _draft?.Dispose();
     private void ToggleTeam(Guid id, bool value) => _project!.TeamIds = value ? _project.TeamIds.Append(id).Distinct().ToArray() : _project.TeamIds.Where(x => x != id).ToArray();
 
     private Task SaveProject() => Run(async () =>
     {
         var p = _project!;
         await Session.Send(p.Id == Guid.Empty ? HttpMethod.Post : HttpMethod.Put, Session.TeamPath("projects" + (p.Id == Guid.Empty ? "" : $"/{p.Id}")), new ProjectRequest(p.Name, p.Description, p.TeamIds));
-        _project = null;
+        _project = null; _projectSnapshot = null;
         _projects = await Session.Get<ProjectModel[]>(Session.TeamPath("projects"));
     });
 
     private Task ArchiveProject() => Run(async () =>
     {
         await Session.Send(HttpMethod.Delete, Session.TeamPath($"projects/{_project!.Id}"), new { });
-        _project = null;
+        _project = null; _projectSnapshot = null;
         _projects = await Session.Get<ProjectModel[]>(Session.TeamPath("projects"));
     });
 }

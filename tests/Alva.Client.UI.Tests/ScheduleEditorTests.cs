@@ -3,6 +3,7 @@ using Alva.Client.Shared;
 using Alva.Contracts;
 using AngleSharp.Dom;
 using Bunit;
+using Flare.Components;
 using Xunit;
 
 namespace Alva.Client.UI.Tests;
@@ -125,6 +126,19 @@ public sealed class ScheduleEditorTests : UiTestBase
         Button(cut, "Удалить вычет «Планёрка»").Click();
         cut.WaitForAssertion(() => Assert.Contains("Сервер недоступен", cut.Markup));
         AssertDraftKept(cut);
+    }
+
+    [Fact]
+    public void Resetting_asks_before_discarding_the_draft()
+    {
+        var page = Render<FlareConfirmDialogProvider>(p => p.AddChildContent<ScheduleEditor>(e => e.Add(x => x.ActorId, _person)));
+        page.Find("input[aria-label='Часы: Понедельник']").Change("6");
+
+        Button(page, "Сбросить изменения").Click();
+
+        page.WaitForAssertion(() => Assert.NotNull(page.Find("[role='alertdialog']")));
+        Button(page, "Остаться").Click();
+        Assert.Equal("6", page.Find("input[aria-label='Часы: Понедельник']").GetAttribute("value"));
     }
 
     [Fact]

@@ -1,9 +1,12 @@
 @page "/team"
 @page "/team/departments"
 @page "/team/roles"
+@implements IDisposable
 @inject AlvaSession Session
 @inject NavigationManager Navigation
+@inject DraftGuard Drafts
 <PageTitle>@Title · Alva</PageTitle>
+<NavigationLock OnBeforeInternalNavigation="ConfirmLeave" ConfirmExternalNavigation="IsDirty" />
 <AlvaPageHeader Category="@Category" Title="@Title">
     <Actions><FlareButton Size="ButtonSize.Sm" OnClick="New" Disabled="@(Session.TeamId is null)">@(Strings.T("Добавить"))</FlareButton></Actions>
 </AlvaPageHeader>
@@ -39,7 +42,7 @@ else
     <FlareButton Variant="ButtonVariant.Text" Size="ButtonSize.Sm" OnClick="AddRole" Disabled="@(!_role.HasValue)">@(Strings.T("Добавить роль"))</FlareButton>
     <FlareStack Row Wrap>@foreach(var role in _actor.RoleIds) { <FlareButton Variant="ButtonVariant.Tonal" Size="ButtonSize.Sm" OnClick="()=>RemoveRole(role)">@ActorName(role) ×</FlareButton> }</FlareStack>
     }
-    <FlareStack Row Wrap><FlareButton Loading="_busy" OnClick="SaveActor" Disabled="@(string.IsNullOrWhiteSpace(_actor.Name))">@(Strings.T("Сохранить"))</FlareButton><FlareButton Variant="ButtonVariant.Text" OnClick="Close">@(Strings.T("Закрыть"))</FlareButton>
+    <FlareStack Row Wrap><FlareButton Loading="_busy" OnClick="SaveActor" Disabled="@(string.IsNullOrWhiteSpace(_actor.Name))">@(Strings.T("Сохранить"))</FlareButton><FlareButton Variant="ButtonVariant.Text" OnClick="CloseActor">@(Strings.T("Закрыть"))</FlareButton>
     @if(_actor.Id!=Guid.Empty) { @if(_actor.Kind!="Role") { <FlareButton Href="@(_actor.Kind=="Department"?$"capacity/{_actor.Id}/schedule":$"capacity/{_actor.Id}")" Variant="ButtonVariant.Text">@(Strings.T("Рабочий график"))</FlareButton> }<FlareButton Variant="ButtonVariant.Text" Color="FlareColor.Error" OnClick="ArchiveActor">@(Strings.T("Архивировать"))</FlareButton> }</FlareStack>
 </FlareStack></FlareCardContent></FlareCard>
 }
@@ -47,6 +50,10 @@ else
 }
 @code {
     private ActorModel[] _actors=[];private ActorModel? _actor;private Guid? _role;private bool _busy;private string? _error;
+    private string? _actorSnapshot; private IDisposable? _draft;
+    [CascadingParameter] public FlareConfirmDialogProvider? Confirm { get; set; }
+    internal bool IsDirty => _actor is not null && DraftSnapshot.Of(_actor) != _actorSnapshot;
+    protected override void OnInitialized() => _draft = Drafts.Track(() => IsDirty);
     private string[] _skillSuggestions=[];
     private string Route=>AppRoutes.Current(Navigation);
     private string Kind=>Route.EndsWith("departments")?"Department":Route.EndsWith("roles")?"Role":"Person";
@@ -62,9 +69,23 @@ else
         catch (HttpRequestException e) when(e.StatusCode==System.Net.HttpStatusCode.Forbidden) { }
         _skillSuggestions=tags.Distinct(StringComparer.OrdinalIgnoreCase).Order(StringComparer.CurrentCultureIgnoreCase).ToArray();
     }
-    private void New()=>_actor=new ActorModel {Kind=Kind};
-    private void Close(){_actor=null;_role=null;}
-    private void EditActor(ActorModel model){Close();_actor=new ActorModel{Id=model.Id,Name=model.Name,Kind=model.Kind,Email=model.Email,ParentId=model.ParentId,RoleIds=[..model.RoleIds],DepartmentIds=[..model.DepartmentIds],UserId=model.UserId,Skills=[..model.Skills]};}
+    private void New(){_actor=new ActorModel {Kind=Kind};_actorSnapshot=DraftSnapshot.Of(_actor);}
+    private void Close(){_actor=null;_role=null;_actorSnapshot=null;}
+    private async Task CloseActor()
+    {
+        if (!await DraftPrompt.CanDiscardAsync(Confirm, IsDirty)) return;
+        Close();
+    }
+
+    private async Task ConfirmLeave(LocationChangingContext context)
+    {
+        if (!IsDirty) return;
+        if (!await DraftPrompt.CanDiscardAsync(Confirm, true)) { context.PreventNavigation(); return; }
+        Close();
+    }
+
+    public void Dispose() => _draft?.Dispose();
+    private void EditActor(ActorModel model){Close();_actor=new ActorModel{Id=model.Id,Name=model.Name,Kind=model.Kind,Email=model.Email,ParentId=model.ParentId,RoleIds=[..model.RoleIds],DepartmentIds=[..model.DepartmentIds],UserId=model.UserId,Skills=[..model.Skills]};_actorSnapshot=DraftSnapshot.Of(_actor);}
     private void ToggleDepartment(Guid id,bool value)=>_actor!.DepartmentIds=value?_actor.DepartmentIds.Append(id).Distinct().ToArray():_actor.DepartmentIds.Where(x=>x!=id).ToArray();
     private string ActorName(Guid? id)=>_actors.FirstOrDefault(a=>a.Id==id)?.Name??Strings.T("Без подкоманды");
     private void AddRole(){if(_role.HasValue)_actor!.RoleIds=_actor.RoleIds.Append(_role.Value).Distinct().ToArray();_role=null;}

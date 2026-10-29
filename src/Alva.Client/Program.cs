@@ -15,6 +15,7 @@ builder.Services.AddScoped(_ =>
 builder.Services.AddScoped<IApiService, ApiServiceHttp>();
 builder.Services.AddLocalization();
 builder.Services.AddScoped<CultureService>();
+builder.Services.AddScoped<DraftGuard>();
 var host = builder.Build();
 await host.Services.GetRequiredService<CultureService>().InitializeAsync();
 await host.RunAsync();

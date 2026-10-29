@@ -949,4 +949,6 @@
   <data name="Штриховка — ожидание подзадач" xml:space="preserve"><value>Hatching — waiting for subtasks</value></data>
   <data name="Перегрузка" xml:space="preserve"><value>Overload</value></data>
   <data name="Язык" xml:space="preserve"><value>Language</value></data>
+  <data name="Есть несохранённые правки. Уйти и потерять их?" xml:space="preserve"><value>There are unsaved changes. Leave and lose them?</value></data>
+  <data name="Несохранённые правки будут потеряны при смене языка. Продолжить?" xml:space="preserve"><value>Unsaved changes will be lost when switching the language. Continue?</value></data>
 </root>

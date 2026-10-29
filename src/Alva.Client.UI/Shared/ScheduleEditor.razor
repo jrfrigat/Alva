@@ -1,7 +1,10 @@
 @* Редактор рабочего графика по макету p16: часы по дням недели, повторяющиеся вычеты, отпуска и
    праздники, расчёт ёмкости и применение графика к другим сотрудникам. Для подкоманды — только общие
    вычеты и нерабочие периоды, которые действуют на всех её участников. *@
+@implements IDisposable
 @inject AlvaSession Session
+@inject DraftGuard Drafts
+<NavigationLock OnBeforeInternalNavigation="ConfirmLeave" ConfirmExternalNavigation="Dirty" />
 <section class="alva-page-header">
     <div class="alva-page-header__text">
         @if (IsDepartment)
@@ -194,6 +197,16 @@
     // Сохранённые часы недели: снимаются при каждой загрузке календаря, а не собираются на каждом рендере.
     private decimal[] Saved { get; set; } = new decimal[7];
     private bool Dirty => _calendar is not null && (!_hours.SequenceEqual(Saved) || _timeZone != _calendar.TimeZone);
+    private IDisposable? _draft;
+    [CascadingParameter] public FlareConfirmDialogProvider? Confirm { get; set; }
+    protected override void OnInitialized() => _draft = Drafts.Track(() => Dirty);
+    public void Dispose() => _draft?.Dispose();
+
+    private async Task ConfirmLeave(LocationChangingContext context)
+    {
+        if (!Dirty) return;
+        if (!await DraftPrompt.CanDiscardAsync(Confirm, true)) context.PreventNavigation();
+    }
 
     /// <summary>Вычеты блоков в день недели (0 — понедельник в порядке экрана).</summary>
     private decimal BlocksOn(int screenDay) => _calendar?.RecurringBlocks.Where(b => (b.DayOfWeek + 6) % 7 == screenDay).Sum(b => b.Hours) ?? 0;
@@ -237,7 +250,11 @@
         _window = (await Session.Get<CapacityDto[]>(Session.TeamPath($"capacity?from={Today:yyyy-MM-dd}&to={Today.AddDays(13):yyyy-MM-dd}"))).Where(r => r.ActorId == ActorId).ToArray();
     }
 
-    private void Reset() { _hours = Saved.ToArray(); _timeZone = _calendar!.TimeZone; }
+    private async Task Reset()
+    {
+        if (!await DraftPrompt.CanDiscardAsync(Confirm, Dirty)) return;
+        _hours = Saved.ToArray(); _timeZone = _calendar!.TimeZone;
+    }
     private void Toggle(Guid id, bool on) { if (on) _applyTo.Add(id); else _applyTo.Remove(id); }
     private CalendarRequest Request => new(_timeZone, _hours[0], _hours[1], _hours[2], _hours[3], _hours[4], _hours[5], _hours[6]);
 

@@ -53,7 +53,7 @@ else if (_data is not null && _people is not null)
     <FlareDrawer Anchor="DrawerAnchor.Right" Open="_panelOpen" OpenChanged="OnPanelOpen" Width="34rem" ContentPadding="FlareSpacing.Large" AriaLabel="@(Strings.T("Задача"))">
         @if (_open is not null)
         {
-            <TaskDetails Item="_open" Tasks="_data!.Tasks" Projects="_projects" Sprints="_data.Sprints" Actors="_data.Actors" Changed="@(() => Reload())" />
+            <TaskDetails @ref="_details" Item="_open" Tasks="_data!.Tasks" Projects="_projects" Sprints="_data.Sprints" Actors="_data.Actors" Changed="@(() => Reload())" />
         }
     </FlareDrawer>
 }
@@ -73,6 +73,8 @@ else if (_data is not null && _people is not null)
 
     // Панель задачи: та же, что на «Гантте по задачам».
     private TaskModel? _open;
+    private TaskDetails? _details;
+    [CascadingParameter] public FlareConfirmDialogProvider? Confirm { get; set; }
     private bool _panelOpen;
     private ElementReference _host;
     private ProjectModel[] _projects = [];
@@ -141,6 +143,12 @@ else if (_data is not null && _people is not null)
     /// <summary>Панель закрылась (Esc, фон или кнопка): задача отпускается, фокус возвращается к доске.</summary>
     private async Task OnPanelOpen(bool open)
     {
+        if (!open && _details?.Dirty == true && !await DraftPrompt.CanDiscardAsync(Confirm, true))
+        {
+            _panelOpen = true;
+            StateHasChanged();
+            return;
+        }
         _panelOpen = open;
         if (open) return;
         _open = null;

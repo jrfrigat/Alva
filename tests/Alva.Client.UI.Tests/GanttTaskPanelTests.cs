@@ -1,5 +1,6 @@
 using Alva.Client.Models;
 using Alva.Client.Pages;
+using Alva.Client.Shared;
 using Alva.Contracts;
 using Bunit;
 using Flare.Components;
@@ -55,6 +56,22 @@ public sealed class GanttTaskPanelTests : UiTestBase
         cut.WaitForAssertion(() => Assert.Contains("Релиз", Panel(cut).TextContent));
     }
 
+    [Fact]
+    public void Closing_the_panel_with_unsaved_changes_asks_first()
+    {
+        var cut = ChartPage();
+
+        cut.Find("[role='button']").Click();
+        cut.WaitForAssertion(() => Assert.Contains("Релиз", Panel(cut).TextContent));
+        Field(cut, "Название").Change("Релиз 2.0");
+        var drawer = cut.FindComponent<FlareDrawer>();
+        cut.InvokeAsync(() => drawer.Instance.OpenChanged.InvokeAsync(false));
+
+        cut.WaitForAssertion(() => Assert.NotNull(cut.Find("[role='alertdialog']")));
+        Button(cut, "Остаться").Click();
+        Assert.Equal("Релиз 2.0", Field(cut, "Название").GetAttribute("value"));
+    }
+
     // Доска виртуализирует строки и колонки, поэтому сначала сообщаем ей размеры и видимую часть оси —
     // в bUnit эти вызовы, которые в браузере делает gantt.js, не приходят сами. Окно ставим на полосу
     // задачи: виртуализированный Gantt рисует только колонки вокруг видимой части, а не всю ось.
@@ -70,7 +87,19 @@ public sealed class GanttTaskPanelTests : UiTestBase
         return cut;
     }
 
-    private static AngleSharp.Dom.IElement Panel(IRenderedComponent<GanttTasks> cut) =>
+    private IRenderedComponent<FlareConfirmDialogProvider> ChartPage()
+    {
+        var cut = Render<FlareConfirmDialogProvider>(p => p.AddChildContent<GanttTasks>());
+        cut.WaitForAssertion(() => Assert.NotEmpty(cut.FindAll(".alva-gantt")));
+        var chart = cut.FindComponent<FlareGantt>().Instance;
+        cut.InvokeAsync(() => chart.Viewport(1200, 256));
+        var start = chart.X(_task.StartDate!.Value.ToDateTime(TimeOnly.MinValue));
+        cut.InvokeAsync(() => chart.Horizontal(Math.Max(0, start - 100), 400));
+        cut.WaitForAssertion(() => Assert.NotEmpty(cut.FindAll("[role='button']")));
+        return cut;
+    }
+
+    private static AngleSharp.Dom.IElement Panel<T>(IRenderedComponent<T> cut) where T : Microsoft.AspNetCore.Components.IComponent =>
         cut.FindAll(".flare-drawer").FirstOrDefault(panel => panel.TextContent.Contains("Релиз"))
         ?? throw new InvalidOperationException("Панель задачи не открылась");
 }

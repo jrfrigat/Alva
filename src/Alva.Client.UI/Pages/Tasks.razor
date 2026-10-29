@@ -2,9 +2,12 @@
 @page "/tasks/{TaskId:guid}"
 @page "/unassigned"
 @page "/my-work"
+@implements IDisposable
 @inject AlvaSession Session
 @inject NavigationManager Navigation
+@inject DraftGuard Drafts
 <PageTitle>@(Current is null ? Strings.T("Задачи") : Current.Title) · Alva</PageTitle>
+<NavigationLock OnBeforeInternalNavigation="ConfirmLeave" ConfirmExternalNavigation="IsDirty" />
 @if (Current is not null)
 {
     <PageFeedback Error="@_error" Loading="_busy" />
@@ -90,7 +93,10 @@ else
 @code {
     [Parameter] public Guid? TaskId { get; set; }
     private TaskModel[] _tasks=[]; private ProjectModel[] _projects=[]; private SprintModel[] _sprints=[]; private ActorModel[] _actors=[]; private HistoryDto[] _history=[];
-    private TaskModel? _editing; private string? _error,_search,_statusFilter; private Guid? _projectFilter; private bool _busy,_loaded;
+    private TaskModel? _editing; private string? _editingSnapshot; private IDisposable? _draft;
+    private string? _error,_search,_statusFilter; private Guid? _projectFilter; private bool _busy,_loaded;
+    [CascadingParameter] public FlareConfirmDialogProvider? Confirm { get; set; }
+    internal bool IsDirty => _editing is not null && DraftSnapshot.Of(_editing) != _editingSnapshot;
     private double _pendingScroll;
     private readonly string[] _statuses=["Backlog","Planned","InProgress","Done","Cancelled"];
     private string Route => AppRoutes.Current(Navigation);
@@ -106,6 +112,7 @@ else
     private TaskModel? Current => TaskId.HasValue ? _tasks.FirstOrDefault(t=>t.Id==TaskId) : null;
     protected override async Task OnInitializedAsync()
     {
+        _draft = Drafts.Track(() => IsDirty);
         // Список пересоздаётся по ключу маршрута (MainLayout), поэтому поиск, фильтры и позиция возвращаются
         // из TaskListState — после перехода в карточку и Back, а также после перезагрузки страницы.
         var context = await Session.TaskList.Load();
@@ -138,7 +145,7 @@ else
     // нём не срабатывает — правки уходят только после явного согласия.
     private void OnCardKey(KeyboardEventArgs e)
     {
-        if (e.Key != "Escape" || _details?.Dirty == true) return;
+        if (e.Key != "Escape" || _details?.Dirty == true || IsDirty) return;
         _returnFocus = true;
         Navigation.NavigateTo("tasks");
     }
@@ -166,8 +173,8 @@ else
     private async Task Open(TaskModel? task){ if(task is null) return; await Session.TaskList.SaveFilters(_search, _projectFilter, _statusFilter); await Session.TaskList.SaveScroll(await Session.TaskList.Scroll()); Navigation.NavigateTo($"tasks/{task.Id}"); }
     private async Task Run(Func<Task> action) { _busy=true; _error=null;try{await action();}catch(Exception e) when(e is HttpRequestException or InvalidOperationException){_error=PageFeedback.Describe(e);}finally{_busy=false;} }
     private Task Load()=>Run(async()=>{await Session.Initialize();if(Session.TeamId is null)return;_tasks=await Session.Get<TaskModel[]>(Session.TeamPath("tasks"));_projects=await Session.Get<ProjectModel[]>(Session.TeamPath("projects"));_actors=await Session.Get<ActorModel[]>(Session.TeamPath("actors"));_sprints=await Session.Get<SprintModel[]>(Session.TeamPath("sprints"));_loaded=true;});
-    private void NewTask(){_editing=new TaskModel { TeamId=Session.TeamId!.Value };_history=[];}
-    private void NewChild(Guid id){NewTask();_editing!.ParentId=id;}
+    private void NewTask(){_editing=new TaskModel { TeamId=Session.TeamId!.Value };_history=[];_editingSnapshot=DraftSnapshot.Of(_editing);}
+    private void NewChild(Guid id){NewTask();_editing!.ParentId=id;_editingSnapshot=DraftSnapshot.Of(_editing);}
     private FlareButton? _newButton;
     // Открытая карточка задачи: её обёртка (фокус при открытии), сама карточка (несохранённые правки) и
     // признаки, что после перерисовки нужно вернуть фокус.
@@ -176,9 +183,25 @@ else
     private Guid? _opened;
     private bool _focusCard;
     private bool _returnFocus;
-    private void Hide(){_editing=null;_history=[];}
+    private void Hide(){_editing=null;_history=[];_editingSnapshot=null;}
     // Закрытие редактора возвращает фокус на кнопку, которой его открыли, а не роняет его на body.
-    private async Task Close(){Hide();if(BackToProject){Navigation.NavigateTo($"projects?project={NewProject}");return;}StateHasChanged();if(_newButton is not null) await _newButton.FocusAsync();}
+    private async Task Close()
+    {
+        if (!await DraftPrompt.CanDiscardAsync(Confirm, IsDirty)) return;
+        Hide();
+        if(BackToProject){Navigation.NavigateTo($"projects?project={NewProject}");return;}
+        StateHasChanged();
+        if(_newButton is not null) await _newButton.FocusAsync();
+    }
+
+    private async Task ConfirmLeave(LocationChangingContext context)
+    {
+        if (!IsDirty) return;
+        if (!await DraftPrompt.CanDiscardAsync(Confirm, true)) { context.PreventNavigation(); return; }
+        Hide();
+    }
+
+    public void Dispose() => _draft?.Dispose();
     private Task Save()=>Run(async()=>{
         var model=_editing!;var request=new TaskRequest(model.Title,model.Description,model.Status,model.ProjectId,model.ParentId,model.EstimateHours,model.Deadline,model.StartDate,model.EndDate,model.Order,model.Id==Guid.Empty?null:model.Version,model.RequiredSkills,model.Priority, RemainingHours:model.RemainingHours, SetRemainingHours:true, DatesFixed:model.DatesFixed);
         var saved=await Session.Save<TaskModel>(model.Id==Guid.Empty?HttpMethod.Post:HttpMethod.Put,Session.TeamPath("tasks"+(model.Id==Guid.Empty?"":$"/{model.Id}")),request);

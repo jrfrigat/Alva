@@ -23,6 +23,7 @@ public abstract class UiTestBase : BunitContext, IAsyncLifetime
         Services.AddFlareGantt();
         Services.AddLocalization();
         Services.AddScoped<CultureService>();
+        Services.AddScoped<DraftGuard>();
         Services.AddSingleton<IApiService>(Api);
         Services.AddScoped<AlvaSession>();
         // Колокольчик рисков в шапке зависит от этого сервиса; для тестов шапки он должен быть в контейнере.

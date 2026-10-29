@@ -4,6 +4,8 @@
 @inject NavigationManager Navigation
 @inject IBrowserViewportService Viewport
 @inject CultureService Cultures
+@inject DraftGuard Drafts
+@inject IJSRuntime JS
 <a class="skip-link" href="#main-content">@(Strings.T("К содержимому"))</a>
 @* Подтверждения (уход с несохранёнными правками и др.) — штатный диалог Flare, один на приложение. *@
 <FlareConfirmDialogProvider>
@@ -120,6 +122,8 @@
     // Switching the language reloads the shell: the whole tree must render in the new language.
     private async Task ToggleCulture()
     {
+        if (Drafts.HasDirty && !await JS.InvokeAsync<bool>("confirm", Strings.T("Несохранённые правки будут потеряны при смене языка. Продолжить?")))
+            return;
         await Cultures.SetAsync(Cultures.Current == "ru" ? "en" : "ru");
         Navigation.NavigateTo(Navigation.Uri, forceLoad: true);
     }

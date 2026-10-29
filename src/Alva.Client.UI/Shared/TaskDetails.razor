@@ -1,7 +1,9 @@
 @* Страница задачи по макету p9: крошки, действия, описание и параметры, дерево задач подзадач,
    история и боковая панель назначения исполнителя с загрузкой кандидатов. *@
+@implements IDisposable
 @inject AlvaSession Session
 @inject NavigationManager Navigation
+@inject DraftGuard Drafts
 <NavigationLock OnBeforeInternalNavigation="ConfirmLeave" ConfirmExternalNavigation="Dirty" />
 <div class="alva-task">
     <FlareBreadcrumb Items="Crumbs" Separator="›" AriaLabel="@(Strings.T("Путь к задаче"))" />
@@ -205,6 +207,9 @@
     [CascadingParameter] public FlareConfirmDialogProvider? Confirm { get; set; }
 
     private bool _leaving;
+    private IDisposable? _draft;
+    protected override void OnInitialized() => _draft = Drafts.Track(() => Dirty);
+    public void Dispose() => _draft?.Dispose();
 
     // Черновик уступает свежим данным после конфликта версий: иначе сохранение уходило бы со старой версией.
     private bool _adoptFresh;

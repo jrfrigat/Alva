@@ -949,4 +949,6 @@
   <data name="Штриховка — ожидание подзадач" xml:space="preserve"><value>Штриховка — ожидание подзадач</value></data>
   <data name="Перегрузка" xml:space="preserve"><value>Перегрузка</value></data>
   <data name="Язык" xml:space="preserve"><value>Язык</value></data>
+  <data name="Есть несохранённые правки. Уйти и потерять их?" xml:space="preserve"><value>Есть несохранённые правки. Уйти и потерять их?</value></data>
+  <data name="Несохранённые правки будут потеряны при смене языка. Продолжить?" xml:space="preserve"><value>Несохранённые правки будут потеряны при смене языка. Продолжить?</value></data>
 </root>
