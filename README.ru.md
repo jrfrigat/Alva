@@ -56,6 +56,13 @@
 Приложение: <http://localhost:8080>. Подробности — в
 [Начале работы](docs/ru/getting-started.md).
 
+Собрать образ без запуска стека и опубликовать его:
+
+```powershell
+docker build -f build/Dockerfile -t alva:latest .
+./publish-docker.bat ВАШ_DOCKERHUB latest
+```
+
 ### Локально без Docker
 
 ```powershell
@@ -66,13 +73,13 @@ dotnet run --project src/Alva.Api --urls http://localhost:8080
 
 ## Установка из релиза
 
-Релиз (тег `v*`) публикует образ в Docker Hub:
+Релиз (тег `v*`) публикует образ в GHCR и, если задана переменная `DOCKERHUB_USERNAME`, в Docker Hub:
 
 ```sh
-docker pull <ваш-dockerhub>/alva:latest
+docker pull ghcr.io/jrfrigat/alva:latest
 docker run -p 8080:8080 \
   -e ConnectionStrings__Alva="Host=<host>;Port=5432;Database=alva;Username=alva;Password=<пароль>" \
-  <ваш-dockerhub>/alva:latest
+  ghcr.io/jrfrigat/alva:latest
 # Alva: http://localhost:8080
 ```
 

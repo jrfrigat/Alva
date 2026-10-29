@@ -20,9 +20,10 @@ services:
     restart: unless-stopped
 
   app:
+    image: ${ALVA_IMAGE:-alva:latest}
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: build/Dockerfile
     environment:
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Production}
       ASPNETCORE_HTTP_PORTS: "8080"

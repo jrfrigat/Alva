@@ -2,11 +2,22 @@
 
 ## Image
 
-A release (a pushed `v*` tag) builds the image and publishes it to Docker Hub:
+A release (a pushed `v*` tag) builds the image and publishes it to GHCR; Docker Hub is added when
+the `DOCKERHUB_USERNAME` repository variable is set:
 
 ```sh
-docker pull <your-dockerhub>/alva:latest        # or a pinned :X.Y.Z tag
+docker pull ghcr.io/jrfrigat/alva:latest        # or a pinned :X.Y.Z tag
 ```
+
+Build and publish a local image:
+
+```powershell
+docker build -f build/Dockerfile -t alva:latest .
+./publish-docker.bat YOUR_DOCKERHUB latest      # or ghcr.io/OWNER
+```
+
+A GHCR package is private by default; change its visibility in the package settings if the image is
+meant to be pulled without a token.
 
 ## Compose
 
@@ -54,8 +65,9 @@ The application answers on `/health/ready` (the database is reachable) and `/hea
 
 1. Make sure `main` is green (CI).
 2. Tag: `git tag v0.1.0 && git push origin v0.1.0`.
-3. The `Release` workflow builds and tests the solution, publishes the image to Docker Hub (when the
-   `DOCKERHUB_USERNAME` variable is set) and creates a GitHub Release.
+3. The `Release` workflow builds and tests the solution, publishes the image to GHCR and, when the
+   `DOCKERHUB_USERNAME` variable is set, to Docker Hub, then creates a GitHub Release.
 
-Required repository settings: the `DOCKERHUB_USERNAME` variable, the `DOCKERHUB_TOKEN` secret, and Pages
-with the "GitHub Actions" source for the demo.
+GHCR works with the workflow's own token; no extra secret is needed. For Docker Hub set the
+`DOCKERHUB_USERNAME` variable and the `DOCKERHUB_TOKEN` secret. For the demo, enable Pages with the
+"GitHub Actions" source.

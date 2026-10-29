@@ -49,6 +49,13 @@ Open <https://jrfrigat.github.io/Alva/> — the data lives in `localStorage`, no
 The script creates `.env` with a generated password, builds the image and starts the stack.
 Application: <http://localhost:8080>. See [Getting started](docs/en/getting-started.md) for details.
 
+To build the image without starting the stack, or publish a built image:
+
+```powershell
+docker build -f build/Dockerfile -t alva:latest .
+./publish-docker.bat YOUR_DOCKERHUB latest
+```
+
 ### Locally, without Docker
 
 ```powershell
@@ -59,13 +66,14 @@ dotnet run --project src/Alva.Api --urls http://localhost:8080
 
 ## Install from a release
 
-A release (a pushed `v*` tag) publishes the image to Docker Hub:
+A release (a pushed `v*` tag) publishes the image to GHCR and, when `DOCKERHUB_USERNAME` is set, to
+Docker Hub:
 
 ```sh
-docker pull <your-dockerhub>/alva:latest
+docker pull ghcr.io/jrfrigat/alva:latest
 docker run -p 8080:8080 \
   -e ConnectionStrings__Alva="Host=<host>;Port=5432;Database=alva;Username=alva;Password=<password>" \
-  <your-dockerhub>/alva:latest
+  ghcr.io/jrfrigat/alva:latest
 # Alva: http://localhost:8080
 ```
 

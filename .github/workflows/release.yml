@@ -1,9 +1,9 @@
 name: Release
 
 # Runs when a version tag is pushed, e.g. v0.1.0: builds and tests, builds the application image,
-# pushes it to Docker Hub and creates a GitHub Release. The version comes from the tag (v1.2.3 -> 1.2.3).
-# Publishing to Docker Hub happens only when the repository variable DOCKERHUB_USERNAME is set, so the
-# release still builds and records itself without Docker Hub configured.
+# pushes it to the GitHub Container Registry and, when DOCKERHUB_USERNAME is set, to Docker Hub.
+# The version comes from the tag (v1.2.3 -> 1.2.3). GHCR works with the workflow's own token, so a
+# release publishes an image even before Docker Hub is configured.
 
 on:
   push:
@@ -15,6 +15,7 @@ concurrency:
 
 permissions:
   contents: write   # create the GitHub Release
+  packages: write   # push the container image to GHCR
 
 jobs:
   release:
@@ -36,8 +37,32 @@ jobs:
       - run: dotnet build Alva.slnx -c Release --no-restore
       - run: dotnet test Alva.slnx -c Release --no-build
 
-      - name: Build container image
-        run: docker build -t alva:${{ steps.version.outputs.value }} .
+      # GHCR needs a lowercase repository path; github.repository preserves the repo's case.
+      # Docker Hub tags are added only when DOCKERHUB_USERNAME is set, so GHCR alone is enough.
+      - name: Compute image tags
+        id: tags
+        env:
+          DOCKERHUB_USER: ${{ vars.DOCKERHUB_USERNAME }}
+          VERSION: ${{ steps.version.outputs.value }}
+        run: |
+          GHCR="ghcr.io/${GITHUB_REPOSITORY,,}"
+          {
+            echo "list<<EOF"
+            echo "${GHCR}:${VERSION}"
+            echo "${GHCR}:latest"
+            if [ -n "${DOCKERHUB_USER}" ]; then
+              echo "docker.io/${DOCKERHUB_USER}/alva:${VERSION}"
+              echo "docker.io/${DOCKERHUB_USER}/alva:latest"
+            fi
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Log in to Docker Hub
         if: ${{ vars.DOCKERHUB_USERNAME != '' }}
@@ -46,15 +71,26 @@ jobs:
           username: ${{ vars.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Push to Docker Hub
+      - name: Build and push image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: build/Dockerfile
+          push: true
+          tags: ${{ steps.tags.outputs.list }}
+
+      # Keep the Docker Hub repository overview in sync with build/dockerhub-overview.md.
+      # Non-fatal so a description hiccup never fails a release.
+      - name: Update Docker Hub description
         if: ${{ vars.DOCKERHUB_USERNAME != '' }}
-        run: |
-          image="docker.io/${{ vars.DOCKERHUB_USERNAME }}/alva"
-          version="${{ steps.version.outputs.value }}"
-          docker tag "alva:${version}" "${image}:${version}"
-          docker tag "alva:${version}" "${image}:latest"
-          docker push "${image}:${version}"
-          docker push "${image}:latest"
+        continue-on-error: true
+        uses: peter-evans/dockerhub-description@v4
+        with:
+          username: ${{ vars.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          repository: ${{ vars.DOCKERHUB_USERNAME }}/alva
+          short-description: "Resource planning for teams: sprints, capacity, risks and a two-dimensional Gantt. .NET 10."
+          readme-filepath: build/dockerhub-overview.md
 
       - name: Create GitHub Release
         env:

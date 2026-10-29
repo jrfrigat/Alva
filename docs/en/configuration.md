@@ -29,6 +29,7 @@ production behaviour never changes by accident.
 | `POSTGRES_PASSWORD` | — (required) | Database password; Base64 of 32 bytes is safe in a connection string |
 | `POSTGRES_PORT` | `5432` | Database port on loopback |
 | `ALVA_PORT` | `8080` | Application port on loopback |
+| `ALVA_IMAGE` | `alva:latest` | Image name built by compose and used by `publish-docker.bat` |
 | `ASPNETCORE_ENVIRONMENT` | `Production` | Application environment |
 | `ALVA_DOMAIN` | `localhost` | Domain for the Caddy HTTPS profile |
 | `REVERSE_PROXY_ENABLED` | `false` | Trust forwarded headers from Caddy |

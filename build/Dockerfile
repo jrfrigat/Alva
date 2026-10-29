@@ -1,4 +1,8 @@
 # syntax=docker/dockerfile:1
+# Multi-stage build for the Alva host: the API plus the Blazor WASM client it serves.
+# Build context is the repository root:
+#   docker build -f build/Dockerfile -t alva:latest .
+
 FROM mcr.microsoft.com/dotnet/sdk:10.0.401 AS build
 WORKDIR /source
 COPY global.json Directory.Build.props Alva.slnx ./

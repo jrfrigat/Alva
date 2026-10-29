@@ -29,6 +29,7 @@
 | `POSTGRES_PASSWORD` | — (обязательно) | Пароль базы; Base64 от 32 байт безопасен для строки подключения |
 | `POSTGRES_PORT` | `5432` | Порт базы на loopback |
 | `ALVA_PORT` | `8080` | Порт приложения на loopback |
+| `ALVA_IMAGE` | `alva:latest` | Имя образа, который собирает compose и публикует `publish-docker.bat` |
 | `ASPNETCORE_ENVIRONMENT` | `Production` | Окружение приложения |
 | `ALVA_DOMAIN` | `localhost` | Домен для HTTPS-профиля Caddy |
 | `REVERSE_PROXY_ENABLED` | `false` | Доверять forwarded headers от Caddy |

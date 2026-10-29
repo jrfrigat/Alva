@@ -2,11 +2,22 @@
 
 ## Образ
 
-Релиз (тег `v*`) собирает образ и публикует его в Docker Hub:
+Релиз (тег `v*`) собирает образ и публикует его в GHCR; Docker Hub добавляется, если задана
+переменная репозитория `DOCKERHUB_USERNAME`:
 
 ```sh
-docker pull <ваш-dockerhub>/alva:latest        # или конкретная версия :X.Y.Z
+docker pull ghcr.io/jrfrigat/alva:latest        # или конкретная версия :X.Y.Z
 ```
+
+Собрать и опубликовать локальный образ:
+
+```powershell
+docker build -f build/Dockerfile -t alva:latest .
+./publish-docker.bat ВАШ_DOCKERHUB latest      # или ghcr.io/OWNER
+```
+
+Пакет GHCR по умолчанию приватный; измените его видимость в настройках пакета, если образ должен
+скачиваться без токена.
 
 ## Compose
 
@@ -57,5 +68,9 @@ docker compose --profile https up -d
 
 1. Убедитесь, что `main` зелёный (CI).
 2. Поставьте тег: `git tag v0.1.0 && git push origin v0.1.0`.
-3. Workflow `Release` соберёт и протестирует решение, опубликует образ в Docker Hub
-   (если задана переменная `DOCKERHUB_USERNAME`) и создаст GitHub Release.
+3. Workflow `Release` соберёт и протестирует решение, опубликует образ в GHCR и, если задана
+   переменная `DOCKERHUB_USERNAME`, в Docker Hub, затем создаст GitHub Release.
+
+GHCR работает на токене самого workflow, дополнительных секретов не нужно. Для Docker Hub задайте
+переменную `DOCKERHUB_USERNAME` и секрет `DOCKERHUB_TOKEN`. Для демо включите Pages с источником
+«GitHub Actions».

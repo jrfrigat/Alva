@@ -32,4 +32,4 @@ jobs:
       - name: Validate Compose
         run: POSTGRES_PASSWORD=ci-validation-only docker compose config --quiet
       - name: Build container
-        run: docker build -t alva:ci .
+        run: docker build -f build/Dockerfile -t alva:ci .

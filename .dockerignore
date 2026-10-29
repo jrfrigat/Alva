@@ -1,5 +1,9 @@
 **/bin
 **/obj
+**/publish
+**/.vs
+**/.idea
+**/.vscode
 .git
 .aiko
 .agents
@@ -13,5 +17,10 @@ TestResults
 artifacts
 .data
 **/*.user
+**/appsettings.*.local.json
 **/appsettings.Local.json
 **/secrets.json
+**/node_modules
+**/*.db
+**/*.db-shm
+**/*.db-wal
