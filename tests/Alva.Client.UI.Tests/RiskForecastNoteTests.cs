@@ -19,7 +19,7 @@ public sealed class RiskForecastNoteTests : UiTestBase
 
         var cut = Render<Analytics>();
 
-        cut.WaitForAssertion(() => Assert.Contains("общую очередь исполнителя", cut.Find(".alva-risk-panel__note").TextContent));
-        Assert.Contains("730", cut.Find(".alva-risk-panel__note").TextContent);
+        cut.WaitForAssertion(() => Assert.Contains("общую очередь исполнителя", cut.Find(".alva-risk-panel__details").TextContent));
+        Assert.Contains("730", cut.Find(".alva-risk-panel__details").TextContent);
     }
 }

@@ -71,6 +71,7 @@
                 <li><span class="alva-factors__dot" aria-hidden="true"></span>@ReasonText.Describe(reason.Key)<b class="alva-num">@reason.Count()</b></li>
             }
         </ul>
+        @if (Risks.Length > 0) { <p class="alva-kpi__note"><a href="analytics">@(Strings.T("Все риски")) (@Risks.Length)</a></p> }
         @if (Risks.Length > 0)
         {
             var high = Risks.Any(r => string.Equals(r.Severity, "High", StringComparison.OrdinalIgnoreCase));
@@ -83,10 +84,11 @@
         @foreach (var (actor, pct) in People.Take(3))
         {
             <div class="alva-loadbar">
-                <div class="alva-loadbar__row"><span>@actor.Name</span><span class="alva-loadbar__pct alva-loadbar__pct--@Tone(pct).ToString().ToLowerInvariant() alva-num">@LoadText(actor.Id, pct)</span></div>
+                <div class="alva-loadbar__row"><span><a href="@($"capacity/{actor.Id}")">@actor.Name</a></span><span class="alva-loadbar__pct alva-loadbar__pct--@Tone(pct).ToString().ToLowerInvariant() alva-num">@LoadText(actor.Id, pct)</span></div>
                 <div class="alva-loadbar__track"><span class="alva-loadbar__fill alva-loadbar__fill--@Tone(pct).ToString().ToLowerInvariant()" style="width:@Math.Min(100, pct)%"></span></div>
             </div>
         }
+        @if (People.Length > 3) { <p class="alva-kpi__note"><a href="capacity">@(Strings.T("Все люди")) (@People.Length)</a></p> }
         @if (People.Length == 0) { <p class="alva-kpi__note">@(Strings.T("Нет рабочих графиков людей за период спринта."))</p> }
         @if (People.LastOrDefault() is { Actor: { } free } && _load.TryGetValue(free.Id, out var freeLoad) && freeLoad.Available > freeLoad.Allocated)
         {

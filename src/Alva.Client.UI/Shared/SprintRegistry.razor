@@ -140,7 +140,22 @@
                 {
                     <div class="alva-iteration__risks">
                         <span class="alva-iteration__risks-title"><FlareIconView Value="@MaterialDesign3Icons.Regular.Error" Size="16px" /> @risks.Length @AlvaFormat.Plural(risks.Length, "task") под риском срыва срока:</span>
-                        <ul>@foreach (var risk in risks.Take(3)) { <li><a href="@($"tasks/{risk.TaskId}")">@risk.Title</a> — @ReasonText.Join(risk.Reasons, ", ")</li> }</ul>
+                        <ul>
+                            @foreach (var risk in risks.Take(3))
+                            {
+                                var task = TaskOf(risk.TaskId);
+                                <li>
+                                    <a href="@($"tasks/{risk.TaskId}")">@risk.Title</a> —
+                                    @for (var i = 0; i < risk.Reasons.Length; i++)
+                                    {
+                                        if (i > 0) { <text>, </text> }
+                                        var reason = risk.Reasons[i];
+                                        <a href="@RiskActions.Href(reason, risk.TaskId, task?.ResolvedPersonId)" title="@RiskActions.Label(reason, task?.ResolvedPersonId)">@ReasonText.Describe(reason)</a>
+                                    }
+                                </li>
+                            }
+                        </ul>
+                        @if (risks.Length > 3) { <a class="alva-iteration__more" href="analytics">@(Strings.T("Ещё")) @(risks.Length - 3)</a> }
                     </div>
                 }
             </div>
@@ -237,6 +252,7 @@
         .Where(s => s.Status == status && (string.IsNullOrWhiteSpace(_search) || s.Name.Contains(_search, StringComparison.OrdinalIgnoreCase)))
         .OrderBy(s => status == "Completed" ? -s.EndDate.DayNumber : s.StartDate.DayNumber);
     private TaskModel[] TasksOf(SprintModel sprint) => Tasks.Where(t => t.SprintIds.Contains(sprint.Id) && t.Status != "Cancelled").ToArray();
+    private TaskModel? TaskOf(Guid id) => Tasks.FirstOrDefault(t => t.Id == id);
     private RiskDto[] RisksOf(SprintModel sprint) => _risks.Where(r => TasksOf(sprint).Any(t => t.Id == r.TaskId)).ToArray();
 
     /// <summary>Закрытые и все оценённые часы спринта — доли задач, которые приходятся на него.</summary>

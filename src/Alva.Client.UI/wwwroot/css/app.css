@@ -674,3 +674,13 @@ a.alva-matrix__name:hover{text-decoration:underline}
   .alva-task-filters > *{flex:1 1 calc(50% - .5rem) !important;min-width:0 !important}
   .alva-task-filters > :first-child{flex-basis:100% !important}
 }
+a.alva-chip{text-decoration:none}
+a.alva-chip:hover,a.alva-chip:focus-visible{text-decoration:underline}
+.alva-risk-table__reasons a{color:inherit}
+.alva-risk-table__reasons a:not(.alva-chip){text-decoration:underline dotted;text-underline-offset:2px}
+.alva-risk-panel__note--short{padding-bottom:.25rem}
+.alva-risk-panel__details{padding:0 1rem .75rem;font-size:12px;color:var(--flare-color-on-surface-variant,var(--alva-on-surface-variant))}
+.alva-risk-panel__details summary{cursor:pointer;font-weight:600}
+.alva-risk-panel__details .alva-risk-panel__note{padding:.5rem 0 0}
+.alva-iteration__more{display:inline-block;margin-top:.25rem;font-weight:600;color:inherit}
+.alva-kpi__note a{color:inherit}

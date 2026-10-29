@@ -793,6 +793,15 @@
   <data name="Ещё {0} — откройте колокольчик в Alva." xml:space="preserve"><value>{0} more — open the bell in Alva.</value></data>
   <data name="Риск: {0}" xml:space="preserve"><value>Risk: {0}</value></data>
   <data name="Риски: новых" xml:space="preserve"><value>Risks: new</value></data>
+  <data name="Все люди" xml:space="preserve"><value>All people</value></data>
+  <data name="Добавьте задачи — тогда появятся сроки, прогноз и риски." xml:space="preserve"><value>Add tasks to see deadlines, the forecast and risks.</value></data>
+  <data name="Ещё" xml:space="preserve"><value>More</value></data>
+  <data name="Нет задач для оценки" xml:space="preserve"><value>No tasks to assess</value></data>
+  <data name="Открыть блокирующую задачу" xml:space="preserve"><value>Open the blocking task</value></data>
+  <data name="Открыть календарь исполнителя" xml:space="preserve"><value>Open the assignee's calendar</value></data>
+  <data name="Подробнее о прогнозе" xml:space="preserve"><value>More about the forecast</value></data>
+  <data name="Прогноз учитывает очередь, календарь и зависимости; это не обещание." xml:space="preserve"><value>The forecast uses the queue, calendars and dependencies; it is not a promise.</value></data>
+  <data name="Сбросить фильтр" xml:space="preserve"><value>Reset the filter</value></data>
   <data name="plural.day.few" xml:space="preserve"><value>days</value></data>
   <data name="plural.day.many" xml:space="preserve"><value>days</value></data>
   <data name="plural.day.one" xml:space="preserve"><value>day</value></data>

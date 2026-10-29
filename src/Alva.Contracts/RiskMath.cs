@@ -46,7 +46,7 @@ public static class RiskMath
             t.EstimateHours, t.RemainingHours, t.Start, t.End, t.Deadline, t.Priority, t.BacklogRank)).ToArray(),
             links.Select(d => new ForecastLink(d.PredecessorId, d.SuccessorId, d.Kind, d.LagDays)), CalendarOf, today);
         var open = tasks.Where(t => t.Status is not ("Done" or "Cancelled")).Select(t => t.Id).ToHashSet();
-        var waiting = links.Where(d => open.Contains(d.PredecessorId)).Select(d => d.SuccessorId).ToHashSet();
+        var waiting = links.Where(d => open.Contains(d.PredecessorId)).ToLookup(d => d.SuccessorId, d => d.PredecessorId);
         var result = new List<RiskDto>();
         foreach (var task in tasks.Where(t => open.Contains(t.Id)))
         {
@@ -82,7 +82,9 @@ public static class RiskMath
                         break;
                     }
             }
-            if (waiting.Contains(task.Id)) reasons.Add(new ReasonDto(ReasonCodes.RiskDependencyOpen));
+            if (waiting[task.Id].Any())
+                reasons.Add(new ReasonDto(ReasonCodes.RiskDependencyOpen,
+                    waiting[task.Id].Distinct().Select(id => id.ToString()).ToArray()));
             if (reasons.Count == 0) continue;
 
             var severe = deadline is { } limit && (limit < today || forecast is { } date && date.DayNumber - limit.DayNumber > 3);

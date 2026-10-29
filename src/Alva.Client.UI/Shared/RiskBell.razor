@@ -29,7 +29,14 @@
                                 <a href="tasks/@item.Risk.TaskId" @onclick="Close">@item.Risk.Title</a>
                                 @if (item.New) { <span class="alva-bell__new">@(Strings.T("новый"))</span> }
                             </div>
-                            <FlareText Typo="TypographyScale.BodySmall" Class="alva-bell__reasons">@ReasonText.Join(item.Risk.Reasons, " · ")</FlareText>
+                            <FlareText Typo="TypographyScale.BodySmall" Class="alva-bell__reasons">
+                                @for (var i = 0; i < item.Risk.Reasons.Length; i++)
+                                {
+                                    if (i > 0) { <text> · </text> }
+                                    var reason = item.Risk.Reasons[i];
+                                    <a href="@RiskActions.Href(reason, item.Risk.TaskId)" title="@RiskActions.Label(reason)">@ReasonText.Describe(reason)</a>
+                                }
+                            </FlareText>
                         </li>
                     }
                 </ul>
