@@ -25,7 +25,7 @@
     <div class="alva-page-header__actions">
         <FlareButton Variant="ButtonVariant.Tonal" Size="ButtonSize.Sm" OnClick="Reset" Disabled="@(!Dirty)"><LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.Undo" Size="18px" /></LeadingIcon><ChildContent>@(Strings.T("Сбросить изменения"))</ChildContent></FlareButton>
         <FlareButton Variant="ButtonVariant.Tonal" Size="ButtonSize.Sm" OnClick="() => _applyOpen = !_applyOpen"><LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.GroupAdd" Size="18px" /></LeadingIcon><ChildContent>@(Strings.T("Применить к выбранным сотрудникам"))</ChildContent></FlareButton>
-        <FlareButton Size="ButtonSize.Sm" Loading="_busy" OnClick="Save" Disabled="@(!Dirty)"><LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.Save" Size="18px" /></LeadingIcon><ChildContent>@(Strings.T("Сохранить график"))</ChildContent></FlareButton>
+        <FlareButton Size="ButtonSize.Sm" Loading="_busy" OnClick="Save" Disabled="@(!Dirty)"><LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.Save" Size="18px" /></LeadingIcon><ChildContent>@(Strings.T("Сохранить график"))</ChildContent></FlareButton><EditorStatus Dirty="Dirty" Saving="_busy" />
     </div>
     }
 </section>

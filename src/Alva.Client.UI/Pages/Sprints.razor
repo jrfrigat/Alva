@@ -28,7 +28,7 @@ else
         <FlareDatePicker Label="@(Strings.T("Начало"))" @bind-Value="_start" /><FlareDatePicker Label="@(Strings.T("Окончание"))" ErrorText="@_endError" @bind-Value="_end" Min="_start" />
         <FlareSelect TValue="string" Label="@(Strings.T("Статус"))" Items="_statuses" ItemLabel="Labels.Status" @bind-Value="_editing.Status" />
     </FlareGrid>
-    <FlareStack Row><FlareButton OnClick="Save" Loading="_busy" Disabled="@(string.IsNullOrWhiteSpace(_editing.Name) || !_start.HasValue || !_end.HasValue)">@(Strings.T("Сохранить спринт"))</FlareButton></FlareStack>
+    <FlareStack Row><FlareButton OnClick="Save" Loading="_busy" Disabled="@(string.IsNullOrWhiteSpace(_editing.Name) || !_start.HasValue || !_end.HasValue || !IsDirty)">@(Strings.T("Сохранить спринт"))</FlareButton><EditorStatus Dirty="IsDirty" Saving="_busy" /></FlareStack>
 </FlareStack></FlareCardContent></FlareCard>
 }
 @if(Planning)

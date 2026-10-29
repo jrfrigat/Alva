@@ -999,4 +999,7 @@
   <data name="Дерево задач проекта" xml:space="preserve"><value>Дерево задач проекта</value></data>
   <data name="Наименование" xml:space="preserve"><value>Наименование</value></data>
   <data name="Текущее" xml:space="preserve"><value>Текущее</value></data>
+  <data name="Сохранение…" xml:space="preserve"><value>Сохранение…</value></data>
+  <data name="Сохранено" xml:space="preserve"><value>Сохранено</value></data>
+  <data name="Есть несохранённые изменения" xml:space="preserve"><value>Есть несохранённые изменения</value></data>
 </root>

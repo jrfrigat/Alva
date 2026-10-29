@@ -8,7 +8,7 @@
 <div class="alva-task">
     <FlareBreadcrumb Items="Crumbs" Separator="›" AriaLabel="@(Strings.T("Путь к задаче"))" />
     <div class="alva-task__actions">
-        <FlareButton Loading="_busy" Disabled="@string.IsNullOrWhiteSpace(_model.Title)" OnClick="Save" Size="ButtonSize.Sm">
+        <FlareButton Loading="_busy" Disabled="@(string.IsNullOrWhiteSpace(_model.Title) || !Dirty)" OnClick="Save" Size="ButtonSize.Sm">
             <LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.Save" Size="18px" /></LeadingIcon>
             <ChildContent>@(Strings.T("Сохранить"))</ChildContent>
         </FlareButton>
@@ -17,6 +17,7 @@
             <ChildContent>@(Strings.T("Назначить исполнителя"))</ChildContent>
         </FlareButton>
         <FlareIconButton Icon="@MaterialDesign3Icons.Regular.Delete" Color="FlareColor.Error" Size="ButtonSize.Sm" Tooltip="@(Strings.T("Архивировать задачу"))" AriaLabel="@(Strings.T("Архивировать задачу"))" OnClick="Archive" />
+        <EditorStatus Dirty="Dirty" Saving="_busy" Saved="_saved" />
     </div>
     <div class="alva-task__heading">
         <span class="alva-task__bar alva-task__bar--@RiskTone.ToString().ToLowerInvariant()" aria-hidden="true"></span>
@@ -182,7 +183,7 @@
     private string? _error, _quickTitle, _assignSearch;
     private string? _parentError,_startError,_endError,_estimateError,_remainingError;
     private readonly List<string> _formErrors=[]; private ElementReference _errorSummary;
-    private bool _busy, _assignOpen, _adding;
+    private bool _busy, _saved, _assignOpen, _adding;
     private int _assignTab;
     private Guid? _assignTarget, _assignPerson;
 
@@ -237,6 +238,7 @@
 
     protected override async Task OnParametersSetAsync()
     {
+        if (_model.Id != Item.Id) _saved = false;
         if (_model.Id == Item.Id && _model.Version == Item.Version) return;
         // Задачу перечитали (подзадача, назначение, чужая правка), а черновик ещё не сохранён — он остаётся;
         // сохранение уйдёт со старой версией, и сервер сообщит о конфликте вместо тихой потери правок.
@@ -369,6 +371,7 @@
             var m = _model;
             await Session.Save<TaskModel>(HttpMethod.Put, Session.TeamPath($"tasks/{m.Id}"),
                 new TaskRequest(m.Title, m.Description, m.Status, m.ProjectId, m.ParentId, m.EstimateHours, m.Deadline, m.StartDate, m.EndDate, m.Order, m.Version, m.RequiredSkills, m.Priority, RemainingHours: m.RemainingHours, SetRemainingHours: true, DatesFixed: m.DatesFixed));
+            _saved = true;
             await Changed.InvokeAsync();
         });
     }

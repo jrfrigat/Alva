@@ -82,7 +82,7 @@ else
     <FlareSelect TValue="Guid?" Label="@(Strings.T("Исполнитель, подкоманда или роль"))" Items="_actors.Select(x => (Guid?)x.Id)" ItemLabel="ActorName" NullOption="@(Strings.T("Не назначена"))" @bind-Value="_editing.AssignmentTargetId" Searchable />
     <SkillMatch Required="_editing.RequiredSkills" Person="@(_actors.FirstOrDefault(a=>a.Id==(_editing.ResolvedPersonId ?? _editing.AssignmentTargetId)))" />
     @if(_actors.FirstOrDefault(a=>a.Id==_editing.AssignmentTargetId)?.Kind is "Role" or "Department") { <FlareSelect TValue="Guid?" Label="@(Strings.T("Конкретный исполнитель"))" Items="@(_actors.Where(a=>a.Kind=="Person").Select(a=>(Guid?)a.Id))" ItemLabel="ActorName" NullOption="@(Strings.T("Пока не выбран"))" @bind-Value="_editing.ResolvedPersonId" Searchable /> }
-    <FlareStack Row Wrap><FlareButton Loading="_busy" Disabled="@(string.IsNullOrWhiteSpace(_editing.Title))" OnClick="Save">@(Strings.T("Сохранить задачу"))</FlareButton>
+    <FlareStack Row Wrap><FlareButton Loading="_busy" Disabled="@(string.IsNullOrWhiteSpace(_editing.Title) || !IsDirty)" OnClick="Save">@(Strings.T("Сохранить задачу"))</FlareButton><EditorStatus Dirty="IsDirty" Saving="_busy" />
         @if(_editing.Id != Guid.Empty) { <FlareButton Variant="ButtonVariant.Text" OnClick="() => NewChild(_editing.Id)">@(Strings.T("Подзадача"))</FlareButton><FlareButton Color="FlareColor.Error" Variant="ButtonVariant.Text" OnClick="Archive">@(Strings.T("Архивировать"))</FlareButton> }
     </FlareStack>
     @if(_history.Length>0) { <FlareText Element="h3" Typo="TypographyScale.TitleMedium">@(Strings.T("История"))</FlareText>@foreach(var entry in _history) { <FlareText Typo="TypographyScale.BodySmall">@entry.At.ToLocalTime().ToString("g") · @entry.Summary</FlareText> } }

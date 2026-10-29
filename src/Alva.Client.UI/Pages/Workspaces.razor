@@ -4,6 +4,7 @@
 <PageTitle>@(Strings.T("Команды · Alva"))</PageTitle>
 <FlareText Element="h1" Typo="TypographyScale.HeadlineLarge">@(Strings.T("Рабочее пространство"))</FlareText>
 <PageFeedback Loading="_busy" Error="@_error" />
+<EditorStatus Saved="_saved" Saving="_busy" />
 @if (Session.User is null) { <TeamRequired /> }
 else
 {
@@ -11,24 +12,24 @@ else
     <FlareCard Variant="CardVariant.Outlined"><FlareCardContent><FlareStack>
         <FlareText Element="h2" Typo="TypographyScale.TitleLarge">@(Strings.T("Пространства"))</FlareText>
         @foreach(var item in Session.Workspaces) { <FlareStack Row Align="FlareAlignItems.Center" Gap="FlareSpacing.Small"><FlareButton Variant="@(Session.WorkspaceId == item.Id ? ButtonVariant.Tonal : ButtonVariant.Text)" OnClick="() => SelectWorkspace(item.Id)">@item.Name</FlareButton>@if (Session.WorkspaceId == item.Id) { <AlvaStatusChip Tone="AlvaTone.Ok">@(Strings.T("Текущее"))</AlvaStatusChip> }</FlareStack> }
-        <FlareTextField Label="@(Strings.T("Новое пространство"))" @bind-Value="_spaceName" />
+        <FlareTextField Label="@(Strings.T("Новое пространство"))" @bind-Value="_spaceName" @bind-Value:after="() => _saved = false" />
         <FlareButton Disabled="@(string.IsNullOrWhiteSpace(_spaceName) || _busy)" OnClick="CreateSpace">@(Strings.T("Создать пространство"))</FlareButton>
     </FlareStack></FlareCardContent></FlareCard>
     <FlareCard Variant="CardVariant.Outlined"><FlareCardContent><FlareStack>
         <FlareText Element="h2" Typo="TypographyScale.TitleLarge">@(Strings.T("Команды"))</FlareText>
         @foreach(var item in Session.Teams) { <FlareStack Row Align="FlareAlignItems.Center" Gap="FlareSpacing.Small"><FlareButton Variant="@(Session.TeamId == item.Id ? ButtonVariant.Tonal : ButtonVariant.Text)" OnClick="() => SelectTeam(item.Id)">@item.Name</FlareButton>@if (Session.TeamId == item.Id) { <AlvaStatusChip Tone="AlvaTone.Ok">@(Strings.T("Текущее"))</AlvaStatusChip> }</FlareStack> }
         @if (Session.Teams.Length == 0) { <FlareText>@(Strings.T("Создайте первую команду в пространстве."))</FlareText> }
-        <FlareTextField Label="@(Strings.T("Новая команда"))" @bind-Value="_teamName" />
+        <FlareTextField Label="@(Strings.T("Новая команда"))" @bind-Value="_teamName" @bind-Value:after="() => _saved = false" />
         <FlareButton Disabled="@(Session.WorkspaceId is null || string.IsNullOrWhiteSpace(_teamName) || _busy)" OnClick="CreateTeam">@(Strings.T("Создать команду"))</FlareButton>
     </FlareStack></FlareCardContent></FlareCard>
 </FlareGrid>
 }
 @code {
-    private string? _spaceName, _teamName, _error; private bool _busy;
+    private string? _spaceName, _teamName, _error; private bool _busy, _saved;
     protected override async Task OnInitializedAsync() => await Run(Session.Initialize);
     private async Task Run(Func<Task> action) { _busy=true; _error=null; try { await action(); } catch(Exception e) when(e is HttpRequestException or InvalidOperationException) { _error=e.Message; } finally { _busy=false; } }
     private Task SelectWorkspace(Guid id) => Run(() => Session.SelectWorkspace(id));
     private Task SelectTeam(Guid id) => Run(async () => { await Session.SelectTeam(id); Navigation.NavigateTo(AppRoutes.Home); });
-    private Task CreateSpace() => Run(async () => { await Session.Send(HttpMethod.Post,"api/workspaces",new { name=_spaceName }); _spaceName=null; await Session.LoadWorkspaces(); });
-    private Task CreateTeam() => Run(async () => { await Session.Send(HttpMethod.Post,$"api/workspaces/{Session.WorkspaceId}/teams",new { name=_teamName }); _teamName=null; await Session.SelectWorkspace(Session.WorkspaceId!.Value); });
+    private Task CreateSpace() => Run(async () => { await Session.Send(HttpMethod.Post,"api/workspaces",new { name=_spaceName }); _spaceName=null; await Session.LoadWorkspaces(); _saved=true; });
+    private Task CreateTeam() => Run(async () => { await Session.Send(HttpMethod.Post,$"api/workspaces/{Session.WorkspaceId}/teams",new { name=_teamName }); _teamName=null; await Session.SelectWorkspace(Session.WorkspaceId!.Value); _saved=true; });
 }

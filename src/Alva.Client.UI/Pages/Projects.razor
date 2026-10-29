@@ -11,6 +11,7 @@
     <Actions><FlareButton Size="ButtonSize.Sm" OnClick="New" Disabled="@(Session.TeamId is null)"><LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.AddCircle" Size="18px" /></LeadingIcon><ChildContent>@(Strings.T("Новый проект"))</ChildContent></FlareButton></Actions>
 </AlvaPageHeader>
 <PageFeedback Loading="_busy" Error="@_error" />
+<EditorStatus Dirty="IsDirty" Saving="_busy" Saved="_saved" />
 @if (Session.TeamId is null) { <TeamRequired /> }
 else
 {
@@ -33,7 +34,7 @@ else
     <FlareText Typo="TypographyScale.LabelLarge">@(Strings.T("Команды проекта"))</FlareText>
     @foreach (var team in Session.Teams) { <FlareCheckbox TValue="bool" Value="_project.TeamIds.Contains(team.Id)" ValueChanged="(bool value) => ToggleTeam(team.Id, value)">@team.Name</FlareCheckbox> }
     <FlareStack Row Wrap>
-        <FlareButton Loading="_busy" OnClick="SaveProject" Disabled="@(string.IsNullOrWhiteSpace(_project.Name))">@(Strings.T("Сохранить"))</FlareButton>
+        <FlareButton Loading="_busy" OnClick="SaveProject" Disabled="@(string.IsNullOrWhiteSpace(_project.Name) || !IsDirty)">@(Strings.T("Сохранить"))</FlareButton>
         <FlareButton Variant="ButtonVariant.Text" OnClick="CloseProject">@(Strings.T("Закрыть"))</FlareButton>
         @if (_project.Id != Guid.Empty) { <FlareButton Variant="ButtonVariant.Text" Color="FlareColor.Error" OnClick="ArchiveProject">@(Strings.T("Архивировать"))</FlareButton> }
     </FlareStack>
@@ -171,6 +172,7 @@ else
     [CascadingParameter] public FlareConfirmDialogProvider? Confirm { get; set; }
     internal bool IsDirty => _project is not null && DraftSnapshot.Of(_project) != _projectSnapshot;
     private Guid? _selected;
+    private bool _saved;
     private string _filter = "all";
     private string? _error, _wbsSearch;
     private bool _busy;
@@ -259,8 +261,8 @@ else
         }
     });
 
-    private void New() { _project = new ProjectModel { TeamIds = [Session.TeamId!.Value] }; _projectSnapshot = DraftSnapshot.Of(_project); }
-    private void Edit(ProjectModel model) { _project = new ProjectModel { Id = model.Id, Name = model.Name, Description = model.Description, TeamIds = [.. model.TeamIds] }; _projectSnapshot = DraftSnapshot.Of(_project); }
+    private void New() { _saved = false; _project = new ProjectModel { TeamIds = [Session.TeamId!.Value] }; _projectSnapshot = DraftSnapshot.Of(_project); }
+    private void Edit(ProjectModel model) { _saved = false; _project = new ProjectModel { Id = model.Id, Name = model.Name, Description = model.Description, TeamIds = [.. model.TeamIds] }; _projectSnapshot = DraftSnapshot.Of(_project); }
     private async Task CloseProject()
     {
         if (!await DraftPrompt.CanDiscardAsync(Confirm, IsDirty)) return;
@@ -281,6 +283,7 @@ else
     {
         var p = _project!;
         await Session.Send(p.Id == Guid.Empty ? HttpMethod.Post : HttpMethod.Put, Session.TeamPath("projects" + (p.Id == Guid.Empty ? "" : $"/{p.Id}")), new ProjectRequest(p.Name, p.Description, p.TeamIds));
+        _saved = true;
         _project = null; _projectSnapshot = null;
         _projects = await Session.Get<ProjectModel[]>(Session.TeamPath("projects"));
     });

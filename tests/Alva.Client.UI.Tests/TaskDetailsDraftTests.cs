@@ -59,6 +59,17 @@ public sealed class TaskDetailsDraftTests : UiTestBase
     }
 
     [Fact]
+    public void Save_stays_disabled_until_the_card_changes()
+    {
+        var cut = Page();
+        Assert.True(Button(cut, "Сохранить").HasAttribute("disabled"));
+
+        EditTitle(cut);
+
+        cut.WaitForAssertion(() => Assert.False(Button(cut, "Сохранить").HasAttribute("disabled")));
+    }
+
+    [Fact]
     public void Remaining_work_is_saved_explicitly_and_marks_the_draft_dirty()
     {
         var cut = Page();

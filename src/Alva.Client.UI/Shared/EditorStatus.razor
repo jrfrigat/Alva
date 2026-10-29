@@ -1,0 +1,20 @@
+@* Одно состояние редактора на всех экранах: правки, сохранение и подтверждённый результат.
+   Ошибку показывает PageFeedback, чтобы серверный текст не дублировался. *@
+@if (Saving)
+{
+    <span role="status" aria-live="polite"><AlvaStatusChip Tone="AlvaTone.Info">@(Strings.T("Сохранение…"))</AlvaStatusChip></span>
+}
+else if (Saved && !Dirty)
+{
+    <span role="status" aria-live="polite"><AlvaStatusChip Tone="AlvaTone.Ok">@(Strings.T("Сохранено"))</AlvaStatusChip></span>
+}
+else if (Dirty)
+{
+    <span role="status" aria-live="polite"><AlvaStatusChip Tone="AlvaTone.Warning">@(Strings.T("Есть несохранённые изменения"))</AlvaStatusChip></span>
+}
+
+@code {
+    [Parameter] public bool Dirty { get; set; }
+    [Parameter] public bool Saving { get; set; }
+    [Parameter] public bool Saved { get; set; }
+}
