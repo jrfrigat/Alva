@@ -141,7 +141,9 @@
 {
     <section class="alva-panel">
         <header class="alva-panel__header"><div><h2 class="alva-panel__title">@(Strings.T("Прогноз баланса ёмкости по периодам"))</h2><p class="alva-panel__subtitle">@(Strings.T("Сравнение номинала фонда, запланированной работы и ресурсного дефицита"))</p></div></header>
-        <FlareChart Type="ChartType.Bar" Data="Forecast" Height="260" aria-label="@(Strings.T("Фонд, план и дефицит по периодам"))" />
+        <FlareChart Type="ChartType.Bar" Data="Forecast" Height="260" ComponentCssClass="alva-forecast-chart"
+                    Description="@ForecastSummary" DataTable="true" aria-label="@(Strings.T("Фонд, план и дефицит по периодам"))" />
+        <p class="alva-chart-summary"><strong>@(Strings.T("Ключевой вывод:"))</strong> @ForecastSummary</p>
     </section>
 }
 
@@ -215,12 +217,30 @@
         _ => AlvaFormat.Plural(n, "day")
     };
 
+    private decimal PeriodDeficit(Period period) => VisiblePeople.Sum(x => Overload(x.Id, period)) + Vacancies.Sum(v => Demand(v, period));
+
     private ChartData Forecast => new(
     [
-        new ChartSeries(Strings.T("Номинал фонда"), _periods.Select(p => (double)VisiblePeople.Sum(x => Cell(x.Id, p).Available)).ToArray(), "#B7C4FF"),
-        new ChartSeries(Strings.T("Запланировано"), _periods.Select(p => (double)VisiblePeople.Sum(x => Cell(x.Id, p).Allocated)).ToArray(), "#1D4ED8"),
-        new ChartSeries(Strings.T("Дефицит"), _periods.Select(p => (double)(VisiblePeople.Sum(x => Overload(x.Id, p)) + Vacancies.Sum(v => Demand(v, p)))).ToArray(), "#DC2626"),
+        new ChartSeries(Strings.T("Номинал фонда"), _periods.Select(p => (double)VisiblePeople.Sum(x => Cell(x.Id, p).Available)).ToArray(), "var(--alva-chart-fund)"),
+        new ChartSeries(Strings.T("Запланировано"), _periods.Select(p => (double)VisiblePeople.Sum(x => Cell(x.Id, p).Allocated)).ToArray(), "var(--alva-chart-planned)"),
+        new ChartSeries(Strings.T("Дефицит"), _periods.Select(p => (double)PeriodDeficit(p)).ToArray(), "var(--alva-chart-deficit)"),
     ], _periods.Select(p => p.Title).ToArray());
+
+    /// <summary>Видимый текстовый вывод: те же значения, что в графике, без опоры только на цвет и форму.</summary>
+    private string ForecastSummary
+    {
+        get
+        {
+            if (VisiblePeople.Length == 0 && Vacancies.Length == 0) return Strings.T("Нет данных для прогноза.");
+            var fund = _periods.Sum(p => VisiblePeople.Sum(x => Cell(x.Id, p).Available));
+            var planned = _periods.Sum(p => VisiblePeople.Sum(x => Cell(x.Id, p).Allocated));
+            var pct = Pct(planned, fund);
+            var worst = _periods.Select(p => (p.Title, Hours: PeriodDeficit(p))).OrderByDescending(x => x.Hours).First();
+            return worst.Hours > 0
+                ? string.Format(Strings.T("Запланировано {0} ч из {1} ч фонда ({2}%). Наибольший дефицит — {3} ч в период «{4}»."), AlvaFormat.Hours(planned), AlvaFormat.Hours(fund), pct, AlvaFormat.Hours(worst.Hours), worst.Title)
+                : string.Format(Strings.T("Запланировано {0} ч из {1} ч фонда ({2}%). Дефицита по периодам нет."), AlvaFormat.Hours(planned), AlvaFormat.Hours(fund), pct);
+        }
+    }
 
     protected override async Task OnInitializedAsync()
     {

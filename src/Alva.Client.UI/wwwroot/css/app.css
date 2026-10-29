@@ -281,6 +281,8 @@ html,body{margin:0;min-height:100%;font-family:var(--alva-font);background:var(-
 .alva-heat-legend__title{text-transform:uppercase;letter-spacing:.04em;color:var(--flare-color-on-surface-variant,var(--alva-on-surface-variant))}
 .alva-heat-legend span{display:inline-flex;align-items:center;gap:6px}
 .alva-heat-legend i{display:inline-block;width:12px;height:12px;border-radius:3px}
+.alva-chart-summary{margin:0;padding:.5rem .75rem;border-radius:6px;background:var(--alva-subtle);font-size:12px;line-height:18px;color:var(--flare-color-on-surface-variant,var(--alva-on-surface-variant))}
+.alva-chart-summary strong{color:var(--flare-color-on-surface,var(--alva-on-surface))}
 .alva-matrix{display:flex;flex-direction:column;overflow-x:auto}
 .alva-matrix__head,.alva-matrix__row{display:grid;grid-template-columns:minmax(14rem,1.6fr) 7rem 6rem repeat(var(--alva-matrix-periods),minmax(9rem,1fr)) 7.5rem;align-items:center;gap:.75rem;padding:8px 16px;min-width:fit-content}
 .alva-matrix__head{background:var(--flare-color-surface-container-low,#eff4ff);border-top:1px solid var(--alva-border);border-bottom:1px solid var(--alva-border);font-size:11px;font-weight:600;letter-spacing:.03em;text-transform:uppercase;color:var(--flare-color-on-surface-variant,var(--alva-on-surface-variant))}
@@ -308,7 +310,7 @@ a.alva-matrix__name:hover{text-decoration:underline}
 .alva-heat{display:flex;flex-direction:column;gap:4px;padding:6px 8px;border:1px solid transparent;border-radius:4px;font-size:11px}
 .alva-heat__top{display:flex;justify-content:space-between;gap:.25rem;font-weight:600}
 .alva-heat__top b{padding:0 4px;border-radius:3px}
-.alva-heat__bar{height:3px;overflow:hidden;border-radius:9999px;background:rgba(15,23,42,.08)}
+.alva-heat__bar{height:3px;overflow:hidden;border-radius:9999px;background:var(--alva-heat-track)}
 .alva-heat__bar span{display:block;height:100%;background:var(--flare-color-primary,var(--alva-primary))}
 .alva-heat__note{font-size:11px;color:var(--flare-color-on-surface-variant,var(--alva-on-surface-variant))}
 .alva-heat--under,.alva-heat-legend .alva-heat--under{background:var(--alva-heat-under)}

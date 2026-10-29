@@ -19,6 +19,13 @@
   --alva-heat-under: #F0F4FF;
   --alva-heat-balance: #DCE9FF;
   --alva-heat-tension: #B7C4FF;
+  --alva-heat-track: #CBD5E1;
+
+  /* Серии графика ёмкости. Для графических объектов нужно ≥3:1 к подложке: на белом
+     #7C8DB5 даёт 3.32:1, #1D4ED8 — 6.70:1, #DC2626 — 4.83:1. */
+  --alva-chart-fund: #7C8DB5;
+  --alva-chart-planned: #1D4ED8;
+  --alva-chart-deficit: #DC2626;
 
   /* Семантика риска, ёмкости и ролей: текст, подложка, рамка. Подложки и рамки — из DESIGN.md, тексты
      затемнены до 4,5:1 на своей подложке и на белом: дизайновые #DC2626 и #D97706 давали 3,95 и 2,86:1. */
@@ -52,6 +59,12 @@
   --alva-heat-under: var(--flare-color-surface-container-low);
   --alva-heat-balance: var(--flare-color-surface-container-high);
   --alva-heat-tension: var(--flare-color-secondary-container);
+  --alva-heat-track: #8B93A5;
+
+  /* Светлые серии на тёмной подложке #06121F: 12.70:1, 7.41:1 и 9.93:1. */
+  --alva-chart-fund: #CBD5E1;
+  --alva-chart-planned: #60A5FA;
+  --alva-chart-deficit: #FCA5A5;
 
   /* Тёмные подложки того же тона и светлые тексты; заливка под белым текстом остаётся тёмно-красной. */
   --alva-critical-text: #FCA5A5;
@@ -72,6 +85,15 @@
   --alva-info-text: #B7C4FF;
   --alva-info-bg: #12233A;
   --alva-info-border: #2151DA;
+}
+
+/* Высокая контрастность — почти чёрная подложка #000A16; серии усиливаются до 19.91:1,
+   11.04:1 и 13.76:1 и остаются различимыми по светлоте и тону. */
+.flare-theme-alva.flare-mode-high-contrast {
+  --alva-heat-track: #C4C5D7;
+  --alva-chart-fund: #FFFFFF;
+  --alva-chart-planned: #93C5FD;
+  --alva-chart-deficit: #FECACA;
 }
 
 /* DESIGN.md, Components: «Alternating row background on subtle hover (#F1F5F9)». Flare красит

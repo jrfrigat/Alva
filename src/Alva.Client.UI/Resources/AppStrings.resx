@@ -637,6 +637,10 @@
   <data name="Фонд месяца по графику" xml:space="preserve"><value>Month fund from the schedule</value></data>
   <data name="Фонд на 2 недели" xml:space="preserve"><value>Two-week fund</value></data>
   <data name="Фонд, план и дефицит по периодам" xml:space="preserve"><value>Fund, plan and deficit by period</value></data>
+  <data name="Ключевой вывод:" xml:space="preserve"><value>Key takeaway:</value></data>
+  <data name="Нет данных для прогноза." xml:space="preserve"><value>No data for the forecast.</value></data>
+  <data name="Запланировано {0} ч из {1} ч фонда ({2}%). Наибольший дефицит — {3} ч в период «{4}»." xml:space="preserve"><value>Planned {0} h of {1} h fund ({2}%). Largest deficit: {3} h in "{4}".</value></data>
+  <data name="Запланировано {0} ч из {1} ч фонда ({2}%). Дефицита по периодам нет." xml:space="preserve"><value>Planned {0} h of {1} h fund ({2}%). No deficit by period.</value></data>
   <data name="Формат" xml:space="preserve"><value>Format</value></data>
   <data name="Целевой коридор: 85–95%" xml:space="preserve"><value>Target corridor: 85–95%</value></data>
   <data name="Цели, сроки и состав спринтов команды." xml:space="preserve"><value>The team's sprint goals, dates and scope.</value></data>
