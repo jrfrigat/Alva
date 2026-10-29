@@ -22,9 +22,10 @@ else
 {
 <FlareCard Variant="CardVariant.Outlined"><FlareCardContent><FlareStack Gap="FlareSpacing.Large">
     <FlareStack Row StretchFirst><FlareText Element="h2" Typo="TypographyScale.TitleLarge">@(_editing.Id==Guid.Empty?Strings.T("Новый спринт"):Strings.T("Параметры спринта"))</FlareText><FlareButton OnClick="Close" Variant="ButtonVariant.Text" Size="ButtonSize.Sm">@(Strings.T("Закрыть"))</FlareButton></FlareStack>
+    @if (_formErrors.Count > 0) { <div class="alva-form-errors" role="alert" tabindex="-1" @ref="_errorSummary"><b>@(Strings.T("Проверьте выделенные поля."))</b>@foreach (var error in _formErrors) { <div>@error</div> }</div> }
     <FlareGrid MinColumnWidth="min(100%,15rem)">
-        <FlareTextField Label="@(Strings.T("Название"))" @bind-Value="_editing.Name" Required Autofocus /><FlareTextField Label="@(Strings.T("Цель"))" @bind-Value="_editing.Goal" />
-        <FlareDatePicker Label="@(Strings.T("Начало"))" @bind-Value="_start" /><FlareDatePicker Label="@(Strings.T("Окончание"))" @bind-Value="_end" Min="_start" />
+        <FlareTextField Label="@(Strings.T("Название"))" ErrorText="@_nameError" @bind-Value="_editing.Name" Required Autofocus /><FlareTextField Label="@(Strings.T("Цель"))" @bind-Value="_editing.Goal" />
+        <FlareDatePicker Label="@(Strings.T("Начало"))" @bind-Value="_start" /><FlareDatePicker Label="@(Strings.T("Окончание"))" ErrorText="@_endError" @bind-Value="_end" Min="_start" />
         <FlareSelect TValue="string" Label="@(Strings.T("Статус"))" Items="_statuses" ItemLabel="Labels.Status" @bind-Value="_editing.Status" />
     </FlareGrid>
     <FlareStack Row><FlareButton OnClick="Save" Loading="_busy" Disabled="@(string.IsNullOrWhiteSpace(_editing.Name) || !_start.HasValue || !_end.HasValue)">@(Strings.T("Сохранить спринт"))</FlareButton></FlareStack>
@@ -44,6 +45,7 @@ else if(_loaded){<UnavailableState Title="@(Strings.T("Спринт не най�
     [Parameter]public Guid? SprintId{get;set;}
     private SprintModel[] _sprints=[];private TaskModel[] _tasks=[];private SprintModel? _editing;private DateOnly? _start,_end;private bool _busy,_loaded;private string? _error;private readonly string[] _statuses=["Planned","Active","Completed"];
     private string? _editingSnapshot; private IDisposable? _draft;
+    private string? _nameError,_endError; private readonly List<string> _formErrors=[]; private ElementReference _errorSummary;
     [CascadingParameter] public FlareConfirmDialogProvider? Confirm { get; set; }
     internal bool IsDirty => _editing is not null && DraftSnapshot.Of(_editing, _start, _end) != _editingSnapshot;
     protected override void OnInitialized() => _draft = Drafts.Track(() => IsDirty);
@@ -77,5 +79,12 @@ else if(_loaded){<UnavailableState Title="@(Strings.T("Спринт не най�
     }
 
     public void Dispose() => _draft?.Dispose();
-    private Task Save()=>Run(async()=>{var s=_editing!;var saved=await Session.Save<SprintModel>(s.Id==Guid.Empty?HttpMethod.Post:HttpMethod.Put,Session.TeamPath("sprints"+(s.Id==Guid.Empty?"":$"/{s.Id}")),new SprintRequest(s.Name,s.Goal,_start!.Value,_end!.Value,s.Status));_sprints=await Session.Get<SprintModel[]>(Session.TeamPath("sprints"));_editing=null;Navigation.NavigateTo($"sprints/{saved.Id}/plan");});
+    private async Task Save()
+    {
+        _nameError=_endError=null;_formErrors.Clear();
+        if (string.IsNullOrWhiteSpace(_editing!.Name)) { _nameError=Strings.T("Название спринта обязательно."); _formErrors.Add(_nameError); }
+        if (_start is { } start && _end is { } end && start > end) { _endError=Strings.T("Окончание раньше начала."); _formErrors.Add(_endError); }
+        if (_formErrors.Count > 0) { StateHasChanged(); await SafeFocus.Async(_errorSummary); return; }
+        await Run(async()=>{var s=_editing!;var saved=await Session.Save<SprintModel>(s.Id==Guid.Empty?HttpMethod.Post:HttpMethod.Put,Session.TeamPath("sprints"+(s.Id==Guid.Empty?"":$"/{s.Id}")),new SprintRequest(s.Name,s.Goal,_start!.Value,_end!.Value,s.Status));_sprints=await Session.Get<SprintModel[]>(Session.TeamPath("sprints"));_editing=null;Navigation.NavigateTo($"sprints/{saved.Id}/plan");});
+    }
 }

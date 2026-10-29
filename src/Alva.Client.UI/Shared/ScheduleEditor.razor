@@ -56,7 +56,7 @@
             <header class="alva-panel__header"><FlareIconView Value="@MaterialDesign3Icons.Regular.EditCalendar" Size="20px" Class="alva-panel__icon" /><div><h2 class="alva-panel__title">@(Strings.T("Рабочая неделя")) @(Person?.Name)</h2><p class="alva-panel__subtitle">@(Strings.T("Базовый цикл рабочей недели и часовой пояс"))</p></div></header>
             <div class="alva-schedule__meta">
                 <span class="alva-chip alva-chip--info alva-num">@(Strings.T("Недельный фонд:")) @AlvaFormat.Hours(_hours.Sum()) @(Strings.T("ч"))</span>
-                <FlareTextField Label="@(Strings.T("Часовой пояс IANA"))" @bind-Value="_timeZone" HelperText="@(Strings.T("Например, Europe/Moscow"))" />
+                <FlareTextField Label="@(Strings.T("Часовой пояс IANA"))" ErrorText="@_timeZoneError" @bind-Value="_timeZone" HelperText="@(Strings.T("Например, Europe/Moscow"))" />
             </div>
             <div class="alva-week" role="table" aria-label="@(Strings.T("Рабочие часы по дням недели"))">
                 <div class="alva-week__row alva-week__row--head" role="row"><span role="columnheader">@(Strings.T("День недели"))</span><span role="columnheader">@(Strings.T("Рабочий"))</span><span role="columnheader">@(Strings.T("Часов в день"))</span><span role="columnheader">@(Strings.T("Вычеты"))</span><span role="columnheader">@(Strings.T("Чистые часы"))</span></div>
@@ -171,6 +171,7 @@
     private CapacityDto[] _window = [];
     private decimal[] _hours = new decimal[7], _lastHours = new decimal[7];
     private string _timeZone = "Europe/Moscow";
+    private string? _timeZoneError;
     private readonly HashSet<Guid> _applyTo = [];
     private bool _busy, _applyOpen, _saved;
     private string? _error, _blockName, _exReason;
@@ -258,10 +259,25 @@
     private void Toggle(Guid id, bool on) { if (on) _applyTo.Add(id); else _applyTo.Remove(id); }
     private CalendarRequest Request => new(_timeZone, _hours[0], _hours[1], _hours[2], _hours[3], _hours[4], _hours[5], _hours[6]);
 
-    private Task Save() => Run(async () => { await Session.Send(HttpMethod.Put, CalendarPath, Request); await LoadCalendar(keepDraft: false); _saved = true; });
+    private async Task Save()
+    {
+        if (!await ValidateTimeZone()) return;
+        await Run(async () => { await Session.Send(HttpMethod.Put, CalendarPath, Request); await LoadCalendar(keepDraft: false); _saved = true; });
+    }
+
+    private async Task<bool> ValidateTimeZone()
+    {
+        _timeZoneError = null;
+        if (!string.IsNullOrWhiteSpace(_timeZone) && (TimeZoneInfo.TryFindSystemTimeZoneById(_timeZone, out _) || TimeZoneInfo.TryConvertIanaIdToWindowsId(_timeZone, out _)))
+            return true;
+        _timeZoneError = Strings.T("Неизвестный часовой пояс.");
+        StateHasChanged();
+        return false;
+    }
 
     private async Task Apply()
     {
+        if (!await ValidateTimeZone()) return;
         if (!await DestructivePrompt.ConfirmAsync(Confirm, Strings.T("Применить график"),
             string.Format(Strings.T("График будет применён к {0} сотрудникам."), _applyTo.Count), Strings.T("Применить"))) return;
         await Run(async () =>

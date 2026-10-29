@@ -32,10 +32,11 @@ else
 {
 <FlareCard Variant="CardVariant.Outlined"><FlareCardContent><FlareStack>
     <FlareText Element="h2" Typo="TypographyScale.TitleLarge">@Labels.Kind(_actor.Kind)</FlareText>
-    <FlareTextField Label="@(Strings.T("Имя или название"))" @bind-Value="_actor.Name" Required />
-    @if(_actor.Kind=="Person") { <FlareTextField Label="@(Strings.T("Электронная почта"))" @bind-Value="_actor.Email" Type="email" /> }
+    @if (_formErrors.Count > 0) { <div class="alva-form-errors" role="alert" tabindex="-1" @ref="_errorSummary"><b>@(Strings.T("Проверьте выделенные поля."))</b>@foreach (var error in _formErrors) { <div>@error</div> }</div> }
+    <FlareTextField Label="@(Strings.T("Имя или название"))" ErrorText="@_nameError" @bind-Value="_actor.Name" Required />
+    @if(_actor.Kind=="Person") { <FlareTextField Label="@(Strings.T("Электронная почта"))" ErrorText="@_emailError" @bind-Value="_actor.Email" Type="email" /> }
     @if(_actor.Kind=="Person") { <SkillTagEditor Label="@(Strings.T("Навыки"))" @bind-Values="_actor.Skills" Suggestions="_skillSuggestions" /> }
-    <FlareSelect TValue="Guid?" Label="@(Strings.T("Подкоманда"))" Items="@(_actors.Where(a=>a.Kind=="Department" && a.Id!=_actor.Id).Select(a=>(Guid?)a.Id))" ItemLabel="ActorName" NullOption="@(Strings.T("Без подкоманды"))" @bind-Value="_actor.ParentId" />
+    @if(_actor.Kind!="Role") { <FlareSelect TValue="Guid?" Label="@(_actor.Kind=="Department" ? Strings.T("Родительская подкоманда") : Strings.T("Подкоманда"))" Items="@(_actors.Where(a=>a.Kind=="Department" && a.Id!=_actor.Id).Select(a=>(Guid?)a.Id))" ItemLabel="ActorName" NullOption="@(Strings.T("Без подкоманды"))" @bind-Value="_actor.ParentId" /> }
     @if(_actor.Kind=="Person") { @foreach(var department in _actors.Where(a=>a.Kind=="Department")){<FlareCheckbox Value="_actor.DepartmentIds.Contains(department.Id)" ValueChanged="(bool value)=>ToggleDepartment(department.Id,value)">@department.Name</FlareCheckbox>} }
     @if(_actor.Kind!="Role") {
     <FlareSelect TValue="Guid?" Label="@(Strings.T("Добавить роль"))" Items="@(_actors.Where(a=>a.Kind=="Role").Select(a=>(Guid?)a.Id))" ItemLabel="ActorName" NullOption="@(Strings.T("Выберите роль"))" @bind-Value="_role" />
@@ -51,6 +52,7 @@ else
 @code {
     private ActorModel[] _actors=[];private ActorModel? _actor;private Guid? _role;private bool _busy;private string? _error;
     private string? _actorSnapshot; private IDisposable? _draft;
+    private string? _nameError,_emailError; private readonly List<string> _formErrors=[]; private ElementReference _errorSummary;
     [CascadingParameter] public FlareConfirmDialogProvider? Confirm { get; set; }
     internal bool IsDirty => _actor is not null && DraftSnapshot.Of(_actor) != _actorSnapshot;
     protected override void OnInitialized() => _draft = Drafts.Track(() => IsDirty);
@@ -90,7 +92,15 @@ else
     private string ActorName(Guid? id)=>_actors.FirstOrDefault(a=>a.Id==id)?.Name??Strings.T("Без подкоманды");
     private void AddRole(){if(_role.HasValue)_actor!.RoleIds=_actor.RoleIds.Append(_role.Value).Distinct().ToArray();_role=null;}
     private void RemoveRole(Guid id)=>_actor!.RoleIds=_actor.RoleIds.Where(x=>x!=id).ToArray();
-    private Task SaveActor()=>Run(async()=>{var a=_actor!;await Session.Send(a.Id==Guid.Empty?HttpMethod.Post:HttpMethod.Put,Session.TeamPath("actors"+(a.Id==Guid.Empty?"":$"/{a.Id}")),new ActorRequest(a.Name,a.Kind,a.Email,a.ParentId,a.UserId,a.RoleIds,a.DepartmentIds,a.Skills));Close();_actors=await Session.Get<ActorModel[]>(Session.TeamPath("actors"));});
+    private async Task SaveActor()
+    {
+        _nameError=_emailError=null;_formErrors.Clear();
+        var a=_actor!;
+        if (string.IsNullOrWhiteSpace(a.Name)) { _nameError=Strings.T("Имя обязательно."); _formErrors.Add(_nameError); }
+        if (a.Kind=="Person" && !string.IsNullOrWhiteSpace(a.Email) && !System.Net.Mail.MailAddress.TryCreate(a.Email, out _)) { _emailError=Strings.T("Некорректный адрес почты."); _formErrors.Add(_emailError); }
+        if (_formErrors.Count > 0) { StateHasChanged(); await SafeFocus.Async(_errorSummary); return; }
+        await Run(async()=>{await Session.Send(a.Id==Guid.Empty?HttpMethod.Post:HttpMethod.Put,Session.TeamPath("actors"+(a.Id==Guid.Empty?"":$"/{a.Id}")),new ActorRequest(a.Name,a.Kind,a.Email,a.ParentId,a.UserId,a.RoleIds,a.DepartmentIds,a.Skills));Close();_actors=await Session.Get<ActorModel[]>(Session.TeamPath("actors"));});
+    }
     private async Task ArchiveActor()
     {
         if (!await DestructivePrompt.ConfirmAsync(Confirm, Strings.T("Архивировать участника"),

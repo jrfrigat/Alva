@@ -31,7 +31,7 @@ public sealed class CreateFromProjectTests : UiTestBase
         var cut = Render<Tasks>();
         cut.WaitForAssertion(() => Assert.Contains("Платформа", cut.FindAll(".flare-select").First(s => s.TextContent.Contains("Проект") && !s.TextContent.Contains("Все проекты")).TextContent));
 
-        Field(cut, "Название").Input("Новая");
+        Field(cut, "Название").Change("Новая");
         Button(cut, "Сохранить задачу").Click();
 
         cut.WaitForAssertion(() => Assert.EndsWith($"/projects?project={_project.Id}", Navigation.Uri));

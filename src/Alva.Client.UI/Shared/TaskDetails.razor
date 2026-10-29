@@ -36,17 +36,18 @@
             <SkillTagEditor Label="@(Strings.T("Необходимые навыки"))" @bind-Values="_model.RequiredSkills"
                             Suggestions="Actors.SelectMany(a=>a.Skills).Concat(Tasks.SelectMany(t=>t.RequiredSkills)).Distinct(StringComparer.OrdinalIgnoreCase)" />
             <SkillMatch Required="_model.RequiredSkills" Person="@(Actors.FirstOrDefault(a=>a.Id==(Item.ResolvedPersonId ?? Item.AssignmentTargetId)))" />
+            @if (_formErrors.Count > 0) { <div class="alva-form-errors" role="alert" tabindex="-1" @ref="_errorSummary"><b>@(Strings.T("Проверьте выделенные поля."))</b>@foreach (var error in _formErrors) { <div>@error</div> }</div> }
             <FlareGrid MinColumnWidth="min(100%,12rem)">
                 <FlareSelect TValue="string" Label="@(Strings.T("Статус"))" Items="Statuses" ItemLabel="Labels.Status" @bind-Value="_model.Status" />
                 <FlareSelect TValue="string" Label="@(Strings.T("Приоритет"))" Items="Labels.Priorities" ItemLabel="Labels.Priority" @bind-Value="_model.Priority" />
                 <FlareSelect TValue="Guid?" Label="@(Strings.T("Проект"))" Items="Projects.Select(x => (Guid?)x.Id)" ItemLabel="ProjectName" NullOption="@(Strings.T("Текучка"))" @bind-Value="_model.ProjectId" />
                 <FlareSelect TValue="Guid?" Label="@(Strings.T("Спринт (по датам)"))" Items="Sprints.OrderBy(x => x.StartDate).Select(x => (Guid?)x.Id)" ItemLabel="SprintName" NullOption="@(Strings.T("Бэклог — без дат"))" Value="SprintDates.First(_model, Sprints)" ValueChanged="id => SprintDates.Place(_model, Sprints.FirstOrDefault(s => s.Id == id))" HelperText="@SprintDates.Hint(_model, Sprints)" Disabled="_model.DatesFixed" />
-                <FlareSelect TValue="Guid?" Label="@(Strings.T("Родительская задача"))" Items="Tasks.Where(x => x.Id != Item.Id).Select(x => (Guid?)x.Id)" ItemLabel="TaskName" NullOption="@(Strings.T("Корневая задача"))" @bind-Value="_model.ParentId" Searchable />
-                <FlareNumericField TValue="decimal?" Label="@(Strings.T("Оценка, часы"))" @bind-Value="_model.EstimateHours" Min="0" />
-                <FlareNumericField TValue="decimal?" Label="@(Strings.T("Остаток, часы"))" @bind-Value="_model.RemainingHours" Min="0" Max="100000" HelperText="@(Strings.T("Для начатой задачи пустое поле означает неизвестный остаток; 0 — работа закончена."))" />
+                <FlareSelect TValue="Guid?" Label="@(Strings.T("Родительская задача"))" ErrorText="@_parentError" Items="Tasks.Where(x => x.Id != Item.Id).Select(x => (Guid?)x.Id)" ItemLabel="TaskName" NullOption="@(Strings.T("Корневая задача"))" @bind-Value="_model.ParentId" Searchable />
+                <FlareNumericField TValue="decimal?" Label="@(Strings.T("Оценка, часы"))" ErrorText="@_estimateError" @bind-Value="_model.EstimateHours" Min="0" />
+                <FlareNumericField TValue="decimal?" Label="@(Strings.T("Остаток, часы"))" ErrorText="@_remainingError" @bind-Value="_model.RemainingHours" Min="0" Max="100000" HelperText="@(Strings.T("Для начатой задачи пустое поле означает неизвестный остаток; 0 — работа закончена."))" />
                 <FlareDatePicker Label="@(Strings.T("Дедлайн"))" @bind-Value="_model.Deadline" />
-                <FlareDatePicker Label="@(Strings.T("Начало"))" @bind-Value="_model.StartDate" Disabled="_model.DatesFixed" />
-                <FlareDatePicker Label="@(Strings.T("Окончание"))" @bind-Value="_model.EndDate" Disabled="_model.DatesFixed" />
+                <FlareDatePicker Label="@(Strings.T("Начало"))" ErrorText="@_startError" @bind-Value="_model.StartDate" Disabled="_model.DatesFixed" />
+                <FlareDatePicker Label="@(Strings.T("Окончание"))" ErrorText="@_endError" @bind-Value="_model.EndDate" Disabled="_model.DatesFixed" />
             </FlareGrid>
             <FlareStack Gap="FlareSpacing.Small">
                 <FlareSwitch @bind-Value="_model.DatesFixed" Label="@(Strings.T("Фиксированные даты — не переносить"))"
@@ -179,6 +180,8 @@
     private Dictionary<Guid, (decimal Available, decimal Allocated)> _load = [];
     private Guid _loadedFor;
     private string? _error, _quickTitle, _assignSearch;
+    private string? _parentError,_startError,_endError,_estimateError,_remainingError;
+    private readonly List<string> _formErrors=[]; private ElementReference _errorSummary;
     private bool _busy, _assignOpen, _adding;
     private int _assignTab;
     private Guid? _assignTarget, _assignPerson;
@@ -353,13 +356,44 @@
         });
     }
 
-    private Task Save() => Run(async () =>
+    private async Task Save()
     {
-        var m = _model;
-        await Session.Save<TaskModel>(HttpMethod.Put, Session.TeamPath($"tasks/{m.Id}"),
-            new TaskRequest(m.Title, m.Description, m.Status, m.ProjectId, m.ParentId, m.EstimateHours, m.Deadline, m.StartDate, m.EndDate, m.Order, m.Version, m.RequiredSkills, m.Priority, RemainingHours: m.RemainingHours, SetRemainingHours: true, DatesFixed: m.DatesFixed));
-        await Changed.InvokeAsync();
-    });
+        if (!Validate())
+        {
+            StateHasChanged();
+            await SafeFocus.Async(_errorSummary);
+            return;
+        }
+        await Run(async () =>
+        {
+            var m = _model;
+            await Session.Save<TaskModel>(HttpMethod.Put, Session.TeamPath($"tasks/{m.Id}"),
+                new TaskRequest(m.Title, m.Description, m.Status, m.ProjectId, m.ParentId, m.EstimateHours, m.Deadline, m.StartDate, m.EndDate, m.Order, m.Version, m.RequiredSkills, m.Priority, RemainingHours: m.RemainingHours, SetRemainingHours: true, DatesFixed: m.DatesFixed));
+            await Changed.InvokeAsync();
+        });
+    }
+
+    private bool Validate()
+    {
+        _parentError=_startError=_endError=_estimateError=_remainingError=null;
+        _formErrors.Clear();
+        var m=_model;
+        if (m.StartDate is { } start && m.EndDate is { } end && start > end) Error(ref _endError, Strings.T("Окончание раньше начала."));
+        if (m.EstimateHours is < 0) Error(ref _estimateError, Strings.T("Оценка не может быть отрицательной."));
+        if (m.RemainingHours is < 0) Error(ref _remainingError, Strings.T("Остаток не может быть отрицательным."));
+        if (m.ParentId is { } parent && (parent == m.Id || IsDescendant(parent, m.Id))) Error(ref _parentError, Strings.T("Родительская задача не может быть самой задачей или её потомком."));
+        return _formErrors.Count == 0;
+    }
+
+    private bool IsDescendant(Guid candidate, Guid taskId)
+    {
+        var byId=Tasks.ToDictionary(t=>t.Id); var seen=new HashSet<Guid>();
+        for (Guid? id=candidate; id is { } current && seen.Add(current) && byId.TryGetValue(current, out var task); id=task.ParentId)
+            if (current == taskId) return true;
+        return false;
+    }
+
+    private void Error(ref string? field, string message) { field=message; _formErrors.Add(message); }
 
     private async Task QuickKey(KeyboardEventArgs e)
     {

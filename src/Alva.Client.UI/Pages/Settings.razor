@@ -9,6 +9,7 @@
 <PageTitle>@(Strings.T("Настройки · Alva"))</PageTitle>
 <FlareText Element="h1" Typo="TypographyScale.HeadlineLarge">@(Strings.T("Настройки"))</FlareText>
 <PageFeedback Error="@_error" Loading="_busy" />
+@if (_formErrors.Count > 0) { <div class="alva-form-errors" role="alert" tabindex="-1" @ref="_errorSummary"><b>@(Strings.T("Проверьте выделенные поля."))</b>@foreach (var error in _formErrors) { <div>@error</div> }</div> }
 <FlareGrid MinColumnWidth="min(100%,24rem)">
 <FlareCard Variant="CardVariant.Outlined"><FlareCardContent><FlareStack Gap="FlareSpacing.Large"><FlareText Element="h2" Typo="TypographyScale.TitleLarge">@(Strings.T("Внешний вид"))</FlareText><FlareSelect TValue="ThemeMode" Label="@(Strings.T("Режим"))" Items="Modes" ItemLabel="ModeLabel" Value="Theme.Mode" ValueChanged="Theme.SetModeAsync" /></FlareStack></FlareCardContent></FlareCard>
 @if(Session.User is not null)
@@ -20,17 +21,18 @@
     <FlareSwitch Value="Notifications.BrowserNotifications" ValueChanged="ToggleBrowser" Label="@(Strings.T("Уведомления браузера о новых рисках"))" />
     @if(_permissionNote is not null){<FlareText Typo="TypographyScale.BodySmall">@_permissionNote</FlareText>}
 </FlareStack></FlareCardContent></FlareCard>
-<FlareCard Variant="CardVariant.Outlined"><FlareCardContent><FlareStack Gap="FlareSpacing.Large"><FlareText Element="h2" Typo="TypographyScale.TitleLarge">@(Strings.T("Профиль"))</FlareText><FlareText>@Session.User.Email</FlareText><FlareTextField Label="@(Strings.T("Ваше имя"))" @bind-Value="_displayName" /><FlareButton OnClick="SaveProfile" Loading="_busy" Disabled="@(string.IsNullOrWhiteSpace(_displayName))">@(Strings.T("Сохранить профиль"))</FlareButton><FlareButton Variant="ButtonVariant.Text" OnClick="Logout">@(Strings.T("Выйти из Alva"))</FlareButton></FlareStack></FlareCardContent></FlareCard>
+<FlareCard Variant="CardVariant.Outlined"><FlareCardContent><FlareStack Gap="FlareSpacing.Large"><FlareText Element="h2" Typo="TypographyScale.TitleLarge">@(Strings.T("Профиль"))</FlareText><FlareText>@Session.User.Email</FlareText><FlareTextField Label="@(Strings.T("Ваше имя"))" ErrorText="@_nameError" @bind-Value="_displayName" /><FlareButton OnClick="SaveProfile" Loading="_busy" Disabled="@(string.IsNullOrWhiteSpace(_displayName))">@(Strings.T("Сохранить профиль"))</FlareButton><FlareButton Variant="ButtonVariant.Text" OnClick="Logout">@(Strings.T("Выйти из Alva"))</FlareButton></FlareStack></FlareCardContent></FlareCard>
 @if(Session.WorkspaceId.HasValue)
 {
 <FlareCard Variant="CardVariant.Outlined"><FlareCardContent><FlareStack Gap="FlareSpacing.Large"><FlareText Element="h2" Typo="TypographyScale.TitleLarge">@(Strings.T("Пространство и доступ"))</FlareText><FlareTextField Label="@(Strings.T("Название пространства"))" @bind-Value="_spaceName" /><FlareCheckbox @bind-Value="_permissions">@(Strings.T("Ограничивать доступ по разрешениям"))</FlareCheckbox><FlareText>@(Strings.T("По умолчанию все участники команды видят её данные. Изменение доступно владельцу пространства."))</FlareText><FlareButton OnClick="SaveSpace" Loading="_busy">@(Strings.T("Сохранить пространство"))</FlareButton></FlareStack></FlareCardContent></FlareCard>
-<FlareCard Variant="CardVariant.Outlined"><FlareCardContent><FlareStack Gap="FlareSpacing.Large"><FlareText Element="h2" Typo="TypographyScale.TitleLarge">@(Strings.T("Участники пространства"))</FlareText><FlareText>@(Strings.T("Добавьте зарегистрированного пользователя по почте и выберите команды."))</FlareText><FlareTextField Label="@(Strings.T("Почта участника"))" Type="email" @bind-Value="_memberEmail" />@foreach(var team in Session.Teams){<FlareCheckbox Value="_memberTeams.Contains(team.Id)" ValueChanged="(bool value)=>ToggleMemberTeam(team.Id,value)">@team.Name</FlareCheckbox>}<FlareCheckbox @bind-Value="_owner">@(Strings.T("Владелец пространства"))</FlareCheckbox><FlareButton OnClick="SaveMember" Disabled="@(string.IsNullOrWhiteSpace(_memberEmail) || _busy)">@(Strings.T("Сохранить участника"))</FlareButton>@foreach(var member in _members){<FlareText>@member.DisplayName · @member.Email @(member.IsOwner?Strings.T("· владелец"):"")</FlareText>}</FlareStack></FlareCardContent></FlareCard>
+<FlareCard Variant="CardVariant.Outlined"><FlareCardContent><FlareStack Gap="FlareSpacing.Large"><FlareText Element="h2" Typo="TypographyScale.TitleLarge">@(Strings.T("Участники пространства"))</FlareText><FlareText>@(Strings.T("Добавьте зарегистрированного пользователя по почте и выберите команды."))</FlareText><FlareTextField Label="@(Strings.T("Почта участника"))" ErrorText="@_memberEmailError" Type="email" @bind-Value="_memberEmail" />@foreach(var team in Session.Teams){<FlareCheckbox Value="_memberTeams.Contains(team.Id)" ValueChanged="(bool value)=>ToggleMemberTeam(team.Id,value)">@team.Name</FlareCheckbox>}<FlareCheckbox @bind-Value="_owner">@(Strings.T("Владелец пространства"))</FlareCheckbox><FlareButton OnClick="SaveMember" Disabled="@(string.IsNullOrWhiteSpace(_memberEmail) || _busy)">@(Strings.T("Сохранить участника"))</FlareButton>@foreach(var member in _members){<FlareText>@member.DisplayName · @member.Email @(member.IsOwner?Strings.T("· владелец"):"")</FlareText>}</FlareStack></FlareCardContent></FlareCard>
 }
 }
 </FlareGrid>
 @code {
     private static readonly ThemeMode[] Modes=[ThemeMode.Auto,ThemeMode.Light,ThemeMode.Dark,ThemeMode.HighContrast];private bool _busy,_permissions,_owner;private string? _error,_displayName,_spaceName,_memberEmail;private Guid[] _memberTeams=[];private MemberDto[] _members=[];
     private bool _permissionsSaved,_ownerSaved;private string? _displayNameSaved,_spaceNameSaved,_memberEmailSaved;private Guid[] _memberTeamsSaved=[];
+    private string? _nameError,_memberEmailError; private readonly List<string> _formErrors=[]; private ElementReference _errorSummary;
     private IDisposable? _draft;
     [CascadingParameter] public FlareConfirmDialogProvider? Confirm { get; set; }
     internal bool IsDirty => _displayName != _displayNameSaved || _spaceName != _spaceNameSaved || _permissions != _permissionsSaved
@@ -50,9 +52,22 @@
     private static string ModeLabel(ThemeMode mode)=>mode switch{ThemeMode.Auto=>Strings.T("Как на устройстве"),ThemeMode.Light=>Strings.T("Светлый"),ThemeMode.Dark=>Strings.T("Тёмный"),_=>Strings.T("Высокая контрастность")};
     protected override async Task OnInitializedAsync(){await Run(async()=>{await Session.Initialize();_displayName=Session.User?.DisplayName;if(Session.WorkspaceId.HasValue){var spaces=await Session.Get<WorkspaceDto[]>("api/workspaces");var space=spaces.First(x=>x.Id==Session.WorkspaceId);_spaceName=space.Name;_permissions=space.EnforcePermissions;_members=await Session.Get<MemberDto[]>($"api/workspaces/{Session.WorkspaceId}/members");}});Snapshot();}
     private async Task Run(Func<Task> action){_busy=true;_error=null;try{await action();}catch(Exception e) when(e is HttpRequestException or InvalidOperationException){_error=e.Message;}finally{_busy=false;}}
-    private Task SaveProfile()=>Run(async()=>{await Session.Send(HttpMethod.Put,"api/auth/profile",new ProfileRequest(_displayName!));await Session.RefreshUser();Snapshot();});
+    private async Task SaveProfile()
+    {
+        _nameError=null;_formErrors.Clear();
+        if (string.IsNullOrWhiteSpace(_displayName)) { _nameError=Strings.T("Имя обязательно."); _formErrors.Add(_nameError); }
+        if (_formErrors.Count > 0) { StateHasChanged(); await SafeFocus.Async(_errorSummary); return; }
+        await Run(async()=>{await Session.Send(HttpMethod.Put,"api/auth/profile",new ProfileRequest(_displayName!));await Session.RefreshUser();Snapshot();});
+    }
     private Task SaveSpace()=>Run(async()=>{await Session.Send(HttpMethod.Put,$"api/workspaces/{Session.WorkspaceId}",new WorkspaceSettingsRequest(_spaceName!,_permissions));await Session.LoadWorkspaces();Snapshot();});
     private Task Logout()=>Run(async()=>{await Session.Logout();Navigation.NavigateTo("login");});
     private void ToggleMemberTeam(Guid id,bool value)=>_memberTeams=value?_memberTeams.Append(id).Distinct().ToArray():_memberTeams.Where(x=>x!=id).ToArray();
-    private Task SaveMember()=>Run(async()=>{await Session.Send(HttpMethod.Post,$"api/workspaces/{Session.WorkspaceId}/members",new MembershipRequest(_memberEmail!,_memberTeams,_owner));_members=await Session.Get<MemberDto[]>($"api/workspaces/{Session.WorkspaceId}/members");Snapshot();});
+    private async Task SaveMember()
+    {
+        _memberEmailError=null;_formErrors.Clear();
+        if (string.IsNullOrWhiteSpace(_memberEmail)) { _memberEmailError=Strings.T("Почта участника обязательна."); _formErrors.Add(_memberEmailError); }
+        else if (!System.Net.Mail.MailAddress.TryCreate(_memberEmail, out _)) { _memberEmailError=Strings.T("Некорректный адрес почты."); _formErrors.Add(_memberEmailError); }
+        if (_formErrors.Count > 0) { StateHasChanged(); await SafeFocus.Async(_errorSummary); return; }
+        await Run(async()=>{await Session.Send(HttpMethod.Post,$"api/workspaces/{Session.WorkspaceId}/members",new MembershipRequest(_memberEmail!,_memberTeams,_owner));_members=await Session.Get<MemberDto[]>($"api/workspaces/{Session.WorkspaceId}/members");Snapshot();});
+    }
 }

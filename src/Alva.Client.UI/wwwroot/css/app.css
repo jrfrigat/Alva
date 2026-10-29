@@ -684,3 +684,7 @@ a.alva-chip:hover,a.alva-chip:focus-visible{text-decoration:underline}
 .alva-risk-panel__details .alva-risk-panel__note{padding:.5rem 0 0}
 .alva-iteration__more{display:inline-block;margin-top:.25rem;font-weight:600;color:inherit}
 .alva-kpi__note a{color:inherit}
+.alva-form-errors{margin:.25rem 0 .5rem;padding:.625rem .75rem;border:1px solid var(--alva-critical-border);border-radius:6px;background:var(--alva-critical-bg);color:var(--alva-critical-text);font-size:12px;line-height:16px}
+.alva-form-errors:focus{outline:2px solid var(--alva-critical);outline-offset:2px}
+.alva-form-errors b{display:block;margin-bottom:.25rem}
+.alva-field-error{color:var(--alva-critical-text)}

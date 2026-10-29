@@ -1,4 +1,5 @@
 using Flare.Components;
+using Microsoft.AspNetCore.Components;
 
 namespace Alva.Client.Services;
 
@@ -51,5 +52,15 @@ public static class DestructivePrompt
     {
         if (confirm is null) return true;
         return await confirm.ConfirmAsync(title, message, action, Strings.T("Отмена")) == true;
+    }
+}
+
+/// <summary>Фокус на элемент без падения вне браузера: bUnit и отключённый JS не дают ElementReference.</summary>
+public static class SafeFocus
+{
+    public static async Task Async(ElementReference element)
+    {
+        try { await element.FocusAsync(); }
+        catch (Exception e) when (e is InvalidOperationException or Microsoft.JSInterop.JSException or Microsoft.JSInterop.JSDisconnectedException) { }
     }
 }

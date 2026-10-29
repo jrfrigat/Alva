@@ -967,4 +967,18 @@
   <data name="Спринт «{0}» начнётся сейчас: состав и даты зафиксируются, вернуть его в черновик нельзя." xml:space="preserve"><value>Спринт «{0}» начнётся сейчас: состав и даты зафиксируются, вернуть его в черновик нельзя.</value></data>
   <data name="Применить изменения" xml:space="preserve"><value>Применить изменения</value></data>
   <data name="Будет применено изменений: {0}. Даты и исполнители задач изменятся." xml:space="preserve"><value>Будет применено изменений: {0}. Даты и исполнители задач изменятся.</value></data>
+  <data name="Укажите название." xml:space="preserve"><value>Укажите название.</value></data>
+  <data name="Окончание раньше начала." xml:space="preserve"><value>Окончание раньше начала.</value></data>
+  <data name="Родительская задача не может быть самой задачей или её потомком." xml:space="preserve"><value>Родительская задача не может быть самой задачей или её потомком.</value></data>
+  <data name="Оценка не может быть отрицательной." xml:space="preserve"><value>Оценка не может быть отрицательной.</value></data>
+  <data name="Остаток не может быть отрицательным." xml:space="preserve"><value>Остаток не может быть отрицательным.</value></data>
+  <data name="Проверьте выделенные поля." xml:space="preserve"><value>Проверьте выделенные поля.</value></data>
+  <data name="Название спринта обязательно." xml:space="preserve"><value>Название спринта обязательно.</value></data>
+  <data name="Некорректный адрес почты." xml:space="preserve"><value>Некорректный адрес почты.</value></data>
+  <data name="Файл не выбран." xml:space="preserve"><value>Файл не выбран.</value></data>
+  <data name="Расширение файла не совпадает с форматом." xml:space="preserve"><value>Расширение файла не совпадает с форматом.</value></data>
+  <data name="Неизвестный часовой пояс." xml:space="preserve"><value>Неизвестный часовой пояс.</value></data>
+  <data name="Родительская подкоманда" xml:space="preserve"><value>Родительская подкоманда</value></data>
+  <data name="Имя обязательно." xml:space="preserve"><value>Имя обязательно.</value></data>
+  <data name="Почта участника обязательна." xml:space="preserve"><value>Почта участника обязательна.</value></data>
 </root>

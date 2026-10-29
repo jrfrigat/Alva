@@ -60,7 +60,8 @@ else
 {
 <FlareCard Variant="CardVariant.Outlined"><FlareCardContent><FlareStack Gap="FlareSpacing.Medium">
     <FlareStack Row StretchFirst><FlareText Element="h2" Typo="TypographyScale.TitleLarge">@(_editing.Id == Guid.Empty ? Strings.T("Новая задача") : Strings.T("Карточка задачи"))</FlareText><FlareButton OnClick="Close" Variant="ButtonVariant.Text" Size="ButtonSize.Sm">@(Strings.T("Закрыть"))</FlareButton></FlareStack>
-    <FlareTextField Label="@(Strings.T("Название"))" @bind-Value="_editing.Title" Required MaxLength="500" Autofocus />
+    @if (_formErrors.Count > 0) { <div class="alva-form-errors" role="alert" tabindex="-1" @ref="_errorSummary"><b>@(Strings.T("Проверьте выделенные поля."))</b>@foreach (var error in _formErrors) { <div>@error</div> }</div> }
+    <FlareTextField Label="@(Strings.T("Название"))" @bind-Value="_editing.Title" ErrorText="@_titleError" Required MaxLength="500" Autofocus />
     <FlareTextArea Label="@(Strings.T("Описание"))" @bind-Value="_editing.Description" AutoGrow />
     <SkillTagEditor Label="@(Strings.T("Необходимые навыки"))" @bind-Values="_editing.RequiredSkills"
                     Suggestions="_actors.SelectMany(a=>a.Skills).Concat(_tasks.SelectMany(t=>t.RequiredSkills)).Distinct(StringComparer.OrdinalIgnoreCase)" />
@@ -69,12 +70,12 @@ else
         <FlareSelect TValue="string" Label="@(Strings.T("Приоритет"))" Items="Labels.Priorities" ItemLabel="Labels.Priority" @bind-Value="_editing.Priority" />
         <FlareSelect TValue="Guid?" Label="@(Strings.T("Проект"))" Items="_projects.Select(x => (Guid?)x.Id)" ItemLabel="ProjectName" NullOption="@(Strings.T("Текучка"))" @bind-Value="_editing.ProjectId" />
         <FlareSelect TValue="Guid?" Label="@(Strings.T("Спринт (по датам)"))" Items="_sprints.OrderBy(x => x.StartDate).Select(x => (Guid?)x.Id)" ItemLabel="SprintName" NullOption="@(Strings.T("Бэклог — без дат"))" Value="SprintDates.First(_editing, _sprints)" ValueChanged="id => SprintDates.Place(_editing, _sprints.FirstOrDefault(s => s.Id == id))" HelperText="@SprintDates.Hint(_editing, _sprints)" Disabled="_editing.DatesFixed" />
-        <FlareSelect TValue="Guid?" Label="@(Strings.T("Родительская задача"))" Items="_tasks.Where(x => x.Id != _editing.Id).Select(x => (Guid?)x.Id)" ItemLabel="TaskName" NullOption="@(Strings.T("Корневая задача"))" @bind-Value="_editing.ParentId" Searchable />
-        <FlareNumericField TValue="decimal?" Label="@(Strings.T("Оценка, часы"))" @bind-Value="_editing.EstimateHours" Min="0" />
-        <FlareNumericField TValue="decimal?" Label="@(Strings.T("Остаток, часы"))" @bind-Value="_editing.RemainingHours" Min="0" Max="100000" HelperText="@(Strings.T("Для начатой задачи пустое поле означает неизвестный остаток; 0 — работа закончена."))" />
+        <FlareSelect TValue="Guid?" Label="@(Strings.T("Родительская задача"))" ErrorText="@_parentError" Items="_tasks.Where(x => x.Id != _editing.Id).Select(x => (Guid?)x.Id)" ItemLabel="TaskName" NullOption="@(Strings.T("Корневая задача"))" @bind-Value="_editing.ParentId" Searchable />
+        <FlareNumericField TValue="decimal?" Label="@(Strings.T("Оценка, часы"))" ErrorText="@_estimateError" @bind-Value="_editing.EstimateHours" Min="0" />
+        <FlareNumericField TValue="decimal?" Label="@(Strings.T("Остаток, часы"))" ErrorText="@_remainingError" @bind-Value="_editing.RemainingHours" Min="0" Max="100000" HelperText="@(Strings.T("Для начатой задачи пустое поле означает неизвестный остаток; 0 — работа закончена."))" />
         <FlareDatePicker Label="@(Strings.T("Дедлайн"))" @bind-Value="_editing.Deadline" />
-        <FlareDatePicker Label="@(Strings.T("Начало"))" @bind-Value="_editing.StartDate" Disabled="_editing.DatesFixed" />
-        <FlareDatePicker Label="@(Strings.T("Окончание"))" @bind-Value="_editing.EndDate" Disabled="_editing.DatesFixed" />
+        <FlareDatePicker Label="@(Strings.T("Начало"))" ErrorText="@_startError" @bind-Value="_editing.StartDate" Disabled="_editing.DatesFixed" />
+        <FlareDatePicker Label="@(Strings.T("Окончание"))" ErrorText="@_endError" @bind-Value="_editing.EndDate" Disabled="_editing.DatesFixed" />
     </FlareGrid>
     <FlareSwitch @bind-Value="_editing.DatesFixed" Label="@(Strings.T("Фиксированные даты — не переносить"))"
                  Disabled="@(_editing.StartDate is null || _editing.EndDate is null)" />
@@ -95,6 +96,8 @@ else
     private TaskModel[] _tasks=[]; private ProjectModel[] _projects=[]; private SprintModel[] _sprints=[]; private ActorModel[] _actors=[]; private HistoryDto[] _history=[];
     private TaskModel? _editing; private string? _editingSnapshot; private IDisposable? _draft;
     private string? _error,_search,_statusFilter; private Guid? _projectFilter; private bool _busy,_loaded;
+    private string? _titleError,_parentError,_startError,_endError,_estimateError,_remainingError;
+    private readonly List<string> _formErrors=[]; private ElementReference _errorSummary;
     [CascadingParameter] public FlareConfirmDialogProvider? Confirm { get; set; }
     internal bool IsDirty => _editing is not null && DraftSnapshot.Of(_editing) != _editingSnapshot;
     private double _pendingScroll;
@@ -202,13 +205,46 @@ else
     }
 
     public void Dispose() => _draft?.Dispose();
-    private Task Save()=>Run(async()=>{
-        var model=_editing!;var request=new TaskRequest(model.Title,model.Description,model.Status,model.ProjectId,model.ParentId,model.EstimateHours,model.Deadline,model.StartDate,model.EndDate,model.Order,model.Id==Guid.Empty?null:model.Version,model.RequiredSkills,model.Priority, RemainingHours:model.RemainingHours, SetRemainingHours:true, DatesFixed:model.DatesFixed);
-        var saved=await Session.Save<TaskModel>(model.Id==Guid.Empty?HttpMethod.Post:HttpMethod.Put,Session.TeamPath("tasks"+(model.Id==Guid.Empty?"":$"/{model.Id}")),request);
-        if(model.AssignmentTargetId.HasValue)await Session.Send(HttpMethod.Put,Session.TeamPath($"tasks/{saved.Id}/assignment"),new AssignmentRequest(model.AssignmentTargetId.Value,model.ResolvedPersonId));
-        else if(model.Id!=Guid.Empty && _tasks.Any(t=>t.Id==model.Id && t.AssignmentTargetId.HasValue))await Session.Send(HttpMethod.Delete,Session.TeamPath($"tasks/{saved.Id}/assignment"),new{});
-        Hide();Navigation.NavigateTo(BackToProject ? $"projects?project={NewProject}" : $"tasks/{saved.Id}");
-    });
+    private async Task Save()
+    {
+        if (!Validate())
+        {
+            StateHasChanged();
+            await SafeFocus.Async(_errorSummary);
+            return;
+        }
+        await Run(async()=>{
+            var model=_editing!;var request=new TaskRequest(model.Title,model.Description,model.Status,model.ProjectId,model.ParentId,model.EstimateHours,model.Deadline,model.StartDate,model.EndDate,model.Order,model.Id==Guid.Empty?null:model.Version,model.RequiredSkills,model.Priority, RemainingHours:model.RemainingHours, SetRemainingHours:true, DatesFixed:model.DatesFixed);
+            var saved=await Session.Save<TaskModel>(model.Id==Guid.Empty?HttpMethod.Post:HttpMethod.Put,Session.TeamPath("tasks"+(model.Id==Guid.Empty?"":$"/{model.Id}")),request);
+            if(model.AssignmentTargetId.HasValue)await Session.Send(HttpMethod.Put,Session.TeamPath($"tasks/{saved.Id}/assignment"),new AssignmentRequest(model.AssignmentTargetId.Value,model.ResolvedPersonId));
+            else if(model.Id!=Guid.Empty && _tasks.Any(t=>t.Id==model.Id && t.AssignmentTargetId.HasValue))await Session.Send(HttpMethod.Delete,Session.TeamPath($"tasks/{saved.Id}/assignment"),new{});
+            Hide();Navigation.NavigateTo(BackToProject ? $"projects?project={NewProject}" : $"tasks/{saved.Id}");
+        });
+    }
+
+    private bool Validate()
+    {
+        _titleError=_parentError=_startError=_endError=_estimateError=_remainingError=null;
+        _formErrors.Clear();
+        var m=_editing!;
+        if (string.IsNullOrWhiteSpace(m.Title)) Error(ref _titleError, Strings.T("Укажите название."));
+        if (m.StartDate is { } start && m.EndDate is { } end && start > end) Error(ref _endError, Strings.T("Окончание раньше начала."));
+        if (m.EstimateHours is < 0) Error(ref _estimateError, Strings.T("Оценка не может быть отрицательной."));
+        if (m.RemainingHours is < 0) Error(ref _remainingError, Strings.T("Остаток не может быть отрицательным."));
+        if (m.ParentId is { } parent && (parent == m.Id || IsDescendant(parent, m.Id))) Error(ref _parentError, Strings.T("Родительская задача не может быть самой задачей или её потомком."));
+        return _formErrors.Count == 0;
+    }
+
+    // Идём от кандидата вверх: если дошли до самой задачи, она станет потомком собственного потомка.
+    private bool IsDescendant(Guid candidate, Guid taskId)
+    {
+        var byId=_tasks.ToDictionary(t=>t.Id); var seen=new HashSet<Guid>();
+        for (Guid? id=candidate; id is { } current && seen.Add(current) && byId.TryGetValue(current, out var task); id=task.ParentId)
+            if (current == taskId) return true;
+        return false;
+    }
+
+    private void Error(ref string? field, string message) { field=message; _formErrors.Add(message); }
     private async Task Archive()
     {
         if (!await DestructivePrompt.ConfirmAsync(Confirm, Strings.T("Архивировать задачу"),
