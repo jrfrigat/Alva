@@ -758,6 +758,41 @@
   <data name="Включите, чтобы запретить перенос задачи и изменение её дат." xml:space="preserve"><value>Включите, чтобы запретить перенос задачи и изменение её дат.</value></data>
   <data name="Ограничения несовместимы: допустимого плана нет" xml:space="preserve"><value>Ограничения несовместимы: допустимого плана нет</value></data>
   <data name="Допустимого плана нет: фиксированные даты и связи противоречат друг другу." xml:space="preserve"><value>Допустимого плана нет: фиксированные даты и связи противоречат друг другу.</value></data>
+  <data name="reason.balance.evens-days" xml:space="preserve"><value>разгружает загруженные дни</value></data>
+  <data name="reason.balance.excluded.beyond-sprint" xml:space="preserve"><value>Окно задачи выходит за спринт</value></data>
+  <data name="reason.balance.excluded.in-progress" xml:space="preserve"><value>В работе — даты и исполнитель не меняются</value></data>
+  <data name="reason.balance.excluded.no-dates" xml:space="preserve"><value>Нет плановых дат</value></data>
+  <data name="reason.balance.excluded.no-estimate" xml:space="preserve"><value>Нет оценки</value></data>
+  <data name="reason.balance.excluded.no-target" xml:space="preserve"><value>Нет назначения — ни человека, ни роли</value></data>
+  <data name="reason.balance.excluded.parent" xml:space="preserve"><value>Родительская — двигаются подзадачи</value></data>
+  <data name="reason.balance.excluded.starts-before-sprint" xml:space="preserve"><value>Начинается до спринта</value></data>
+  <data name="reason.balance.free-hours" xml:space="preserve"><value>{0}: останется свободно {1} ч</value></data>
+  <data name="reason.balance.improves" xml:space="preserve"><value>Улучшает план</value></data>
+  <data name="reason.balance.keeps-links" xml:space="preserve"><value>соблюдает связи</value></data>
+  <data name="reason.balance.late-days" xml:space="preserve"><value>просрочка {0} → {1} дн.</value></data>
+  <data name="reason.balance.less-overflow" xml:space="preserve"><value>меньше работы после конца спринта</value></data>
+  <data name="reason.balance.on-time" xml:space="preserve"><value>укладывается в срок</value></data>
+  <data name="reason.balance.overload-drop" xml:space="preserve"><value>{0}: перегруз {1} → {2} ч</value></data>
+  <data name="reason.balance.was-unassigned" xml:space="preserve"><value>человек не был выбран</value></data>
+  <data name="reason.forecast.completed-assumption" xml:space="preserve"><value>Для завершённой задачи использованы плановые даты</value></data>
+  <data name="reason.forecast.cycle" xml:space="preserve"><value>Цикл зависимостей или иерархии</value></data>
+  <data name="reason.forecast.estimate-assumption" xml:space="preserve"><value>Остаток принят равным исходной оценке</value></data>
+  <data name="reason.forecast.missing-dependency" xml:space="preserve"><value>Предшественник недоступен для расчёта</value></data>
+  <data name="reason.forecast.no-capacity" xml:space="preserve"><value>Недостаточно ёмкости на горизонте прогноза</value></data>
+  <data name="reason.forecast.no-person" xml:space="preserve"><value>Для прогноза нужен конкретный исполнитель</value></data>
+  <data name="reason.forecast.unknown-dependency" xml:space="preserve"><value>Не определены даты предшественника</value></data>
+  <data name="reason.forecast.unknown-queue" xml:space="preserve"><value>Очередь исполнителя содержит неопределённую работу</value></data>
+  <data name="reason.forecast.unknown-remaining" xml:space="preserve"><value>Неизвестен остаток работы</value></data>
+  <data name="reason.risk.absence" xml:space="preserve"><value>Исполнитель недоступен: {0} ({1}–{2})</value></data>
+  <data name="reason.risk.dependency-open" xml:space="preserve"><value>Зависимость не завершена</value></data>
+  <data name="reason.risk.forecast-late" xml:space="preserve"><value>Прогноз позже срока</value></data>
+  <data name="reason.risk.no-assignee" xml:space="preserve"><value>Нет исполнителя</value></data>
+  <data name="reason.risk.overdue" xml:space="preserve"><value>Срок прошёл</value></data>
+  <data name="reason.risk.overload" xml:space="preserve"><value>Перегрузка исполнителя: {0}</value></data>
+  <data name="reason.risk.required-person" xml:space="preserve"><value>Требуется человек: {0}</value></data>
+  <data name="Ещё {0} — откройте колокольчик в Alva." xml:space="preserve"><value>Ещё {0} — откройте колокольчик в Alva.</value></data>
+  <data name="Риск: {0}" xml:space="preserve"><value>Риск: {0}</value></data>
+  <data name="Риски: новых" xml:space="preserve"><value>Риски: новых</value></data>
   <data name="plural.day.few" xml:space="preserve"><value>дня</value></data>
   <data name="plural.day.many" xml:space="preserve"><value>дней</value></data>
   <data name="plural.day.one" xml:space="preserve"><value>день</value></data>

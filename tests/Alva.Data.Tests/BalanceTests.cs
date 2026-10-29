@@ -53,7 +53,7 @@ public sealed class BalanceTests
         Assert.Equal(Boris.Id, change.ToPersonId);
         Assert.Equal(Role, change.ToTargetId);
         Assert.Equal(change.FromStart, change.ToStart);
-        Assert.Contains("перегруз", change.Reason);
+        Assert.Contains(change.Reasons, r => r.Code == ReasonCodes.BalanceOverloadDrop);
     }
 
     [Fact]
@@ -83,7 +83,7 @@ public sealed class BalanceTests
         Assert.Equal(0, proposal.After.LateDays);
         var change = Assert.Single(proposal.Changes);
         Assert.True(change.ToEnd <= Start.AddDays(3));
-        Assert.Contains("срок", change.Reason);
+        Assert.Contains(change.Reasons, r => r.Code is ReasonCodes.BalanceOnTime or ReasonCodes.BalanceLateDays);
     }
 
     [Fact]
@@ -152,8 +152,8 @@ public sealed class BalanceTests
         var proposal = BalanceMath.Proposal(problem, BalanceMath.Greedy(problem), BalanceMath.Heuristic);
 
         Assert.Equal(1, proposal.Considered);
-        Assert.Equal("Нет назначения — ни человека, ни роли", proposal.Excluded!.Single(x => x.TaskId == unassigned.Id).Reason);
-        Assert.Equal("В работе — даты и исполнитель не меняются", proposal.Excluded!.Single(x => x.TaskId == started.Id).Reason);
+        Assert.Equal(ReasonCodes.BalanceExcludedNoTarget, proposal.Excluded!.Single(x => x.TaskId == unassigned.Id).Reason.Code);
+        Assert.Equal(ReasonCodes.BalanceExcludedInProgress, proposal.Excluded!.Single(x => x.TaskId == started.Id).Reason.Code);
     }
 
     [Fact]

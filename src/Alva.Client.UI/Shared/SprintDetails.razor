@@ -68,7 +68,7 @@
         <ul class="alva-factors">
             @foreach (var reason in Risks.SelectMany(r => r.Reasons).GroupBy(r => r).OrderByDescending(g => g.Count()).Take(3))
             {
-                <li><span class="alva-factors__dot" aria-hidden="true"></span>@reason.Key<b class="alva-num">@reason.Count()</b></li>
+                <li><span class="alva-factors__dot" aria-hidden="true"></span>@ReasonText.Describe(reason.Key)<b class="alva-num">@reason.Count()</b></li>
             }
         </ul>
         @if (Risks.Length > 0)

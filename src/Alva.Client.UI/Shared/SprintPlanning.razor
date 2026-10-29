@@ -87,7 +87,7 @@
                 <ul>
                     @foreach (var item in excluded)
                     {
-                        <li @key="item.TaskId"><a href="tasks/@item.TaskId">@item.Title</a> — @Strings.T(item.Reason)</li>
+                        <li @key="item.TaskId"><a href="tasks/@item.TaskId">@item.Title</a> — @ReasonText.Describe(item.Reason)</li>
                     }
                 </ul>
             </details>
@@ -118,7 +118,7 @@
                                     <span>@AlvaFormat.Period(change.FromStart, change.FromEnd) → <b>@AlvaFormat.Period(change.ToStart, change.ToEnd)</b></span>
                                 }
                             </span>
-                            <small class="alva-plan-change__why">@change.Reason</small>
+                            <small class="alva-plan-change__why">@ReasonText.Join(change.Reasons)</small>
                         </div>
                     </li>
                 }

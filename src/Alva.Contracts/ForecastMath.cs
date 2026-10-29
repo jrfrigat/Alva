@@ -3,7 +3,7 @@ namespace Alva.Contracts;
 public record ForecastWork(Guid Id, Guid? ParentId, Guid? PersonId, string Status, decimal? EstimateHours,
     decimal? RemainingHours, DateOnly? Start, DateOnly? End, DateOnly? Deadline, string Priority = "Normal", int? Rank = null);
 public record ForecastLink(Guid PredecessorId, Guid SuccessorId, string Kind = "FS", int LagDays = 0);
-public record ForecastResult(DateOnly? Start, DateOnly? Finish, string[] Reasons);
+public record ForecastResult(DateOnly? Start, DateOnly? Finish, ReasonDto[] Reasons);
 
 /// <summary>
 /// Read-only forecast for one team's entire queue. Days share a single capacity ledger per person.
@@ -13,15 +13,15 @@ public record ForecastResult(DateOnly? Start, DateOnly? Finish, string[] Reasons
 public static class ForecastMath
 {
     public const int HorizonDays = 730;
-    public const string UnknownRemaining = "Неизвестен остаток работы";
-    public const string NoPerson = "Для прогноза нужен конкретный исполнитель";
-    public const string UnknownQueue = "Очередь исполнителя содержит неопределённую работу";
-    public const string UnknownDependency = "Не определены даты предшественника";
-    public const string MissingDependency = "Предшественник недоступен для расчёта";
-    public const string Cycle = "Цикл зависимостей или иерархии";
-    public const string NoCapacity = "Недостаточно ёмкости на горизонте прогноза";
-    public const string EstimateAssumption = "Остаток принят равным исходной оценке";
-    public const string CompletedAssumption = "Для завершённой задачи использованы плановые даты";
+    public const string UnknownRemaining = ReasonCodes.ForecastUnknownRemaining;
+    public const string NoPerson = ReasonCodes.ForecastNoPerson;
+    public const string UnknownQueue = ReasonCodes.ForecastUnknownQueue;
+    public const string UnknownDependency = ReasonCodes.ForecastUnknownDependency;
+    public const string MissingDependency = ReasonCodes.ForecastMissingDependency;
+    public const string Cycle = ReasonCodes.ForecastCycle;
+    public const string NoCapacity = ReasonCodes.ForecastNoCapacity;
+    public const string EstimateAssumption = ReasonCodes.ForecastEstimateAssumption;
+    public const string CompletedAssumption = ReasonCodes.ForecastCompletedAssumption;
 
     public static IReadOnlyDictionary<Guid, ForecastResult> Build(IReadOnlyCollection<ForecastWork> work,
         IEnumerable<ForecastLink> dependencies, Func<Guid, CalendarDto> calendarOf, DateOnly today)
@@ -44,15 +44,15 @@ public static class ForecastMath
         var uncertainPeople = new HashSet<Guid>();
         var capacity = new Dictionary<Guid, decimal[]>();
         var used = new Dictionary<Guid, decimal[]>();
-        void Fail(ForecastWork task, string reason)
+        void Fail(ForecastWork task, string code)
         {
-            result[task.Id] = new(null, null, [reason]);
+            result[task.Id] = new(null, null, [new ReasonDto(code)]);
             pending.Remove(task.Id);
             if (!children[task.Id].Any() && task.PersonId is { } person) uncertainPeople.Add(person);
         }
         decimal? Remaining(ForecastWork t) => t.RemainingHours ?? (t.Status == "InProgress" ? null : t.EstimateHours);
         foreach (var t in work.Where(t => t.Status is "Done" or "Cancelled"))
-            result[t.Id] = new(t.Start, t.End, [CompletedAssumption]);
+            result[t.Id] = new(t.Start, t.End, [new ReasonDto(CompletedAssumption)]);
 
         // Unknown work cannot silently count as zero hours in the person's queue.
         foreach (var t in pending.Values.ToArray())
@@ -126,7 +126,7 @@ public static class ForecastMath
             }
             if (allocation is null) { Fail(t, NoCapacity); continue; }
             foreach (var (day, take) in allocation) used[personId][day] += take;
-            var assumptions = t.RemainingHours is null ? new[] { EstimateAssumption } : Array.Empty<string>();
+            var assumptions = t.RemainingHours is null ? new[] { new ReasonDto(EstimateAssumption) } : Array.Empty<ReasonDto>();
             result[t.Id] = new(today.AddDays(allocation[0].Day), today.AddDays(allocation[^1].Day), assumptions);
             pending.Remove(t.Id);
         }

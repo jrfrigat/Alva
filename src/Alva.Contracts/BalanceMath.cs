@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace Alva.Contracts;
 
 /// <summary>Запрос автобаланса спринта: режим оптимизации.</summary>
@@ -17,7 +19,7 @@ public record BalanceMetricsDto(decimal OverloadHours, decimal PeakOverloadHours
 
 /// <summary>Одно изменение предложения: кто делает задачу и когда.</summary>
 public record BalanceChangeDto(Guid TaskId, string Title, Guid? FromPersonId, string? FromPersonName, Guid ToTargetId, Guid ToPersonId, string ToPersonName,
-    DateOnly FromStart, DateOnly FromEnd, DateOnly ToStart, DateOnly ToEnd, string Reason);
+    DateOnly FromStart, DateOnly FromEnd, DateOnly ToStart, DateOnly ToEnd, ReasonDto[] Reasons);
 
 /// <summary>Предложение автобаланса: изменения и метрики до и после. Ничего не сохранено.</summary>
 /// <param name="Status">Optimal — оптимум доказан; Feasible — лучшее за отведённое время; Heuristic — простой алгоритм.</param>
@@ -27,7 +29,7 @@ public record BalanceProposalDto(string Mode, string Status, BalanceMetricsDto B
     int Considered = 0, BalanceExcludedDto[]? Excluded = null);
 
 /// <summary>Задача спринта, которую автобаланс не двигал, и причина.</summary>
-public record BalanceExcludedDto(Guid TaskId, string Title, string Reason);
+public record BalanceExcludedDto(Guid TaskId, string Title, ReasonDto Reason);
 
 /// <summary>Человек команды для автобаланса: роли и подкоманды определяют, какие задачи ему можно дать.</summary>
 public record BalancePersonInput(Guid Id, string Name, Guid[] Roles, Guid[] Departments, string[]? Skills = null);
@@ -238,14 +240,14 @@ public static class BalanceMath
     }
 
     // Почему задача спринта не двигается — в порядке условий Movable, чтобы причина совпадала с правилом.
-    private static string ExclusionReason(BalanceTaskInput t, HashSet<Guid> parents, DateOnly sprintStart) =>
-        t.Status == "InProgress" ? "В работе — даты и исполнитель не меняются"
-        : parents.Contains(t.Id) ? "Родительская — двигаются подзадачи"
-        : t.EstimateHours is not > 0 ? "Нет оценки"
-        : t.TargetId is null ? "Нет назначения — ни человека, ни роли"
-        : t.Start is not { } s || t.End is null ? "Нет плановых дат"
-        : s < sprintStart ? "Начинается до спринта"
-        : "Окно задачи выходит за спринт";
+    private static ReasonDto ExclusionReason(BalanceTaskInput t, HashSet<Guid> parents, DateOnly sprintStart) =>
+        new(t.Status == "InProgress" ? ReasonCodes.BalanceExcludedInProgress
+            : parents.Contains(t.Id) ? ReasonCodes.BalanceExcludedParent
+            : t.EstimateHours is not > 0 ? ReasonCodes.BalanceExcludedNoEstimate
+            : t.TargetId is null ? ReasonCodes.BalanceExcludedNoTarget
+            : t.Start is not { } s || t.End is null ? ReasonCodes.BalanceExcludedNoDates
+            : s < sprintStart ? ReasonCodes.BalanceExcludedStartsBeforeSprint
+            : ReasonCodes.BalanceExcludedBeyondSprint);
 
     // Кому можно дать задачу: назначенный человек; люди группы цели; в «Максимальном» — ещё люди с общей ролью.
     private static IEnumerable<int> Candidates(string mode, IReadOnlyList<BalancePersonInput> people, Guid target, bool targetIsGroup, int current)
@@ -405,30 +407,39 @@ public static class BalanceMath
         return new BalanceProposalDto(problem.Mode, status, before.Metrics, after.Metrics, [.. changes], note ?? problem.Infeasible, problem.Tasks.Length, problem.Excluded ?? []);
     }
 
-    private static string Reason(BalanceProblem problem, BalanceTask task, BalanceOption from, BalanceOption to, Evaluation before, Evaluation after)
+    private static ReasonDto[] Reason(BalanceProblem problem, BalanceTask task, BalanceOption from, BalanceOption to, Evaluation before, Evaluation after)
     {
-        var parts = new List<string>();
+        var parts = new List<ReasonDto>();
         if (from.Person != to.Person)
         {
             var toName = problem.People[to.Person].Name;
             var free = Hours(Math.Max(0, after.FreeByPerson[to.Person]));
             // Имена без падежей: «Анна Ковалёва: …» читается при любом имени.
             if (from.Person >= 0 && before.OverloadByPerson[from.Person] > 0)
-                parts.Add($"{problem.People[from.Person].Name}: перегруз {Hours(before.OverloadByPerson[from.Person]):0.#} → {Hours(after.OverloadByPerson[from.Person]):0.#} ч");
+                parts.Add(new ReasonDto(ReasonCodes.BalanceOverloadDrop,
+                [
+                    problem.People[from.Person].Name,
+                    Hours(before.OverloadByPerson[from.Person]).ToString("0.#", CultureInfo.InvariantCulture),
+                    Hours(after.OverloadByPerson[from.Person]).ToString("0.#", CultureInfo.InvariantCulture)
+                ]));
             else if (from.Person < 0)
-                parts.Add("человек не был выбран");
-            parts.Add($"{toName}: останется свободно {free:0.#} ч");
+                parts.Add(new ReasonDto(ReasonCodes.BalanceWasUnassigned));
+            parts.Add(new ReasonDto(ReasonCodes.BalanceFreeHours,
+                [toName, free.ToString("0.#", CultureInfo.InvariantCulture)]));
         }
         if (from.Start != to.Start)
         {
-            if (to.LateDays < from.LateDays) parts.Add(to.LateDays == 0 ? "укладывается в срок" : $"просрочка {from.LateDays} → {to.LateDays} дн.");
-            else if (to.OverflowTenths < from.OverflowTenths) parts.Add("меньше работы после конца спринта");
+            if (to.LateDays < from.LateDays)
+                parts.Add(to.LateDays == 0
+                    ? new ReasonDto(ReasonCodes.BalanceOnTime)
+                    : new ReasonDto(ReasonCodes.BalanceLateDays,
+                        [from.LateDays.ToString(CultureInfo.InvariantCulture), to.LateDays.ToString(CultureInfo.InvariantCulture)]));
+            else if (to.OverflowTenths < from.OverflowTenths) parts.Add(new ReasonDto(ReasonCodes.BalanceLessOverflow));
             else if (problem.Links.Any(l => l.From == Array.IndexOf(problem.Tasks, task) || l.To == Array.IndexOf(problem.Tasks, task)))
-                parts.Add("соблюдает связи");
-            else parts.Add("разгружает загруженные дни");
+                parts.Add(new ReasonDto(ReasonCodes.BalanceKeepsLinks));
+            else parts.Add(new ReasonDto(ReasonCodes.BalanceEvensDays));
         }
-        var text = string.Join("; ", parts);
-        return text.Length == 0 ? "Улучшает план" : char.ToUpperInvariant(text[0]) + text[1..];
+        return parts.Count == 0 ? [new ReasonDto(ReasonCodes.BalanceImproves)] : [.. parts];
     }
 }
 

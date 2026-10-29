@@ -1,3 +1,5 @@
+using Alva.Contracts;
+
 namespace Alva.Client.Models;
 
 public record UserInfo(Guid Id, string Email, string DisplayName);
@@ -94,7 +96,7 @@ public static class SprintHours
     public static decimal Sum(IEnumerable<TaskModel> tasks, SprintModel sprint) => tasks.Sum(t => Of(t, sprint));
 }
 public record CapacityDay(Guid ActorId, string ActorName, DateOnly Date, decimal AvailableHours, decimal AllocatedHours);
-public record RiskInfo(Guid TaskId, string Title, string Severity, string[] Reasons, DateOnly? ForecastDate);
+public record RiskInfo(Guid TaskId, string Title, string Severity, ReasonDto[] Reasons, DateOnly? ForecastDate);
 public static class Labels
 {
     public static string Status(string value) => value switch { "Backlog" => Strings.T(Strings.T("В пуле")), "Planned" => Strings.T(Strings.T("Запланирована")), "InProgress" => Strings.T(Strings.T("В работе")), "Done" => Strings.T(Strings.T("Готова")), "Cancelled" => Strings.T(Strings.T("Отменена")), "Active" => Strings.T(Strings.T("Активный")), "Completed" => Strings.T(Strings.T("Завершён")), _ => value };

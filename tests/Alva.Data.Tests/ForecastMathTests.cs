@@ -41,7 +41,7 @@ public sealed class ForecastMathTests
         var unknown = started with { RemainingHours = null };
         var result = Build([unknown, next]);
         Assert.Null(result[unknown.Id].Finish);
-        Assert.Contains(ForecastMath.UnknownQueue, result[next.Id].Reasons);
+        Assert.Contains(result[next.Id].Reasons, r => r.Code == ForecastMath.UnknownQueue);
     }
     [Theory]
     [InlineData("FS", 0, 3)]

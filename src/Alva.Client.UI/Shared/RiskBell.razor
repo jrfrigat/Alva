@@ -29,7 +29,7 @@
                                 <a href="tasks/@item.Risk.TaskId" @onclick="Close">@item.Risk.Title</a>
                                 @if (item.New) { <span class="alva-bell__new">@(Strings.T("новый"))</span> }
                             </div>
-                            <FlareText Typo="TypographyScale.BodySmall" Class="alva-bell__reasons">@string.Join(" · ", item.Risk.Reasons)</FlareText>
+                            <FlareText Typo="TypographyScale.BodySmall" Class="alva-bell__reasons">@ReasonText.Join(item.Risk.Reasons, " · ")</FlareText>
                         </li>
                     }
                 </ul>
@@ -43,7 +43,7 @@
 </FlarePopover>
 @code {
     private bool _open;
-    private string Label => Notifications.Unseen > 0 ? $"Риски: новых {Notifications.Unseen}" : Strings.T("Риски");
+    private string Label => Notifications.Unseen > 0 ? $"{Strings.T("Риски: новых")} {Notifications.Unseen}" : Strings.T("Риски");
 
     public static string ScopeLabel(RiskScope scope) => scope switch
     {

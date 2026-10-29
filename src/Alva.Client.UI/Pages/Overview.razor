@@ -26,7 +26,7 @@ else
 </FlareStack></FlareCardContent></FlareCard>
 </FlareGrid>
 <FlareText Element="h2" Typo="TypographyScale.TitleLarge">@(Strings.T("На что обратить внимание"))</FlareText>
-@foreach(var risk in _risks.Take(5)){<FlareAlert Severity="@(string.Equals(risk.Severity, "High", StringComparison.OrdinalIgnoreCase) ? AlertSeverity.Error : AlertSeverity.Warning)" Title="@risk.Title"><FlareStack Gap="FlareSpacing.Small"><FlareText>@string.Join(" · ",risk.Reasons)</FlareText><FlareLink Href="@($"tasks/{risk.TaskId}")">@(Strings.T("Открыть задачу"))</FlareLink></FlareStack></FlareAlert>}
+@foreach(var risk in _risks.Take(5)){<FlareAlert Severity="@(string.Equals(risk.Severity, "High", StringComparison.OrdinalIgnoreCase) ? AlertSeverity.Error : AlertSeverity.Warning)" Title="@risk.Title"><FlareStack Gap="FlareSpacing.Small"><FlareText>@ReasonText.Join(risk.Reasons, " · ")</FlareText><FlareLink Href="@($"tasks/{risk.TaskId}")">@(Strings.T("Открыть задачу"))</FlareLink></FlareStack></FlareAlert>}
 @if(_risks.Length==0){<FlareEmptyState Compact Title="@(Strings.T("Открытых рисков нет"))" Description="@(Strings.T("Alva проверяет загрузку, сроки и назначение задач."))" />}
 }
 @code {

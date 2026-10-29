@@ -174,7 +174,7 @@ public sealed class GanttData
         if (ChildrenOf(task).Any()) title += "\nШтриховка — ожидание подзадач";
         if (task.DatesFixed) title += $"\n{Strings.T("Даты зафиксированы: задача не переносится")}";
         return RiskOf(task) is { Severity: "High" or "Medium" } risk
-            ? $"{title}\n{(risk.Severity == "High" ? Strings.T(Strings.T("Высокий")) : Strings.T(Strings.T("Средний")))} риск: {string.Join("; ", risk.Reasons)}"
+            ? $"{title}\n{(risk.Severity == "High" ? Strings.T(Strings.T("Высокий")) : Strings.T(Strings.T("Средний")))} риск: {ReasonText.Join(risk.Reasons)}"
             : title;
     }
 

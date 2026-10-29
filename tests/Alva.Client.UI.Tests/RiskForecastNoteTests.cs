@@ -13,7 +13,7 @@ public sealed class RiskForecastNoteTests : UiTestBase
     public void The_risk_table_explains_what_the_forecast_does_not_know()
     {
         var task = new TaskModel { Id = Guid.NewGuid(), Title = "Отчёт", Deadline = new DateOnly(2026, 10, 20) };
-        Api.Answer("risks", _ => new[] { new RiskDto(task.Id, task.Title, "High", ["Прогноз позже срока"], new DateOnly(2026, 10, 27)) })
+        Api.Answer("risks", _ => new[] { new RiskDto(task.Id, task.Title, "High", [new ReasonDto(ReasonCodes.RiskForecastLate)], new DateOnly(2026, 10, 27)) })
            .Answer("tasks", _ => new[] { task })
            .Answer("actors", _ => Array.Empty<ActorModel>());
 

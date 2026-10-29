@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Alva.Client.Models;
+using Alva.Client.Shared;
 using Alva.Contracts;
 using Microsoft.JSInterop;
 
@@ -104,7 +105,8 @@ public sealed class RiskNotifications(AlvaSession session, IJSRuntime js) : IAsy
 
     public async Task<string> BrowserPermission() => await (await Module()).InvokeAsync<string>("permission");
 
-    private static string Key(RiskDto risk) => $"{risk.TaskId}|{risk.Severity}|{string.Join("¦", risk.Reasons)}";
+    private static string Key(RiskDto risk) => $"{risk.TaskId}|{risk.Severity}|{string.Join("¦", risk.Reasons.Select(Key))}";
+    private static string Key(ReasonDto reason) => $"{reason.Code}:{string.Join(",", reason.Args ?? [])}";
 
     private void Build()
     {
@@ -124,9 +126,10 @@ public sealed class RiskNotifications(AlvaSession session, IJSRuntime js) : IAsy
         if (fresh.Length == 0) return;
         var module = await Module();
         foreach (var item in fresh.Take(3))
-            await module.InvokeVoidAsync("show", $"Риск: {item.Risk.Title}", string.Join("; ", item.Risk.Reasons), item.Risk.TaskId.ToString());
+            await module.InvokeVoidAsync("show", string.Format(Strings.T("Риск: {0}"), item.Risk.Title), ReasonText.Join(item.Risk.Reasons), item.Risk.TaskId.ToString());
         if (fresh.Length > 3)
-            await module.InvokeVoidAsync("show", Strings.T(Strings.T("Alva: новые риски")), $"Ещё {fresh.Length - 3} — откройте колокольчик в Alva.", "alva-risks");
+            await module.InvokeVoidAsync("show", Strings.T("Alva: новые риски"),
+                string.Format(Strings.T("Ещё {0} — откройте колокольчик в Alva."), fresh.Length - 3), "alva-risks");
         foreach (var item in fresh) _state.Shown.Add(Key(item.Risk));
     }
 

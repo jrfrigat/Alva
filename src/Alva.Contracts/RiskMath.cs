@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace Alva.Contracts;
 
 /// <summary>
@@ -48,8 +50,11 @@ public static class RiskMath
         var result = new List<RiskDto>();
         foreach (var task in tasks.Where(t => open.Contains(t.Id)))
         {
-            var reasons = new List<string>();
-            if (task.PersonId is null) reasons.Add(task.TargetName is { } target ? $"Требуется человек: {target}" : "Нет исполнителя");
+            var reasons = new List<ReasonDto>();
+            if (task.PersonId is null)
+                reasons.Add(task.TargetName is { } target
+                    ? new ReasonDto(ReasonCodes.RiskRequiredPerson, [target])
+                    : new ReasonDto(ReasonCodes.RiskNoAssignee));
 
             var calendar = task.PersonId is { } assignee ? CalendarOf(assignee) : CapacityMath.DefaultCalendar(task.Id);
             var window = CapacityMath.Window(task.Start, task.End, task.Deadline);
@@ -57,22 +62,27 @@ public static class RiskMath
             var prediction = forecasts[task.Id];
             var forecast = prediction.Finish;
             if (forecast is null) reasons.AddRange(prediction.Reasons);
-            if (deadline is { } passed && passed < today) reasons.Add("Срок прошёл");
-            else if (deadline is { } due && forecast > due) reasons.Add("Прогноз позже срока");
+            if (deadline is { } passed && passed < today) reasons.Add(new ReasonDto(ReasonCodes.RiskOverdue));
+            else if (deadline is { } due && forecast > due) reasons.Add(new ReasonDto(ReasonCodes.RiskForecastLate));
 
             if (task.PersonId is { } person && window is { } range && range.End >= today)
             {
                 var from = range.Start < today ? today : range.Start;
                 if (Absence(calendar, from, range.End) is { } absence)
-                    reasons.Add($"Исполнитель недоступен: {absence.Reason} ({absence.From:dd.MM}–{absence.To:dd.MM})");
+                    reasons.Add(new ReasonDto(ReasonCodes.RiskAbsence,
+                    [
+                        absence.Reason,
+                        absence.From.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+                        absence.To.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)
+                    ]));
                 for (var day = from; day <= range.End; day = day.AddDays(1))
                     if (load.GetValueOrDefault((person, day)) > CapacityMath.Available(calendar, day) + 0.01m)
                     {
-                        reasons.Add($"Перегрузка исполнителя: {task.PersonName}");
+                        reasons.Add(new ReasonDto(ReasonCodes.RiskOverload, [task.PersonName ?? ""]));
                         break;
                     }
             }
-            if (waiting.Contains(task.Id)) reasons.Add("Зависимость не завершена");
+            if (waiting.Contains(task.Id)) reasons.Add(new ReasonDto(ReasonCodes.RiskDependencyOpen));
             if (reasons.Count == 0) continue;
 
             var severe = deadline is { } limit && (limit < today || forecast is { } date && date.DayNumber - limit.DayNumber > 3);

@@ -140,7 +140,7 @@
                 {
                     <div class="alva-iteration__risks">
                         <span class="alva-iteration__risks-title"><FlareIconView Value="@MaterialDesign3Icons.Regular.Error" Size="16px" /> @risks.Length @AlvaFormat.Plural(risks.Length, "task") под риском срыва срока:</span>
-                        <ul>@foreach (var risk in risks.Take(3)) { <li><a href="@($"tasks/{risk.TaskId}")">@risk.Title</a> — @string.Join(", ", risk.Reasons)</li> }</ul>
+                        <ul>@foreach (var risk in risks.Take(3)) { <li><a href="@($"tasks/{risk.TaskId}")">@risk.Title</a> — @ReasonText.Join(risk.Reasons, ", ")</li> }</ul>
                     </div>
                 }
             </div>

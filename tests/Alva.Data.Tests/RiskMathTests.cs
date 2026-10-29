@@ -22,8 +22,8 @@ public sealed class RiskMathTests
     {
         var risks = Assess(Week(), Task("Без назначения", 4m, Monday, Monday, null, assigned: false), Task("На роль", 4m, Monday, Monday, null, assigned: false, role: "Backend"));
 
-        Assert.Contains("Нет исполнителя", risks.Single(x => x.Title == "Без назначения").Reasons);
-        Assert.Contains("Требуется человек: Backend", risks.Single(x => x.Title == "На роль").Reasons);
+        Assert.Contains(risks.Single(x => x.Title == "Без назначения").Reasons, r => r.Code == ReasonCodes.RiskNoAssignee);
+        Assert.Contains(risks.Single(x => x.Title == "На роль").Reasons, r => r.Code == ReasonCodes.RiskRequiredPerson && r.Args is ["Backend"]);
         Assert.All(risks, r => Assert.Null(r.ForecastDate));
     }
 
@@ -33,7 +33,7 @@ public sealed class RiskMathTests
         var risk = Assert.Single(Assess(Week(), Task("Просрочена", 4m, null, null, Friday.AddDays(-1))));
 
         Assert.Equal("High", risk.Severity);
-        Assert.Contains("Срок прошёл", risk.Reasons);
+        Assert.Contains(risk.Reasons, r => r.Code == ReasonCodes.RiskOverdue);
     }
 
     [Fact]
@@ -45,7 +45,9 @@ public sealed class RiskMathTests
         Assert.Equal(Monday.AddDays(3), risk.ForecastDate);
         Assert.Equal("Medium", risk.Severity);
         // Отпуск сжимает окно до среды: 16 ч на 8-часовой день — это и есть перегрузка.
-        Assert.Equal(["Прогноз позже срока", "Исполнитель недоступен: Отпуск (12.10–13.10)", "Перегрузка исполнителя: Анна"], risk.Reasons);
+        Assert.Equal([ReasonCodes.RiskForecastLate, ReasonCodes.RiskAbsence, ReasonCodes.RiskOverload], risk.Reasons.Select(r => r.Code));
+        Assert.Equal(["Отпуск", "2026-10-12", "2026-10-13"], risk.Reasons.Single(r => r.Code == ReasonCodes.RiskAbsence).Args!);
+        Assert.Equal(["Анна"], risk.Reasons.Single(r => r.Code == ReasonCodes.RiskOverload).Args!);
     }
 
     [Fact]
@@ -62,7 +64,7 @@ public sealed class RiskMathTests
         var risks = Assess(Week(), Task("Первая", 8m, Monday, Monday, null), Task("Вторая", 8m, Monday, Monday, null), Task("Свободная", 8m, Monday.AddDays(1), Monday.AddDays(1), null));
 
         Assert.Equal(["Вторая", "Первая"], risks.Select(x => x.Title).Order());
-        Assert.All(risks, x => Assert.Equal(["Перегрузка исполнителя: Анна"], x.Reasons));
+        Assert.All(risks, x => Assert.Equal([ReasonCodes.RiskOverload], x.Reasons.Select(r => r.Code)));
     }
 
     [Fact]
@@ -74,7 +76,7 @@ public sealed class RiskMathTests
 
         var stage = risks.Single(x => x.TaskId == parent.Id);
         Assert.Equal(Monday.AddDays(2), stage.ForecastDate);
-        Assert.Contains("Прогноз позже срока", stage.Reasons);
+        Assert.Contains(stage.Reasons, r => r.Code == ReasonCodes.RiskForecastLate);
     }
 
     [Fact]
@@ -84,8 +86,8 @@ public sealed class RiskMathTests
         var second = Task("Потом", 4m, Monday.AddDays(1), Monday.AddDays(1), null);
         var risks = RiskMath.Assess([first, second], [new RiskDependency(first.Id, second.Id), new RiskDependency(Guid.NewGuid(), first.Id)], _ => Week(), Friday);
 
-        Assert.Contains(ForecastMath.MissingDependency, risks.Single(r => r.TaskId == first.Id).Reasons);
-        Assert.Contains("Зависимость не завершена", risks.Single(r => r.TaskId == second.Id).Reasons);
+        Assert.Contains(risks.Single(r => r.TaskId == first.Id).Reasons, r => r.Code == ForecastMath.MissingDependency);
+        Assert.Contains(risks.Single(r => r.TaskId == second.Id).Reasons, r => r.Code == ReasonCodes.RiskDependencyOpen);
         Assert.All(risks, r => Assert.Null(r.ForecastDate));
     }
 
@@ -98,7 +100,7 @@ public sealed class RiskMathTests
         var result = RiskMath.Assess([done, first, next], [new(done.Id, first.Id)], _ => Week(), Friday);
         Assert.DoesNotContain(result, r => r.TaskId == done.Id);
         Assert.Equal(Monday, result.Single(r => r.TaskId == next.Id).ForecastDate);
-        Assert.DoesNotContain("Зависимость не завершена", result.Single(r => r.TaskId == first.Id).Reasons);
+        Assert.DoesNotContain(result.Single(r => r.TaskId == first.Id).Reasons, r => r.Code == ReasonCodes.RiskDependencyOpen);
     }
 
     [Fact]
