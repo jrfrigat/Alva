@@ -91,5 +91,11 @@ else
     private void AddRole(){if(_role.HasValue)_actor!.RoleIds=_actor.RoleIds.Append(_role.Value).Distinct().ToArray();_role=null;}
     private void RemoveRole(Guid id)=>_actor!.RoleIds=_actor.RoleIds.Where(x=>x!=id).ToArray();
     private Task SaveActor()=>Run(async()=>{var a=_actor!;await Session.Send(a.Id==Guid.Empty?HttpMethod.Post:HttpMethod.Put,Session.TeamPath("actors"+(a.Id==Guid.Empty?"":$"/{a.Id}")),new ActorRequest(a.Name,a.Kind,a.Email,a.ParentId,a.UserId,a.RoleIds,a.DepartmentIds,a.Skills));Close();_actors=await Session.Get<ActorModel[]>(Session.TeamPath("actors"));});
-    private Task ArchiveActor()=>Run(async()=>{await Session.Send(HttpMethod.Delete,Session.TeamPath($"actors/{_actor!.Id}"),new{});Close();_actors=await Session.Get<ActorModel[]>(Session.TeamPath("actors"));});
+    private async Task ArchiveActor()
+    {
+        if (!await DestructivePrompt.ConfirmAsync(Confirm, Strings.T("Архивировать участника"),
+            string.Format(Strings.T("«{0}» уйдёт из реестра; назначения на него останутся в истории."), _actor!.Name),
+            Strings.T("Архивировать"))) return;
+        await Run(async()=>{await Session.Send(HttpMethod.Delete,Session.TeamPath($"actors/{_actor!.Id}"),new{});Close();_actors=await Session.Get<ActorModel[]>(Session.TeamPath("actors"));});
+    }
 }

@@ -15,8 +15,19 @@ else
 }
 @code {
     private static readonly string[] Formats=["json","csv","xlsx"];private string _format="json";private IBrowserFile? _file;private bool _busy,_success;private string? _error;
+    [CascadingParameter] public FlareConfirmDialogProvider? Confirm { get; set; }
     protected override async Task OnInitializedAsync(){try{await Session.Initialize();}catch(Exception e) when(e is HttpRequestException or InvalidOperationException){_error=e.Message;}}
     private void SelectFiles(IReadOnlyList<IBrowserFile> files){_file=files.FirstOrDefault();_success=false;}
     // Успех показывается только после того, как импорт действительно прошёл; любая ошибка — включая неподдерживаемую операцию — без «успеха».
-    private async Task Import(){if(!Session.SupportsDataTransfer||_file is null)return;_busy=true;_success=false;_error=null;try{await using var stream=_file.OpenReadStream(10*1024*1024);await Session.Import(_format,stream);_success=true;}catch(Exception e) when(e is HttpRequestException or InvalidOperationException or IOException or NotSupportedException){_error=e.Message;}finally{_busy=false;}}
+    private async Task Import()
+    {
+        if(!Session.SupportsDataTransfer||_file is null)return;
+        if(!await DestructivePrompt.ConfirmAsync(Confirm, Strings.T("Импортировать данные"),
+            string.Format(Strings.T("Файл «{0}» будет импортирован в команду; существующие данные могут измениться."), _file.Name),
+            Strings.T("Импортировать"))) return;
+        _busy=true;_success=false;_error=null;
+        try{await using var stream=_file.OpenReadStream(10*1024*1024);await Session.Import(_format,stream);_success=true;}
+        catch(Exception e) when(e is HttpRequestException or InvalidOperationException or IOException or NotSupportedException){_error=e.Message;}
+        finally{_busy=false;}
+    }
 }

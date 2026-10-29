@@ -209,5 +209,11 @@ else
         else if(model.Id!=Guid.Empty && _tasks.Any(t=>t.Id==model.Id && t.AssignmentTargetId.HasValue))await Session.Send(HttpMethod.Delete,Session.TeamPath($"tasks/{saved.Id}/assignment"),new{});
         Hide();Navigation.NavigateTo(BackToProject ? $"projects?project={NewProject}" : $"tasks/{saved.Id}");
     });
-    private Task Archive()=>Run(async()=>{await Session.Send(HttpMethod.Delete,Session.TeamPath($"tasks/{_editing!.Id}"),new{});Hide();_tasks=await Session.Get<TaskModel[]>(Session.TeamPath("tasks"));});
+    private async Task Archive()
+    {
+        if (!await DestructivePrompt.ConfirmAsync(Confirm, Strings.T("Архивировать задачу"),
+            string.Format(Strings.T("Задача «{0}» уйдёт из списков; её можно будет восстановить в архиве."), _editing!.Title),
+            Strings.T("Архивировать"))) return;
+        await Run(async()=>{await Session.Send(HttpMethod.Delete,Session.TeamPath($"tasks/{_editing!.Id}"),new{});Hide();_tasks=await Session.Get<TaskModel[]>(Session.TeamPath("tasks"));});
+    }
 }

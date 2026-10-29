@@ -389,13 +389,19 @@
         finally { _adding = false; }
     }
 
-    private Task Archive() => Run(async () =>
+    private async Task Archive()
     {
-        await Session.Send(HttpMethod.Delete, Session.TeamPath($"tasks/{Item.Id}"), new { });
-        await Changed.InvokeAsync();
-        _leaving = true;
-        Navigation.NavigateTo("tasks");
-    });
+        if (!await DestructivePrompt.ConfirmAsync(Confirm, Strings.T("Архивировать задачу"),
+            string.Format(Strings.T("Задача «{0}» уйдёт из списков; её можно будет восстановить в архиве."), Item.Title),
+            Strings.T("Архивировать"))) return;
+        await Run(async () =>
+        {
+            await Session.Send(HttpMethod.Delete, Session.TeamPath($"tasks/{Item.Id}"), new { });
+            await Changed.InvokeAsync();
+            _leaving = true;
+            Navigation.NavigateTo("tasks");
+        });
+    }
 
     private async Task Run(Func<Task> action)
     {

@@ -37,7 +37,7 @@
         <FlareButton Href="@($"sprints/{Sprint.Id}")" Variant="ButtonVariant.Outlined" Size="ButtonSize.Sm">@(Strings.T("Страница спринта"))</FlareButton>
         @if (Sprint.Status == "Planned")
         {
-            <FlareButton Size="ButtonSize.Sm" Loading="_busy" OnClick="Commit">
+            <FlareButton Size="ButtonSize.Sm" Variant="ButtonVariant.Outlined" Loading="_busy" OnClick="Commit">
                 <LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.Lock" Size="18px" /></LeadingIcon>
                 <ChildContent>@(Strings.T("Зафиксировать спринт"))</ChildContent>
             </FlareButton>
@@ -207,6 +207,7 @@
     [Parameter] public TaskModel[] Tasks { get; set; } = [];
     [Parameter] public EventCallback Changed { get; set; }
     [Parameter] public EventCallback OnParams { get; set; }
+    [CascadingParameter] public FlareConfirmDialogProvider? Confirm { get; set; }
 
     private FlareButton? _paramsButton;
     /// <summary>Возвращает фокус на «Параметры спринта», когда закрыт открытый ею редактор.</summary>
@@ -480,20 +481,32 @@
     private void RejectProposal() => _proposal = null;
 
     /// <summary>Применяет отмеченные изменения одной операцией сервера: все или ни одного, с проверкой версий задач.</summary>
-    private Task ApplyProposal() => Run(async () =>
+    private async Task ApplyProposal()
     {
-        var items = Chosen.Select(c => Tasks.FirstOrDefault(t => t.Id == c.TaskId) is { } task
-                ? new BalanceApplyItem(c.TaskId, task.Version, c.ToStart, c.ToEnd, c.ToTargetId, c.ToPersonId) : null)
-            .OfType<BalanceApplyItem>().ToArray();
-        await Session.Send(HttpMethod.Post, Session.TeamPath($"sprints/{Sprint.Id}/balance/apply"), new BalanceApplyRequest(items));
-        await Refresh();
-    });
+        if (!await DestructivePrompt.ConfirmAsync(Confirm, Strings.T("Применить изменения"),
+            string.Format(Strings.T("Будет применено изменений: {0}. Даты и исполнители задач изменятся."), Chosen.Count),
+            Strings.T("Применить"))) return;
+        await Run(async () =>
+        {
+            var items = Chosen.Select(c => Tasks.FirstOrDefault(t => t.Id == c.TaskId) is { } task
+                    ? new BalanceApplyItem(c.TaskId, task.Version, c.ToStart, c.ToEnd, c.ToTargetId, c.ToPersonId) : null)
+                .OfType<BalanceApplyItem>().ToArray();
+            await Session.Send(HttpMethod.Post, Session.TeamPath($"sprints/{Sprint.Id}/balance/apply"), new BalanceApplyRequest(items));
+            await Refresh();
+        });
+    }
 
-    private Task Commit() => Run(async () =>
+    private async Task Commit()
     {
-        await Session.Save<SprintModel>(HttpMethod.Put, Session.TeamPath($"sprints/{Sprint.Id}"), new SprintRequest(Sprint.Name, Sprint.Goal, Sprint.StartDate, Sprint.EndDate, "Active"));
-        await Changed.InvokeAsync();
-    });
+        if (!await DestructivePrompt.ConfirmAsync(Confirm, Strings.T("Зафиксировать спринт"),
+            string.Format(Strings.T("Спринт «{0}» начнётся сейчас: состав и даты зафиксируются, вернуть его в черновик нельзя."), Sprint.Name),
+            Strings.T("Зафиксировать спринт"))) return;
+        await Run(async () =>
+        {
+            await Session.Save<SprintModel>(HttpMethod.Put, Session.TeamPath($"sprints/{Sprint.Id}"), new SprintRequest(Sprint.Name, Sprint.Goal, Sprint.StartDate, Sprint.EndDate, "Active"));
+            await Changed.InvokeAsync();
+        });
+    }
 
     private async Task Run(Func<Task> action)
     {

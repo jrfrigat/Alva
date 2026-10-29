@@ -43,3 +43,13 @@ public static class DraftPrompt
         return leave == true;
     }
 }
+
+/// <summary>Подтверждение необратимого или массового действия с названием объекта и последствием.</summary>
+public static class DestructivePrompt
+{
+    public static async Task<bool> ConfirmAsync(FlareConfirmDialogProvider? confirm, string title, string message, string action)
+    {
+        if (confirm is null) return true;
+        return await confirm.ConfirmAsync(title, message, action, Strings.T("Отмена")) == true;
+    }
+}

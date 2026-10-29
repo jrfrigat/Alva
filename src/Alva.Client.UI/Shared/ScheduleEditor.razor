@@ -260,11 +260,16 @@
 
     private Task Save() => Run(async () => { await Session.Send(HttpMethod.Put, CalendarPath, Request); await LoadCalendar(keepDraft: false); _saved = true; });
 
-    private Task Apply() => Run(async () =>
+    private async Task Apply()
     {
-        foreach (var id in _applyTo) await Session.Send(HttpMethod.Put, Session.TeamPath($"actors/{id}/calendar"), Request);
-        _applyTo.Clear(); _applyOpen = false; _saved = true;
-    });
+        if (!await DestructivePrompt.ConfirmAsync(Confirm, Strings.T("Применить график"),
+            string.Format(Strings.T("График будет применён к {0} сотрудникам."), _applyTo.Count), Strings.T("Применить"))) return;
+        await Run(async () =>
+        {
+            foreach (var id in _applyTo) await Session.Send(HttpMethod.Put, Session.TeamPath($"actors/{id}/calendar"), Request);
+            _applyTo.Clear(); _applyOpen = false; _saved = true;
+        });
+    }
 
     private Task AddBlock() => Run(async () =>
     {
@@ -273,7 +278,13 @@
         await LoadCalendar();
     });
 
-    private Task DeleteBlock(Guid id) => Run(async () => { await Session.Send(HttpMethod.Delete, CalendarPath + $"/blocks/{id}", new { }); await LoadCalendar(); });
+    private async Task DeleteBlock(Guid id)
+    {
+        var name = _calendar?.RecurringBlocks.FirstOrDefault(b => b.Id == id)?.Name ?? "";
+        if (!await DestructivePrompt.ConfirmAsync(Confirm, Strings.T("Удалить вычет"),
+            string.Format(Strings.T("Вычет «{0}» будет удалён из графика."), name), Strings.T("Удалить"))) return;
+        await Run(async () => { await Session.Send(HttpMethod.Delete, CalendarPath + $"/blocks/{id}", new { }); await LoadCalendar(); });
+    }
 
     private Task AddException() => Run(async () =>
     {
@@ -282,7 +293,13 @@
         await LoadCalendar();
     });
 
-    private Task DeleteException(Guid id) => Run(async () => { await Session.Send(HttpMethod.Delete, CalendarPath + $"/exceptions/{id}", new { }); await LoadCalendar(); });
+    private async Task DeleteException(Guid id)
+    {
+        var reason = _calendar?.Exceptions.FirstOrDefault(e => e.Id == id)?.Reason ?? "";
+        if (!await DestructivePrompt.ConfirmAsync(Confirm, Strings.T("Удалить период"),
+            string.Format(Strings.T("Период «{0}» будет удалён из графика."), reason), Strings.T("Удалить"))) return;
+        await Run(async () => { await Session.Send(HttpMethod.Delete, CalendarPath + $"/exceptions/{id}", new { }); await LoadCalendar(); });
+    }
 
     private async Task Run(Func<Task> action)
     {

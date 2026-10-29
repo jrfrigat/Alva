@@ -129,6 +129,19 @@ public sealed class ScheduleEditorTests : UiTestBase
     }
 
     [Fact]
+    public void Deleting_a_block_asks_before_removing_it()
+    {
+        var page = Render<FlareConfirmDialogProvider>(p => p.AddChildContent<ScheduleEditor>(e => e.Add(x => x.ActorId, _person)));
+        page.WaitForAssertion(() => Assert.Contains("Планёрка", page.Markup));
+
+        Button(page, "Удалить вычет «Планёрка»").Click();
+
+        page.WaitForAssertion(() => Assert.NotNull(page.Find("[role='alertdialog']")));
+        Button(page, "Отмена").Click();
+        Assert.Contains("Планёрка", page.Markup);
+    }
+
+    [Fact]
     public void Resetting_asks_before_discarding_the_draft()
     {
         var page = Render<FlareConfirmDialogProvider>(p => p.AddChildContent<ScheduleEditor>(e => e.Add(x => x.ActorId, _person)));

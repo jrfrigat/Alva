@@ -26,7 +26,7 @@
             </FlareButton>
             @if (Sprint.Status == "Active")
             {
-                <FlareButton Size="ButtonSize.Sm" Loading="_busy" OnClick="OpenClose">
+                <FlareButton Size="ButtonSize.Sm" Variant="ButtonVariant.Outlined" Loading="_busy" OnClick="OpenClose">
                     <LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.CheckCircle" Size="18px" /></LeadingIcon>
                     <ChildContent>@(Strings.T("Завершить спринт"))</ChildContent>
                 </FlareButton>
@@ -199,7 +199,8 @@
         SprintCarry.Backlog => Strings.T("Вернуть в пул"),
         _ => Strings.T("Отметить готовой")
     };
-    private string Decision(TaskModel task) => _decisions.TryGetValue(task.Id, out var action) && Actions.Contains(action) ? action : Actions[0];
+    // По умолчанию — безопасный возврат в пул, а не перенос в следующий спринт: решение должно быть явным.
+    private string Decision(TaskModel task) => _decisions.TryGetValue(task.Id, out var action) && Actions.Contains(action) ? action : SprintCarry.Backlog;
     private string CloseSummary => string.Join(" · ", Actions
         .Select(a => (Label: ActionLabel(a), Hours: Open.Where(t => Decision(t) == a).Sum(Hours)))
         .Where(x => x.Hours > 0).Select(x => string.Format(Strings.T("{0}: {1} ч"), x.Label, AlvaFormat.Hours(x.Hours))));

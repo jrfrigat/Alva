@@ -272,10 +272,16 @@ else
         _projects = await Session.Get<ProjectModel[]>(Session.TeamPath("projects"));
     });
 
-    private Task ArchiveProject() => Run(async () =>
+    private async Task ArchiveProject()
     {
-        await Session.Send(HttpMethod.Delete, Session.TeamPath($"projects/{_project!.Id}"), new { });
-        _project = null; _projectSnapshot = null;
-        _projects = await Session.Get<ProjectModel[]>(Session.TeamPath("projects"));
-    });
+        if (!await DestructivePrompt.ConfirmAsync(Confirm, Strings.T("Архивировать проект"),
+            string.Format(Strings.T("Проект «{0}» уйдёт из реестра; его можно будет восстановить в архиве."), _project!.Name),
+            Strings.T("Архивировать"))) return;
+        await Run(async () =>
+        {
+            await Session.Send(HttpMethod.Delete, Session.TeamPath($"projects/{_project!.Id}"), new { });
+            _project = null; _projectSnapshot = null;
+            _projects = await Session.Get<ProjectModel[]>(Session.TeamPath("projects"));
+        });
+    }
 }
