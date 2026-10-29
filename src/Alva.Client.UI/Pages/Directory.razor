@@ -14,7 +14,11 @@
 @if(Session.TeamId is null) { <TeamRequired /> }
 else
 {
-<FlareStack Row Wrap><FlareButton Href="team" Size="ButtonSize.Sm" Variant="ButtonVariant.Text">@(Strings.T("Люди"))</FlareButton><FlareButton Href="team/departments" Size="ButtonSize.Sm" Variant="ButtonVariant.Text">@(Strings.T("Подкоманды"))</FlareButton><FlareButton Href="team/roles" Size="ButtonSize.Sm" Variant="ButtonVariant.Text">@(Strings.T("Роли"))</FlareButton></FlareStack>
+<FlareStack Row Wrap>
+    <FlareButton Href="team" Size="ButtonSize.Sm" Variant="@(Route == "team" ? ButtonVariant.Tonal : ButtonVariant.Text)" Selected="@(Route == "team")">@(Strings.T("Люди"))</FlareButton>
+    <FlareButton Href="team/departments" Size="ButtonSize.Sm" Variant="@(Route == "team/departments" ? ButtonVariant.Tonal : ButtonVariant.Text)" Selected="@(Route == "team/departments")">@(Strings.T("Подкоманды"))</FlareButton>
+    <FlareButton Href="team/roles" Size="ButtonSize.Sm" Variant="@(Route == "team/roles" ? ButtonVariant.Tonal : ButtonVariant.Text)" Selected="@(Route == "team/roles")">@(Strings.T("Роли"))</FlareButton>
+</FlareStack>
 <FlareGrid MinColumnWidth="min(100%,24rem)" Gap="FlareSpacing.Large">
 <FlareCard Variant="CardVariant.Outlined"><FlareCardContent>
     <FlareDataGrid TItem="ActorModel" Items="_actors.Where(a=>a.Kind==Kind)" Height="auto" Hoverable Dense="true">

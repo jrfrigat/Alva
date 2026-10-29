@@ -22,9 +22,11 @@ public sealed class FakeApi : IApiService
     public FakeApi Answer(string prefix, Func<string, object> answer) { _gets.Insert(0, (prefix, answer)); return this; }
 
     public UserInfo? User { get; set; }
-    public SpaceInfo[] Workspaces => [];
+    public SpaceInfo[] WorkspaceList { get; set; } = [];
+    public SpaceInfo[] Workspaces => WorkspaceList;
     public TeamInfo[] Teams { get; set; } = [];
-    public Guid? WorkspaceId => Guid.Empty;
+    public Guid? SelectedWorkspaceId { get; set; } = Guid.Empty;
+    public Guid? WorkspaceId => SelectedWorkspaceId;
     /// <summary>Команда, восстановленная после входа; null — пользователь ещё не выбрал команду.</summary>
     public Guid? SelectedTeamId { get; set; }
     public Guid? TeamId => SelectedTeamId;

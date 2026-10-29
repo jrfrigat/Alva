@@ -10,12 +10,20 @@ namespace Alva.Client.UI.Tests;
 public sealed class CapacityChartTests : UiTestBase
 {
     private readonly Guid _person = Guid.NewGuid();
+    private readonly SprintModel _sprint = new()
+    {
+        Id = Guid.NewGuid(),
+        Name = "Спринт",
+        Status = "Active",
+        StartDate = DateOnly.FromDateTime(DateTime.Today),
+        EndDate = DateOnly.FromDateTime(DateTime.Today.AddDays(13))
+    };
 
     public CapacityChartTests()
     {
         var person = new ActorModel { Id = _person, Name = "Анна", Kind = "Person" };
         Api.Answer("actors", _ => new[] { person })
-           .Answer("sprints", _ => Array.Empty<SprintModel>())
+           .Answer("sprints", _ => new[] { _sprint })
            .Answer("capacity", _ => Days())
            .Answer("capacity/demand", _ => Array.Empty<CapacityDemandDto>());
     }
@@ -42,6 +50,17 @@ public sealed class CapacityChartTests : UiTestBase
         Assert.Contains("var(--alva-chart-fund)", cut.Markup);
         Assert.Contains("var(--alva-chart-planned)", cut.Markup);
         Assert.Contains("var(--alva-chart-deficit)", cut.Markup);
+    }
+
+    [Fact]
+    public void The_capacity_actions_open_the_people_list_and_the_sprint_board()
+    {
+        var cut = Render<CapacityOverview>();
+        cut.WaitForAssertion(() => Assert.Contains("Балансировать спринт", cut.Markup));
+
+        var links = cut.FindAll("a").Select(a => a.GetAttribute("href")).ToArray();
+        Assert.Contains("capacity/people", links);
+        Assert.Contains($"sprints/{_sprint.Id}/plan", links);
     }
 
     private CapacityDto[] Days()

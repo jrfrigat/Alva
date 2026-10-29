@@ -13,25 +13,26 @@ public sealed record NavigationGroup(string Title, NavigationEntry[] Entries);
 public static class NavigationItems
 {
     public static readonly NavigationEntry Overview =
-        new(AppRoutes.Home, Strings.T("Обзор (Дашборд)"), Flare.Icons.MaterialDesign3Icons.Regular.Dashboard, true, Strings.T("Обзор"));
+        new(AppRoutes.Home, Strings.T("Обзор"), Flare.Icons.MaterialDesign3Icons.Regular.Dashboard, true, Strings.T("Обзор"));
 
     public static readonly NavigationGroup[] Groups =
     [
-        new(Strings.T("Спринты"),
+        new(Strings.T("Планирование"),
         [
-            new("sprints", Strings.T("Список"), Flare.Icons.MaterialDesign3Icons.Regular.ViewTimeline, false),
-            new("sprints/plan", Strings.T("Планирование"), Flare.Icons.MaterialDesign3Icons.Regular.EventAvailable, false)
+            new("sprints", Strings.T("Все спринты"), Flare.Icons.MaterialDesign3Icons.Regular.ViewTimeline, false),
+            new("sprints/plan", Strings.T("Планирование спринта"), Flare.Icons.MaterialDesign3Icons.Regular.EventAvailable, false),
+            new("projects", Strings.T("Проекты"), Flare.Icons.MaterialDesign3Icons.Regular.FolderSpecial, false)
         ]),
         new(Strings.T("Задачи"),
         [
             new("tasks", Strings.T("Дерево задач"), Flare.Icons.MaterialDesign3Icons.Regular.Layers, true, Strings.T("Задачи")),
-            new("unassigned", Strings.T("Пул неназначенных"), Flare.Icons.MaterialDesign3Icons.Regular.Inbox, false)
+            new("unassigned", Strings.T("Без исполнителя"), Flare.Icons.MaterialDesign3Icons.Regular.Inbox, false),
+            new("my-work", Strings.T("Моя работа"), Flare.Icons.MaterialDesign3Icons.Regular.Checklist, false)
         ]),
         new(Strings.T("Диаграммы"),
         [
             new("gantt/tasks", Strings.T("Гантт по задачам"), Flare.Icons.MaterialDesign3Icons.Regular.WaterfallChart, false),
-            new("gantt/people", Strings.T("Гантт по людям"), Flare.Icons.MaterialDesign3Icons.Regular.StackedBarChart, false),
-            new("projects", Strings.T("Проекты"), Flare.Icons.MaterialDesign3Icons.Regular.FolderSpecial, false)
+            new("gantt/people", Strings.T("Гантт по людям"), Flare.Icons.MaterialDesign3Icons.Regular.StackedBarChart, false)
         ]),
         new(Strings.T("Ёмкость"),
         [
@@ -53,8 +54,7 @@ public static class NavigationItems
     /// <summary>Блок под разделами, как в макете: после групп, отделён линией.</summary>
     public static readonly NavigationEntry[] Tail =
     [
-        new("my-work", Strings.T("Моя работа"), Flare.Icons.MaterialDesign3Icons.Regular.Checklist, false),
-        new("data", Strings.T("Данные (Импорт/Экспорт)"), Flare.Icons.MaterialDesign3Icons.Regular.SwapVert, false),
+        new("data", Strings.T("Данные"), Flare.Icons.MaterialDesign3Icons.Regular.SwapVert, false),
         new("settings", Strings.T("Настройки"), Flare.Icons.MaterialDesign3Icons.Regular.Settings, false)
     ];
 
@@ -66,4 +66,3 @@ public static class NavigationItems
     /// «Команда» сюда не входит: в нижней панели он не помещается.</summary>
     public static NavigationEntry[] Primary => All.Where(x => x.Primary).ToArray();
 }
-

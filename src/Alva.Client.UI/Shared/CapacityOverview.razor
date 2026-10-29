@@ -8,16 +8,13 @@
         <p class="alva-page-header__desc">@(Strings.T("Сводный баланс рабочего фонда, утилизация по подкомандам и ресурсные дефициты на горизонте")) @Horizon.</p>
     </div>
     <div class="alva-page-header__actions">
-        @if (_actors.FirstOrDefault(a => a.Kind == "Person") is { } first)
-        {
-            <FlareButton Href="@($"capacity/{first.Id}")" Variant="ButtonVariant.Tonal" Size="ButtonSize.Sm">
-                <LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.EditCalendar" Size="18px" /></LeadingIcon>
-                <ChildContent>@(Strings.T("Редактор графиков"))</ChildContent>
-            </FlareButton>
-        }
+        <FlareButton Href="capacity/people" Variant="ButtonVariant.Tonal" Size="ButtonSize.Sm">
+            <LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.EditCalendar" Size="18px" /></LeadingIcon>
+            <ChildContent>@(Strings.T("Редактор графиков"))</ChildContent>
+        </FlareButton>
         @if (_sprints.FirstOrDefault(s => s.Status == "Active") is { } active)
         {
-            <FlareButton Href="@($"sprints/{active.Id}")" Size="ButtonSize.Sm">
+            <FlareButton Href="@($"sprints/{active.Id}/plan")" Size="ButtonSize.Sm">
                 <LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.Balance" Size="18px" /></LeadingIcon>
                 <ChildContent>@(Strings.T("Балансировать спринт"))</ChildContent>
             </FlareButton>
@@ -91,7 +88,7 @@
             var groupFund = people.Sum(p => Available(p.Id));
             var groupBalance = groupFund - people.Sum(p => Allocated(p.Id)) - roles.Sum(r => Demand(r));
             <div class="alva-matrix__group" role="row">
-                <span role="cell" class="alva-matrix__group-name"><FlareIconView Value="@MaterialDesign3Icons.Regular.KeyboardArrowDown" Size="18px" /> @group.Name <small>(@people.Length @AlvaFormat.Plural(people.Length, "person")@(roles.Length > 0 ? string.Format(Strings.T(", вакансий: {0}"), roles.Length) : ""))</small></span>
+                <span role="cell" class="alva-matrix__group-name">@group.Name <small>(@people.Length @AlvaFormat.Plural(people.Length, "person")@(roles.Length > 0 ? string.Format(Strings.T(", вакансий: {0}"), roles.Length) : ""))</small></span>
                 <span role="cell" class="alva-matrix__group-total @(groupBalance < 0 ? "alva-matrix__group-total--critical" : "")">@(groupBalance < 0 ? string.Format(Strings.T("Дефицит периода: −{0} ч"), AlvaFormat.Hours(-groupBalance)) : string.Format(Strings.T("Резерв периода: +{0} ч"), AlvaFormat.Hours(groupBalance))) · @(Strings.T("Фонд:")) @AlvaFormat.Hours(groupFund) @(Strings.T("ч"))</span>
             </div>
             @foreach (var person in people)

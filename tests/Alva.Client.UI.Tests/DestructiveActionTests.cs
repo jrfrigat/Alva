@@ -37,8 +37,8 @@ public sealed class DestructiveActionTests : UiTestBase
            .Answer("risks", _ => Array.Empty<RiskDto>());
         var cut = Provider<Projects>();
 
-        Button(cut, "Изменить рамку").Click();
-        cut.WaitForAssertion(() => Assert.Contains("Рамка проекта", cut.Markup));
+        Button(cut, "Настройки проекта").Click();
+        cut.WaitForAssertion(() => Assert.Contains("Настройки проекта", cut.Markup));
         Button(cut, "Архивировать").Click();
 
         cut.WaitForAssertion(() => Assert.NotNull(cut.Find("[role='alertdialog']")));

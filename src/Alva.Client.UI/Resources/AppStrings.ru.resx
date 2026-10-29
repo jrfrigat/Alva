@@ -991,4 +991,12 @@
   <data name="Родительская подкоманда" xml:space="preserve"><value>Родительская подкоманда</value></data>
   <data name="Имя обязательно." xml:space="preserve"><value>Имя обязательно.</value></data>
   <data name="Почта участника обязательна." xml:space="preserve"><value>Почта участника обязательна.</value></data>
+  <data name="Планирование спринта" xml:space="preserve"><value>Планирование спринта</value></data>
+  <data name="Данные" xml:space="preserve"><value>Данные</value></data>
+  <data name="Скорость команды" xml:space="preserve"><value>Скорость команды</value></data>
+  <data name="Ход работы" xml:space="preserve"><value>Ход работы</value></data>
+  <data name="Настройки проекта" xml:space="preserve"><value>Настройки проекта</value></data>
+  <data name="Дерево задач проекта" xml:space="preserve"><value>Дерево задач проекта</value></data>
+  <data name="Наименование" xml:space="preserve"><value>Наименование</value></data>
+  <data name="Текущее" xml:space="preserve"><value>Текущее</value></data>
 </root>
