@@ -9,6 +9,8 @@ using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using System.Net;
 using System.Threading.RateLimiting;
+using Alva.Api.Integrations;
+using Alva.Integrations.YandexTracker;
 
 var builder = WebApplication.CreateBuilder(args);
 var databaseProvider = builder.Configuration["Database:Provider"] ?? "Npgsql";
@@ -41,6 +43,10 @@ if (proxyEnabled)
     if (!IPAddress.TryParse(builder.Configuration["ReverseProxy:KnownProxy"], out var knownProxy)) throw new InvalidOperationException("ReverseProxy:KnownProxy must specify the trusted proxy IP.");
     builder.Services.Configure<ForwardedHeadersOptions>(o => { o.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto; o.KnownProxies.Add(knownProxy); });
 }
+// Модули интеграции задач: каждый подключается одной строкой, ядро знает их только через контракт.
+builder.Services.AddYandexTrackerModule();
+builder.Services.AddScoped<IntegrationSync>();
+if (builder.Configuration.GetValue("Integrations:AutoSync", true)) builder.Services.AddHostedService<IntegrationSyncWorker>();
 builder.Services.AddRateLimiter(o => { o.RejectionStatusCode = 429; o.AddPolicy("auth", ctx => RateLimitPartition.GetFixedWindowLimiter(ctx.Connection.RemoteIpAddress?.ToString() ?? "unknown", _ => new FixedWindowRateLimiterOptions { PermitLimit = 30, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 })); });
 var app = builder.Build();
 if (proxyEnabled) app.UseForwardedHeaders();
@@ -69,6 +75,7 @@ app.MapPlanning();
 app.MapCapacity();
 app.MapBalance();
 app.MapData();
+app.MapIntegrations();
 app.MapGet("/health/live", () => Results.Ok(new { status = "live" }));
 app.MapGet("/health/ready", async (AlvaDbContext db, CancellationToken ct) => await db.Database.CanConnectAsync(ct) ? Results.Ok(new { status = "ready" }) : Results.StatusCode(503));
 if (builder.Configuration.GetValue("Database:MigrateOnStartup", true))

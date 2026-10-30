@@ -154,3 +154,49 @@ public sealed class TaskHistory : Entity
     public Guid UserId { get; set; }
     public string Summary { get; set; } = "";
 }
+/// <summary>
+/// Подключение команды к внешнему источнику задач (модулю интеграции). Несекретные настройки — JSON как есть, секреты —
+/// JSON под DataProtection: в ответах API их нет, видно только, какие заданы.
+/// </summary>
+public sealed class TaskSourceConnection : Entity
+{
+    public Guid TeamId { get; set; }
+    /// <summary>Идентификатор модуля, например yandex-tracker.</summary>
+    public string Module { get; set; } = "";
+    public string Name { get; set; } = "";
+    public string SettingsJson { get; set; } = "{}";
+    public string ProtectedSecrets { get; set; } = "";
+    public bool Enabled { get; set; } = true;
+    /// <summary>Интервал автосинхронизации в минутах; null — только вручную.</summary>
+    public int? AutoSyncMinutes { get; set; }
+    /// <summary>Начало последнего успешного прогона: следующий берёт изменённое после него.</summary>
+    public DateTimeOffset? SyncedThrough { get; set; }
+    public DateTimeOffset? LastRunAt { get; set; }
+    public bool? LastOk { get; set; }
+    public string? LastMessage { get; set; }
+    /// <summary>Кто создал подключение: от его имени пишется история задач при фоновой синхронизации.</summary>
+    public Guid CreatedBy { get; set; }
+    public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
+}
+/// <summary>Один прогон синхронизации: что создано, обновлено, пропущено и чем кончилось.</summary>
+public sealed class TaskSourceRun : Entity
+{
+    public Guid ConnectionId { get; set; }
+    public DateTimeOffset StartedAt { get; set; }
+    public DateTimeOffset FinishedAt { get; set; }
+    public bool Ok { get; set; }
+    public int Created { get; set; }
+    public int Updated { get; set; }
+    public int Unchanged { get; set; }
+    public int Skipped { get; set; }
+    public string Message { get; set; } = "";
+}
+/// <summary>Задача Alva, пришедшая из внешнего источника: по ключу повторная синхронизация обновляет её, а не создаёт новую.</summary>
+public sealed class ExternalTaskLink : Entity
+{
+    public Guid ConnectionId { get; set; }
+    public Guid TaskId { get; set; }
+    public string ExternalKey { get; set; } = "";
+    public string? ExternalUrl { get; set; }
+    public DateTimeOffset? ExternalUpdatedAt { get; set; }
+}

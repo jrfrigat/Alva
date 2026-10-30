@@ -1077,4 +1077,5 @@
   <data name="plural.workday.many" xml:space="preserve"><value>working days</value></data>
   <data name="reason.risk.daily-limit" xml:space="preserve"><value>At {0} h a day the task finishes no earlier than {1} — later than planned</value></data>
   <data name="reason.balance.daily-limit" xml:space="preserve"><value>At {0} h a day the work takes until {1}: the dates are stretched</value></data>
+  <data name="Интеграции работают в версии Alva с сервером: он хранит токены и сам обращается к трекеру." xml:space="preserve"><value>Integrations work in Alva with a server: it keeps the tokens and talks to the tracker itself.</value></data>
 </root>

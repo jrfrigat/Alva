@@ -16,7 +16,7 @@ public record ProjectRequest(string Name, string Description, Guid[] TeamIds);
 public record ActorDto(Guid Id, Guid TeamId, string Name, string Kind, string? Email, Guid? ParentId, Guid? UserId, Guid[] RoleIds, Guid[]? DepartmentIds = null, string[]? Skills = null);
 public record ActorRequest(string Name, string Kind, string? Email = null, Guid? ParentId = null, Guid? UserId = null, Guid[]? RoleIds = null, Guid[]? DepartmentIds = null, string[]? Skills = null);
 /// <summary>Задача. SprintIds — спринты, с которыми пересекаются её даты (кэш TaskSprint).</summary>
-public record TaskDto(Guid Id, Guid TeamId, Guid? ProjectId, Guid? ParentId, string Title, string Description, string Status, decimal? EstimateHours, DateOnly? Deadline, DateOnly? StartDate, DateOnly? EndDate, int Order, Guid? AssignmentTargetId, Guid? ResolvedPersonId, long Version, decimal EffectiveEstimateHours, DateOnly? EffectiveDeadline, Guid[] SprintIds, string[]? RequiredSkills = null, string Priority = "Normal", int? BacklogRank = null, decimal? RemainingHours = null, bool DatesFixed = false, decimal? DailyHoursLimit = null);
+public record TaskDto(Guid Id, Guid TeamId, Guid? ProjectId, Guid? ParentId, string Title, string Description, string Status, decimal? EstimateHours, DateOnly? Deadline, DateOnly? StartDate, DateOnly? EndDate, int Order, Guid? AssignmentTargetId, Guid? ResolvedPersonId, long Version, decimal EffectiveEstimateHours, DateOnly? EffectiveDeadline, Guid[] SprintIds, string[]? RequiredSkills = null, string Priority = "Normal", int? BacklogRank = null, decimal? RemainingHours = null, bool DatesFixed = false, decimal? DailyHoursLimit = null, string? ExternalKey = null, string? ExternalUrl = null);
 /// <summary>Правка задачи. Priority = null сохраняет текущий приоритет: правки дат и быстрые подзадачи его не сбрасывают.
 /// DatesFixed = null сохраняет признак фиксации дат: служебные правки не снимают его случайно.
 /// DailyHoursLimit меняется только с SetDailyHoursLimit, как остаток: иначе быстрые правки стирали бы лимит.</summary>
@@ -118,3 +118,17 @@ public record DashboardDto(int TotalTasks, int DoneTasks, int ActiveSprints, dec
 public record SprintCloseRequest(SprintCarryDto[] Tasks, Guid? NextSprintId = null);
 /// <summary>Что делать с незавершённой задачей при закрытии: next — в следующий спринт, backlog — в пул, done — готова.</summary>
 public record SprintCarryDto(Guid TaskId, string Action);
+/// <summary>Модуль интеграции и его настройки — по ним строится форма подключения.</summary>
+public record IntegrationModuleDto(string Id, string Name, string Description, string[] Capabilities, IntegrationSettingDto[] Settings);
+/// <summary>Настройка модуля. Kind: Text, Secret, Url, Number, Flag, Choice.</summary>
+public record IntegrationSettingDto(string Key, string Label, string Kind, bool Required, string? Default, string? Description, IntegrationChoiceDto[]? Choices);
+public record IntegrationChoiceDto(string Value, string Label);
+/// <summary>Подключение команды. Секретов в ответе нет: SecretsSet — какие из них сохранены.</summary>
+public record IntegrationConnectionDto(Guid Id, string Module, string ModuleName, string Name, Dictionary<string, string> Settings, string[] SecretsSet,
+    bool Enabled, int? AutoSyncMinutes, DateTimeOffset? LastRunAt, bool? LastOk, string? LastMessage, int LinkedTasks);
+/// <summary>Создание или правка подключения. Пустой или отсутствующий секрет сохраняет прежний.</summary>
+public record IntegrationConnectionRequest(string Module, string Name, Dictionary<string, string>? Settings = null, Dictionary<string, string>? Secrets = null,
+    bool Enabled = true, int? AutoSyncMinutes = null);
+public record IntegrationCheckDto(bool Ok, string Message, string? Account);
+/// <summary>Прогон синхронизации: сколько задач создано, обновлено, без изменений и пропущено.</summary>
+public record IntegrationRunDto(Guid Id, DateTimeOffset StartedAt, DateTimeOffset FinishedAt, bool Ok, int Created, int Updated, int Unchanged, int Skipped, string Message);

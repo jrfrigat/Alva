@@ -276,6 +276,7 @@ public static class TaskEndpoints
         var tasks = await db.Tasks.AsNoTracking().Where(x => x.TeamId == teamId && !x.Archived).ToArrayAsync();
         var ids = tasks.Select(x => x.Id).ToArray();
         var assignments = await db.Assignments.AsNoTracking().Where(x => ids.Contains(x.TaskId)).ToDictionaryAsync(x => x.TaskId);
+        var external = await db.ExternalTaskLinks.AsNoTracking().Where(x => ids.Contains(x.TaskId)).ToDictionaryAsync(x => x.TaskId);
         var estimates = EffectiveEstimates(tasks);
         var deadlines = EffectiveDeadlines(tasks);
         // Спринты задачи — из кэша одним запросом по команде, в порядке начала спринта.
@@ -286,7 +287,8 @@ public static class TaskEndpoints
         {
             assignments.TryGetValue(x.Id, out var assignment);
             Guid[] inSprints = [.. sprints[x.Id]];
-            return new TaskDto(x.Id, x.TeamId, x.ProjectId, x.ParentId, x.Title, x.Description, x.Status.ToString(), x.EstimateHours, x.Deadline, x.StartDate, x.EndDate, x.Order, assignment?.TargetId, assignment?.ResolvedPersonId, x.Version, estimates.GetValueOrDefault(x.Id), deadlines.GetValueOrDefault(x.Id), inSprints, x.RequiredSkills, x.Priority.ToString(), x.BacklogRank, x.RemainingHours, x.DatesFixed, x.DailyHoursLimit);
+            external.TryGetValue(x.Id, out var link);
+            return new TaskDto(x.Id, x.TeamId, x.ProjectId, x.ParentId, x.Title, x.Description, x.Status.ToString(), x.EstimateHours, x.Deadline, x.StartDate, x.EndDate, x.Order, assignment?.TargetId, assignment?.ResolvedPersonId, x.Version, estimates.GetValueOrDefault(x.Id), deadlines.GetValueOrDefault(x.Id), inSprints, x.RequiredSkills, x.Priority.ToString(), x.BacklogRank, x.RemainingHours, x.DatesFixed, x.DailyHoursLimit, link?.ExternalKey, link?.ExternalUrl);
         }).ToArray();
     }
 

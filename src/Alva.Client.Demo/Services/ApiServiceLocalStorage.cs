@@ -105,6 +105,9 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
     /// <summary>Почему в демо нет импорта и экспорта — показывается на странице «Данные» до выбора файла.</summary>
     internal static string DemoTransferNote => Strings.T("В демо данные хранятся только в этом браузере: импорт и экспорт файлов работают в версии Alva с сервером.");
 
+    /// <summary>Почему в демо нет интеграций: токены хранит сервер, а браузер к внешнему трекеру напрямую не пустят.</summary>
+    internal static string DemoIntegrationsNote => Strings.T("Интеграции работают в версии Alva с сервером: он хранит токены и сам обращается к трекеру.");
+
     public async Task<T> Get<T>(string path)
     {
         var store = await Load();
@@ -128,6 +131,9 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
             ["api", "teams", var t, "capacity"] => Capacity(store, Id(t), QueryDate(query, "from", today), QueryDate(query, "to", today.AddDays(13))),
             ["api", "teams", var t, "capacity", "demand"] => Demand(store, Id(t), QueryDate(query, "from", today), QueryDate(query, "to", today.AddDays(13))),
             ["api", "teams", var t, "risks"] => Risks(store, Id(t), today),
+            ["api", "teams", _, "integrations", "modules"] => Array.Empty<IntegrationModuleDto>(),
+            ["api", "teams", _, "integrations"] => Array.Empty<IntegrationConnectionDto>(),
+            ["api", "teams", _, "integrations", _, "runs"] => Array.Empty<IntegrationRunDto>(),
             _ => throw new NotSupportedException($"Demo: GET {path} не поддерживается.")
         };
         return (T)result;
@@ -279,6 +285,7 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
         var s = SplitQuery(path).Resource.Split('/', StringSplitOptions.RemoveEmptyEntries);
         // Автобаланс только считает: хранилище не меняется.
         if (s is ["api", "teams", var bt, "sprints", var bs, "balance"]) return (T)(object)Balance(store, Id(bt), Id(bs), Read<BalanceRequest>(value));
+        if (s is ["api", "teams", _, "integrations", ..]) throw new NotSupportedException(DemoIntegrationsNote);
         object saved = s switch
         {
             ["api", "teams", var t, "tasks"] => SaveTask(store, Id(t), null, value),
@@ -298,6 +305,7 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
     {
         var store = await Load();
         var s = SplitQuery(path).Resource.Split('/', StringSplitOptions.RemoveEmptyEntries);
+        if (s is ["api", "teams", _, "integrations", ..]) throw new NotSupportedException(DemoIntegrationsNote);
         switch (s)
         {
             case ["api", "auth", "profile"]:

@@ -26,6 +26,9 @@ public class AlvaDbContext(DbContextOptions<AlvaDbContext> options) : DbContext(
     public DbSet<WorkspaceMembership> WorkspaceMemberships => Set<WorkspaceMembership>();
     public DbSet<TeamMembership> TeamMemberships => Set<TeamMembership>();
     public DbSet<PermissionGrant> PermissionGrants => Set<PermissionGrant>();
+    public DbSet<TaskSourceConnection> TaskSources => Set<TaskSourceConnection>();
+    public DbSet<TaskSourceRun> TaskSourceRuns => Set<TaskSourceRun>();
+    public DbSet<ExternalTaskLink> ExternalTaskLinks => Set<ExternalTaskLink>();
 
     /// <summary>
     /// Сохраняет изменения и в той же транзакции пересчитывает кэш TaskSprint для задач и спринтов, у которых изменились
@@ -103,11 +106,21 @@ public class AlvaDbContext(DbContextOptions<AlvaDbContext> options) : DbContext(
         b.Entity<TaskDependency>().HasIndex(x => new { x.PredecessorId, x.SuccessorId }).IsUnique();
         b.Entity<TaskCard>().ToTable(t => { t.HasCheckConstraint("CK_Task_Estimate", "\"EstimateHours\" IS NULL OR \"EstimateHours\" >= 0"); t.HasCheckConstraint("CK_Task_Parent", "\"ParentId\" IS NULL OR \"ParentId\" <> \"Id\""); });
         b.Entity<Sprint>().ToTable(t => t.HasCheckConstraint("CK_Sprint_Dates", "\"EndDate\" >= \"StartDate\""));
+        b.Entity<TaskSourceConnection>().HasOne<Team>().WithMany().HasForeignKey(x => x.TeamId);
+        b.Entity<TaskSourceConnection>().HasIndex(x => new { x.TeamId, x.Name }).IsUnique();
+        b.Entity<TaskSourceRun>().HasOne<TaskSourceConnection>().WithMany().HasForeignKey(x => x.ConnectionId);
+        b.Entity<TaskSourceRun>().HasIndex(x => new { x.ConnectionId, x.StartedAt });
+        b.Entity<ExternalTaskLink>().HasOne<TaskSourceConnection>().WithMany().HasForeignKey(x => x.ConnectionId);
+        b.Entity<ExternalTaskLink>().HasOne<TaskCard>().WithMany().HasForeignKey(x => x.TaskId);
+        // Один внешний ключ — одна задача, одна задача — один источник: повтор или гонка прогонов не создадут дубль.
+        b.Entity<ExternalTaskLink>().HasIndex(x => new { x.ConnectionId, x.ExternalKey }).IsUnique();
+        b.Entity<ExternalTaskLink>().HasIndex(x => x.TaskId).IsUnique();
         foreach (var entity in b.Model.GetEntityTypes())
         {
             foreach (var property in entity.GetProperties())
             {
-                if (property.ClrType == typeof(string)) property.SetMaxLength(property.Name is "Description" or "Summary" ? 10000 : 500);
+                // Настройки и секреты подключений длиннее 500: IAM-токен под DataProtection занимает больше килобайта.
+                if (property.ClrType == typeof(string)) property.SetMaxLength(property.Name is "Description" or "Summary" or "SettingsJson" or "ProtectedSecrets" or "Message" or "LastMessage" ? 10000 : 500);
                 if (property.ClrType == typeof(decimal) || property.ClrType == typeof(decimal?)) { property.SetPrecision(12); property.SetScale(2); }
             }
             foreach (var fk in entity.GetForeignKeys()) fk.DeleteBehavior = DeleteBehavior.Restrict;

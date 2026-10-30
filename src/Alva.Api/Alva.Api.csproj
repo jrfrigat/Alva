@@ -5,6 +5,8 @@
     <ProjectReference Include="../Alva.Infrastructure/Alva.Infrastructure.csproj" />
     <ProjectReference Include="../Alva.Contracts/Alva.Contracts.csproj" />
     <ProjectReference Include="../Alva.Client/Alva.Client.csproj" />
+    <ProjectReference Include="../Alva.Integrations.Abstractions/Alva.Integrations.Abstractions.csproj" />
+    <ProjectReference Include="../Alva.Integrations.YandexTracker/Alva.Integrations.YandexTracker.csproj" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="10.0.12" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.12" />
   </ItemGroup>

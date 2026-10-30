@@ -44,6 +44,9 @@ public sealed class TaskModel
     public bool DatesFixed { get; set; }
     /// <summary>Не больше стольких часов в день на эту задачу; null — без ограничения.</summary>
     public decimal? DailyHoursLimit { get; set; }
+    /// <summary>Ключ задачи во внешнем источнике (TEST-1), если она пришла оттуда.</summary>
+    public string? ExternalKey { get; set; }
+    public string? ExternalUrl { get; set; }
     public int Order { get; set; }
     public Guid? AssignmentTargetId { get; set; }
     public Guid? ResolvedPersonId { get; set; }
