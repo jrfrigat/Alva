@@ -142,12 +142,18 @@ public sealed class YandexTrackerModule : ITaskSourceModule
     }
 
     /// <summary>Ошибка Трекера словами, которые подскажут, что исправить в подключении.</summary>
-    internal static IntegrationException Explain(TrackerApiException e) => e.StatusCode switch
+    internal static IntegrationException Explain(TrackerApiException e)
     {
-        HttpStatusCode.Unauthorized => new("Трекер не принял токен: проверьте токен и его вид (OAuth или IAM).", e),
-        HttpStatusCode.Forbidden => new($"Трекер отказал в доступе: проверьте идентификатор и вид организации и права токена. {e.Message}", e),
-        _ => new($"Трекер ответил ошибкой {(int)e.StatusCode}: {e.Message}", e)
-    };
+        // Свои слова Трекера добавляются, только если он их прислал: иначе текст повторил бы код ответа дважды.
+        var details = e.ErrorMessages.Count > 0 ? " " + string.Join(" ", e.ErrorMessages) : "";
+        return e.StatusCode switch
+        {
+            HttpStatusCode.Unauthorized => new("Трекер не принял токен: проверьте токен и его вид (OAuth или IAM).", e),
+            HttpStatusCode.Forbidden => new($"Трекер отказал в доступе: проверьте идентификатор и вид организации и права токена.{details}", e),
+            HttpStatusCode.NotFound => new($"Трекер не нашёл адрес или очередь: проверьте адрес API и очереди.{details}", e),
+            _ => new($"Трекер ответил ошибкой {(int)e.StatusCode}.{details}", e)
+        };
+    }
 }
 
 public static class YandexTrackerRegistration
