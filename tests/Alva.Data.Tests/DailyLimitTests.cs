@@ -77,4 +77,27 @@ public sealed class DailyLimitTests
         Assert.Equal(Monday.AddDays(4), change.ToEnd);
         Assert.Contains(change.Reasons, r => r.Code == ReasonCodes.BalanceDailyLimit);
     }
+
+    [Fact]
+    public void Solver_keeps_the_successor_after_the_real_finish_and_the_day_under_the_limit()
+    {
+        var role = Guid.NewGuid();
+        var anna = new BalancePersonInput(Person, "Анна", [role], []);
+        var report = new BalanceTaskInput(Guid.NewGuid(), "Отчёт", "Planned", null, 10m, Monday, Monday.AddDays(1), null, Person, Person, DailyHoursLimit: 2m);
+        var next = new BalanceTaskInput(Guid.NewGuid(), "Анонс", "Planned", null, 4m, Monday.AddDays(2), Monday.AddDays(2), null, Person, Person);
+        var problem = BalanceMath.Build(BalanceModes.Deadlines, Guid.NewGuid(), Monday, Monday.AddDays(11), [anna], CapacityMath.DefaultCalendar,
+            [report, next], [new BalanceLinkInput(report.Id, next.Id, "FS", 0)]);
+
+        var (choice, status) = Alva.Api.BalanceSolver.Solve(problem, TimeSpan.FromSeconds(5));
+        var proposal = BalanceMath.Proposal(problem, choice, status);
+
+        Assert.NotEqual(BalanceMath.Infeasible, status);
+        Assert.Equal(0, proposal.After.LinkViolationDays);
+        var r = Array.FindIndex(problem.Tasks, t => t.Id == report.Id);
+        var n = Array.FindIndex(problem.Tasks, t => t.Id == next.Id);
+        var chosen = problem.Tasks[r].Options[choice[r]];
+        Assert.All(chosen.Load, l => Assert.True(l <= 20));
+        Assert.True(problem.Tasks[n].Options[choice[n]].Start >= chosen.Start + chosen.Span);
+        Assert.Contains(proposal.Changes, c => c.TaskId == report.Id && c.ToEnd > Monday.AddDays(1));
+    }
 }
