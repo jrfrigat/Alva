@@ -1037,4 +1037,31 @@
   <data name="Если включено, доступ к данным команды получают только владелец и участники с разрешениями. Выдайте их в матрице прав." xml:space="preserve"><value>When enabled, only the owner and members with permissions can access team data. Grant them in the permission matrix.</value></data>
   <data name="Пространство и команды" xml:space="preserve"><value>Workspace and teams</value></data>
   <data name="Рабочее пространство · Alva" xml:space="preserve"><value>Workspace · Alva</value></data>
+  <data name="Действия с задачей" xml:space="preserve"><value>Task actions</value></data>
+  <data name="Рисков нет: срок, исполнитель и зависимости в порядке." xml:space="preserve"><value>No risks: the deadline, assignee and dependencies are fine.</value></data>
+  <data name="Прогноз завершения: {0}" xml:space="preserve"><value>Forecast finish: {0}</value></data>
+  <data name="План" xml:space="preserve"><value>Plan</value></data>
+  <data name="Назначение" xml:space="preserve"><value>Assignment</value></data>
+  <data name="Что задача ждёт и кого задерживает" xml:space="preserve"><value>What the task waits for and what it holds up</value></data>
+  <data name="Предшественники" xml:space="preserve"><value>Predecessors</value></data>
+  <data name="Последователи" xml:space="preserve"><value>Successors</value></data>
+  <data name="Задача ничего не ждёт." xml:space="preserve"><value>The task waits for nothing.</value></data>
+  <data name="Никто не ждёт эту задачу." xml:space="preserve"><value>Nothing waits for this task.</value></data>
+  <data name="лаг {0} дн." xml:space="preserve"><value>lag {0} d</value></data>
+  <data name="Удалить связь с «{0}»" xml:space="preserve"><value>Remove the link to “{0}”</value></data>
+  <data name="Удалить связь" xml:space="preserve"><value>Remove link</value></data>
+  <data name="Связь" xml:space="preserve"><value>Link</value></data>
+  <data name="Выберите задачу" xml:space="preserve"><value>Choose a task</value></data>
+  <data name="Вид" xml:space="preserve"><value>Type</value></data>
+  <data name="Лаг, дни" xml:space="preserve"><value>Lag, days</value></data>
+  <data name="Добавить связь" xml:space="preserve"><value>Add link</value></data>
+  <data name="Снять назначение" xml:space="preserve"><value>Unassign</value></data>
+  <data name="Начало → начало" xml:space="preserve"><value>Start → start</value></data>
+  <data name="Окончание → окончание" xml:space="preserve"><value>Finish → finish</value></data>
+  <data name="Начало → окончание" xml:space="preserve"><value>Start → finish</value></data>
+  <data name="Окончание → начало" xml:space="preserve"><value>Finish → start</value></data>
+  <data name="Предшественник — задача ждёт его" xml:space="preserve"><value>Predecessor — this task waits for it</value></data>
+  <data name="Последователь — ждёт эту задачу" xml:space="preserve"><value>Successor — waits for this task</value></data>
+  <data name="Задача недоступна" xml:space="preserve"><value>Task unavailable</value></data>
+  <data name="Связь с задачей «{0}» будет удалена; прогноз и риск пересчитаются." xml:space="preserve"><value>The link to “{0}” will be removed; the forecast and risk will be recalculated.</value></data>
 </root>

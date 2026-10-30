@@ -1037,4 +1037,31 @@
   <data name="Если включено, доступ к данным команды получают только владелец и участники с разрешениями. Выдайте их в матрице прав." xml:space="preserve"><value>Если включено, доступ к данным команды получают только владелец и участники с разрешениями. Выдайте их в матрице прав.</value></data>
   <data name="Пространство и команды" xml:space="preserve"><value>Пространство и команды</value></data>
   <data name="Рабочее пространство · Alva" xml:space="preserve"><value>Рабочее пространство · Alva</value></data>
+  <data name="Действия с задачей" xml:space="preserve"><value>Действия с задачей</value></data>
+  <data name="Рисков нет: срок, исполнитель и зависимости в порядке." xml:space="preserve"><value>Рисков нет: срок, исполнитель и зависимости в порядке.</value></data>
+  <data name="Прогноз завершения: {0}" xml:space="preserve"><value>Прогноз завершения: {0}</value></data>
+  <data name="План" xml:space="preserve"><value>План</value></data>
+  <data name="Назначение" xml:space="preserve"><value>Назначение</value></data>
+  <data name="Что задача ждёт и кого задерживает" xml:space="preserve"><value>Что задача ждёт и кого задерживает</value></data>
+  <data name="Предшественники" xml:space="preserve"><value>Предшественники</value></data>
+  <data name="Последователи" xml:space="preserve"><value>Последователи</value></data>
+  <data name="Задача ничего не ждёт." xml:space="preserve"><value>Задача ничего не ждёт.</value></data>
+  <data name="Никто не ждёт эту задачу." xml:space="preserve"><value>Никто не ждёт эту задачу.</value></data>
+  <data name="лаг {0} дн." xml:space="preserve"><value>лаг {0} дн.</value></data>
+  <data name="Удалить связь с «{0}»" xml:space="preserve"><value>Удалить связь с «{0}»</value></data>
+  <data name="Удалить связь" xml:space="preserve"><value>Удалить связь</value></data>
+  <data name="Связь" xml:space="preserve"><value>Связь</value></data>
+  <data name="Выберите задачу" xml:space="preserve"><value>Выберите задачу</value></data>
+  <data name="Вид" xml:space="preserve"><value>Вид</value></data>
+  <data name="Лаг, дни" xml:space="preserve"><value>Лаг, дни</value></data>
+  <data name="Добавить связь" xml:space="preserve"><value>Добавить связь</value></data>
+  <data name="Снять назначение" xml:space="preserve"><value>Снять назначение</value></data>
+  <data name="Начало → начало" xml:space="preserve"><value>Начало → начало</value></data>
+  <data name="Окончание → окончание" xml:space="preserve"><value>Окончание → окончание</value></data>
+  <data name="Начало → окончание" xml:space="preserve"><value>Начало → окончание</value></data>
+  <data name="Окончание → начало" xml:space="preserve"><value>Окончание → начало</value></data>
+  <data name="Предшественник — задача ждёт его" xml:space="preserve"><value>Предшественник — задача ждёт его</value></data>
+  <data name="Последователь — ждёт эту задачу" xml:space="preserve"><value>Последователь — ждёт эту задачу</value></data>
+  <data name="Задача недоступна" xml:space="preserve"><value>Задача недоступна</value></data>
+  <data name="Связь с задачей «{0}» будет удалена; прогноз и риск пересчитаются." xml:space="preserve"><value>Связь с задачей «{0}» будет удалена; прогноз и риск пересчитаются.</value></data>
 </root>

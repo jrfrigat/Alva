@@ -1,5 +1,5 @@
-@* Страница задачи по макету p9: крошки, действия, описание и параметры, дерево задач подзадач,
-   история и боковая панель назначения исполнителя с загрузкой кандидатов. *@
+@* Страница задачи по макету p9: крошки, закреплённые действия, риск с причинами, секции формы,
+   зависимости, подзадачи, история и боковая панель назначения исполнителя с загрузкой кандидатов. *@
 @implements IDisposable
 @inject AlvaSession Session
 @inject NavigationManager Navigation
@@ -7,12 +7,14 @@
 <NavigationLock OnBeforeInternalNavigation="ConfirmLeave" ConfirmExternalNavigation="Dirty" />
 <div class="alva-task">
     <FlareBreadcrumb Items="Crumbs" Separator="›" AriaLabel="@(Strings.T("Путь к задаче"))" />
-    <div class="alva-task__actions">
+    @* Панель прилипает к верху прокрутки: «Сохранить» и «Назначить» видны на любой глубине формы. На телефоне
+       она тоже сверху — внизу уже закреплена нижняя навигация, вторая полоса там закрыла бы контент. *@
+    <div class="alva-task__actions" role="toolbar" aria-label="@(Strings.T("Действия с задачей"))">
         <FlareButton Loading="_busy" Disabled="@(string.IsNullOrWhiteSpace(_model.Title) || !Dirty)" OnClick="Save" Size="ButtonSize.Sm">
             <LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.Save" Size="18px" /></LeadingIcon>
             <ChildContent>@(Strings.T("Сохранить"))</ChildContent>
         </FlareButton>
-        <FlareButton Variant="ButtonVariant.Tonal" OnClick="OpenAssign" Size="ButtonSize.Sm">
+        <FlareButton @ref="_assignButton" Variant="ButtonVariant.Tonal" OnClick="OpenAssign" Size="ButtonSize.Sm">
             <LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.PersonAdd" Size="18px" /></LeadingIcon>
             <ChildContent>@(Strings.T("Назначить исполнителя"))</ChildContent>
         </FlareButton>
@@ -26,17 +28,66 @@
     </div>
     <PageFeedback Error="@_error" />
 
+    <section class="alva-panel alva-task__risk" aria-labelledby="alva-task-risk">
+        <header class="alva-panel__header">
+            <FlareIconView Value="@MaterialDesign3Icons.Regular.Warning" Size="20px" Class="alva-panel__icon" />
+            <h2 class="alva-panel__title" id="alva-task-risk">@(Strings.T("Риск"))</h2>
+            @if (_risk is not null) { <AlvaStatusChip Tone="AlvaTones.Severity(_risk.Severity)">@(_risk.Severity == "High" ? Strings.T("Высокий") : Strings.T("Средний"))</AlvaStatusChip> }
+        </header>
+        @if (_linksError is not null) { <FlareText Typo="TypographyScale.BodySmall" Class="alva-field-error">@_linksError</FlareText> }
+        else if (_risk is null) { <FlareText Typo="TypographyScale.BodySmall">@(Strings.T("Рисков нет: срок, исполнитель и зависимости в порядке."))</FlareText> }
+        else
+        {
+            @if (_risk.ForecastDate is { } forecast) { <FlareText Typo="TypographyScale.BodySmall">@string.Format(Strings.T("Прогноз завершения: {0}"), forecast.ToString("d MMM yyyy"))</FlareText> }
+            <ul class="alva-task__reasons">
+                @foreach (var reason in _risk.Reasons)
+                {
+                    <li>
+                        @if (reason.Code is ReasonCodes.RiskNoAssignee or ReasonCodes.RiskRequiredPerson)
+                        {
+                            @* Ссылка вела бы на эту же карточку: действие — сразу открыть назначение. *@
+                            <span>@ReasonText.Describe(reason)</span>
+                            <FlareButton Variant="ButtonVariant.Text" Size="ButtonSize.Sm" OnClick="OpenAssign">@(Strings.T("Назначить исполнителя"))</FlareButton>
+                        }
+                        else
+                        {
+                            <a href="@RiskActions.Href(reason, Item.Id, Item.ResolvedPersonId)" title="@RiskActions.Label(reason, Item.ResolvedPersonId)">@ReasonText.Describe(reason)</a>
+                        }
+                    </li>
+                }
+            </ul>
+        }
+    </section>
+
     <section class="alva-panel">
         <header class="alva-panel__header">
             <FlareIconView Value="@MaterialDesign3Icons.Regular.Description" Size="20px" Class="alva-panel__icon" />
-            <h2 class="alva-panel__title">@(Strings.T("Описание и параметры"))</h2>
+            <h2 class="alva-panel__title">@(Strings.T("Описание"))</h2>
         </header>
         <FlareStack Gap="FlareSpacing.Medium">
             <FlareTextField Label="@(Strings.T("Название"))" @bind-Value="_model.Title" Required MaxLength="500" />
             <FlareTextArea Label="@(Strings.T("Описание и цели"))" @bind-Value="_model.Description" AutoGrow />
+        </FlareStack>
+    </section>
+
+    <section class="alva-panel">
+        <header class="alva-panel__header">
+            <FlareIconView Value="@MaterialDesign3Icons.Regular.Badge" Size="20px" Class="alva-panel__icon" />
+            <h2 class="alva-panel__title">@(Strings.T("Навыки"))</h2>
+        </header>
+        <FlareStack Gap="FlareSpacing.Medium">
             <SkillTagEditor Label="@(Strings.T("Необходимые навыки"))" @bind-Values="_model.RequiredSkills"
                             Suggestions="Actors.SelectMany(a=>a.Skills).Concat(Tasks.SelectMany(t=>t.RequiredSkills)).Distinct(StringComparer.OrdinalIgnoreCase)" />
             <SkillMatch Required="_model.RequiredSkills" Person="@(Actors.FirstOrDefault(a=>a.Id==(Item.ResolvedPersonId ?? Item.AssignmentTargetId)))" />
+        </FlareStack>
+    </section>
+
+    <section class="alva-panel">
+        <header class="alva-panel__header">
+            <FlareIconView Value="@MaterialDesign3Icons.Regular.Tune" Size="20px" Class="alva-panel__icon" />
+            <h2 class="alva-panel__title">@(Strings.T("План"))</h2>
+        </header>
+        <FlareStack Gap="FlareSpacing.Medium">
             @if (_formErrors.Count > 0) { <div class="alva-form-errors" role="alert" tabindex="-1" @ref="_errorSummary"><b>@(Strings.T("Проверьте выделенные поля."))</b>@foreach (var error in _formErrors) { <div>@error</div> }</div> }
             <FlareGrid MinColumnWidth="min(100%,12rem)">
                 <FlareSelect TValue="string" Label="@(Strings.T("Статус"))" Items="Statuses" ItemLabel="Labels.Status" @bind-Value="_model.Status" />
@@ -55,11 +106,56 @@
                              Disabled="@(_model.StartDate is null || _model.EndDate is null)" />
                 <FlareText Typo="TypographyScale.BodySmall">@FixedHint</FlareText>
             </FlareStack>
-            <div class="alva-task__assignee">
-                <span class="alva-micro-label">@(Strings.T("Исполнитель"))</span>
-                <AlvaAssignee Task="Item" Actors="Actors" />
-            </div>
         </FlareStack>
+    </section>
+
+    <section class="alva-panel">
+        <header class="alva-panel__header">
+            <FlareIconView Value="@MaterialDesign3Icons.Regular.Assignment" Size="20px" Class="alva-panel__icon" />
+            <h2 class="alva-panel__title">@(Strings.T("Назначение"))</h2>
+        </header>
+        <div class="alva-task__assignee">
+            <span class="alva-micro-label">@(Strings.T("Исполнитель"))</span>
+            <AlvaAssignee Task="Item" Actors="Actors" />
+        </div>
+    </section>
+
+    <section class="alva-panel alva-task__deps" aria-labelledby="alva-task-deps">
+        <header class="alva-panel__header">
+            <FlareIconView Value="@MaterialDesign3Icons.Regular.Hub" Size="20px" Class="alva-panel__icon" />
+            <div>
+                <h2 class="alva-panel__title" id="alva-task-deps">@(Strings.T("Зависимости"))</h2>
+                <p class="alva-panel__subtitle">@(Strings.T("Что задача ждёт и кого задерживает"))</p>
+            </div>
+        </header>
+        @foreach (var (title, incoming) in new[] { (Strings.T("Предшественники"), true), (Strings.T("Последователи"), false) })
+        {
+            var links = _dependencies.Where(d => incoming ? d.SuccessorId == Item.Id : d.PredecessorId == Item.Id).ToArray();
+            <span class="alva-micro-label">@title (@links.Length)</span>
+            @if (links.Length == 0) { <FlareText Typo="TypographyScale.BodySmall">@(incoming ? Strings.T("Задача ничего не ждёт.") : Strings.T("Никто не ждёт эту задачу."))</FlareText> }
+            else
+            {
+                <ul class="alva-deps">
+                    @foreach (var link in links)
+                    {
+                        var other = incoming ? link.PredecessorId : link.SuccessorId;
+                        <li class="alva-deps__item" @key="link.Id">
+                            <a class="alva-deps__task" href="@($"tasks/{other}")" title="@LinkTitle(other)"><span class="alva-task__code">@AlvaFormat.Code(other)</span> @LinkTitle(other)</a>
+                            <span class="alva-deps__meta">@KindLabel(link.Kind)@(link.LagDays != 0 ? " · " + string.Format(Strings.T("лаг {0} дн."), link.LagDays) : "")</span>
+                            <FlareIconButton Icon="@MaterialDesign3Icons.Regular.Delete" Size="ButtonSize.Sm" Disabled="_busy"
+                                             AriaLabel="@string.Format(Strings.T("Удалить связь с «{0}»"), LinkTitle(other))" Tooltip="@(Strings.T("Удалить связь"))" OnClick="() => RemoveDependency(link)" />
+                        </li>
+                    }
+                </ul>
+            }
+        }
+        <FlareGrid MinColumnWidth="min(100%,11rem)" Class="alva-deps__add">
+            <FlareSelect TValue="bool" Label="@(Strings.T("Связь"))" Items="Directions" ItemLabel="DirectionLabel" @bind-Value="_linkIncoming" />
+            <FlareSelect TValue="Guid?" Label="@(Strings.T("Задача"))" Items="LinkCandidates" ItemLabel="TaskName" NullOption="@(Strings.T("Выберите задачу"))" @bind-Value="_linkTask" Searchable />
+            <FlareSelect TValue="string" Label="@(Strings.T("Вид"))" Items="DependencyKinds" ItemLabel="KindLabel" @bind-Value="_linkKind" />
+            <FlareNumericField TValue="int" Label="@(Strings.T("Лаг, дни"))" @bind-Value="_linkLag" Min="-365" Max="365" />
+        </FlareGrid>
+        <FlareButton Variant="ButtonVariant.Tonal" Size="ButtonSize.Sm" Loading="_busy" Disabled="@(_linkTask is null || _busy)" OnClick="AddDependency">@(Strings.T("Добавить связь"))</FlareButton>
     </section>
 
     <section class="alva-panel">
@@ -127,7 +223,7 @@
     </section>
 </div>
 
-<FlareDrawer Anchor="DrawerAnchor.Right" @bind-Open="_assignOpen" Width="26rem" AriaLabel="@(Strings.T("Назначение исполнителя"))">
+<FlareDrawer Anchor="DrawerAnchor.Right" @bind-Open="_assignOpen" @bind-Open:after="AssignToggled" Width="26rem" AriaLabel="@(Strings.T("Назначение исполнителя"))">
     <HeaderContent>
         <div class="alva-assign__header">
             <FlareIconView Value="@MaterialDesign3Icons.Regular.PersonAdd" Size="22px" Class="alva-panel__icon" />
@@ -151,7 +247,11 @@
                 <FlareSelect TValue="Guid?" Label="@(Strings.T("Конкретный исполнитель"))" Items="@(Actors.Where(a => a.Kind == "Person").Select(a => (Guid?)a.Id))" ItemLabel="ActorName" NullOption="@(Strings.T("Пока не выбран — требуется человек"))" @bind-Value="_assignPerson" Searchable />
             }
             <div class="alva-assign__footer">
-                <FlareButton Variant="ButtonVariant.Text" Size="ButtonSize.Sm" OnClick="() => _assignOpen = false">@(Strings.T("Отмена"))</FlareButton>
+                @if (Item.AssignmentTargetId is not null)
+                {
+                    <FlareButton Variant="ButtonVariant.Text" Size="ButtonSize.Sm" Color="FlareColor.Error" Disabled="_busy" OnClick="ClearAssign">@(Strings.T("Снять назначение"))</FlareButton>
+                }
+                <FlareButton Variant="ButtonVariant.Text" Size="ButtonSize.Sm" OnClick="CloseAssign">@(Strings.T("Отмена"))</FlareButton>
                 <FlareButton Size="ButtonSize.Sm" Loading="_busy" Disabled="@(_assignTarget is null)" OnClick="ApplyAssign">
                     <LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.Check" Size="18px" /></LeadingIcon>
                     <ChildContent>@(Strings.T("Применить назначение"))</ChildContent>
@@ -179,7 +279,17 @@
     private TaskModel _model = new();
     private HistoryDto[] _history = [];
     private Dictionary<Guid, (decimal Available, decimal Allocated)> _load = [];
-    private Guid _loadedFor;
+    private RiskDto? _risk;
+    private DependencyDto[] _dependencies = [];
+    private (Guid Id, long Version) _linksFor;
+    private string? _linksError;
+    private static readonly bool[] Directions = [true, false];
+    private static readonly string[] DependencyKinds = ["FS", "SS", "FF", "SF"];
+    private bool _linkIncoming = true;
+    private Guid? _linkTask;
+    private string _linkKind = "FS";
+    private int _linkLag;
+    private FlareButton? _assignButton;
     private string? _error, _quickTitle, _assignSearch;
     private string? _parentError,_startError,_endError,_estimateError,_remainingError;
     private readonly List<string> _formErrors=[]; private ElementReference _errorSummary;
@@ -194,15 +304,17 @@
         get
         {
             yield return new(Strings.T("Задачи"), "tasks");
-            if (Projects.FirstOrDefault(p => p.Id == Item.ProjectId) is { } project) yield return new(project.Name, "projects");
+            if (Projects.FirstOrDefault(p => p.Id == Item.ProjectId) is { } project) yield return new(project.Name, $"projects?project={project.Id}");
             if (Sprints.FirstOrDefault(s => Item.SprintIds.Contains(s.Id)) is { } sprint) yield return new(sprint.Name, $"sprints/{sprint.Id}");
             yield return new(Code(Item));
         }
     }
 
-    /// <summary>Полоса у заголовка: просрочка — crimson, нет исполнителя — amber, иначе sapphire.</summary>
+    /// <summary>Полоса у заголовка: уровень риска с сервера, а без него — просрочка crimson, нет исполнителя amber,
+    /// иначе sapphire.</summary>
     private AlvaTone RiskTone =>
         Item.Status is "Done" or "Cancelled" ? AlvaTone.Ok
+        : _risk is not null ? AlvaTones.Severity(_risk.Severity)
         : Item.Deadline < DateOnly.FromDateTime(DateTime.Today) ? AlvaTone.Critical
         : Item.AssignmentTargetId is null ? AlvaTone.Warning
         : AlvaTone.Info;
@@ -240,6 +352,8 @@
     {
         if (_model.Id != Item.Id) _saved = false;
         if (_model.Id == Item.Id && _model.Version == Item.Version) return;
+        // Риск и связи читаются для каждой новой версии задачи, даже когда черновик ниже остаётся нетронутым.
+        if (_linksFor != (Item.Id, Item.Version)) await LoadLinks();
         // Задачу перечитали (подзадача, назначение, чужая правка), а черновик ещё не сохранён — он остаётся;
         // сохранение уйдёт со старой версией, и сервер сообщит о конфликте вместо тихой потери правок.
         // После конфликта черновик, наоборот, уступает свежим данным (_adoptFresh): сохранять поверх
@@ -267,7 +381,69 @@
     private string ProjectName(Guid? id) => Projects.FirstOrDefault(x => x.Id == id)?.Name ?? Strings.T("Текучка");
     private string SprintName(Guid? id) => Sprints.FirstOrDefault(x => x.Id == id)?.Name ?? Strings.T("Без спринта");
     private string TaskName(Guid? id) => Tasks.FirstOrDefault(x => x.Id == id)?.Title ?? Strings.T("Корневая задача");
+    /// <summary>Название связанной задачи; архивная или чужая задача не выдаётся за «корневую».</summary>
+    private string LinkTitle(Guid id) => Tasks.FirstOrDefault(x => x.Id == id)?.Title ?? Strings.T("Задача недоступна");
     private string ActorName(Guid? id) => Actors.FirstOrDefault(x => x.Id == id)?.Name ?? Strings.T("Не назначена");
+
+    private static string KindLabel(string kind) => kind switch
+    {
+        "SS" => Strings.T("Начало → начало"),
+        "FF" => Strings.T("Окончание → окончание"),
+        "SF" => Strings.T("Начало → окончание"),
+        _ => Strings.T("Окончание → начало")
+    };
+    private static string DirectionLabel(bool incoming) => incoming ? Strings.T("Предшественник — задача ждёт его") : Strings.T("Последователь — ждёт эту задачу");
+
+    /// <summary>Задачи, с которыми ещё можно связать эту: не она сама и не уже связанные.</summary>
+    private IEnumerable<Guid?> LinkCandidates => Tasks
+        .Where(t => t.Id != Item.Id && !_dependencies.Any(d => d.PredecessorId == t.Id || d.SuccessorId == t.Id))
+        .Select(t => (Guid?)t.Id);
+
+    /// <summary>Риск задачи и её связи. Ошибка остаётся в блоке риска и не мешает редактировать форму.</summary>
+    private async Task LoadLinks()
+    {
+        _linksFor = (Item.Id, Item.Version);
+        _linksError = null;
+        try
+        {
+            _dependencies = await Session.Get<DependencyDto[]>(Session.TeamPath($"tasks/{Item.Id}/dependencies"));
+            _risk = (await Session.Get<RiskDto[]>(Session.TeamPath("risks"))).FirstOrDefault(r => r.TaskId == Item.Id);
+        }
+        catch (Exception e) when (e is HttpRequestException or InvalidOperationException)
+        {
+            _risk = null;
+            _linksError = PageFeedback.Describe(e);
+        }
+    }
+
+    private async Task AddDependency()
+    {
+        if (_linkTask is not { } other) return;
+        var request = _linkIncoming
+            ? new DependencyRequest(other, Item.Id, _linkKind, _linkLag)
+            : new DependencyRequest(Item.Id, other, _linkKind, _linkLag);
+        await Run(async () =>
+        {
+            await Session.Save<DependencyDto>(HttpMethod.Post, Session.TeamPath($"tasks/{Item.Id}/dependencies"), request);
+            _linkTask = null; _linkLag = 0;
+            await LoadLinks();
+            await Changed.InvokeAsync();
+        });
+    }
+
+    private async Task RemoveDependency(DependencyDto link)
+    {
+        var other = link.PredecessorId == Item.Id ? link.SuccessorId : link.PredecessorId;
+        if (!await DestructivePrompt.ConfirmAsync(Confirm, Strings.T("Удалить связь"),
+            string.Format(Strings.T("Связь с задачей «{0}» будет удалена; прогноз и риск пересчитаются."), LinkTitle(other)),
+            Strings.T("Удалить"))) return;
+        await Run(async () =>
+        {
+            await Session.Send(HttpMethod.Delete, Session.TeamPath($"tasks/dependencies/{link.Id}"), new { });
+            await LoadLinks();
+            await Changed.InvokeAsync();
+        });
+    }
 
     /// <summary>Кандидаты одного вида. У людей — загрузка за окно спринта (или 14 дней).</summary>
     private RenderFragment Candidates(string kind) => __builder =>
@@ -334,7 +510,7 @@
         _assignPerson = Item.ResolvedPersonId;
         _assignTab = Math.Max(0, Array.IndexOf(Kinds, Actors.FirstOrDefault(a => a.Id == Item.AssignmentTargetId)?.Kind ?? "Person"));
         _assignOpen = true;
-        if (_loadedFor == Item.Id) return;
+        // Загрузка читается при каждом открытии: за время работы с карточкой назначения команды меняются.
         var sprint = Sprints.FirstOrDefault(s => Item.SprintIds.Contains(s.Id));
         var from = sprint?.StartDate ?? DateOnly.FromDateTime(DateTime.Today);
         var to = sprint?.EndDate ?? from.AddDays(13);
@@ -342,8 +518,20 @@
         {
             var rows = await Session.Get<CapacityDto[]>(Session.TeamPath($"capacity?from={from:yyyy-MM-dd}&to={to:yyyy-MM-dd}"));
             _load = rows.GroupBy(r => r.ActorId).ToDictionary(g => g.Key, g => (g.Sum(r => r.AvailableHours), g.Sum(r => r.AllocatedHours)));
-            _loadedFor = Item.Id;
         });
+    }
+
+    /// <summary>Панель закрылась любым способом — фокус возвращается на «Назначить исполнителя» в панели действий:
+    /// она закреплена и всегда на экране, даже если панель открыли из блока риска.</summary>
+    private async Task AssignToggled()
+    {
+        if (!_assignOpen && _assignButton is not null) await _assignButton.FocusAsync();
+    }
+
+    private async Task CloseAssign()
+    {
+        _assignOpen = false;
+        await AssignToggled();
     }
 
     private async Task ApplyAssign()
@@ -352,8 +540,18 @@
         await Run(async () =>
         {
             await Session.Send(HttpMethod.Put, Session.TeamPath($"tasks/{Item.Id}/assignment"), new AssignmentRequest(_assignTarget!.Value, person));
-            _assignOpen = false;
-            _loadedFor = Guid.Empty;
+            await CloseAssign();
+            await Changed.InvokeAsync();
+        });
+    }
+
+    private async Task ClearAssign()
+    {
+        await Run(async () =>
+        {
+            await Session.Send(HttpMethod.Delete, Session.TeamPath($"tasks/{Item.Id}/assignment"), new { });
+            _assignTarget = _assignPerson = null;
+            await CloseAssign();
             await Changed.InvokeAsync();
         });
     }

@@ -66,8 +66,13 @@ public sealed class FakeApi : IApiService
         Reads.Add(path);
         if (GetGate is not null) await GetGate;
         var resource = path.StartsWith(TeamPath(""), StringComparison.Ordinal) ? path[TeamPath("").Length..] : path;
+        // Ответ другого типа пропускается: общий префикс вроде «tasks/» (история) не должен отвечать
+        // на запрос связей той же задачи.
         foreach (var (prefix, answer) in _gets)
-            if (resource.StartsWith(prefix, StringComparison.Ordinal)) return (T)answer(resource);
+            if (resource.StartsWith(prefix, StringComparison.Ordinal) && answer(resource) is T typed) return typed;
+        // Карточка задачи читает риск и связи всегда; тестам, которым они не важны, хватает пустых.
+        if (resource == "risks" && Array.Empty<RiskDto>() is T noRisks) return noRisks;
+        if (resource.EndsWith("/dependencies", StringComparison.Ordinal) && Array.Empty<DependencyDto>() is T noLinks) return noLinks;
         throw new InvalidOperationException($"Нет ответа для {path}");
     }
 

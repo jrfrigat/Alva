@@ -46,7 +46,15 @@ html,body{margin:0;min-height:100%;font-family:var(--alva-font);background:var(-
 
 /* Страница задачи (p9): панель действий, заголовок с полосой риска, белые панели-секции. */
 .alva-task{display:flex;flex-direction:column;gap:1rem}
-.alva-task__actions{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem}
+/* Прилипает к краю прокрутки: top и margin компенсируют верхний отступ контента Flare (1rem), фон — цвет оболочки. */
+.alva-task__actions{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem;position:sticky;top:-1rem;z-index:3;margin-top:-1rem;padding-block:1.5rem .5rem;background:var(--flare-layout-shell-bg,var(--flare-color-background));border-bottom:1px solid var(--alva-border)}
+.alva-task__reasons{margin:0;padding-left:1.25rem;display:flex;flex-direction:column;gap:.25rem}
+.alva-task__reasons li{display:flex;flex-wrap:wrap;align-items:center;gap:.25rem .5rem}
+.alva-task__reasons a{color:inherit;text-decoration:underline dotted;text-underline-offset:2px}
+.alva-deps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:.25rem}
+.alva-deps__item{display:flex;align-items:center;gap:.5rem;min-width:0}
+.alva-deps__task{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--alva-on-surface)}
+.alva-deps__meta{flex:none;font-size:.8125rem;color:var(--alva-on-surface-variant)}
 .alva-task__heading{display:flex;align-items:center;gap:.75rem;min-width:0}
 .alva-task__bar{flex:none;align-self:stretch;width:6px;min-height:2rem;border-radius:9999px;background:var(--alva-primary-container)}
 .alva-task__bar--critical{background:var(--alva-critical)}.alva-task__bar--warning{background:var(--alva-warning)}.alva-task__bar--ok{background:var(--alva-ok)}
