@@ -314,8 +314,16 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
                 store.Teams.Add(new TeamDto(Guid.NewGuid(), Id(w), Read<NameRequest>(value).Name, null));
                 break;
             case ["api", "workspaces", _, "members"]:
+                // Как на сервере: та же почта — правка участника, а не второй участник.
                 var membership = Read<MembershipRequest>(value);
-                store.Members.Add(new MemberDto(Guid.NewGuid(), membership.Email, membership.Email.Split('@')[0], membership.IsOwner, membership.TeamIds));
+                var existing = store.Members.FindIndex(m => string.Equals(m.Email, membership.Email.Trim(), StringComparison.OrdinalIgnoreCase));
+                if (existing < 0) store.Members.Add(new MemberDto(Guid.NewGuid(), membership.Email.Trim(), membership.Email.Trim().Split('@')[0], membership.IsOwner, membership.TeamIds));
+                else if (store.Members[existing].IsOwner && !membership.IsOwner && store.Members.Count(m => m.IsOwner) <= 1) throw new InvalidOperationException("В пространстве должен остаться владелец.");
+                else store.Members[existing] = store.Members[existing] with { IsOwner = membership.IsOwner, TeamIds = membership.TeamIds };
+                break;
+            case ["api", "workspaces", _, "members", var u]:
+                if (Id(u) == DemoIds.User) throw new InvalidOperationException("Нельзя удалить себя из пространства.");
+                if (store.Members.RemoveAll(m => m.UserId == Id(u)) == 0) throw new InvalidOperationException("Участник не найден.");
                 break;
             case ["api", "teams", var t, "projects"]:
                 AddProject(store, Id(t), value);

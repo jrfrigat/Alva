@@ -32,13 +32,14 @@ public sealed class ApiServer(WebApplication app, SqliteConnection connection, G
 
     public async ValueTask DisposeAsync() { Client.Dispose(); await app.DisposeAsync(); await connection.DisposeAsync(); }
 
-    public static async Task<ApiServer> Create(Action<WebApplication> map)
+    public static async Task<ApiServer> Create(Action<WebApplication> map, Action<IServiceCollection>? services = null)
     {
         var connection = new SqliteConnection("Data Source=:memory:"); await connection.OpenAsync();
         var builder = WebApplication.CreateBuilder(); builder.WebHost.UseTestServer(); builder.Logging.ClearProviders();
         builder.Services.AddDbContext<AlvaDbContext>(x => x.UseSqlite(connection));
         builder.Services.ConfigureHttpJsonOptions(o => o.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
         builder.Services.AddAuthentication("test").AddScheme<AuthenticationSchemeOptions, TestAuth>("test", _ => { }); builder.Services.AddAuthorization();
+        services?.Invoke(builder.Services);
         var app = builder.Build();
         app.Use(async (context, next) =>
         {
