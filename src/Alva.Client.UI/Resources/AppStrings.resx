@@ -967,8 +967,8 @@
   <data name="Применить" xml:space="preserve"><value>Apply</value></data>
   <data name="Применить график" xml:space="preserve"><value>Apply the schedule</value></data>
   <data name="Импортировать данные" xml:space="preserve"><value>Import data</value></data>
-  <data name="Задача «{0}» уйдёт из списков; её можно будет восстановить в архиве." xml:space="preserve"><value>Task “{0}” will leave the lists; you can restore it from the archive.</value></data>
-  <data name="Проект «{0}» уйдёт из реестра; его можно будет восстановить в архиве." xml:space="preserve"><value>Project “{0}” will leave the registry; you can restore it from the archive.</value></data>
+  <data name="Задача «{0}» уйдёт из списков. Вернуть её из приложения пока нельзя." xml:space="preserve"><value>Task “{0}” will leave the lists. It can’t be brought back from the app yet.</value></data>
+  <data name="Проект «{0}» уйдёт из реестра. Вернуть его из приложения пока нельзя." xml:space="preserve"><value>Project “{0}” will leave the registry. It can’t be brought back from the app yet.</value></data>
   <data name="«{0}» уйдёт из реестра; назначения на него останутся в истории." xml:space="preserve"><value>“{0}” will leave the registry; its assignments stay in the history.</value></data>
   <data name="Вычет «{0}» будет удалён из графика." xml:space="preserve"><value>Deduction “{0}” will be deleted from the schedule.</value></data>
   <data name="Период «{0}» будет удалён из графика." xml:space="preserve"><value>Period “{0}” will be deleted from the schedule.</value></data>

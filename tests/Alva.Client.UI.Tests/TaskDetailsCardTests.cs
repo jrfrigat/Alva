@@ -175,6 +175,19 @@ public sealed class TaskDetailsCardTests : UiTestBase
         Assert.Contains(cut.FindAll("a"), a => a.GetAttribute("href") == $"projects?project={project.Id}");
     }
 
+    [Fact]
+    public void Archive_confirmation_does_not_promise_a_restore_the_app_lacks()
+    {
+        var cut = Page();
+
+        cut.Find("[aria-label='Архивировать задачу']").Click();
+
+        cut.WaitForAssertion(() => Assert.NotNull(cut.Find("[role='alertdialog']")));
+        var text = cut.Find("[role='alertdialog']").TextContent;
+        Assert.Contains("Вернуть её из приложения пока нельзя", text);
+        Assert.DoesNotContain("восстановить", text);
+    }
+
     private int Focuses() => JSInterop.Invocations.Count(i => i.Identifier.Contains("focus", StringComparison.OrdinalIgnoreCase));
 
     private static void Choose<T>(IRenderedComponent<FlareSelect<T>> select, string option)

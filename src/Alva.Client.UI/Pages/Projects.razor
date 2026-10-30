@@ -291,7 +291,7 @@ else
     private async Task ArchiveProject()
     {
         if (!await DestructivePrompt.ConfirmAsync(Confirm, Strings.T("Архивировать проект"),
-            string.Format(Strings.T("Проект «{0}» уйдёт из реестра; его можно будет восстановить в архиве."), _project!.Name),
+            string.Format(Strings.T("Проект «{0}» уйдёт из реестра. Вернуть его из приложения пока нельзя."), _project!.Name),
             Strings.T("Архивировать"))) return;
         await Run(async () =>
         {

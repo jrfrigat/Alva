@@ -627,7 +627,7 @@
     private async Task Archive()
     {
         if (!await DestructivePrompt.ConfirmAsync(Confirm, Strings.T("Архивировать задачу"),
-            string.Format(Strings.T("Задача «{0}» уйдёт из списков; её можно будет восстановить в архиве."), Item.Title),
+            string.Format(Strings.T("Задача «{0}» уйдёт из списков. Вернуть её из приложения пока нельзя."), Item.Title),
             Strings.T("Архивировать"))) return;
         await Run(async () =>
         {
