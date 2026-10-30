@@ -16,11 +16,14 @@
     private Task Retry() => OnRetry.HasDelegate ? OnRetry.InvokeAsync() : Task.CompletedTask;
 
     /// <summary>
-    /// Текст ошибки для страницы: класс ошибки называется понятными словами, а не сырым ответом сервера.
-    /// 403 объясняет, что делать; 404 говорит, что запись исчезла; 409 — что данные уже изменились.
+    /// Текст ошибки для страницы. Отказ, который сервер объяснил (400/404/409/422), и правило демо-API
+    /// показываются их же словами: «сначала переместите подзадачи» полезнее, чем «проверьте данные».
+    /// Остальное — понятная фраза по классу ошибки: 403 объясняет, что делать; 404 — что запись исчезла;
+    /// 409 — что данные уже изменились; 5xx и сеть — что повторить.
     /// </summary>
     public static string Describe(Exception error) => error switch
     {
+        ServerRefusalException { StatusCode: System.Net.HttpStatusCode.BadRequest or System.Net.HttpStatusCode.NotFound or System.Net.HttpStatusCode.Conflict or System.Net.HttpStatusCode.UnprocessableEntity } refusal => refusal.Message,
         HttpRequestException { StatusCode: System.Net.HttpStatusCode.Unauthorized } => Strings.T("Сессия истекла. Войдите снова."),
         HttpRequestException { StatusCode: System.Net.HttpStatusCode.Forbidden } => Strings.T("Нет доступа: у вашей роли нет прав на эти данные. Попросите владельца пространства выдать доступ."),
         HttpRequestException { StatusCode: System.Net.HttpStatusCode.NotFound } => Strings.T("Запись не найдена: возможно, её уже удалили."),
@@ -30,6 +33,7 @@
         HttpRequestException { StatusCode: { } status } when (int)status >= 500 => Strings.T("Сервер не смог выполнить действие. Повторите позже."),
         HttpRequestException => Strings.T("Не удалось связаться с сервером. Проверьте соединение и повторите."),
         TimeoutException or TaskCanceledException => Strings.T("Сервер не ответил вовремя. Повторите."),
+        InvalidOperationException or NotSupportedException when !string.IsNullOrWhiteSpace(error.Message) => error.Message,
         _ => Strings.T("Не удалось выполнить действие. Повторите.")
     };
 }

@@ -111,7 +111,8 @@ public sealed class ApiServiceHttp(HttpClient http, IJSRuntime js) : IApiService
         {
             using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
             foreach (var key in new[] { "detail", "title", "error" })
-                if (document.RootElement.TryGetProperty(key, out var text) && text.ValueKind == JsonValueKind.String) { message = text.GetString()!; break; }
+                if (document.RootElement.TryGetProperty(key, out var text) && text.ValueKind == JsonValueKind.String && !string.IsNullOrWhiteSpace(text.GetString()))
+                    throw new ServerRefusalException(text.GetString()!, response.StatusCode);
         }
         catch (JsonException) { }
         throw new HttpRequestException(message, null, response.StatusCode);

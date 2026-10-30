@@ -1,4 +1,5 @@
 using System.Net;
+using Alva.Client.Services;
 using Alva.Client.Shared;
 using Bunit;
 using Microsoft.AspNetCore.Components;
@@ -23,6 +24,34 @@ public sealed class PageFeedbackTests : UiTestBase
 
         Assert.Equal(expected, PageFeedback.Describe(error));
         Assert.DoesNotContain("raw server text", PageFeedback.Describe(error));
+    }
+
+    [Theory]
+    [InlineData(HttpStatusCode.BadRequest, "Сначала переместите или архивируйте подзадачи.")]
+    [InlineData(HttpStatusCode.NotFound, "Пользователь должен сначала зарегистрироваться.")]
+    [InlineData(HttpStatusCode.Conflict, "Пользователь уже связан с участником команды.")]
+    [InlineData(HttpStatusCode.UnprocessableEntity, "Сначала снимите фиксацию дат.")]
+    public void A_refusal_the_server_explained_keeps_its_words(HttpStatusCode status, string message)
+    {
+        Assert.Equal(message, PageFeedback.Describe(new ServerRefusalException(message, status)));
+    }
+
+    [Theory]
+    [InlineData(HttpStatusCode.Unauthorized, "Сессия истекла. Войдите снова.")]
+    [InlineData(HttpStatusCode.Forbidden, "Нет доступа: у вашей роли нет прав на эти данные. Попросите владельца пространства выдать доступ.")]
+    [InlineData(HttpStatusCode.InternalServerError, "Сервер не смог выполнить действие. Повторите позже.")]
+    public void Access_and_server_failures_stay_generic_even_when_explained(HttpStatusCode status, string expected)
+    {
+        Assert.Equal(expected, PageFeedback.Describe(new ServerRefusalException("System.NullReferenceException at ...", status)));
+    }
+
+    [Fact]
+    public void Demo_api_rules_keep_their_words()
+    {
+        const string rule = "Даты задачи «Релиз» зафиксированы: изменение вышло за её окно. Снимите фиксацию, чтобы расширить окно.";
+
+        Assert.Equal(rule, PageFeedback.Describe(new InvalidOperationException(rule)));
+        Assert.Contains("требуют сервера", PageFeedback.Describe(new NotSupportedException("Demo: режимы требуют сервера.")));
     }
 
     [Fact]
