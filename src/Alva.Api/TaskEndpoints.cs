@@ -91,8 +91,10 @@ public static class TaskEndpoints
         {
             await AccessControl.RequireTeam(db, user, teamId, "tasks", "view");
             await Find(db, teamId, taskId);
-            return await db.TaskHistory.AsNoTracking().Where(x => x.TaskId == taskId).OrderByDescending(x => x.At)
-                .Select(x => new HistoryDto(x.Id, x.At, x.UserId, x.Summary)).ToArrayAsync();
+            // Сортировка — после чтения: SQLite (локальный запуск) не умеет ORDER BY по DateTimeOffset, а записей у задачи немного.
+            var history = await db.TaskHistory.AsNoTracking().Where(x => x.TaskId == taskId)
+                .Select(x => new HistoryDto(x.Id, x.At, x.UserId, x.Summary)).ToListAsync();
+            return history.OrderByDescending(x => x.At).ThenBy(x => x.Id).ToArray();
         });
         group.MapPut("/{taskId:guid}/assignment", async (Guid teamId, Guid taskId, AssignmentRequest request, ClaimsPrincipal user, AlvaDbContext db) =>
         {
