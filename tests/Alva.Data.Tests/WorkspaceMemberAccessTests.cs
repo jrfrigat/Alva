@@ -56,6 +56,22 @@ public sealed class WorkspaceMemberAccessTests
         await server.WithDb(async db => Assert.True(await db.PermissionGrants.AnyAsync(p => p.UserId == member && p.Edit)));
     }
 
+    [Fact]
+    public async Task Permissions_left_from_an_earlier_removal_do_not_come_back_with_the_team()
+    {
+        await using var server = await Server();
+        var (workspaceId, member) = await AddMemberWithGrant(server);
+        await server.WithDb(async db =>
+        {
+            db.TeamMemberships.RemoveRange(db.TeamMemberships.Where(m => m.UserId == member));
+            await db.SaveChangesAsync();
+        });
+
+        await server.Client.PostAsJsonAsync($"/api/workspaces/{workspaceId}/members", new MembershipRequest(Email, [server.TeamId], false));
+
+        await server.WithDb(async db => Assert.False(await db.PermissionGrants.AnyAsync(p => p.UserId == member)));
+    }
+
     private static Task<ApiServer> Server() => ApiServer.Create(app => app.MapAuth(), services =>
     {
         services.AddSingleton<PasswordHasher<UserAccount>>();

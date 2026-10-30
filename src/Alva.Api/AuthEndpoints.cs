@@ -88,7 +88,9 @@ public static class AuthEndpoints
             var oldLinks = await db.TeamMemberships.Where(m => m.UserId == account.Id && ownedTeamIds.Contains(m.TeamId)).ToListAsync();
             db.RemoveRange(oldLinks.Where(m => !teamIds.Contains(m.TeamId)));
             // Права живут, пока человек в команде: иначе возвращение в команду молча вернуло бы старые права.
-            db.RemoveRange(await db.PermissionGrants.Where(p => p.UserId == account.Id && ownedTeamIds.Contains(p.TeamId) && !teamIds.Contains(p.TeamId)).ToListAsync());
+            // Новая связь тоже начинает без прав — на случай прав, оставшихся от удалений до этой проверки.
+            var keptTeamIds = oldLinks.Select(m => m.TeamId).Where(teamIds.Contains).ToList();
+            db.RemoveRange(await db.PermissionGrants.Where(p => p.UserId == account.Id && ownedTeamIds.Contains(p.TeamId) && !keptTeamIds.Contains(p.TeamId)).ToListAsync());
             foreach (var id in teamIds.Where(id => oldLinks.All(m => m.TeamId != id))) db.Add(new TeamMembership { TeamId = id, UserId = account.Id });
             await db.SaveChangesAsync();
             await transaction.CommitAsync();
