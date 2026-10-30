@@ -1,11 +1,12 @@
 using System.Net;
 using System.Text.Json;
 using Xunit;
+using YandexTracker.Models.Issues;
 
 namespace YandexTracker.Tests;
 
 /// <summary>Клиент Трекера: заголовки, разбор задач, поиск страницами, ошибки и повторы.</summary>
-public sealed class TrackerClientTests
+public sealed class YandexTrackerClientTests
 {
     private const string IssueJson = """
         {"id":"5f1","key":"TEST-1","version":7,"summary":"Отчёт","status":{"key":"inProgress","display":"В работе"},
@@ -32,7 +33,7 @@ public sealed class TrackerClientTests
     public async Task IAM_and_Cloud_use_Bearer_and_the_cloud_header()
     {
         var handler = new StubHandler().Json("""{"uid":1,"login":"anna","display":"Анна","email":"anna@example.test"}""");
-        using var client = StubHandler.Client(handler, o => { o.TokenType = TrackerTokenType.Iam; o.OrganizationKind = TrackerOrganizationKind.Cloud; });
+        using var client = StubHandler.Client(handler, o => { o.TokenType = YandexTrackerTokenType.Iam; o.OrganizationKind = YandexTrackerOrganizationKind.Cloud; });
 
         var me = await client.MyselfAsync();
 
@@ -46,8 +47,8 @@ public sealed class TrackerClientTests
     [Fact]
     public void A_client_without_token_or_organization_is_refused_up_front()
     {
-        Assert.Throws<ArgumentException>(() => new TrackerClient(new HttpClient(), new TrackerClientOptions { OrganizationId = "42" }));
-        Assert.Throws<ArgumentException>(() => new TrackerClient(new HttpClient(), new TrackerClientOptions { Token = "t" }));
+        Assert.Throws<ArgumentException>(() => new YandexTrackerClient(new HttpClient(), new YandexTrackerClientOptions { OrganizationId = "42" }));
+        Assert.Throws<ArgumentException>(() => new YandexTrackerClient(new HttpClient(), new YandexTrackerClientOptions { Token = "t" }));
     }
 
     [Fact]
@@ -62,7 +63,7 @@ public sealed class TrackerClientTests
         Assert.Equal("TEST-0", issue.Parent!.Key);
         Assert.Equal(new DateOnly(2026, 10, 5), issue.Start);
         Assert.Equal(new DateOnly(2026, 10, 12), issue.Deadline);
-        Assert.Equal(12m, TrackerDuration.ToHours(issue.OriginalEstimation));
+        Assert.Equal(12m, YandexTrackerDuration.ToHours(issue.OriginalEstimation));
         Assert.Equal(new DateTimeOffset(2026, 10, 30, 10, 15, 0, TimeSpan.Zero), issue.UpdatedAt);
         Assert.Equal("значение", issue.Fields!["customField"].GetString());
     }
@@ -105,20 +106,46 @@ public sealed class TrackerClientTests
     }
 
     [Theory]
-    [InlineData(HttpStatusCode.Unauthorized, typeof(TrackerUnauthorizedException))]
-    [InlineData(HttpStatusCode.Forbidden, typeof(TrackerForbiddenException))]
-    [InlineData(HttpStatusCode.NotFound, typeof(TrackerNotFoundException))]
-    [InlineData(HttpStatusCode.Conflict, typeof(TrackerConflictException))]
-    [InlineData(HttpStatusCode.BadRequest, typeof(TrackerApiException))]
+    [InlineData(HttpStatusCode.Unauthorized, typeof(YandexTrackerUnauthorizedException))]
+    [InlineData(HttpStatusCode.Forbidden, typeof(YandexTrackerForbiddenException))]
+    [InlineData(HttpStatusCode.NotFound, typeof(YandexTrackerNotFoundException))]
+    [InlineData(HttpStatusCode.Conflict, typeof(YandexTrackerConflictException))]
+    [InlineData(HttpStatusCode.BadRequest, typeof(YandexTrackerApiException))]
     public async Task Refusals_become_typed_errors_with_the_trackers_words(HttpStatusCode status, Type expected)
     {
         using var client = StubHandler.Client(new StubHandler().Json("""{"errors":{},"errorMessages":["Задача не найдена"],"statusCode":0}""", status));
 
-        var error = await Assert.ThrowsAnyAsync<TrackerApiException>(() => client.Issues.GetAsync("TEST-9"));
+        var error = await Assert.ThrowsAnyAsync<YandexTrackerApiException>(() => client.Issues.GetAsync("TEST-9"));
 
         Assert.IsType(expected, error);
         Assert.Equal(status, error.StatusCode);
         Assert.Equal("Задача не найдена", error.Message);
+    }
+
+    [Fact]
+    public async Task An_unreadable_answer_is_a_serialization_error_with_the_library_base_type()
+    {
+        using var client = StubHandler.Client(new StubHandler().Json("""{"key":["not","an","issue"]}"""));
+
+        var error = await Assert.ThrowsAsync<YandexTrackerSerializationException>(() => client.Issues.GetAsync("TEST-1"));
+
+        Assert.IsAssignableFrom<YandexTrackerException>(error);
+        Assert.Contains("Issue", error.Message);
+    }
+
+    [Fact]
+    public async Task An_api_error_keeps_the_parsed_body_and_the_raw_response()
+    {
+        const string body = """{"errors":{"summary":"Обязательное поле"},"errorMessages":["", "Задача не создана"]}""";
+        using var client = StubHandler.Client(new StubHandler().Json(body, HttpStatusCode.UnprocessableEntity));
+
+        var error = await Assert.ThrowsAsync<YandexTrackerApiException>(() => client.Issues.GetAsync("TEST-1"));
+
+        Assert.Equal("Задача не создана", error.Message);
+        Assert.Equal(["Задача не создана"], error.ErrorMessages);
+        Assert.Equal("Обязательное поле", error.Error!.Fields["summary"]);
+        Assert.Equal(body, error.RawResponse);
+        Assert.IsAssignableFrom<YandexTrackerException>(error);
     }
 
     [Fact]
@@ -146,7 +173,7 @@ public sealed class TrackerClientTests
 
         var writes = new StubHandler().Json("{}", HttpStatusCode.BadGateway).Json(IssueJson);
         using (var client = StubHandler.Client(writes))
-            await Assert.ThrowsAsync<TrackerApiException>(() => client.Issues.UpdateAsync("TEST-1", new Dictionary<string, object?> { ["summary"] = "x" }));
+            await Assert.ThrowsAsync<YandexTrackerApiException>(() => client.Issues.UpdateAsync("TEST-1", new Dictionary<string, object?> { ["summary"] = "x" }));
         Assert.Single(writes.Requests);
     }
 
@@ -195,20 +222,20 @@ public sealed class TrackerClientTests
     [InlineData("P1DT4H30M", 12.5)]
     [InlineData("p2d", 16)]
     public void Durations_count_working_time(string value, double hours) =>
-        Assert.Equal((decimal)hours, TrackerDuration.ToHours(value));
+        Assert.Equal((decimal)hours, YandexTrackerDuration.ToHours(value));
 
     [Theory]
     [InlineData(null)]
     [InlineData("")]
     [InlineData("P")]
     [InlineData("1 день")]
-    public void Unknown_durations_are_null(string? value) => Assert.Null(TrackerDuration.ToHours(value));
+    public void Unknown_durations_are_null(string? value) => Assert.Null(YandexTrackerDuration.ToHours(value));
 
     [Fact]
     public void Hours_go_back_to_tracker_durations()
     {
-        Assert.Equal("P1DT4H30M", TrackerDuration.FromHours(12.5m));
-        Assert.Equal("PT0H", TrackerDuration.FromHours(0));
-        Assert.Equal(12.5m, TrackerDuration.ToHours(TrackerDuration.FromHours(12.5m)));
+        Assert.Equal("P1DT4H30M", YandexTrackerDuration.FromHours(12.5m));
+        Assert.Equal("PT0H", YandexTrackerDuration.FromHours(0));
+        Assert.Equal(12.5m, YandexTrackerDuration.ToHours(YandexTrackerDuration.FromHours(12.5m)));
     }
 }

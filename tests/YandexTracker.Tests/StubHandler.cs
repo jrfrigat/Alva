@@ -27,10 +27,10 @@ internal sealed class StubHandler : HttpMessageHandler
         return _answers.Count > 0 ? _answers.Dequeue()(request) : throw new InvalidOperationException($"Нет ответа для {request.Method} {request.RequestUri}");
     }
 
-    public static TrackerClient Client(StubHandler handler, Action<TrackerClientOptions>? configure = null)
+    public static YandexTrackerClient Client(StubHandler handler, Action<YandexTrackerClientOptions>? configure = null)
     {
-        var options = new TrackerClientOptions { Token = "secret", OrganizationId = "42", RetryDelay = TimeSpan.Zero };
+        var options = new YandexTrackerClientOptions { Token = "secret", OrganizationId = "42", RetryDelay = TimeSpan.Zero };
         configure?.Invoke(options);
-        return new TrackerClient(new HttpClient(handler), options);
+        return new YandexTrackerClient(new HttpClient(handler), options);
     }
 }

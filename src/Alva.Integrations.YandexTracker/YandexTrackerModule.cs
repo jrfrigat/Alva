@@ -2,6 +2,8 @@ using System.Net;
 using System.Runtime.CompilerServices;
 using Microsoft.Extensions.DependencyInjection;
 using YandexTracker;
+using YandexTracker.Models.Issues;
+using YandexTracker.Models.Users;
 
 namespace Alva.Integrations.YandexTracker;
 
@@ -58,7 +60,7 @@ public sealed class YandexTrackerModule : ITaskSourceModule
             Description: "Ключ статуса Трекера = статус Alva через запятую, например testing=InProgress, ready=Planned."),
         new(ReadLinksKey, "Читать связи «зависит от»", IntegrationSettingKind.Flag, Default: "true",
             Description: "Один дополнительный запрос на задачу; для очень больших очередей можно выключить."),
-        new(ApiUrlKey, "Адрес API", IntegrationSettingKind.Url, Default: TrackerClientOptions.DefaultBaseAddress.ToString()),
+        new(ApiUrlKey, "Адрес API", IntegrationSettingKind.Url, Default: YandexTrackerClientOptions.DefaultBaseAddress.ToString()),
         new(WebUrlKey, "Адрес Трекера для ссылок", IntegrationSettingKind.Url, Default: "https://tracker.yandex.ru/")
     ];
 
@@ -66,13 +68,13 @@ public sealed class YandexTrackerModule : ITaskSourceModule
     {
         var errors = IntegrationSettings.Validate(this, connection);
         if (errors.Count > 0) throw new IntegrationException(string.Join(" ", errors.Select(e => e.Message)));
-        var options = new TrackerClientOptions
+        var options = new YandexTrackerClientOptions
         {
             BaseAddress = new Uri(connection.Get(this, ApiUrlKey)!),
             Token = connection.Value(TokenKey)!,
-            TokenType = connection.Get(this, TokenTypeKey) == "iam" ? TrackerTokenType.Iam : TrackerTokenType.OAuth,
+            TokenType = connection.Get(this, TokenTypeKey) == "iam" ? YandexTrackerTokenType.Iam : YandexTrackerTokenType.OAuth,
             OrganizationId = connection.Value(OrganizationIdKey)!,
-            OrganizationKind = connection.Get(this, OrganizationKindKey) == "cloud" ? TrackerOrganizationKind.Cloud : TrackerOrganizationKind.Yandex360
+            OrganizationKind = connection.Get(this, OrganizationKindKey) == "cloud" ? YandexTrackerOrganizationKind.Cloud : YandexTrackerOrganizationKind.Yandex360
         };
         var settings = new SourceSettings(
             Queues: (connection.Value(QueuesKey) ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries),
@@ -80,7 +82,7 @@ public sealed class YandexTrackerModule : ITaskSourceModule
             WebUrl: connection.Get(this, WebUrlKey)!.TrimEnd('/'),
             StatusMap: YandexTrackerMapping.ParseStatusMap(connection.Value(StatusMapKey)),
             ReadLinks: !bool.TryParse(connection.Get(this, ReadLinksKey), out var links) || links);
-        return Task.FromResult<ITaskSource>(new Source(new TrackerClient(_http, options), settings));
+        return Task.FromResult<ITaskSource>(new Source(new YandexTrackerClient(_http, options), settings));
     }
 
     internal sealed record SourceSettings(string[] Queues, string? Query, string WebUrl, IReadOnlyDictionary<string, ExternalTaskStatus> StatusMap, bool ReadLinks)
@@ -100,7 +102,7 @@ public sealed class YandexTrackerModule : ITaskSourceModule
         }
     }
 
-    private sealed class Source(TrackerClient client, SourceSettings settings) : ITaskSource
+    private sealed class Source(IYandexTrackerClient client, SourceSettings settings) : ITaskSource
     {
         private readonly Dictionary<string, User?> _users = new(StringComparer.Ordinal);
 
@@ -130,19 +132,20 @@ public sealed class YandexTrackerModule : ITaskSourceModule
         {
             if (_users.TryGetValue(uid, out var cached)) return cached;
             try { return _users[uid] = await client.Users.GetAsync(uid, ct).ConfigureAwait(false); }
-            catch (TrackerApiException) { return _users[uid] = null; }
+            catch (YandexTrackerException) { return _users[uid] = null; }
         }
 
         private static async Task<T> Call<T>(Func<Task<T>> call)
         {
             try { return await call().ConfigureAwait(false); }
-            catch (TrackerApiException e) { throw Explain(e); }
+            catch (YandexTrackerApiException e) { throw Explain(e); }
+            catch (YandexTrackerSerializationException e) { throw new IntegrationException("Трекер ответил в непонятном виде: проверьте адрес API.", e); }
             catch (HttpRequestException e) { throw new IntegrationException($"Трекер недоступен: {e.Message}", e); }
         }
     }
 
     /// <summary>Ошибка Трекера словами, которые подскажут, что исправить в подключении.</summary>
-    internal static IntegrationException Explain(TrackerApiException e)
+    internal static IntegrationException Explain(YandexTrackerApiException e)
     {
         // Свои слова Трекера добавляются, только если он их прислал: иначе текст повторил бы код ответа дважды.
         var details = e.ErrorMessages.Count > 0 ? " " + string.Join(" ", e.ErrorMessages) : "";
@@ -229,8 +232,8 @@ internal static class YandexTrackerMapping
             Status(issue, statusMap),
             issue.Status?.Display ?? issue.Status?.Key,
             Priority(issue.Priority?.Key),
-            TrackerDuration.ToHours(issue.OriginalEstimation),
-            TrackerDuration.ToHours(issue.Estimation),
+            YandexTrackerDuration.ToHours(issue.OriginalEstimation),
+            YandexTrackerDuration.ToHours(issue.Estimation),
             issue.Start,
             issue.End,
             issue.Deadline,

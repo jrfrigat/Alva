@@ -2,13 +2,13 @@ using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace YandexTracker;
+namespace YandexTracker.Serialization;
 
 /// <summary>
 /// Трекер пишет время как <c>2017-06-11T05:16:01.339+0000</c> — смещение без двоеточия, которое System.Text.Json не
 /// принимает. Конвертер читает и этот вид, и обычный ISO 8601, а пишет в том виде, что ждёт Трекер.
 /// </summary>
-internal sealed class TrackerDateTimeConverter : JsonConverter<DateTimeOffset>
+internal sealed class YandexTrackerDateTimeConverter : JsonConverter<DateTimeOffset>
 {
     private static readonly string[] Formats = ["yyyy-MM-dd'T'HH:mm:ss.fffzzz", "yyyy-MM-dd'T'HH:mm:ss.fffK", "yyyy-MM-dd'T'HH:mm:ssK", "yyyy-MM-dd'T'HH:mm:ss.FFFFFFFK"];
 

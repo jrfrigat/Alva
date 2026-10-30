@@ -7,7 +7,7 @@ namespace YandexTracker;
 /// Длительности Трекера (оценка, остаток, затраченное время) — строки ISO 8601 вроде <c>P1W2DT3H30M</c>. Трекер считает их
 /// в рабочем времени: неделя — 5 рабочих дней, день — 8 часов. Здесь они переводятся в часы и обратно по тем же правилам.
 /// </summary>
-public static partial class TrackerDuration
+public static partial class YandexTrackerDuration
 {
     [GeneratedRegex(@"^P(?:(?<w>\d+(?:[.,]\d+)?)W)?(?:(?<d>\d+(?:[.,]\d+)?)D)?(?:T(?:(?<h>\d+(?:[.,]\d+)?)H)?(?:(?<m>\d+(?:[.,]\d+)?)M)?(?:(?<s>\d+(?:[.,]\d+)?)S)?)?$", RegexOptions.CultureInvariant)]
     private static partial Regex Pattern();

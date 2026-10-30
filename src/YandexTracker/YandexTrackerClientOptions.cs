@@ -1,7 +1,9 @@
+using YandexTracker.Http;
+
 namespace YandexTracker;
 
 /// <summary>Вид токена: OAuth-токен Яндекса или IAM-токен Yandex Cloud.</summary>
-public enum TrackerTokenType
+public enum YandexTrackerTokenType
 {
     /// <summary>OAuth-токен: <c>Authorization: OAuth &lt;токен&gt;</c>.</summary>
     OAuth,
@@ -10,7 +12,7 @@ public enum TrackerTokenType
 }
 
 /// <summary>Где живёт организация Трекера: от этого зависит заголовок с её идентификатором.</summary>
-public enum TrackerOrganizationKind
+public enum YandexTrackerOrganizationKind
 {
     /// <summary>Организация Яндекс 360: заголовок <c>X-Org-ID</c>.</summary>
     Yandex360,
@@ -19,10 +21,10 @@ public enum TrackerOrganizationKind
 }
 
 /// <summary>Параметры подключения к API Трекера.</summary>
-public sealed class TrackerClientOptions
+public sealed class YandexTrackerClientOptions
 {
     /// <summary>Адрес API по умолчанию.</summary>
-    public static readonly Uri DefaultBaseAddress = new("https://api.tracker.yandex.net/");
+    public static readonly Uri DefaultBaseAddress = new(YandexTrackerHosts.Api);
 
     /// <summary>Адрес API; путь <c>v2/…</c> добавляется к нему.</summary>
     public Uri BaseAddress { get; set; } = DefaultBaseAddress;
@@ -30,12 +32,12 @@ public sealed class TrackerClientOptions
     /// <summary>Токен доступа.</summary>
     public string Token { get; set; } = "";
 
-    public TrackerTokenType TokenType { get; set; } = TrackerTokenType.OAuth;
+    public YandexTrackerTokenType TokenType { get; set; } = YandexTrackerTokenType.OAuth;
 
     /// <summary>Идентификатор организации.</summary>
     public string OrganizationId { get; set; } = "";
 
-    public TrackerOrganizationKind OrganizationKind { get; set; } = TrackerOrganizationKind.Yandex360;
+    public YandexTrackerOrganizationKind OrganizationKind { get; set; } = YandexTrackerOrganizationKind.Yandex360;
 
     /// <summary>Сколько раз повторять запрос после 429 или временной ошибки сервера.</summary>
     public int MaxRetries { get; set; } = 3;
