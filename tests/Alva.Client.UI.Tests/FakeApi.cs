@@ -1,5 +1,6 @@
 using Alva.Client.Services;
 using Alva.Client.Models;
+using Alva.Contracts;
 
 namespace Alva.Client.UI.Tests;
 
@@ -49,7 +50,13 @@ public sealed class FakeApi : IApiService
     /// <summary>Импорт: вернуть исключение, чтобы он упал; число успешных импортов — в Imports.</summary>
     public Func<Exception?> OnImport { get; set; } = () => null;
     public int Imports { get; private set; }
-    public Task Import(string format, Stream stream) { if (OnImport() is { } error) return Task.FromException(error); Imports++; return Task.CompletedTask; }
+    public DataImportResult ImportResult { get; set; } = new(0, [], []);
+    public async Task<DataImportResult> Import(string format, Stream stream)
+    {
+        if (OnImport() is { } error) throw error;
+        Imports++;
+        return await Task.FromResult(ImportResult);
+    }
 
     /// <summary>Медленный сервер: чтение ждёт эту задачу, прежде чем ответить.</summary>
     public Task? GetGate { get; set; }

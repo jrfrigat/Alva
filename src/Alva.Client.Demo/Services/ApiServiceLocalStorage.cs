@@ -100,7 +100,7 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
     }
 
     // Раньше файл читался и молча отбрасывался, а страница сообщала об успешном импорте.
-    public Task Import(string format, Stream stream) => throw new NotSupportedException(DemoTransferNote);
+    public Task<DataImportResult> Import(string format, Stream stream) => throw new NotSupportedException(DemoTransferNote);
 
     /// <summary>Почему в демо нет импорта и экспорта — показывается на странице «Данные» до выбора файла.</summary>
     internal static string DemoTransferNote => Strings.T("В демо данные хранятся только в этом браузере: импорт и экспорт файлов работают в версии Alva с сервером.");

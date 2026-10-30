@@ -71,6 +71,6 @@ public sealed class AlvaSession(IApiService api, IJSRuntime js)
         AssignmentChecked?.Invoke();
     }
     public Task<T> Save<T>(HttpMethod method, string path, object value) => api.Save<T>(method, path, value);
-    public Task Import(string format, Stream stream) => api.Import(format, stream);
+    public Task<DataImportResult> Import(string format, Stream stream) => api.Import(format, stream);
 }
 

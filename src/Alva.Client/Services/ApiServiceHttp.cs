@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Alva.Client.Models;
+using Alva.Contracts;
 using Microsoft.JSInterop;
 
 namespace Alva.Client.Services;
@@ -85,12 +86,13 @@ public sealed class ApiServiceHttp(HttpClient http, IJSRuntime js) : IApiService
         await Check(response);
         return (await response.Content.ReadFromJsonAsync<T>())!;
     }
-    public async Task Import(string format, Stream stream)
+    public async Task<DataImportResult> Import(string format, Stream stream)
     {
         using var content = new StreamContent(stream);
         content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/octet-stream");
         using var response = await http.PostAsync(TeamPath("data/import?format=" + format), content);
         await Check(response);
+        return (await response.Content.ReadFromJsonAsync<DataImportResult>())!;
     }
     public async Task RefreshUser()
     {

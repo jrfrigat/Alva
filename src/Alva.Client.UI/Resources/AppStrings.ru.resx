@@ -1018,4 +1018,15 @@
   <data name="Настройте команду по шагам — подсказки появятся здесь." xml:space="preserve"><value>Настройте команду по шагам — подсказки появятся здесь.</value></data>
   <data name="Люди и графики" xml:space="preserve"><value>Люди и графики</value></data>
   <data name="Следующий шаг" xml:space="preserve"><value>Следующий шаг</value></data>
+  <data name="Файл: {0} · {1}" xml:space="preserve"><value>Файл: {0} · {1}</value></data>
+  <data name="Предпросмотр" xml:space="preserve"><value>Предпросмотр</value></data>
+  <data name="Формат не удалось определить по расширению. Выберите формат вручную." xml:space="preserve"><value>Формат не удалось определить по расширению. Выберите формат вручную.</value></data>
+  <data name="Импорт завершён" xml:space="preserve"><value>Импорт завершён</value></data>
+  <data name="Импортировано записей: {0}." xml:space="preserve"><value>Импортировано записей: {0}.</value></data>
+  <data name="Предупреждения импорта" xml:space="preserve"><value>Предупреждения импорта</value></data>
+  <data name="Проверьте задачи, проекты и спринты." xml:space="preserve"><value>Проверьте задачи, проекты и спринты.</value></data>
+  <data name="Экспорт откроется в новой вкладке; сохраните файл, если браузер его не скачал." xml:space="preserve"><value>Экспорт откроется в новой вкладке; сохраните файл, если браузер его не скачал.</value></data>
+  <data name="Б" xml:space="preserve"><value>Б</value></data>
+  <data name="КБ" xml:space="preserve"><value>КБ</value></data>
+  <data name="МБ" xml:space="preserve"><value>МБ</value></data>
 </root>

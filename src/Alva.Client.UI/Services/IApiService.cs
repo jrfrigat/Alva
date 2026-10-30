@@ -1,4 +1,5 @@
 using Alva.Client.Models;
+using Alva.Contracts;
 
 namespace Alva.Client.Services;
 
@@ -31,5 +32,5 @@ public interface IApiService
     Task<T> Get<T>(string path);
     Task Send(HttpMethod method, string path, object value);
     Task<T> Save<T>(HttpMethod method, string path, object value);
-    Task Import(string format, Stream stream);
+    Task<DataImportResult> Import(string format, Stream stream);
 }

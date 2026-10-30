@@ -1018,4 +1018,15 @@
   <data name="Настройте команду по шагам — подсказки появятся здесь." xml:space="preserve"><value>Set up the team step by step; hints will appear here.</value></data>
   <data name="Люди и графики" xml:space="preserve"><value>People and schedules</value></data>
   <data name="Следующий шаг" xml:space="preserve"><value>Next step</value></data>
+  <data name="Файл: {0} · {1}" xml:space="preserve"><value>File: {0} · {1}</value></data>
+  <data name="Предпросмотр" xml:space="preserve"><value>Preview</value></data>
+  <data name="Формат не удалось определить по расширению. Выберите формат вручную." xml:space="preserve"><value>The format could not be detected from the extension. Choose it manually.</value></data>
+  <data name="Импорт завершён" xml:space="preserve"><value>Import complete</value></data>
+  <data name="Импортировано записей: {0}." xml:space="preserve"><value>Records imported: {0}.</value></data>
+  <data name="Предупреждения импорта" xml:space="preserve"><value>Import warnings</value></data>
+  <data name="Проверьте задачи, проекты и спринты." xml:space="preserve"><value>Check tasks, projects and sprints.</value></data>
+  <data name="Экспорт откроется в новой вкладке; сохраните файл, если браузер его не скачал." xml:space="preserve"><value>Export opens in a new tab; save the file if the browser did not download it.</value></data>
+  <data name="Б" xml:space="preserve"><value>B</value></data>
+  <data name="КБ" xml:space="preserve"><value>KB</value></data>
+  <data name="МБ" xml:space="preserve"><value>MB</value></data>
 </root>

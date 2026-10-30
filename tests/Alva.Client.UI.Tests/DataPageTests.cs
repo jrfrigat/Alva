@@ -1,4 +1,5 @@
 using Alva.Client.Pages;
+using Alva.Contracts;
 using Bunit;
 using Microsoft.AspNetCore.Components.Forms;
 using Xunit;
@@ -36,19 +37,34 @@ public sealed class DataPageTests : UiTestBase
         Button(cut, "Импортировать").Click();
 
         cut.WaitForAssertion(() => Assert.Contains("Не удалось выполнить действие. Повторите.", cut.Markup));
-        Assert.DoesNotContain("Данные импортированы", cut.Markup);
+        Assert.DoesNotContain("Импорт завершён", cut.Markup);
     }
 
     [Fact]
     public void Success_is_shown_only_after_the_import_went_through()
     {
+        Api.ImportResult = new DataImportResult(7, [], ["Связи пользователей не переносятся."]);
         var cut = Page();
         ChooseFile(cut);
-        Assert.DoesNotContain("Данные импортированы", cut.Markup);
+        Assert.DoesNotContain("Импорт завершён", cut.Markup);
 
         Button(cut, "Импортировать").Click();
 
-        cut.WaitForAssertion(() => Assert.Contains("Данные импортированы", cut.Markup));
+        cut.WaitForAssertion(() => Assert.Contains("Импорт завершён", cut.Markup));
+        Assert.Contains("Импортировано записей: 7.", cut.Markup);
+        Assert.Contains("Связи пользователей не переносятся.", cut.Markup);
         Assert.Equal(1, Api.Imports);
+    }
+
+    [Fact]
+    public void The_file_name_and_preview_are_visible_before_import()
+    {
+        var cut = Page();
+        cut.FindComponent<InputFile>().UploadFiles(InputFileContent.CreateFromText("title,status\nЗадача,Planning", "team.csv"));
+
+        cut.WaitForAssertion(() => Assert.Contains("Файл: team.csv", cut.Markup));
+        Assert.Contains("title,status", cut.Markup);
+        Assert.Contains("Задача,Planning", cut.Markup);
+        Assert.Equal(0, Api.Imports);
     }
 }
