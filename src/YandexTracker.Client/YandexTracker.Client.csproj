@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Самостоятельная библиотека: ни одной ссылки на Alva, чтобы её можно было вынести в отдельное решение и пакет. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>true</IsPackable>
+    <PackageId>YandexTracker.Client</PackageId>
+    <Version>0.1.0</Version>
+    <Description>Клиент API Яндекс Трекера для .NET: задачи, поиск, связи, переходы, комментарии, очереди, пользователи и статусы.</Description>
+    <PackageTags>yandex;tracker;api;client</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="/" />
+    <InternalsVisibleTo Include="YandexTracker.Client.Tests" />
+  </ItemGroup>
+</Project>
