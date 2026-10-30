@@ -178,7 +178,8 @@ public sealed class IntegrationSync(AlvaDbContext db, TaskSourceModules modules,
         var people = (await db.Actors.Where(x => x.TeamId == teamId && x.Kind == ActorKind.Person && !x.Archived && x.Email != null).ToListAsync(ct))
             .GroupBy(x => x.Email!.Trim(), StringComparer.OrdinalIgnoreCase).ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
         var assigned = (await db.Assignments.Where(x => taskIds.Contains(x.TaskId)).Select(x => x.TaskId).ToListAsync(ct)).ToHashSet();
-        var parents = (await db.Tasks.Where(x => x.TeamId == teamId && x.ParentId != null).Select(x => x.ParentId!.Value).ToListAsync(ct)).ToHashSet();
+        // Родители — по карте команды вместе с только что поставленными: они ещё не сохранены, и запрос к базе их не увидел бы.
+        var parents = parentOf.Values.OfType<Guid>().ToHashSet();
         foreach (var item in external)
         {
             if (Linked(item.Key) is not { } task || item.AssigneeEmail is not { Length: > 0 } email || assigned.Contains(task.Id) || parents.Contains(task.Id)) continue;

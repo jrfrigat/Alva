@@ -198,7 +198,8 @@ public sealed class IntegrationApiTests
         var connection = await Connect(server);
         module.Tasks.AddRange(
         [
-            new ExternalTask("TEST-1", "Эпик", Start: Monday, End: Monday.AddDays(1)),
+            // У эпика тоже есть исполнитель, но назначение ставится только листовой задаче.
+            new ExternalTask("TEST-1", "Эпик", Start: Monday, End: Monday.AddDays(1), AssigneeEmail: "anna@example.test"),
             new ExternalTask("TEST-2", "API", ParentKey: "TEST-1", Start: Monday, End: Monday.AddDays(6), AssigneeEmail: "anna@example.test"),
             new ExternalTask("TEST-3", "Экраны", ParentKey: "TEST-1", Links: [new ExternalLink("TEST-2", "TEST-3"), new ExternalLink("TEST-3", "TEST-2")])
         ]);
