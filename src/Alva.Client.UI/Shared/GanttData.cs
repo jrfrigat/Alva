@@ -173,6 +173,7 @@ public sealed class GanttData
         }
         if (ChildrenOf(task).Any()) title += "\n" + Strings.T("Штриховка — ожидание подзадач");
         if (task.DatesFixed) title += $"\n{Strings.T("Даты зафиксированы: задача не переносится")}";
+        if (task.DailyHoursLimit is > 0) title += "\n" + string.Format(Strings.T("Не больше {0} ч в день"), AlvaFormat.Hours(task.DailyHoursLimit.Value));
         return RiskOf(task) is { Severity: "High" or "Medium" } risk
             ? $"{title}\n{(risk.Severity == "High" ? Strings.T("Высокий") : Strings.T("Средний"))} {Strings.T("риск:")} {ReasonText.Join(risk.Reasons)}"
             : title;
@@ -284,7 +285,7 @@ public sealed class GanttData
 
     /// <summary>
     /// Планирует задачу с началом в указанный день — она попадает в спринты, которые пересекают её новые даты. Длина — прежнее окно задачи, если у неё были свои даты,
-    /// иначе по оценке: 8 часов на рабочий день, не меньше дня.
+    /// иначе по оценке: 8 часов на рабочий день (или лимит в день, если он меньше), не меньше дня.
     /// </summary>
     public Task Place(AlvaSession session, TaskModel task, DateOnly start)
     {
@@ -294,7 +295,8 @@ public sealed class GanttData
         else
         {
             end = start;
-            for (var left = Math.Max(1, (int)Math.Ceiling((task.EstimateHours ?? 8) / 8m)) - 1; left > 0;)
+            var perDay = Math.Min(8m, task.DailyHoursLimit is > 0 ? task.DailyHoursLimit.Value : 8m);
+            for (var left = Math.Max(1, (int)Math.Ceiling((task.EstimateHours ?? 8) / perDay)) - 1; left > 0;)
             {
                 end = end.AddDays(1);
                 if (!IsWeekend(end)) left--;

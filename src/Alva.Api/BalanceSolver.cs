@@ -79,7 +79,8 @@ public static class BalanceSolver
         // Связи — жёсткие: план, нарушающий FS/SS/FF/SF с учётом лага, недопустим.
         {
             LinearExpr Start(int t) => LinearExpr.WeightedSum(z[t], problem.Tasks[t].Options.Select(o => (long)o.Start));
-            LinearExpr End(int t) => LinearExpr.WeightedSum(z[t], problem.Tasks[t].Options.Select(o => (long)(o.Start + o.Length)));
+            // Конец — фактический: с хвостом работы, которую лимит в день вынес за окно.
+            LinearExpr End(int t) => LinearExpr.WeightedSum(z[t], problem.Tasks[t].Options.Select(o => (long)(o.Start + o.Span)));
             foreach (var link in problem.Links)
             {
                 var gap = link.Kind switch

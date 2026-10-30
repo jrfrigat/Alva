@@ -341,6 +341,10 @@ namespace Alva.Infrastructure.Migrations
                     b.Property<int?>("BacklogRank")
                         .HasColumnType("integer");
 
+                    b.Property<decimal?>("DailyHoursLimit")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("numeric(12,2)");
+
                     b.Property<bool>("DatesFixed")
                         .HasColumnType("boolean");
 

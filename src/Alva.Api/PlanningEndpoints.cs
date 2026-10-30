@@ -332,7 +332,7 @@ public static class PlanningEndpoints
         var (people, calendarOf) = await PeopleCalendars(db, teamId);
         var work = new List<CapacityWork>();
         foreach (var (task, assignment, taskStart, taskEnd) in await OpenWork(db, teamId))
-            if (SprintWindows.Planned(taskStart, taskEnd) && assignment is not null && ResolvePerson(assignment, people) is { } person) work.Add(new CapacityWork(person.Id, task.EstimateHours ?? 0m, taskStart, taskEnd, task.Deadline));
+            if (SprintWindows.Planned(taskStart, taskEnd) && assignment is not null && ResolvePerson(assignment, people) is { } person) work.Add(new CapacityWork(person.Id, task.EstimateHours ?? 0m, taskStart, taskEnd, task.Deadline, task.DailyHoursLimit));
         return CapacityMath.Build(people.Select(x => (x.Id, x.Name)), calendarOf, work, start, end);
     }
 
@@ -344,7 +344,7 @@ public static class PlanningEndpoints
         var work = new List<DemandWork>();
         foreach (var (task, assignment, taskStart, taskEnd) in await OpenWork(db, teamId))
             if (SprintWindows.Planned(taskStart, taskEnd) && assignment is { ResolvedPersonId: null } && targets.TryGetValue(assignment.TargetId, out var target))
-                work.Add(new DemandWork(target.Id, target.Name, target.Kind.ToString(), task.EstimateHours ?? 0m, taskStart, taskEnd, task.Deadline));
+                work.Add(new DemandWork(target.Id, target.Name, target.Kind.ToString(), task.EstimateHours ?? 0m, taskStart, taskEnd, task.Deadline, task.DailyHoursLimit));
         return CapacityMath.Demand(work, start, end);
     }
 
@@ -362,7 +362,7 @@ public static class PlanningEndpoints
         {
             var person = x.Assignment is null ? null : ResolvePerson(x.Assignment, people);
             var target = x.Assignment is not null && person is null ? targets.GetValueOrDefault(x.Assignment.TargetId) : null;
-            return new RiskTask(x.Task.Id, x.Task.ParentId, x.Task.Title, x.Task.EstimateHours, x.Start, x.End, x.Task.Deadline, person?.Id, person?.Name, target, x.Task.Status.ToString(), x.Task.RemainingHours, x.Task.Priority.ToString(), x.Task.BacklogRank);
+            return new RiskTask(x.Task.Id, x.Task.ParentId, x.Task.Title, x.Task.EstimateHours, x.Start, x.End, x.Task.Deadline, person?.Id, person?.Name, target, x.Task.Status.ToString(), x.Task.RemainingHours, x.Task.Priority.ToString(), x.Task.BacklogRank, x.Task.DailyHoursLimit);
         }).ToArray();
         return RiskMath.Assess(tasks, dependencies, calendarOf, DateOnly.FromDateTime(DateTime.Today));
     }

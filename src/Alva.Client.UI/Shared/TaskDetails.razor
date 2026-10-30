@@ -97,6 +97,7 @@
                 <FlareSelect TValue="Guid?" Label="@(Strings.T("Родительская задача"))" ErrorText="@_parentError" Items="Tasks.Where(x => x.Id != Item.Id).Select(x => (Guid?)x.Id)" ItemLabel="TaskName" NullOption="@(Strings.T("Корневая задача"))" @bind-Value="_model.ParentId" Searchable />
                 <FlareNumericField TValue="decimal?" Label="@(Strings.T("Оценка, часы"))" ErrorText="@_estimateError" @bind-Value="_model.EstimateHours" Min="0" />
                 <FlareNumericField TValue="decimal?" Label="@(Strings.T("Остаток, часы"))" ErrorText="@_remainingError" @bind-Value="_model.RemainingHours" Min="0" Max="100000" HelperText="@(Strings.T("Для начатой задачи пустое поле означает неизвестный остаток; 0 — работа закончена."))" />
+                <FlareNumericField TValue="decimal?" Label="@(Strings.T("Не больше, ч в день"))" ErrorText="@_limitError" @bind-Value="_model.DailyHoursLimit" Min="0" Max="24" HelperText="@DailyLimit.Hint(_model)" />
                 <FlareDatePicker Label="@(Strings.T("Дедлайн"))" @bind-Value="_model.Deadline" />
                 <FlareDatePicker Label="@(Strings.T("Начало"))" ErrorText="@_startError" @bind-Value="_model.StartDate" Disabled="_model.DatesFixed" />
                 <FlareDatePicker Label="@(Strings.T("Окончание"))" ErrorText="@_endError" @bind-Value="_model.EndDate" Disabled="_model.DatesFixed" />
@@ -291,7 +292,7 @@
     private int _linkLag;
     private FlareButton? _assignButton;
     private string? _error, _quickTitle, _assignSearch;
-    private string? _parentError,_startError,_endError,_estimateError,_remainingError;
+    private string? _parentError,_startError,_endError,_estimateError,_remainingError,_limitError;
     private readonly List<string> _formErrors=[]; private ElementReference _errorSummary;
     private bool _busy, _saved, _assignOpen, _adding;
     private int _assignTab;
@@ -337,7 +338,7 @@
         || _model.Status != Item.Status || _model.ProjectId != Item.ProjectId || _model.ParentId != Item.ParentId
         || _model.RemainingHours != Item.RemainingHours || _model.EstimateHours != Item.EstimateHours || _model.Deadline != Item.Deadline
         || _model.StartDate != Item.StartDate || _model.EndDate != Item.EndDate || _model.Priority != Item.Priority
-        || _model.DatesFixed != Item.DatesFixed || !_model.RequiredSkills.SequenceEqual(Item.RequiredSkills));
+        || _model.DatesFixed != Item.DatesFixed || _model.DailyHoursLimit != Item.DailyHoursLimit || !_model.RequiredSkills.SequenceEqual(Item.RequiredSkills));
 
     // Ссылки, меню и Back/Forward: несохранённые правки уходят только после явного согласия.
     private async Task ConfirmLeave(LocationChangingContext context)
@@ -568,7 +569,7 @@
         {
             var m = _model;
             await Session.Save<TaskModel>(HttpMethod.Put, Session.TeamPath($"tasks/{m.Id}"),
-                new TaskRequest(m.Title, m.Description, m.Status, m.ProjectId, m.ParentId, m.EstimateHours, m.Deadline, m.StartDate, m.EndDate, m.Order, m.Version, m.RequiredSkills, m.Priority, RemainingHours: m.RemainingHours, SetRemainingHours: true, DatesFixed: m.DatesFixed));
+                new TaskRequest(m.Title, m.Description, m.Status, m.ProjectId, m.ParentId, m.EstimateHours, m.Deadline, m.StartDate, m.EndDate, m.Order, m.Version, m.RequiredSkills, m.Priority, RemainingHours: m.RemainingHours, SetRemainingHours: true, DatesFixed: m.DatesFixed, DailyHoursLimit: m.DailyHoursLimit, SetDailyHoursLimit: true));
             _saved = true;
             await Changed.InvokeAsync();
         });
@@ -576,12 +577,13 @@
 
     private bool Validate()
     {
-        _parentError=_startError=_endError=_estimateError=_remainingError=null;
+        _parentError=_startError=_endError=_estimateError=_remainingError=_limitError=null;
         _formErrors.Clear();
         var m=_model;
         if (m.StartDate is { } start && m.EndDate is { } end && start > end) Error(ref _endError, Strings.T("Окончание раньше начала."));
         if (m.EstimateHours is < 0) Error(ref _estimateError, Strings.T("Оценка не может быть отрицательной."));
         if (m.RemainingHours is < 0) Error(ref _remainingError, Strings.T("Остаток не может быть отрицательным."));
+        if (DailyLimit.Error(m.DailyHoursLimit) is { } limitError) Error(ref _limitError, limitError);
         if (m.ParentId is { } parent && (parent == m.Id || IsDescendant(parent, m.Id))) Error(ref _parentError, Strings.T("Родительская задача не может быть самой задачей или её потомком."));
         return _formErrors.Count == 0;
     }

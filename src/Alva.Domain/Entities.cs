@@ -66,6 +66,8 @@ public sealed class TaskCard : Entity
     public DateOnly? EndDate { get; set; }
     /// <summary>Даты зафиксированы: задача не переносится ни вручную, ни автобалансом. Требует обеих дат.</summary>
     public bool DatesFixed { get; set; }
+    /// <summary>Сколько часов в день человек тратит на эту задачу; null — без ограничения.</summary>
+    public decimal? DailyHoursLimit { get; set; }
     public int Order { get; set; }
     /// <summary>Ценность работы для команды: по ней упорядочивается пул и автобаланс держит важное в сроке.</summary>
     public TaskPriority Priority { get; set; } = TaskPriority.Normal;

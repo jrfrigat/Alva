@@ -1,10 +1,10 @@
 namespace Alva.Contracts;
 
-/// <summary>Работа, которая ложится на человека: оценка и окно задачи.</summary>
-public record CapacityWork(Guid PersonId, decimal EstimateHours, DateOnly? Start, DateOnly? End, DateOnly? Deadline);
+/// <summary>Работа, которая ложится на человека: оценка, окно задачи и лимит часов в день (null — без лимита).</summary>
+public record CapacityWork(Guid PersonId, decimal EstimateHours, DateOnly? Start, DateOnly? End, DateOnly? Deadline, decimal? DailyHoursLimit = null);
 
 /// <summary>Работа, назначенная на роль или подкоманду без выбранного человека.</summary>
-public record DemandWork(Guid TargetId, string TargetName, string Kind, decimal EstimateHours, DateOnly? Start, DateOnly? End, DateOnly? Deadline);
+public record DemandWork(Guid TargetId, string TargetName, string Kind, decimal EstimateHours, DateOnly? Start, DateOnly? End, DateOnly? Deadline, decimal? DailyHoursLimit = null);
 
 /// <summary>
 /// Расчёт ёмкости, общий для API и demo: доступные часы по графику и распределение оценки задачи по дням.
@@ -69,20 +69,69 @@ public static class CapacityMath
         return (from.Value, to.Value < from.Value ? from.Value : to.Value);
     }
 
+    /// <summary>Сколько дней после окончания окна ищется место для работы, не поместившейся в лимит.</summary>
+    public const int SpillDays = 730;
+
     /// <summary>
     /// Делит оценку по дням окна пропорционально доступным часам. Если доступных часов в окне нет,
     /// делит поровну на рабочие по графику дни, а если нет и их — на все дни: перегрузка остаётся видна.
+    /// С лимитом день получает не больше <paramref name="dailyLimit"/> часов: излишек уходит на дни окна, где место
+    /// ещё есть, а то, что в окно не помещается, — за окончание, по лимиту в каждый день с доступными часами.
+    /// Так человек остаётся занят задачей столько, сколько она действительно займёт.
     /// </summary>
-    public static IEnumerable<(DateOnly Day, decimal Hours)> Spread(CalendarDto calendar, decimal estimate, DateOnly start, DateOnly end)
+    public static IEnumerable<(DateOnly Day, decimal Hours)> Spread(CalendarDto calendar, decimal estimate, DateOnly start, DateOnly end, decimal? dailyLimit = null)
     {
         if (estimate <= 0 || end < start) yield break;
         var days = Enumerable.Range(0, end.DayNumber - start.DayNumber + 1).Select(start.AddDays).ToArray();
         var weights = days.Select(day => Available(calendar, day)).ToArray();
         if (weights.Sum() == 0) weights = days.Select(day => Nominal(calendar, day.DayOfWeek) > 0 ? 1m : 0m).ToArray();
         if (weights.Sum() == 0) weights = days.Select(_ => 1m).ToArray();
-        var total = weights.Sum();
+        if (dailyLimit is not > 0)
+        {
+            var total = weights.Sum();
+            for (var i = 0; i < days.Length; i++)
+                if (weights[i] > 0) yield return (days[i], estimate * weights[i] / total);
+            yield break;
+        }
+        var limit = dailyLimit.Value;
+        var shares = Fill(weights, estimate, limit);
         for (var i = 0; i < days.Length; i++)
-            if (weights[i] > 0) yield return (days[i], estimate * weights[i] / total);
+            if (shares[i] > 0) yield return (days[i], shares[i]);
+        var left = estimate - shares.Sum();
+        for (var day = end.AddDays(1); left > 0 && day.DayNumber - end.DayNumber <= SpillDays; day = day.AddDays(1))
+        {
+            if (Available(calendar, day) <= 0) continue;
+            var take = Math.Min(left, limit);
+            yield return (day, take);
+            left -= take;
+        }
+    }
+
+    /// <summary>Последний день, на который ложится работа задачи; позже окончания окна — если лимит в день не даёт уложиться.</summary>
+    public static DateOnly? Finish(CalendarDto calendar, decimal estimate, DateOnly start, DateOnly end, decimal? dailyLimit = null) =>
+        Spread(calendar, estimate, start, end, dailyLimit).Select(x => (DateOnly?)x.Day).LastOrDefault();
+
+    /// <summary>
+    /// Пропорциональная доля по весам, но не больше <paramref name="cap"/> в день: дни, упёршиеся в лимит, выходят из
+    /// дележа, а их излишек делится между остальными. Что не поместилось никуда, остаётся неразделённым.
+    /// </summary>
+    internal static decimal[] Fill(decimal[] weights, decimal amount, decimal cap)
+    {
+        var shares = new decimal[weights.Length];
+        var open = Enumerable.Range(0, weights.Length).Where(i => weights[i] > 0).ToList();
+        var left = amount;
+        while (left > 0 && open.Count > 0)
+        {
+            var total = open.Sum(i => weights[i]);
+            var full = open.Where(i => left * weights[i] / total >= cap).ToList();
+            if (full.Count == 0)
+            {
+                foreach (var i in open) shares[i] = left * weights[i] / total;
+                break;
+            }
+            foreach (var i in full) { shares[i] = cap; left -= cap; open.Remove(i); }
+        }
+        return shares;
     }
 
     /// <summary>
@@ -97,7 +146,7 @@ public static class CapacityMath
         {
             if (Window(item.Start, item.End, item.Deadline) is not { } window) continue;
             targets[item.TargetId] = (item.TargetName, item.Kind);
-            foreach (var (day, value) in Spread(DefaultCalendar(item.TargetId), item.EstimateHours, window.Start, window.End))
+            foreach (var (day, value) in Spread(DefaultCalendar(item.TargetId), item.EstimateHours, window.Start, window.End, item.DailyHoursLimit))
                 if (day >= from && day <= to) hours[(item.TargetId, day)] = hours.GetValueOrDefault((item.TargetId, day)) + value;
         }
         return [.. hours.OrderBy(x => targets[x.Key.Item1].Name).ThenBy(x => x.Key.Item2)
@@ -119,7 +168,7 @@ public static class CapacityMath
         foreach (var item in work)
         {
             if (!calendars.TryGetValue(item.PersonId, out var calendar) || Window(item.Start, item.End, item.Deadline) is not { } window) continue;
-            foreach (var (day, hours) in Spread(calendar, item.EstimateHours, window.Start, window.End))
+            foreach (var (day, hours) in Spread(calendar, item.EstimateHours, window.Start, window.End, item.DailyHoursLimit))
                 if (day >= from && day <= to) allocated[(item.PersonId, day)] = allocated.GetValueOrDefault((item.PersonId, day)) + hours;
         }
         var rows = new List<CapacityDto>();

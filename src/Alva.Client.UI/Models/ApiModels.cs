@@ -42,6 +42,8 @@ public sealed class TaskModel
     public DateOnly? EndDate { get; set; }
     /// <summary>Даты зафиксированы: задача не переносится ни вручную, ни автобалансом.</summary>
     public bool DatesFixed { get; set; }
+    /// <summary>Не больше стольких часов в день на эту задачу; null — без ограничения.</summary>
+    public decimal? DailyHoursLimit { get; set; }
     public int Order { get; set; }
     public Guid? AssignmentTargetId { get; set; }
     public Guid? ResolvedPersonId { get; set; }

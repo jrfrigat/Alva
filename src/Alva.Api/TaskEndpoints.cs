@@ -35,6 +35,7 @@ public static class TaskEndpoints
             var task = await Find(db, teamId, taskId);
             if (request.Version is { } version && version != task.Version) throw new ApiException(409, "Задача изменилась. Обновите данные.");
             var wasFixed = task.DatesFixed;
+            var limitBefore = task.DailyHoursLimit;
             var beforeStart = task.StartDate;
             var beforeEnd = task.EndDate;
             await Apply(db, teamId, task, request);
@@ -44,6 +45,8 @@ public static class TaskEndpoints
                 if (changed.Id != task.Id) await ValidateLinks(db, teamId, changed, start, end);
             if (wasFixed != task.DatesFixed)
                 db.Add(new TaskHistory { TaskId = task.Id, UserId = user.UserId(), Summary = task.DatesFixed ? "Даты зафиксированы" : "Фиксация дат снята" });
+            if (limitBefore != task.DailyHoursLimit)
+                db.Add(new TaskHistory { TaskId = task.Id, UserId = user.UserId(), Summary = task.DailyHoursLimit is { } limit ? $"Лимит в день: {limit:0.##} ч" : "Лимит в день снят" });
             task.Version++;
             db.Add(new TaskHistory { TaskId = task.Id, UserId = user.UserId(), Summary = "Задача обновлена" });
             await db.SaveChangesAsync();
@@ -200,6 +203,8 @@ public static class TaskEndpoints
         TaskPriority? priority = null;
         if (request.SetRemainingHours && request.RemainingHours is < 0 or > 100000) throw new ApiException(400, "Остаток должен быть от 0 до 100000 часов.");
         if (request.SetRemainingHours) task.RemainingHours = request.RemainingHours;
+        if (request.SetDailyHoursLimit && request.DailyHoursLimit is <= 0 or > 24) throw new ApiException(400, "Лимит в день должен быть больше 0 и не больше 24 часов.");
+        if (request.SetDailyHoursLimit) task.DailyHoursLimit = request.DailyHoursLimit;
         if (request.Priority is { } text) priority = Enum.TryParse<TaskPriority>(text, true, out var parsed) && Enum.IsDefined(parsed) ? parsed : throw new ApiException(400, "Неизвестный приоритет задачи.");
         // Фиксация требует обеих дат; пока задача зафиксирована, её окно не меняется. Снять фиксацию и
         // перенести одной правкой можно — тогда итоговый признак уже false.
@@ -281,7 +286,7 @@ public static class TaskEndpoints
         {
             assignments.TryGetValue(x.Id, out var assignment);
             Guid[] inSprints = [.. sprints[x.Id]];
-            return new TaskDto(x.Id, x.TeamId, x.ProjectId, x.ParentId, x.Title, x.Description, x.Status.ToString(), x.EstimateHours, x.Deadline, x.StartDate, x.EndDate, x.Order, assignment?.TargetId, assignment?.ResolvedPersonId, x.Version, estimates.GetValueOrDefault(x.Id), deadlines.GetValueOrDefault(x.Id), inSprints, x.RequiredSkills, x.Priority.ToString(), x.BacklogRank, x.RemainingHours, x.DatesFixed);
+            return new TaskDto(x.Id, x.TeamId, x.ProjectId, x.ParentId, x.Title, x.Description, x.Status.ToString(), x.EstimateHours, x.Deadline, x.StartDate, x.EndDate, x.Order, assignment?.TargetId, assignment?.ResolvedPersonId, x.Version, estimates.GetValueOrDefault(x.Id), deadlines.GetValueOrDefault(x.Id), inSprints, x.RequiredSkills, x.Priority.ToString(), x.BacklogRank, x.RemainingHours, x.DatesFixed, x.DailyHoursLimit);
         }).ToArray();
     }
 

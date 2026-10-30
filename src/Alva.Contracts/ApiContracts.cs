@@ -16,10 +16,11 @@ public record ProjectRequest(string Name, string Description, Guid[] TeamIds);
 public record ActorDto(Guid Id, Guid TeamId, string Name, string Kind, string? Email, Guid? ParentId, Guid? UserId, Guid[] RoleIds, Guid[]? DepartmentIds = null, string[]? Skills = null);
 public record ActorRequest(string Name, string Kind, string? Email = null, Guid? ParentId = null, Guid? UserId = null, Guid[]? RoleIds = null, Guid[]? DepartmentIds = null, string[]? Skills = null);
 /// <summary>Задача. SprintIds — спринты, с которыми пересекаются её даты (кэш TaskSprint).</summary>
-public record TaskDto(Guid Id, Guid TeamId, Guid? ProjectId, Guid? ParentId, string Title, string Description, string Status, decimal? EstimateHours, DateOnly? Deadline, DateOnly? StartDate, DateOnly? EndDate, int Order, Guid? AssignmentTargetId, Guid? ResolvedPersonId, long Version, decimal EffectiveEstimateHours, DateOnly? EffectiveDeadline, Guid[] SprintIds, string[]? RequiredSkills = null, string Priority = "Normal", int? BacklogRank = null, decimal? RemainingHours = null, bool DatesFixed = false);
+public record TaskDto(Guid Id, Guid TeamId, Guid? ProjectId, Guid? ParentId, string Title, string Description, string Status, decimal? EstimateHours, DateOnly? Deadline, DateOnly? StartDate, DateOnly? EndDate, int Order, Guid? AssignmentTargetId, Guid? ResolvedPersonId, long Version, decimal EffectiveEstimateHours, DateOnly? EffectiveDeadline, Guid[] SprintIds, string[]? RequiredSkills = null, string Priority = "Normal", int? BacklogRank = null, decimal? RemainingHours = null, bool DatesFixed = false, decimal? DailyHoursLimit = null);
 /// <summary>Правка задачи. Priority = null сохраняет текущий приоритет: правки дат и быстрые подзадачи его не сбрасывают.
-/// DatesFixed = null сохраняет признак фиксации дат: служебные правки не снимают его случайно.</summary>
-public record TaskRequest(string Title, string Description = "", string Status = "Backlog", Guid? ProjectId = null, Guid? ParentId = null, decimal? EstimateHours = null, DateOnly? Deadline = null, DateOnly? StartDate = null, DateOnly? EndDate = null, int Order = 0, long? Version = null, string[]? RequiredSkills = null, string? Priority = null, decimal? RemainingHours = null, bool SetRemainingHours = false, bool? DatesFixed = null);
+/// DatesFixed = null сохраняет признак фиксации дат: служебные правки не снимают его случайно.
+/// DailyHoursLimit меняется только с SetDailyHoursLimit, как остаток: иначе быстрые правки стирали бы лимит.</summary>
+public record TaskRequest(string Title, string Description = "", string Status = "Backlog", Guid? ProjectId = null, Guid? ParentId = null, decimal? EstimateHours = null, DateOnly? Deadline = null, DateOnly? StartDate = null, DateOnly? EndDate = null, int Order = 0, long? Version = null, string[]? RequiredSkills = null, string? Priority = null, decimal? RemainingHours = null, bool SetRemainingHours = false, bool? DatesFixed = null, decimal? DailyHoursLimit = null, bool SetDailyHoursLimit = false);
 /// <summary>Ручной порядок пула: задачи в нужной последовательности, сверху вниз.</summary>
 public record BacklogOrderRequest(Guid[] TaskIds);
 public record MoveTaskRequest(Guid? ParentId, int Order, long Version);
@@ -67,6 +68,7 @@ public static class ReasonCodes
     public const string RiskAbsence = "risk.absence";
     public const string RiskOverload = "risk.overload";
     public const string RiskDependencyOpen = "risk.dependency-open";
+    public const string RiskDailyLimit = "risk.daily-limit";
 
     public const string ForecastUnknownRemaining = "forecast.unknown-remaining";
     public const string ForecastNoPerson = "forecast.no-person";
@@ -87,6 +89,7 @@ public static class ReasonCodes
     public const string BalanceKeepsLinks = "balance.keeps-links";
     public const string BalanceEvensDays = "balance.evens-days";
     public const string BalanceImproves = "balance.improves";
+    public const string BalanceDailyLimit = "balance.daily-limit";
 
     public const string BalanceExcludedInProgress = "balance.excluded.in-progress";
     public const string BalanceExcludedParent = "balance.excluded.parent";
@@ -99,11 +102,11 @@ public static class ReasonCodes
     /// <summary>Все коды: тест проверяет, что у каждого есть перевод на обоих языках.</summary>
     public static readonly string[] All =
     [
-        RiskNoAssignee, RiskRequiredPerson, RiskOverdue, RiskForecastLate, RiskAbsence, RiskOverload, RiskDependencyOpen,
+        RiskNoAssignee, RiskRequiredPerson, RiskOverdue, RiskForecastLate, RiskAbsence, RiskOverload, RiskDependencyOpen, RiskDailyLimit,
         ForecastUnknownRemaining, ForecastNoPerson, ForecastUnknownQueue, ForecastUnknownDependency, ForecastMissingDependency,
         ForecastCycle, ForecastNoCapacity, ForecastEstimateAssumption, ForecastCompletedAssumption,
         BalanceOverloadDrop, BalanceWasUnassigned, BalanceFreeHours, BalanceOnTime, BalanceLateDays, BalanceLessOverflow,
-        BalanceKeepsLinks, BalanceEvensDays, BalanceImproves,
+        BalanceKeepsLinks, BalanceEvensDays, BalanceImproves, BalanceDailyLimit,
         BalanceExcludedInProgress, BalanceExcludedParent, BalanceExcludedNoEstimate, BalanceExcludedNoTarget,
         BalanceExcludedNoDates, BalanceExcludedStartsBeforeSprint, BalanceExcludedBeyondSprint
     ];

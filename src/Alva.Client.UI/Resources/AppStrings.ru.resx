@@ -1065,4 +1065,16 @@
   <data name="Последователь — ждёт эту задачу" xml:space="preserve"><value>Последователь — ждёт эту задачу</value></data>
   <data name="Задача недоступна" xml:space="preserve"><value>Задача недоступна</value></data>
   <data name="Связь с задачей «{0}» будет удалена; прогноз и риск пересчитаются." xml:space="preserve"><value>Связь с задачей «{0}» будет удалена; прогноз и риск пересчитаются.</value></data>
+  <data name="Не больше, ч в день" xml:space="preserve"><value>Не больше, ч в день</value></data>
+  <data name="Пусто — без ограничения. Например, 2 ч в день для задачи, которую ведут параллельно с другой работой." xml:space="preserve"><value>Пусто — без ограничения. Например, 2 ч в день для задачи, которую ведут параллельно с другой работой.</value></data>
+  <data name="Не больше {0} ч в день на эту задачу." xml:space="preserve"><value>Не больше {0} ч в день на эту задачу.</value></data>
+  <data name="При {0} ч в день нужно {1} {2}, а в окне {3} — работа выйдет за окончание." xml:space="preserve"><value>При {0} ч в день нужно {1} {2}, а в окне {3} — работа выйдет за окончание.</value></data>
+  <data name="Не больше {0} ч в день: задаче нужно {1} {2}." xml:space="preserve"><value>Не больше {0} ч в день: задаче нужно {1} {2}.</value></data>
+  <data name="Лимит в день — больше 0 и не больше 24 часов." xml:space="preserve"><value>Лимит в день — больше 0 и не больше 24 часов.</value></data>
+  <data name="Не больше {0} ч в день" xml:space="preserve"><value>Не больше {0} ч в день</value></data>
+  <data name="plural.workday.one" xml:space="preserve"><value>рабочий день</value></data>
+  <data name="plural.workday.few" xml:space="preserve"><value>рабочих дня</value></data>
+  <data name="plural.workday.many" xml:space="preserve"><value>рабочих дней</value></data>
+  <data name="reason.risk.daily-limit" xml:space="preserve"><value>При {0} ч в день задача закончится не раньше {1} — позже плана</value></data>
+  <data name="reason.balance.daily-limit" xml:space="preserve"><value>При {0} ч в день работа займёт до {1}: даты растянуты</value></data>
 </root>

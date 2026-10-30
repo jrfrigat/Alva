@@ -190,6 +190,7 @@ public static class DataTransfer
                     if (x.ParentId == id) Error(id, "parentId", "Задача не может быть собственным родителем.");
                     if (x.StartDate.HasValue && x.EndDate.HasValue) Dates(id, x.StartDate.Value, x.EndDate.Value);
                     if (x.DatesFixed && (x.StartDate is null || x.EndDate is null)) Error(id, "datesFixed", "У фиксированной задачи должны быть заданы начало и окончание.");
+                    if (x.DailyHoursLimit is <= 0 or > 24) Error(id, "dailyHoursLimit", "Лимит в день должен быть больше 0 и не больше 24 часов.");
                     if (x.Version < 1 || x.Order < 0) Error(id, "version/order", "Версия должна быть положительной, порядок — неотрицательным."); break;
                 case Actor x:
                     ValidateSkills(id, x.Skills);

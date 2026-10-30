@@ -213,7 +213,7 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
         var work = PlannedTasks(store, teamId)
             .Where(x => x.Task.ResolvedPersonId is null && x.Task.AssignmentTargetId is { } id && targets.ContainsKey(id))
             .Select(x => (Task: x, Target: targets[x.Task.AssignmentTargetId!.Value]))
-            .Select(x => new DemandWork(x.Target.Id, x.Target.Name, x.Target.Kind, x.Task.Task.EstimateHours ?? 0m, x.Task.Start, x.Task.End, x.Task.Task.Deadline));
+            .Select(x => new DemandWork(x.Target.Id, x.Target.Name, x.Target.Kind, x.Task.Task.EstimateHours ?? 0m, x.Task.Start, x.Task.End, x.Task.Task.Deadline, x.Task.Task.DailyHoursLimit));
         return CapacityMath.Demand(work, from, to);
     }
 
@@ -221,7 +221,7 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
     {
         var people = store.Actors.Where(a => a.TeamId == teamId && a.Kind == "Person").ToArray();
         var work = PlannedTasks(store, teamId).Select(x => (x, Person: PersonOf(store, x.Task))).Where(w => w.Person.HasValue)
-            .Select(w => new CapacityWork(w.Person!.Value, w.x.Task.EstimateHours ?? 0m, w.x.Start, w.x.End, w.x.Task.Deadline));
+            .Select(w => new CapacityWork(w.Person!.Value, w.x.Task.EstimateHours ?? 0m, w.x.Start, w.x.End, w.x.Task.Deadline, w.x.Task.DailyHoursLimit));
         return CapacityMath.Build(people.Select(p => (p.Id, p.Name)), id => CalendarOf(store, people.First(p => p.Id == id)), work, from, to);
     }
 
@@ -246,7 +246,7 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
         {
             var person = PersonOf(store, x.Task) is { } id ? actors.GetValueOrDefault(id) : null;
             var target = person is null && x.Task.AssignmentTargetId is { } targetId ? actors.GetValueOrDefault(targetId)?.Name : null;
-            return new RiskTask(x.Task.Id, x.Task.ParentId, x.Task.Title, x.Task.EstimateHours, x.Start, x.End, x.Task.Deadline, person?.Id, person?.Name, target, x.Task.Status, x.Task.RemainingHours, x.Task.Priority, x.Task.BacklogRank);
+            return new RiskTask(x.Task.Id, x.Task.ParentId, x.Task.Title, x.Task.EstimateHours, x.Start, x.End, x.Task.Deadline, person?.Id, person?.Name, target, x.Task.Status, x.Task.RemainingHours, x.Task.Priority, x.Task.BacklogRank, x.Task.DailyHoursLimit);
         }).ToArray();
         var dependencies = store.Dependencies.Select(d => new RiskDependency(d.PredecessorId, d.SuccessorId, d.Kind, d.LagDays));
         return RiskMath.Assess(tasks, dependencies, id => CalendarOf(store, actors[id]), today);
@@ -266,7 +266,7 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
         var persons = people.Select(p => new BalancePersonInput(p.Id, p.Name, p.RoleIds, p.DepartmentIds, p.Skills)).ToArray();
         // Готовые задачи тоже нужны как якоря связей; фоном они не станут — Build их исключает.
         var tasks = OpenTasks(store, teamId, includeClosed: true).Select(x => new BalanceTaskInput(x.Task.Id, x.Task.Title, x.Task.Status, x.Task.ParentId,
-            x.Task.EstimateHours, x.Start, x.End, x.Task.Deadline, x.Task.AssignmentTargetId, x.Task.ResolvedPersonId, x.Task.RequiredSkills, x.Task.Priority, x.Task.DatesFixed)).ToArray();
+            x.Task.EstimateHours, x.Start, x.End, x.Task.Deadline, x.Task.AssignmentTargetId, x.Task.ResolvedPersonId, x.Task.RequiredSkills, x.Task.Priority, x.Task.DatesFixed, x.Task.DailyHoursLimit)).ToArray();
         var links = TeamDependencies(store, teamId).Select(d => new BalanceLinkInput(d.PredecessorId, d.SuccessorId, d.Kind, d.LagDays)).ToArray();
         var problem = BalanceMath.Build(mode, sprintId, sprint.StartDate, sprint.EndDate, persons, id => CalendarOf(store, people.First(p => p.Id == id)), tasks, links);
         if (problem.Infeasible is not null) return BalanceMath.Proposal(problem, [], BalanceMath.Infeasible);
@@ -504,6 +504,7 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
     {
         var request = Read<TaskRequest>(value);
         if (request.SetRemainingHours && request.RemainingHours is < 0 or > 100000) throw new InvalidOperationException("Остаток должен быть от 0 до 100000 часов.");
+        if (request.SetDailyHoursLimit && request.DailyHoursLimit is <= 0 or > 24) throw new InvalidOperationException("Лимит в день должен быть больше 0 и не больше 24 часов.");
         string[] skills;
         try { skills = SkillMath.Normalize(request.RequiredSkills); }
         catch (ArgumentException) { throw new InvalidOperationException("Укажите не более 50 навыков длиной до 80 символов."); }
@@ -518,7 +519,7 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
                 Title = request.Title, Description = request.Description, Status = request.Status, EstimateHours = request.EstimateHours,
                 RemainingHours = request.SetRemainingHours ? request.RemainingHours : null,
                 Deadline = request.Deadline, StartDate = request.StartDate, EndDate = request.EndDate, Order = request.Order, Version = 1, RequiredSkills = skills, Priority = request.Priority ?? "Normal",
-                DatesFixed = datesFixed
+                DatesFixed = datesFixed, DailyHoursLimit = request.SetDailyHoursLimit ? request.DailyHoursLimit : null
             };
             ValidateTaskDates(store, created, request, datesFixed);
             store.Tasks.Add(created);
@@ -535,6 +536,7 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
             throw new InvalidOperationException("Даты задачи зафиксированы — переносить её нельзя. Снимите фиксацию, чтобы изменить даты.");
         ValidateTaskDates(store, task, request, datesFixed);
         var wasFixed = task.DatesFixed;
+        var limitBefore = task.DailyHoursLimit;
         task.ProjectId = request.ProjectId;
         task.ParentId = request.ParentId;
         task.Title = request.Title;
@@ -542,6 +544,7 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
         task.Status = request.Status;
         task.EstimateHours = request.EstimateHours;
         if (request.SetRemainingHours) task.RemainingHours = request.RemainingHours;
+        if (request.SetDailyHoursLimit) task.DailyHoursLimit = request.DailyHoursLimit;
         task.Deadline = request.Deadline;
         task.StartDate = request.StartDate;
         task.EndDate = request.EndDate;
@@ -552,6 +555,7 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
         task.Version++;
         AddHistory(store, task.Id, $"Изменена (статус {Labels.Status(task.Status)})");
         if (wasFixed != task.DatesFixed) AddHistory(store, task.Id, task.DatesFixed ? "Даты зафиксированы" : "Фиксация дат снята");
+        if (limitBefore != task.DailyHoursLimit) AddHistory(store, task.Id, task.DailyHoursLimit is { } limit ? $"Лимит в день: {limit:0.##} ч" : "Лимит в день снят");
         KeepParentsAroundChildren(store, task);
         return WithSprints(store, [task])[0];
     }

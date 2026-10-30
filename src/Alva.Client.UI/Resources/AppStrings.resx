@@ -1065,4 +1065,16 @@
   <data name="Последователь — ждёт эту задачу" xml:space="preserve"><value>Successor — waits for this task</value></data>
   <data name="Задача недоступна" xml:space="preserve"><value>Task unavailable</value></data>
   <data name="Связь с задачей «{0}» будет удалена; прогноз и риск пересчитаются." xml:space="preserve"><value>The link to “{0}” will be removed; the forecast and risk will be recalculated.</value></data>
+  <data name="Не больше, ч в день" xml:space="preserve"><value>No more than, h per day</value></data>
+  <data name="Пусто — без ограничения. Например, 2 ч в день для задачи, которую ведут параллельно с другой работой." xml:space="preserve"><value>Empty means no limit. For example, 2 h a day for a task done alongside other work.</value></data>
+  <data name="Не больше {0} ч в день на эту задачу." xml:space="preserve"><value>No more than {0} h a day on this task.</value></data>
+  <data name="При {0} ч в день нужно {1} {2}, а в окне {3} — работа выйдет за окончание." xml:space="preserve"><value>At {0} h a day it needs {1} {2}, but the window has {3} — the work will run past the finish date.</value></data>
+  <data name="Не больше {0} ч в день: задаче нужно {1} {2}." xml:space="preserve"><value>No more than {0} h a day: the task needs {1} {2}.</value></data>
+  <data name="Лимит в день — больше 0 и не больше 24 часов." xml:space="preserve"><value>The daily limit must be above 0 and no more than 24 hours.</value></data>
+  <data name="Не больше {0} ч в день" xml:space="preserve"><value>No more than {0} h a day</value></data>
+  <data name="plural.workday.one" xml:space="preserve"><value>working day</value></data>
+  <data name="plural.workday.few" xml:space="preserve"><value>working days</value></data>
+  <data name="plural.workday.many" xml:space="preserve"><value>working days</value></data>
+  <data name="reason.risk.daily-limit" xml:space="preserve"><value>At {0} h a day the task finishes no earlier than {1} — later than planned</value></data>
+  <data name="reason.balance.daily-limit" xml:space="preserve"><value>At {0} h a day the work takes until {1}: the dates are stretched</value></data>
 </root>

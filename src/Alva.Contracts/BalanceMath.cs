@@ -37,7 +37,7 @@ public record BalancePersonInput(Guid Id, string Name, Guid[] Roles, Guid[] Depa
 /// <summary>Задача команды для автобаланса: двигаемая, фон или якорь связи. Start и End — окно задачи; Deadline — срок.</summary>
 public record BalanceTaskInput(Guid Id, string Title, string Status, Guid? ParentId, decimal? EstimateHours,
     DateOnly? Start, DateOnly? End, DateOnly? Deadline, Guid? TargetId, Guid? ResolvedPersonId, string[]? RequiredSkills = null, string Priority = "Normal",
-    bool DatesFixed = false);
+    bool DatesFixed = false, decimal? DailyHoursLimit = null);
 
 /// <summary>Связь задач: тип FS, SS, FF или SF и лаг в днях.</summary>
 public record BalanceLinkInput(Guid PredecessorId, Guid SuccessorId, string Kind, int LagDays);
@@ -77,11 +77,25 @@ public sealed record BalanceWeights(long Overload, long Peak, long LateDay, long
 /// <summary>Вариант задачи: кто её делает и с какого дня. Нагрузка по дням — в десятых долях часа.</summary>
 /// <param name="Person">Индекс человека в задаче или −1, если человек не выбран.</param>
 /// <param name="Start">День начала, считая от начала спринта.</param>
-public sealed record BalanceOption(int Person, int Start, int Length, int[] Load, int LateDays, int OverflowTenths);
+/// <param name="Length">Окно задачи в днях — то, что попадёт в её даты.</param>
+/// <param name="Tail">Дни после окна, на которые работа переходит из-за лимита часов в день, когда даты менять нельзя;
+/// фактический конец — Start + Length + Tail, и по нему держатся связи.</param>
+public sealed record BalanceOption(int Person, int Start, int Length, int[] Load, int LateDays, int OverflowTenths, int Tail = 0)
+{
+    /// <summary>Дней от начала до фактического конца работы.</summary>
+    public int Span => Length + Tail;
+}
 
 /// <summary>Задача, которую автобаланс может двигать. Вариант 0 — текущий план.</summary>
 /// <param name="Weight">Вес просрочки по приоритету: важную задачу решатель удерживает в сроке охотнее.</param>
-public sealed record BalanceTask(Guid Id, string Title, int Tenths, Guid? TargetId, bool TargetIsGroup, int? Deadline, BalanceOption[] Options, int Weight = 2);
+/// <param name="Window">Длина окна в сохранённых датах; 0 — как у варианта 0. Отличается, когда лимит в день растягивает задачу.</param>
+/// <param name="DailyLimit">Лимит часов в день, если задан.</param>
+public sealed record BalanceTask(Guid Id, string Title, int Tenths, Guid? TargetId, bool TargetIsGroup, int? Deadline, BalanceOption[] Options, int Weight = 2,
+    int Window = 0, decimal? DailyLimit = null)
+{
+    /// <summary>Длина окна в сохранённых датах задачи.</summary>
+    public int StoredLength => Window > 0 ? Window : Options[0].Length;
+}
 
 /// <summary>Связь двигаемых задач по их индексам.</summary>
 public sealed record BalanceLink(int From, int To, string Kind, int Lag);
@@ -137,7 +151,9 @@ public static class BalanceMath
             && s >= sprintStart && s <= sprintEnd && e >= s;
 
         var movable = openTasks.Where(Movable).ToArray();
-        var longest = movable.Select(t => t.End!.Value.DayNumber - t.Start!.Value.DayNumber + 1).DefaultIfEmpty(1).Max();
+        // С лимитом в день задача может занять больше своего окна: горизонт берётся с запасом на выходные.
+        var longest = movable.Select(t => Math.Max(t.End!.Value.DayNumber - t.Start!.Value.DayNumber + 1,
+            t.DailyHoursLimit is > 0 ? (int)Math.Ceiling(t.EstimateHours!.Value / t.DailyHoursLimit.Value) * 2 + 7 : 0)).DefaultIfEmpty(1).Max();
         var horizon = sprintDays + longest;
         var last = sprintStart.AddDays(horizon - 1);
 
@@ -146,7 +162,7 @@ public static class BalanceMath
         var movableIds = movable.Select(t => t.Id).ToHashSet();
         // Готовые и отменённые задачи не занимают будущую ёмкость, даже если пришли как якоря связей.
         var backgroundWork = openTasks.Where(t => t.Status is not ("Done" or "Cancelled") && !movableIds.Contains(t.Id) && PersonOf(t) is not null)
-            .Select(t => new CapacityWork(people[PersonOf(t)!.Value].Id, t.EstimateHours ?? 0m, t.Start, t.End, t.Deadline));
+            .Select(t => new CapacityWork(people[PersonOf(t)!.Value].Id, t.EstimateHours ?? 0m, t.Start, t.End, t.Deadline, t.DailyHoursLimit));
         var allocated = CapacityMath.Build(people.Select(p => (p.Id, p.Name)), calendarOf, backgroundWork, sprintStart, last)
             .ToLookup(c => c.ActorId);
         var background = people.Select(p =>
@@ -171,15 +187,24 @@ public static class BalanceMath
             var candidates = Candidates(mode, people, t.TargetId!.Value, targetIsGroup, current)
                 .Where(i => SkillMath.Compatible(t.RequiredSkills, people[i].Skills)).ToArray();
             // Фиксированная задача остаётся на своём дне начала при любом режиме; меняться может только человек.
-            var starts = t.DatesFixed || mode == BalanceModes.Gentle ? [start] : Enumerable.Range(0, sprintDays).Prepend(start).Distinct().ToArray();
-            BalanceOption Option(int person, int s) =>
-                new(person, s, length, Spread(person >= 0 ? capacity[person] : null, tenths, s, length, horizon),
-                    deadline is { } d ? Math.Max(0, s + length - 1 - d) : 0, OverflowOf(person >= 0 ? capacity[person] : null, tenths, s, length, sprintDays, horizon));
+            var keepDates = t.DatesFixed || mode == BalanceModes.Gentle;
+            var starts = keepDates ? [start] : Enumerable.Range(0, sprintDays).Prepend(start).Distinct().ToArray();
+            var limit = t.DailyHoursLimit is > 0 ? ToTenths(t.DailyHoursLimit.Value) : (int?)null;
+            // С лимитом в день работа может не уложиться в окно. Если даты менять можно, окно растягивается до её конца;
+            // если нельзя — окно прежнее, а остаток идёт хвостом, по которому держатся связи и считается просрочка.
+            BalanceOption Option(int person, int s)
+            {
+                var (load, last) = Spread(person >= 0 ? capacity[person] : null, tenths, s, length, horizon, limit);
+                var span = Math.Max(length, last - s + 1);
+                var overflow = load.Skip(sprintDays).Sum() + tenths - load.Sum();
+                return new(person, s, keepDates ? length : span, load, deadline is { } d ? Math.Max(0, s + span - 1 - d) : 0, overflow,
+                    keepDates ? span - length : 0);
+            }
             var options = new List<BalanceOption> { Option(current, start) };
             foreach (var person in candidates)
             foreach (var s in starts)
                 if (person != current || s != start) options.Add(Option(person, s));
-            return new BalanceTask(t.Id, t.Title, tenths, t.TargetId, targetIsGroup, deadline, [.. options], PriorityWeight(t.Priority));
+            return new BalanceTask(t.Id, t.Title, tenths, t.TargetId, targetIsGroup, deadline, [.. options], PriorityWeight(t.Priority), length, t.DailyHoursLimit);
         }).ToArray();
 
         // Якоря — задачи вне модели с обеими датами. Связь с ними нельзя нарушить, поэтому варианты
@@ -199,30 +224,28 @@ public static class BalanceMath
             if (!fromInModel && anchors.TryGetValue(link.PredecessorId, out var from))
             {
                 var task = movableById[link.SuccessorId];
-                var length = task.End!.Value.DayNumber - task.Start!.Value.DayNumber + 1;
-                var minStart = kind switch
+                int MinStart(int length) => kind switch
                 {
                     "SS" => from.Start + link.LagDays,
                     "FF" => from.End + link.LagDays - length,
                     "SF" => from.Start + link.LagDays - length,
                     _ => from.End + link.LagDays
                 };
-                var kept = filtered[link.SuccessorId].Where(o => o.Start >= minStart).ToList();
+                var kept = filtered[link.SuccessorId].Where(o => o.Start >= MinStart(o.Span)).ToList();
                 if (kept.Count == 0) infeasible ??= $"Связь {kind} из «{from.Title}» в «{task.Title}» не оставляет допустимых дат.";
                 else filtered[link.SuccessorId] = kept;
             }
             else if (!toInModel && anchors.TryGetValue(link.SuccessorId, out var to))
             {
                 var task = movableById[link.PredecessorId];
-                var length = task.End!.Value.DayNumber - task.Start!.Value.DayNumber + 1;
-                var maxStart = kind switch
+                int MaxStart(int length) => kind switch
                 {
                     "SS" => to.Start - link.LagDays,
                     "FF" => to.End - link.LagDays - length,
                     "SF" => to.End - link.LagDays - length,
                     _ => to.Start - link.LagDays - length
                 };
-                var kept = filtered[link.PredecessorId].Where(o => o.Start <= maxStart).ToList();
+                var kept = filtered[link.PredecessorId].Where(o => o.Start <= MaxStart(o.Span)).ToList();
                 if (kept.Count == 0) infeasible ??= $"Связь {kind} из «{task.Title}» в «{to.Title}» не оставляет допустимых дат.";
                 else filtered[link.PredecessorId] = kept;
             }
@@ -263,27 +286,53 @@ public static class BalanceMath
         return result.Order();
     }
 
-    // Как CapacityMath.Spread: оценка делится по доступным часам человека в окне, а если их нет — поровну.
-    private static int[] Spread(int[]? capacity, int tenths, int start, int length, int horizon)
+    // Как CapacityMath.Spread: оценка делится по доступным часам человека в окне, а если их нет — поровну. С лимитом
+    // день получает не больше лимита, а не поместившееся в окно переходит на следующие дни с доступными часами.
+    // Last — последний день с работой; за горизонтом — оценка, сколько дней ещё понадобится.
+    private static (int[] Load, int Last) Spread(int[]? capacity, int tenths, int start, int length, int horizon, int? limit = null)
     {
         var load = new int[horizon];
         var days = Enumerable.Range(start, length).Where(d => d >= 0 && d < horizon).ToArray();
-        if (days.Length == 0) return load;
+        if (days.Length == 0) return (load, start + length - 1);
         var weights = days.Select(d => capacity?[d] ?? 0).ToArray();
         if (weights.Sum() == 0) weights = days.Select(_ => 1).ToArray();
-        var total = weights.Sum();
-        var given = 0;
-        for (var i = 0; i < days.Length; i++)
+        if (limit is not > 0)
         {
-            var share = i == days.Length - 1 ? tenths - given : (int)Math.Round((decimal)tenths * weights[i] / total);
-            load[days[i]] = share;
-            given += share;
+            var total = weights.Sum();
+            var given = 0;
+            for (var i = 0; i < days.Length; i++)
+            {
+                var share = i == days.Length - 1 ? tenths - given : (int)Math.Round((decimal)tenths * weights[i] / total);
+                load[days[i]] = share;
+                given += share;
+            }
+            return (load, start + length - 1);
         }
-        return load;
+        var cap = limit.Value;
+        var shares = CapacityMath.Fill([.. weights.Select(w => (decimal)w)], tenths, cap);
+        var placed = 0;
+        for (var i = 0; i < days.Length; i++) placed += load[days[i]] = (int)Math.Floor(shares[i]);
+        // Округление вниз оставило десятые: раздаём их дням окна, где до лимита есть место.
+        for (var i = 0; placed < tenths && i < days.Length; i++)
+            if (shares[i] > 0 && load[days[i]] < cap)
+            {
+                var add = Math.Min(cap - load[days[i]], tenths - placed);
+                load[days[i]] += add;
+                placed += add;
+            }
+        var last = start + length - 1;
+        for (var d = start + length; placed < tenths && d < horizon; d++)
+        {
+            if (capacity is not null && capacity[d] <= 0) continue;
+            var take = Math.Min(cap, tenths - placed);
+            load[d] = take;
+            placed += take;
+            last = d;
+        }
+        // Не поместилось и в горизонт: конец работы за ним, остаток уйдёт в выход за спринт.
+        if (placed < tenths) last = horizon - 1 + (tenths - placed + cap - 1) / cap;
+        return (load, last);
     }
-
-    private static int OverflowOf(int[]? capacity, int tenths, int start, int length, int sprintDays, int horizon) =>
-        Spread(capacity, tenths, start, length, horizon).Skip(sprintDays).Sum();
 
     private static int ToTenths(decimal hours) => (int)Math.Round(hours * Tenth);
 
@@ -338,9 +387,9 @@ public static class BalanceMath
         var required = link.Kind switch
         {
             "SS" => from.Start + link.Lag - to.Start,
-            "FF" => from.Start + from.Length + link.Lag - (to.Start + to.Length),
-            "SF" => from.Start + link.Lag - (to.Start + to.Length),
-            _ => from.Start + from.Length + link.Lag - to.Start
+            "FF" => from.Start + from.Span + link.Lag - (to.Start + to.Span),
+            "SF" => from.Start + link.Lag - (to.Start + to.Span),
+            _ => from.Start + from.Span + link.Lag - to.Start
         };
         return Math.Max(0, required);
     }
@@ -392,16 +441,17 @@ public static class BalanceMath
         var changes = new List<BalanceChangeDto>();
         for (var t = 0; t < problem.Tasks.Length; t++)
         {
-            if (choice[t] == 0) continue;
             var task = problem.Tasks[t];
             var from = task.Options[0];
             var to = task.Options[choice[t]];
+            // Тот же человек и начало, но лимит в день не даёт уложиться в окно — предлагаем растянуть даты.
+            if (choice[t] == 0 && to.Length == task.StoredLength) continue;
             if (to.Person < 0) continue;
             var fromPerson = from.Person >= 0 ? problem.People[from.Person] : null;
             var toPerson = problem.People[to.Person];
             var target = task.TargetIsGroup && task.TargetId is { } group && (toPerson.Roles.Contains(group) || toPerson.Departments.Contains(group)) ? group : toPerson.Id;
             changes.Add(new BalanceChangeDto(task.Id, task.Title, fromPerson?.Id, fromPerson?.Name, target, toPerson.Id, toPerson.Name,
-                problem.Day(from.Start), problem.Day(from.Start + from.Length - 1), problem.Day(to.Start), problem.Day(to.Start + to.Length - 1),
+                problem.Day(from.Start), problem.Day(from.Start + task.StoredLength - 1), problem.Day(to.Start), problem.Day(to.Start + to.Length - 1),
                 Reason(problem, task, from, to, before, after)));
         }
         return new BalanceProposalDto(problem.Mode, status, before.Metrics, after.Metrics, [.. changes], note ?? problem.Infeasible, problem.Tasks.Length, problem.Excluded ?? []);
@@ -410,6 +460,12 @@ public static class BalanceMath
     private static ReasonDto[] Reason(BalanceProblem problem, BalanceTask task, BalanceOption from, BalanceOption to, Evaluation before, Evaluation after)
     {
         var parts = new List<ReasonDto>();
+        if (task.DailyLimit is { } limit && to.Length != task.StoredLength)
+            parts.Add(new ReasonDto(ReasonCodes.BalanceDailyLimit,
+            [
+                limit.ToString("0.##", CultureInfo.InvariantCulture),
+                problem.Day(to.Start + to.Length - 1).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)
+            ]));
         if (from.Person != to.Person)
         {
             var toName = problem.People[to.Person].Name;

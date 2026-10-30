@@ -18,6 +18,7 @@ public static class ReasonText
         ReasonCodes.BalanceOverloadDrop => Text(reason, reason.Arg(0), Number(reason.Arg(1)), Number(reason.Arg(2))),
         ReasonCodes.BalanceFreeHours => Text(reason, reason.Arg(0), Number(reason.Arg(1))),
         ReasonCodes.BalanceLateDays => Text(reason, Number(reason.Arg(0)), Number(reason.Arg(1))),
+        ReasonCodes.RiskDailyLimit or ReasonCodes.BalanceDailyLimit => Text(reason, Number(reason.Arg(0)), Date(reason.Arg(1))),
         _ => Text(reason)
     };
 

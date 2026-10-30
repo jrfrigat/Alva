@@ -8,7 +8,7 @@ namespace Alva.Contracts;
 /// </summary>
 public record RiskTask(Guid Id, Guid? ParentId, string Title, decimal? EstimateHours, DateOnly? Start, DateOnly? End, DateOnly? Deadline,
     Guid? PersonId, string? PersonName, string? TargetName, string Status = "Planned", decimal? RemainingHours = null,
-    string Priority = "Normal", int? BacklogRank = null);
+    string Priority = "Normal", int? BacklogRank = null, decimal? DailyHoursLimit = null);
 
 public record RiskDependency(Guid PredecessorId, Guid SuccessorId, string Kind = "FS", int LagDays = 0);
 
@@ -38,12 +38,12 @@ public static class RiskMath
         var load = new Dictionary<(Guid, DateOnly), decimal>();
         foreach (var task in tasks.Where(t => t.Status is not ("Done" or "Cancelled")))
             if (task.PersonId is { } person && CapacityMath.Window(task.Start, task.End, task.Deadline) is { } window)
-                foreach (var (day, hours) in CapacityMath.Spread(CalendarOf(person), task.EstimateHours ?? 0m, window.Start, window.End))
+                foreach (var (day, hours) in CapacityMath.Spread(CalendarOf(person), task.EstimateHours ?? 0m, window.Start, window.End, task.DailyHoursLimit))
                     load[(person, day)] = load.GetValueOrDefault((person, day)) + hours;
 
         var links = dependencies.ToArray();
         var forecasts = ForecastMath.Build(tasks.Select(t => new ForecastWork(t.Id, t.ParentId, t.PersonId, t.Status,
-            t.EstimateHours, t.RemainingHours, t.Start, t.End, t.Deadline, t.Priority, t.BacklogRank)).ToArray(),
+            t.EstimateHours, t.RemainingHours, t.Start, t.End, t.Deadline, t.Priority, t.BacklogRank, t.DailyHoursLimit)).ToArray(),
             links.Select(d => new ForecastLink(d.PredecessorId, d.SuccessorId, d.Kind, d.LagDays)), CalendarOf, today);
         var open = tasks.Where(t => t.Status is not ("Done" or "Cancelled")).Select(t => t.Id).ToHashSet();
         var waiting = links.Where(d => open.Contains(d.PredecessorId)).ToLookup(d => d.SuccessorId, d => d.PredecessorId);
@@ -82,6 +82,14 @@ public static class RiskMath
                         break;
                     }
             }
+            // Лимит в день растягивает работу за окончание окна: задача закончится позже, чем стоит в плане.
+            if (task.DailyHoursLimit is { } dailyLimit && window is { } planned && !children[task.Id].Any()
+                && CapacityMath.Finish(calendar, task.EstimateHours ?? 0m, planned.Start, planned.End, dailyLimit) is { } finish && finish > planned.End)
+                reasons.Add(new ReasonDto(ReasonCodes.RiskDailyLimit,
+                [
+                    dailyLimit.ToString("0.##", CultureInfo.InvariantCulture),
+                    finish.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)
+                ]));
             if (waiting[task.Id].Any())
                 reasons.Add(new ReasonDto(ReasonCodes.RiskDependencyOpen,
                     waiting[task.Id].Distinct().Select(id => id.ToString()).ToArray()));

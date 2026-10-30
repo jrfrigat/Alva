@@ -1,7 +1,7 @@
 namespace Alva.Contracts;
 
 public record ForecastWork(Guid Id, Guid? ParentId, Guid? PersonId, string Status, decimal? EstimateHours,
-    decimal? RemainingHours, DateOnly? Start, DateOnly? End, DateOnly? Deadline, string Priority = "Normal", int? Rank = null);
+    decimal? RemainingHours, DateOnly? Start, DateOnly? End, DateOnly? Deadline, string Priority = "Normal", int? Rank = null, decimal? DailyHoursLimit = null);
 public record ForecastLink(Guid PredecessorId, Guid SuccessorId, string Kind = "FS", int LagDays = 0);
 public record ForecastResult(DateOnly? Start, DateOnly? Finish, ReasonDto[] Reasons);
 
@@ -116,7 +116,8 @@ public static class ForecastMath
                 var proposed = new List<(int Day, decimal Hours)>();
                 for (var day = candidate; day < HorizonDays && remaining > 0; day++)
                 {
-                    var take = Math.Min(remaining, Math.Max(0, available[day] - used[personId][day]));
+                    // Лимит в день: задача не забирает у человека больше договорённых часов, даже если день свободен.
+                    var take = Math.Min(Math.Min(remaining, Math.Max(0, available[day] - used[personId][day])), t.DailyHoursLimit ?? decimal.MaxValue);
                     if (take <= 0) continue;
                     proposed.Add((day, take)); remaining -= take;
                 }
