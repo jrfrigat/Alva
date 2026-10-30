@@ -1029,4 +1029,12 @@
   <data name="Б" xml:space="preserve"><value>Б</value></data>
   <data name="КБ" xml:space="preserve"><value>КБ</value></data>
   <data name="МБ" xml:space="preserve"><value>МБ</value></data>
+  <data name="Изменить" xml:space="preserve"><value>Изменить</value></data>
+  <data name="Убрать" xml:space="preserve"><value>Убрать</value></data>
+  <data name="Владелец" xml:space="preserve"><value>Владелец</value></data>
+  <data name="Убрать участника" xml:space="preserve"><value>Убрать участника</value></data>
+  <data name="{0} потеряет доступ к пространству и его командам." xml:space="preserve"><value>{0} потеряет доступ к пространству и его командам.</value></data>
+  <data name="Если включено, доступ к данным команды получают только владелец и участники с разрешениями. Выдайте их в матрице прав." xml:space="preserve"><value>Если включено, доступ к данным команды получают только владелец и участники с разрешениями. Выдайте их в матрице прав.</value></data>
+  <data name="Пространство и команды" xml:space="preserve"><value>Пространство и команды</value></data>
+  <data name="Рабочее пространство · Alva" xml:space="preserve"><value>Рабочее пространство · Alva</value></data>
 </root>

@@ -92,6 +92,22 @@ public static class AuthEndpoints
             await transaction.CommitAsync();
             return Results.NoContent();
         });
+        workspaces.MapDelete("/{workspaceId:guid}/members/{userId:guid}", async (Guid workspaceId, Guid userId, ClaimsPrincipal user, AlvaDbContext db) =>
+        {
+            await using var transaction = await db.Database.BeginTransactionAsync();
+            await DbLocks.LockWorkspace(db, workspaceId);
+            await AccessControl.RequireWorkspace(db, user, workspaceId, true);
+            if (user.UserId() == userId) throw new ApiException(400, "Нельзя удалить себя из пространства.");
+            var membership = await db.WorkspaceMemberships.FindAsync(workspaceId, userId) ?? throw new ApiException(404, "Участник не найден.");
+            if (membership.IsOwner && await db.WorkspaceMemberships.CountAsync(m => m.WorkspaceId == workspaceId && m.IsOwner) <= 1)
+                throw new ApiException(400, "В пространстве должен остаться владелец.");
+            var teamIds = await db.Teams.Where(t => t.WorkspaceId == workspaceId).Select(t => t.Id).ToListAsync();
+            db.RemoveRange(await db.TeamMemberships.Where(m => m.UserId == userId && teamIds.Contains(m.TeamId)).ToListAsync());
+            db.Remove(membership);
+            await db.SaveChangesAsync();
+            await transaction.CommitAsync();
+            return Results.NoContent();
+        });
         var teams = app.MapGroup("/api/teams/{teamId:guid}").RequireAuthorization();
         teams.MapGet("/permissions", async (Guid teamId, ClaimsPrincipal user, AlvaDbContext db) => { await AccessControl.TeamOwner(db, user, teamId); return await db.PermissionGrants.Where(p => p.TeamId == teamId).Select(p => new PermissionDto(p.UserId, p.Area, p.View, p.Edit, p.Manage)).ToListAsync(); });
         teams.MapPut("/permissions", async (Guid teamId, PermissionDto request, ClaimsPrincipal user, AlvaDbContext db) =>

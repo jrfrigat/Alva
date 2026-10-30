@@ -25,8 +25,15 @@
 <FlareCard Variant="CardVariant.Outlined"><FlareCardContent><FlareStack Gap="FlareSpacing.Large"><FlareText Element="h2" Typo="TypographyScale.TitleLarge">@(Strings.T("Профиль"))</FlareText><FlareText>@Session.User.Email</FlareText><FlareTextField Label="@(Strings.T("Ваше имя"))" ErrorText="@_nameError" @bind-Value="_displayName" /><FlareButton OnClick="SaveProfile" Loading="_busy" Disabled="@(string.IsNullOrWhiteSpace(_displayName) || !ProfileDirty)">@(Strings.T("Сохранить профиль"))</FlareButton><FlareButton Variant="ButtonVariant.Text" OnClick="Logout">@(Strings.T("Выйти из Alva"))</FlareButton></FlareStack></FlareCardContent></FlareCard>
 @if(Session.WorkspaceId.HasValue)
 {
-<FlareCard Variant="CardVariant.Outlined"><FlareCardContent><FlareStack Gap="FlareSpacing.Large"><FlareText Element="h2" Typo="TypographyScale.TitleLarge">@(Strings.T("Пространство и доступ"))</FlareText><FlareTextField Label="@(Strings.T("Название пространства"))" @bind-Value="_spaceName" /><FlareCheckbox @bind-Value="_permissions">@(Strings.T("Ограничивать доступ по разрешениям"))</FlareCheckbox><FlareText>@(Strings.T("По умолчанию все участники команды видят её данные. Изменение доступно владельцу пространства."))</FlareText><FlareButton OnClick="SaveSpace" Loading="_busy" Disabled="@(!SpaceDirty)">@(Strings.T("Сохранить пространство"))</FlareButton></FlareStack></FlareCardContent></FlareCard>
-<FlareCard Variant="CardVariant.Outlined"><FlareCardContent><FlareStack Gap="FlareSpacing.Large"><FlareText Element="h2" Typo="TypographyScale.TitleLarge">@(Strings.T("Участники пространства"))</FlareText><FlareText>@(Strings.T("Добавьте зарегистрированного пользователя по почте и выберите команды."))</FlareText><FlareTextField Label="@(Strings.T("Почта участника"))" ErrorText="@_memberEmailError" Type="email" @bind-Value="_memberEmail" />@foreach(var team in Session.Teams){<FlareCheckbox Value="_memberTeams.Contains(team.Id)" ValueChanged="(bool value)=>ToggleMemberTeam(team.Id,value)">@team.Name</FlareCheckbox>}<FlareCheckbox @bind-Value="_owner">@(Strings.T("Владелец пространства"))</FlareCheckbox><FlareButton OnClick="SaveMember" Disabled="@(string.IsNullOrWhiteSpace(_memberEmail) || _busy || !MemberDirty)">@(Strings.T("Сохранить участника"))</FlareButton>@foreach(var member in _members){<FlareText>@member.DisplayName · @member.Email @(member.IsOwner?Strings.T("· владелец"):"")</FlareText>}</FlareStack></FlareCardContent></FlareCard>
+<FlareCard Variant="CardVariant.Outlined"><FlareCardContent><FlareStack Gap="FlareSpacing.Large"><FlareText Element="h2" Typo="TypographyScale.TitleLarge">@(Strings.T("Пространство и доступ"))</FlareText><FlareTextField Label="@(Strings.T("Название пространства"))" @bind-Value="_spaceName" /><FlareCheckbox @bind-Value="_permissions">@(Strings.T("Ограничивать доступ по разрешениям"))</FlareCheckbox><FlareText Typo="TypographyScale.BodySmall">@(Strings.T("Если включено, доступ к данным команды получают только владелец и участники с разрешениями. Выдайте их в матрице прав."))</FlareText><FlareButton OnClick="SaveSpace" Loading="_busy" Disabled="@(!SpaceDirty)">@(Strings.T("Сохранить пространство"))</FlareButton></FlareStack></FlareCardContent></FlareCard>
+<FlareCard Variant="CardVariant.Outlined"><FlareCardContent><FlareStack Gap="FlareSpacing.Large"><FlareText Element="h2" Typo="TypographyScale.TitleLarge">@(Strings.T("Участники пространства"))</FlareText><FlareText>@(Strings.T("Добавьте зарегистрированного пользователя по почте и выберите команды."))</FlareText><FlareTextField Label="@(Strings.T("Почта участника"))" ErrorText="@_memberEmailError" Type="email" @bind-Value="_memberEmail" />@foreach(var team in Session.Teams){<FlareCheckbox Value="_memberTeams.Contains(team.Id)" ValueChanged="(bool value)=>ToggleMemberTeam(team.Id,value)">@team.Name</FlareCheckbox>}<FlareCheckbox @bind-Value="_owner">@(Strings.T("Владелец пространства"))</FlareCheckbox><FlareButton OnClick="SaveMember" Disabled="@(string.IsNullOrWhiteSpace(_memberEmail) || _busy || !MemberDirty)">@(Strings.T("Сохранить участника"))</FlareButton>@foreach(var member in _members)
+{
+    <FlareStack Row StretchFirst Align="FlareAlignItems.Center" Gap="FlareSpacing.Small">
+        <span><FlareText>@member.DisplayName · @member.Email</FlareText>@if(member.IsOwner){<AlvaStatusChip Tone="AlvaTone.Info">@(Strings.T("Владелец"))</AlvaStatusChip>}</span>
+        <FlareButton Variant="ButtonVariant.Text" Size="ButtonSize.Sm" OnClick="() => EditMember(member)">@(Strings.T("Изменить"))</FlareButton>
+        <FlareButton Variant="ButtonVariant.Text" Size="ButtonSize.Sm" Color="FlareColor.Error" Disabled="@(Session.User?.Id == member.UserId)" OnClick="() => RemoveMember(member)">@(Strings.T("Убрать"))</FlareButton>
+    </FlareStack>
+}</FlareStack></FlareCardContent></FlareCard>
 }
 }
 </FlareGrid>
@@ -74,5 +81,13 @@
         else if (!System.Net.Mail.MailAddress.TryCreate(_memberEmail, out _)) { _memberEmailError=Strings.T("Некорректный адрес почты."); _formErrors.Add(_memberEmailError); }
         if (_formErrors.Count > 0) { StateHasChanged(); await SafeFocus.Async(_errorSummary); return; }
         await Run(async()=>{await Session.Send(HttpMethod.Post,$"api/workspaces/{Session.WorkspaceId}/members",new MembershipRequest(_memberEmail!,_memberTeams,_owner));_members=await Session.Get<MemberDto[]>($"api/workspaces/{Session.WorkspaceId}/members");Snapshot();_saved=true;});
+    }
+    private void EditMember(MemberDto member){_memberEmail=member.Email;_memberTeams=[..member.TeamIds];_owner=member.IsOwner;_saved=false;}
+    private async Task RemoveMember(MemberDto member)
+    {
+        if (!await DestructivePrompt.ConfirmAsync(Confirm, Strings.T("Убрать участника"),
+            string.Format(Strings.T("{0} потеряет доступ к пространству и его командам."), member.DisplayName),
+            Strings.T("Убрать"))) return;
+        await Run(async()=>{await Session.Send(HttpMethod.Delete,$"api/workspaces/{Session.WorkspaceId}/members/{member.UserId}",new{});_members=await Session.Get<MemberDto[]>($"api/workspaces/{Session.WorkspaceId}/members");_saved=true;});
     }
 }

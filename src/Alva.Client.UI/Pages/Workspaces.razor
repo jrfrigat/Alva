@@ -1,8 +1,8 @@
 @page "/workspaces"
 @inject AlvaSession Session
 @inject NavigationManager Navigation
-<PageTitle>@(Strings.T("Команды · Alva"))</PageTitle>
-<FlareText Element="h1" Typo="TypographyScale.HeadlineLarge">@(Strings.T("Рабочее пространство"))</FlareText>
+<PageTitle>@(Strings.T("Рабочее пространство · Alva"))</PageTitle>
+<FlareText Element="h1" Typo="TypographyScale.HeadlineLarge">@(Strings.T("Пространство и команды"))</FlareText>
 <PageFeedback Loading="_busy" Error="@_error" OnRetry="Reload" />
 <EditorStatus Saved="_saved" Saving="_busy" />
 @if (Session.User is null) { <TeamRequired /> }
