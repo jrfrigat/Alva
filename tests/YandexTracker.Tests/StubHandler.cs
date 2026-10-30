@@ -1,7 +1,7 @@
 using System.Net;
 using System.Text;
 
-namespace YandexTracker.Client.Tests;
+namespace YandexTracker.Tests;
 
 /// <summary>Заглушка HTTP: отвечает по очереди заготовленными ответами и запоминает запросы вместе с телами.</summary>
 internal sealed class StubHandler : HttpMessageHandler

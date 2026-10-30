@@ -1,4 +1,4 @@
-# YandexTracker.Client
+# YandexTracker
 
 Клиент [API Яндекс Трекера](https://yandex.ru/support/tracker/ru/api/about-api) для .NET. Устроен по образцу Python SDK
 [yandex_tracker_client](https://github.com/yandex/yandex_tracker_client): корневой `TrackerClient` и ресурсы

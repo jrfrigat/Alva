@@ -1,4 +1,4 @@
-namespace YandexTracker.Client;
+namespace YandexTracker;
 
 /// <summary>Задачи: чтение, поиск, создание, правка, связи, переходы и комментарии.</summary>
 public sealed class IssuesClient

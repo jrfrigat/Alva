@@ -1,7 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace YandexTracker.Client;
+namespace YandexTracker;
 
 /// <summary>
 /// Ссылка на объект Трекера в ответах: статус, очередь, тип, пользователь, родительская задача. У разных объектов заполнены

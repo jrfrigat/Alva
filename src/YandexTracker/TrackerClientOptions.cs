@@ -1,4 +1,4 @@
-namespace YandexTracker.Client;
+namespace YandexTracker;
 
 /// <summary>Вид токена: OAuth-токен Яндекса или IAM-токен Yandex Cloud.</summary>
 public enum TrackerTokenType

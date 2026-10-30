@@ -2,7 +2,7 @@ using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace YandexTracker.Client;
+namespace YandexTracker;
 
 /// <summary>
 /// Трекер пишет время как <c>2017-06-11T05:16:01.339+0000</c> — смещение без двоеточия, которое System.Text.Json не

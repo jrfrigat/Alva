@@ -1,6 +1,6 @@
 using System.Net;
 
-namespace YandexTracker.Client;
+namespace YandexTracker;
 
 /// <summary>
 /// Трекер отказал в запросе. Сообщение — его собственные <c>errorMessages</c>, а <see cref="Errors"/> — ошибки по полям.

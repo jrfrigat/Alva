@@ -7,6 +7,6 @@
   <ItemGroup>
     <InternalsVisibleTo Include="Alva.Data.Tests" />
     <ProjectReference Include="../Alva.Integrations.Abstractions/Alva.Integrations.Abstractions.csproj" />
-    <ProjectReference Include="../YandexTracker.Client/YandexTracker.Client.csproj" />
+    <ProjectReference Include="../YandexTracker/YandexTracker.csproj" />
   </ItemGroup>
 </Project>

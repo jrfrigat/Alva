@@ -2,7 +2,7 @@ using System.Net;
 using System.Text.Json;
 using Xunit;
 
-namespace YandexTracker.Client.Tests;
+namespace YandexTracker.Tests;
 
 /// <summary>Клиент Трекера: заголовки, разбор задач, поиск страницами, ошибки и повторы.</summary>
 public sealed class TrackerClientTests

@@ -1,13 +1,13 @@
 using System.Net;
 using System.Runtime.CompilerServices;
 using Microsoft.Extensions.DependencyInjection;
-using YandexTracker.Client;
+using YandexTracker;
 
 namespace Alva.Integrations.YandexTracker;
 
 /// <summary>
 /// Модуль Яндекс Трекера: задачи очередей (или собственного запроса) со статусом, приоритетом, оценками, датами, родителем,
-/// исполнителем и связями «зависит от». Клиент API — отдельная библиотека YandexTracker.Client, модуль только переводит её
+/// исполнителем и связями «зависит от». Клиент API — отдельная библиотека YandexTracker, модуль только переводит её
 /// модели в слова Alva.
 /// </summary>
 public sealed class YandexTrackerModule : ITaskSourceModule

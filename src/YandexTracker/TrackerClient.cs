@@ -6,7 +6,7 @@ using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace YandexTracker.Client;
+namespace YandexTracker;
 
 /// <summary>
 /// Клиент API Яндекс Трекера (v2). Корневой объект, как <c>TrackerClient</c> в Python SDK: ресурсы — <see cref="Issues"/>,

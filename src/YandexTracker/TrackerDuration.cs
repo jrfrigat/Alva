@@ -1,7 +1,7 @@
 using System.Globalization;
 using System.Text.RegularExpressions;
 
-namespace YandexTracker.Client;
+namespace YandexTracker;
 
 /// <summary>
 /// Длительности Трекера (оценка, остаток, затраченное время) — строки ISO 8601 вроде <c>P1W2DT3H30M</c>. Трекер считает их

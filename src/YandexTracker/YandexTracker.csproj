@@ -5,7 +5,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IsPackable>true</IsPackable>
-    <PackageId>YandexTracker.Client</PackageId>
+    <PackageId>YandexTracker</PackageId>
     <Version>0.1.0</Version>
     <Description>Клиент API Яндекс Трекера для .NET: задачи, поиск, связи, переходы, комментарии, очереди, пользователи и статусы.</Description>
     <PackageTags>yandex;tracker;api;client</PackageTags>
@@ -15,6 +15,6 @@
   </PropertyGroup>
   <ItemGroup>
     <None Include="README.md" Pack="true" PackagePath="/" />
-    <InternalsVisibleTo Include="YandexTracker.Client.Tests" />
+    <InternalsVisibleTo Include="YandexTracker.Tests" />
   </ItemGroup>
 </Project>
