@@ -79,7 +79,7 @@ public sealed class DraftEditorsTests : UiTestBase
     }
 
     [Fact]
-    public void Switching_the_language_asks_when_a_draft_is_open()
+    public void Switching_the_language_with_a_draft_asks_in_the_app_dialog_and_cancel_keeps_it()
     {
         Services.GetRequiredService<DraftGuard>().Track(() => true);
         var cultures = Services.GetRequiredService<CultureService>();
@@ -87,8 +87,26 @@ public sealed class DraftEditorsTests : UiTestBase
         var cut = Render<MainLayout>();
 
         Button(cut, "Язык").Click();
+        cut.WaitForAssertion(() => Assert.Contains("при смене языка", cut.Find("[role='alertdialog']").TextContent));
+        Button(cut, "Отмена").Click();
 
         Assert.Equal(before, cultures.Current);
+        Assert.DoesNotContain(JSInterop.Invocations, i => i.Identifier == "confirm");
+    }
+
+    [Fact]
+    public void Confirming_the_dialog_switches_the_language()
+    {
+        Services.GetRequiredService<DraftGuard>().Track(() => true);
+        var cultures = Services.GetRequiredService<CultureService>();
+        var before = cultures.Current;
+        var cut = Render<MainLayout>();
+
+        Button(cut, "Язык").Click();
+        cut.WaitForAssertion(() => Assert.NotNull(cut.Find("[role='alertdialog']")));
+        Button(cut, "Сменить язык").Click();
+
+        cut.WaitForAssertion(() => Assert.NotEqual(before, cultures.Current));
     }
 
     private IRenderedComponent<FlareConfirmDialogProvider> Provider<T>() where T : Microsoft.AspNetCore.Components.IComponent =>

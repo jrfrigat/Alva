@@ -5,10 +5,9 @@
 @inject IBrowserViewportService Viewport
 @inject CultureService Cultures
 @inject DraftGuard Drafts
-@inject IJSRuntime JS
 <a class="skip-link" href="#main-content">@(Strings.T("К содержимому"))</a>
 @* Подтверждения (уход с несохранёнными правками и др.) — штатный диалог Flare, один на приложение. *@
-<FlareConfirmDialogProvider>
+<FlareConfirmDialogProvider @ref="_confirm">
 <FlareLayout>
     <FlareLayoutAppBar DrawerToggle="true">
         @* Шапка макета: знак и название, переключатель команды, справа пользователь. *@
@@ -119,10 +118,13 @@
         if (firstRender) _viewportSubscription = await Viewport.SubscribeBreakpointAsync((Breakpoint bp) => InvokeAsync(() => { _mobile = bp.IsAtMost(Breakpoint.Sm); _open = !_mobile; StateHasChanged(); }));
     }
     private void Refresh() => InvokeAsync(StateHasChanged);
+    private FlareConfirmDialogProvider? _confirm;
     // Switching the language reloads the shell: the whole tree must render in the new language.
+    // Тот же диалог Flare, что и при уходе со страницы с черновиком, а не системное окно браузера.
     private async Task ToggleCulture()
     {
-        if (Drafts.HasDirty && !await JS.InvokeAsync<bool>("confirm", Strings.T("Несохранённые правки будут потеряны при смене языка. Продолжить?")))
+        if (Drafts.HasDirty && !await DestructivePrompt.ConfirmAsync(_confirm, Strings.T("Несохранённые изменения"),
+                Strings.T("Несохранённые правки будут потеряны при смене языка. Продолжить?"), Strings.T("Сменить язык")))
             return;
         await Cultures.SetAsync(Cultures.Current == "ru" ? "en" : "ru");
         Navigation.NavigateTo(Navigation.Uri, forceLoad: true);

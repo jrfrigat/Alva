@@ -961,6 +961,7 @@
   <data name="Язык" xml:space="preserve"><value>Язык</value></data>
   <data name="Есть несохранённые правки. Уйти и потерять их?" xml:space="preserve"><value>Есть несохранённые правки. Уйти и потерять их?</value></data>
   <data name="Несохранённые правки будут потеряны при смене языка. Продолжить?" xml:space="preserve"><value>Несохранённые правки будут потеряны при смене языка. Продолжить?</value></data>
+  <data name="Сменить язык" xml:space="preserve"><value>Сменить язык</value></data>
   <data name="Архивировать проект" xml:space="preserve"><value>Архивировать проект</value></data>
   <data name="Архивировать участника" xml:space="preserve"><value>Архивировать участника</value></data>
   <data name="Удалить" xml:space="preserve"><value>Удалить</value></data>

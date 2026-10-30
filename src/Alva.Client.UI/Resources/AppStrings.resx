@@ -961,6 +961,7 @@
   <data name="Язык" xml:space="preserve"><value>Language</value></data>
   <data name="Есть несохранённые правки. Уйти и потерять их?" xml:space="preserve"><value>There are unsaved changes. Leave and lose them?</value></data>
   <data name="Несохранённые правки будут потеряны при смене языка. Продолжить?" xml:space="preserve"><value>Unsaved changes will be lost when switching the language. Continue?</value></data>
+  <data name="Сменить язык" xml:space="preserve"><value>Switch language</value></data>
   <data name="Архивировать проект" xml:space="preserve"><value>Archive project</value></data>
   <data name="Архивировать участника" xml:space="preserve"><value>Archive member</value></data>
   <data name="Удалить" xml:space="preserve"><value>Delete</value></data>
