@@ -1078,4 +1078,42 @@
   <data name="reason.risk.daily-limit" xml:space="preserve"><value>At {0} h a day the task finishes no earlier than {1} — later than planned</value></data>
   <data name="reason.balance.daily-limit" xml:space="preserve"><value>At {0} h a day the work takes until {1}: the dates are stretched</value></data>
   <data name="Интеграции работают в версии Alva с сервером: он хранит токены и сам обращается к трекеру." xml:space="preserve"><value>Integrations work in Alva with a server: it keeps the tokens and talks to the tracker itself.</value></data>
+  <data name="Интеграции · Alva" xml:space="preserve"><value>Integrations · Alva</value></data>
+  <data name="Интеграции" xml:space="preserve"><value>Integrations</value></data>
+  <data name="Задачи из внешних трекеров приходят в Alva и обновляются при синхронизации. Даты, назначения и связи вы по-прежнему планируете здесь." xml:space="preserve"><value>Tasks from external trackers come into Alva and are updated on each sync. You still plan dates, assignments and links here.</value></data>
+  <data name="Интеграции недоступны в демо" xml:space="preserve"><value>Integrations are not available in the demo</value></data>
+  <data name="Добавить подключение" xml:space="preserve"><value>Add a connection</value></data>
+  <data name="Новое подключение" xml:space="preserve"><value>New connection</value></data>
+  <data name="Подключение" xml:space="preserve"><value>Connection</value></data>
+  <data name="Источник" xml:space="preserve"><value>Source</value></data>
+  <data name="Сохранён. Оставьте поле пустым, чтобы не менять." xml:space="preserve"><value>Saved. Leave the field empty to keep it.</value></data>
+  <data name="Подключение включено" xml:space="preserve"><value>Connection enabled</value></data>
+  <data name="Автосинхронизация, минут" xml:space="preserve"><value>Auto-sync, minutes</value></data>
+  <data name="Пусто — только вручную. От 5 до 1440 минут." xml:space="preserve"><value>Empty means manual only. From 5 to 1440 minutes.</value></data>
+  <data name="На сервере не установлено ни одного модуля интеграции." xml:space="preserve"><value>No integration modules are installed on the server.</value></data>
+  <data name="Подключений пока нет. Добавьте первое, чтобы получать задачи из трекера." xml:space="preserve"><value>No connections yet. Add one to receive tasks from your tracker.</value></data>
+  <data name="выключено" xml:space="preserve"><value>disabled</value></data>
+  <data name="Задач из источника: {0}." xml:space="preserve"><value>Tasks from this source: {0}.</value></data>
+  <data name="Автосинхронизация каждые {0} мин." xml:space="preserve"><value>Auto-sync every {0} min.</value></data>
+  <data name="Синхронизация вручную." xml:space="preserve"><value>Manual sync.</value></data>
+  <data name="Последняя синхронизация {0}: успешно." xml:space="preserve"><value>Last sync {0}: succeeded.</value></data>
+  <data name="Последняя синхронизация {0}: ошибка." xml:space="preserve"><value>Last sync {0}: failed.</value></data>
+  <data name="Синхронизировать" xml:space="preserve"><value>Sync now</value></data>
+  <data name="Полная синхронизация" xml:space="preserve"><value>Full sync</value></data>
+  <data name="Проверить подключение" xml:space="preserve"><value>Test connection</value></data>
+  <data name="Журнал" xml:space="preserve"><value>Log</value></data>
+  <data name="Журнал синхронизаций" xml:space="preserve"><value>Sync log</value></data>
+  <data name="Синхронизаций ещё не было." xml:space="preserve"><value>No syncs yet.</value></data>
+  <data name="ошибка" xml:space="preserve"><value>failed</value></data>
+  <data name="Укажите название подключения." xml:space="preserve"><value>Enter a connection name.</value></data>
+  <data name="Заполните поле «{0}»." xml:space="preserve"><value>Fill in “{0}”.</value></data>
+  <data name="Автосинхронизация — от 5 до 1440 минут или пусто." xml:space="preserve"><value>Auto-sync must be 5 to 1440 minutes, or empty.</value></data>
+  <data name="Синхронизация завершена" xml:space="preserve"><value>Sync finished</value></data>
+  <data name="Синхронизация не удалась" xml:space="preserve"><value>Sync failed</value></data>
+  <data name="Подключение работает" xml:space="preserve"><value>Connection works</value></data>
+  <data name="Подключение не работает" xml:space="preserve"><value>Connection does not work</value></data>
+  <data name="Удалить подключение" xml:space="preserve"><value>Delete connection</value></data>
+  <data name="Подключение «{0}» будет удалено. Задачи, пришедшие из него, останутся в Alva, но больше не будут обновляться." xml:space="preserve"><value>The connection “{0}” will be deleted. Tasks that came from it stay in Alva but will no longer be updated.</value></data>
+  <data name="создано {0}, обновлено {1}, без изменений {2}, пропущено {3}." xml:space="preserve"><value>created {0}, updated {1}, unchanged {2}, skipped {3}.</value></data>
+  <data name="Открыть во внешнем трекере" xml:space="preserve"><value>Open in the external tracker</value></data>
 </root>

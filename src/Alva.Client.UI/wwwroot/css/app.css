@@ -60,6 +60,8 @@ html,body{margin:0;min-height:100%;font-family:var(--alva-font);background:var(-
 .alva-task__bar--critical{background:var(--alva-critical)}.alva-task__bar--warning{background:var(--alva-warning)}.alva-task__bar--ok{background:var(--alva-ok)}
 .alva-task__title{margin:0;font-size:1.375rem;line-height:1.75rem;font-weight:700;letter-spacing:-.015em;color:var(--flare-color-on-surface,var(--alva-on-surface))}
 .alva-task__code{color:var(--flare-color-primary,var(--alva-primary));font-variant-numeric:tabular-nums}
+.alva-task__external{font-size:.875rem;font-variant-numeric:tabular-nums;color:var(--flare-color-primary,var(--alva-primary));white-space:nowrap}
+.alva-integration__runs{display:flex;flex-direction:column;gap:.25rem;padding-top:.5rem;border-top:1px solid var(--alva-border)}
 .alva-task__assignee{display:flex;flex-direction:column;gap:.375rem}
 .alva-panel{display:flex;flex-direction:column;gap:.75rem;padding:1rem;border:1px solid var(--alva-border);border-radius:6px;background:var(--flare-color-surface-container-lowest,#fff)}
 .alva-panel__header{display:flex;align-items:flex-start;gap:.5rem}

@@ -55,6 +55,7 @@ public static class NavigationItems
     public static readonly NavigationEntry[] Tail =
     [
         new("data", Strings.T("Данные"), Flare.Icons.MaterialDesign3Icons.Regular.SwapVert, false),
+        new("integrations", Strings.T("Интеграции"), Flare.Icons.MaterialDesign3Icons.Regular.Sync, false),
         new("settings", Strings.T("Настройки"), Flare.Icons.MaterialDesign3Icons.Regular.Settings, false)
     ];
 

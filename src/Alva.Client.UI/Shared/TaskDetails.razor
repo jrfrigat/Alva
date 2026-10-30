@@ -25,6 +25,15 @@
         <span class="alva-task__bar alva-task__bar--@RiskTone.ToString().ToLowerInvariant()" aria-hidden="true"></span>
         <ReadyHeading Class="alva-task__title"><span class="alva-task__code">@Code(Item)</span> @Item.Title</ReadyHeading>
         <AlvaStatusChip Tone="AlvaTones.Status(Item.Status)">@Labels.Status(Item.Status)</AlvaStatusChip>
+        @* Задача пришла из внешнего трекера: ключ ведёт туда, где её ведут, а синхронизация обновит её здесь. *@
+        @if (Item.ExternalKey is { } externalKey)
+        {
+            @if (Item.ExternalUrl is { Length: > 0 } externalUrl)
+            {
+                <a class="alva-task__external" href="@externalUrl" target="_blank" rel="noopener noreferrer" title="@(Strings.T("Открыть во внешнем трекере"))">@externalKey ↗</a>
+            }
+            else { <span class="alva-task__external">@externalKey</span> }
+        }
     </div>
     <PageFeedback Error="@_error" />
 

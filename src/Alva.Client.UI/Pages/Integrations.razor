@@ -1,0 +1,305 @@
+@page "/integrations"
+@inject AlvaSession Session
+<PageTitle>@(Strings.T("Интеграции · Alva"))</PageTitle>
+<FlareText Element="h1" Typo="TypographyScale.HeadlineLarge">@(Strings.T("Интеграции"))</FlareText>
+<FlareText>@(Strings.T("Задачи из внешних трекеров приходят в Alva и обновляются при синхронизации. Даты, назначения и связи вы по-прежнему планируете здесь."))</FlareText>
+<PageFeedback Loading="_busy" Error="@_error" OnRetry="Load" />
+@if (_formErrors.Count > 0) { <div class="alva-form-errors" role="alert" tabindex="-1" @ref="_errorSummary"><b>@(Strings.T("Проверьте выделенные поля."))</b>@foreach (var error in _formErrors) { <div>@error</div> }</div> }
+@if (Session.TeamId is null) { <TeamRequired /> }
+else
+{
+    @* Демо без сервера не может хранить токены и ходить в трекер — говорим об этом до любых действий. *@
+    @if (!Session.SupportsDataTransfer)
+    {
+        <FlareAlert Severity="AlertSeverity.Info" Title="@(Strings.T("Интеграции недоступны в демо"))">@(Strings.T("Интеграции работают в версии Alva с сервером: он хранит токены и сам обращается к трекеру."))</FlareAlert>
+    }
+    else
+    {
+        <FlareStack Row Wrap>
+            <FlareButton OnClick="New" Disabled="@(_modules.Length == 0 || _draft is not null)">@(Strings.T("Добавить подключение"))</FlareButton>
+        </FlareStack>
+        @if (_draft is { } draft)
+        {
+            <FlareCard Variant="CardVariant.Outlined" Class="alva-integration-form">
+                <FlareCardContent>
+                    <FlareStack Gap="FlareSpacing.Large">
+                        <FlareText Element="h2" Typo="TypographyScale.TitleLarge">@(draft.Id is null ? Strings.T("Новое подключение") : Strings.T("Подключение"))</FlareText>
+                        <FlareSelect TValue="string" Label="@(Strings.T("Источник"))" Items="_modules.Select(m => m.Id)" ItemLabel="ModuleName" Value="draft.Module" ValueChanged="SelectModule" Disabled="@(draft.Id is not null)" />
+                        @if (Module(draft.Module) is { } module)
+                        {
+                            <FlareText Typo="TypographyScale.BodySmall">@module.Description</FlareText>
+                            <FlareTextField Label="@(Strings.T("Название"))" @bind-Value="draft.Name" ErrorText="@ErrorOf("name")" Required />
+                            @foreach (var setting in module.Settings)
+                            {
+                                var key = setting.Key;
+                                var label = setting.Label + (setting.Required && setting.Default is null && !(setting.Kind == "Secret" && draft.SecretsSet.Contains(key)) ? " *" : "");
+                                @switch (setting.Kind)
+                                {
+                                    case "Secret":
+                                        <FlareTextField Label="@label" Type="password" Autocomplete="off" Value="@draft.Value(key)" ValueChanged="v => draft.Values[key] = v ?? string.Empty" ErrorText="@ErrorOf(key)"
+                                                        HelperText="@(draft.SecretsSet.Contains(key) ? Strings.T("Сохранён. Оставьте поле пустым, чтобы не менять.") : setting.Description)" />
+                                        break;
+                                    case "Flag":
+                                        <FlareSwitch Label="@label" Value="@(draft.Flag(key, setting.Default))" ValueChanged="v => draft.SetFlag(key, v)" />
+                                        @if (setting.Description is { } flagHint) { <FlareText Typo="TypographyScale.BodySmall">@flagHint</FlareText> }
+                                        break;
+                                    case "Choice":
+                                        <FlareSelect TValue="string" Label="@label" Items="(setting.Choices ?? []).Select(c => c.Value)" ItemLabel="v => setting.Choices?.FirstOrDefault(c => c.Value == v)?.Label ?? v"
+                                                     Value="@(draft.Value(key) is { Length: > 0 } chosen ? chosen : setting.Default)" ValueChanged="v => draft.Values[key] = v ?? string.Empty" HelperText="@setting.Description" ErrorText="@ErrorOf(key)" />
+                                        break;
+                                    default:
+                                        <FlareTextField Label="@label" Type="@(setting.Kind == "Url" ? "url" : "text")" Value="@draft.Value(key)" ValueChanged="v => draft.Values[key] = v ?? string.Empty"
+                                                        Placeholder="@setting.Default" HelperText="@setting.Description" ErrorText="@ErrorOf(key)" />
+                                        break;
+                                }
+                            }
+                            <FlareSwitch Label="@(Strings.T("Подключение включено"))" @bind-Value="draft.Enabled" />
+                            <FlareNumericField TValue="int?" Label="@(Strings.T("Автосинхронизация, минут"))" @bind-Value="draft.AutoSyncMinutes" Min="5" Max="1440"
+                                               ErrorText="@ErrorOf("autoSync")" HelperText="@(Strings.T("Пусто — только вручную. От 5 до 1440 минут."))" />
+                        }
+                        <FlareStack Row Wrap>
+                            <FlareButton OnClick="Save" Loading="_saving">@(Strings.T("Сохранить"))</FlareButton>
+                            <FlareButton OnClick="Cancel" Variant="ButtonVariant.Text">@(Strings.T("Отмена"))</FlareButton>
+                        </FlareStack>
+                    </FlareStack>
+                </FlareCardContent>
+            </FlareCard>
+        }
+        @if (!_busy && _error is null && _connections.Length == 0 && _draft is null)
+        {
+            <FlareText>@(_modules.Length == 0 ? Strings.T("На сервере не установлено ни одного модуля интеграции.") : Strings.T("Подключений пока нет. Добавьте первое, чтобы получать задачи из трекера."))</FlareText>
+        }
+        <FlareStack Gap="FlareSpacing.Large">
+            @foreach (var connection in _connections)
+            {
+                var id = connection.Id;
+                <FlareCard Variant="CardVariant.Outlined" Class="alva-integration">
+                    <FlareCardContent>
+                        <FlareStack Gap="FlareSpacing.Medium">
+                            <FlareStack Row Wrap>
+                                <FlareText Element="h2" Typo="TypographyScale.TitleLarge">@connection.Name</FlareText>
+                                <FlareText Typo="TypographyScale.LabelMedium">@connection.ModuleName</FlareText>
+                                @if (!connection.Enabled) { <FlareText Typo="TypographyScale.LabelMedium">@(Strings.T("выключено"))</FlareText> }
+                            </FlareStack>
+                            <FlareText Typo="TypographyScale.BodySmall">
+                                @string.Format(Strings.T("Задач из источника: {0}."), connection.LinkedTasks)
+                                @(connection.AutoSyncMinutes is { } minutes ? " " + string.Format(Strings.T("Автосинхронизация каждые {0} мин."), minutes) : " " + Strings.T("Синхронизация вручную."))
+                            </FlareText>
+                            @if (connection.LastRunAt is { } at)
+                            {
+                                <FlareText Typo="TypographyScale.BodySmall" Class="@(connection.LastOk == false ? "alva-field-error" : null)">
+                                    @string.Format(connection.LastOk == true ? Strings.T("Последняя синхронизация {0}: успешно.") : Strings.T("Последняя синхронизация {0}: ошибка."), at.ToLocalTime().ToString("g"))
+                                    @connection.LastMessage
+                                </FlareText>
+                            }
+                            @if (_outcome.GetValueOrDefault(id) is { } outcome)
+                            {
+                                <FlareAlert Severity="@(outcome.Ok ? AlertSeverity.Success : AlertSeverity.Error)" Title="@outcome.Title">@outcome.Text</FlareAlert>
+                            }
+                            <FlareStack Row Wrap>
+                                <FlareButton OnClick="() => Sync(connection, false)" Loading="@(_running == id)" Disabled="@(_running is not null)" Size="ButtonSize.Sm">@(Strings.T("Синхронизировать"))</FlareButton>
+                                <FlareButton OnClick="() => Sync(connection, true)" Disabled="@(_running is not null)" Variant="ButtonVariant.Tonal" Size="ButtonSize.Sm">@(Strings.T("Полная синхронизация"))</FlareButton>
+                                <FlareButton OnClick="() => Check(connection)" Disabled="@(_running is not null)" Variant="ButtonVariant.Tonal" Size="ButtonSize.Sm">@(Strings.T("Проверить подключение"))</FlareButton>
+                                <FlareButton OnClick="() => Edit(connection)" Disabled="@(_draft is not null)" Variant="ButtonVariant.Text" Size="ButtonSize.Sm">@(Strings.T("Изменить"))</FlareButton>
+                                <FlareButton OnClick="() => ToggleRuns(connection)" Variant="ButtonVariant.Text" Size="ButtonSize.Sm" aria-expanded="@(_runs.ContainsKey(id) ? "true" : "false")">@(Strings.T("Журнал"))</FlareButton>
+                                <FlareButton OnClick="() => Delete(connection)" Disabled="@(_running is not null)" Variant="ButtonVariant.Text" Size="ButtonSize.Sm" Color="FlareColor.Error">@(Strings.T("Удалить"))</FlareButton>
+                            </FlareStack>
+                            @if (_runs.GetValueOrDefault(id) is { } runs)
+                            {
+                                <div class="alva-integration__runs" role="list" aria-label="@(Strings.T("Журнал синхронизаций"))">
+                                    @if (runs.Length == 0) { <FlareText Typo="TypographyScale.BodySmall">@(Strings.T("Синхронизаций ещё не было."))</FlareText> }
+                                    @foreach (var run in runs)
+                                    {
+                                        <div role="listitem" class="alva-integration__run">
+                                            <FlareText Typo="TypographyScale.BodySmall">
+                                                <span class="alva-num">@run.StartedAt.ToLocalTime().ToString("g")</span> · @(run.Ok ? Summary(run) : Strings.T("ошибка")) @(string.IsNullOrEmpty(run.Message) ? "" : "· " + run.Message)
+                                            </FlareText>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        </FlareStack>
+                    </FlareCardContent>
+                </FlareCard>
+            }
+        </FlareStack>
+    }
+}
+@code {
+    /// <summary>Черновик формы подключения. Секреты не приходят с сервера: пустое поле секрета означает «не менять».</summary>
+    private sealed class Draft
+    {
+        public Guid? Id { get; init; }
+        public string Module { get; set; } = "";
+        public string Name { get; set; } = "";
+        public Dictionary<string, string> Values { get; set; } = [];
+        public string[] SecretsSet { get; init; } = [];
+        public bool Enabled { get; set; } = true;
+        public int? AutoSyncMinutes { get; set; }
+        public string Value(string key) => Values.GetValueOrDefault(key) ?? "";
+        public bool Flag(string key, string? fallback) => bool.TryParse(Values.GetValueOrDefault(key) ?? fallback, out var on) && on;
+        public void SetFlag(string key, bool on) => Values[key] = on ? bool.TrueString.ToLowerInvariant() : bool.FalseString.ToLowerInvariant();
+    }
+
+    private sealed record Outcome(bool Ok, string Title, string Text);
+
+    private IntegrationModuleDto[] _modules = [];
+    private IntegrationConnectionDto[] _connections = [];
+    private readonly Dictionary<Guid, IntegrationRunDto[]> _runs = [];
+    private readonly Dictionary<Guid, Outcome> _outcome = [];
+    private readonly Dictionary<string, string> _fieldErrors = [];
+    private readonly List<string> _formErrors = [];
+    private ElementReference _errorSummary;
+    private Draft? _draft;
+    private bool _busy, _saving;
+    private Guid? _running;
+    private string? _error;
+    [CascadingParameter] public FlareConfirmDialogProvider? Confirm { get; set; }
+
+    protected override Task OnInitializedAsync() => Load();
+
+    private async Task Load()
+    {
+        _busy = true; _error = null;
+        try
+        {
+            await Session.Initialize();
+            if (Session.TeamId is null) return;
+            _modules = await Session.Get<IntegrationModuleDto[]>(Session.TeamPath("integrations/modules"));
+            _connections = await Session.Get<IntegrationConnectionDto[]>(Session.TeamPath("integrations"));
+        }
+        catch (Exception e) when (e is HttpRequestException or InvalidOperationException or NotSupportedException) { _error = PageFeedback.Describe(e); }
+        finally { _busy = false; }
+    }
+
+    private IntegrationModuleDto? Module(string id) => _modules.FirstOrDefault(m => m.Id == id);
+    private string ModuleName(string id) => Module(id)?.Name ?? id;
+    private string? ErrorOf(string key) => _fieldErrors.GetValueOrDefault(key);
+
+    private void New()
+    {
+        var module = _modules.FirstOrDefault();
+        _draft = new Draft { Module = module?.Id ?? "", Name = module?.Name ?? "" };
+        ClearErrors();
+    }
+
+    private void SelectModule(string id)
+    {
+        if (_draft is null) return;
+        if (_draft.Name == ModuleName(_draft.Module)) _draft.Name = ModuleName(id);
+        _draft.Module = id;
+        _draft.Values = [];
+    }
+
+    private void Edit(IntegrationConnectionDto connection)
+    {
+        _draft = new Draft
+        {
+            Id = connection.Id, Module = connection.Module, Name = connection.Name, Values = new(connection.Settings),
+            SecretsSet = connection.SecretsSet, Enabled = connection.Enabled, AutoSyncMinutes = connection.AutoSyncMinutes
+        };
+        ClearErrors();
+    }
+
+    private void Cancel() { _draft = null; ClearErrors(); }
+
+    private void ClearErrors() { _fieldErrors.Clear(); _formErrors.Clear(); }
+
+    /// <summary>Те же правила, что проверит сервер: обязательные поля (сохранённый секрет считается заполненным) и интервал.</summary>
+    private bool Validate(Draft draft, IntegrationModuleDto module)
+    {
+        ClearErrors();
+        void Error(string key, string text) { _fieldErrors[key] = text; _formErrors.Add(text); }
+        if (string.IsNullOrWhiteSpace(draft.Name)) Error("name", Strings.T("Укажите название подключения."));
+        foreach (var setting in module.Settings.Where(s => s.Required && s.Default is null))
+        {
+            var filled = !string.IsNullOrWhiteSpace(draft.Value(setting.Key)) || setting.Kind == "Secret" && draft.SecretsSet.Contains(setting.Key);
+            if (!filled) Error(setting.Key, string.Format(Strings.T("Заполните поле «{0}»."), setting.Label));
+        }
+        if (draft.AutoSyncMinutes is < 5 or > 1440) Error("autoSync", Strings.T("Автосинхронизация — от 5 до 1440 минут или пусто."));
+        return _formErrors.Count == 0;
+    }
+
+    private async Task Save()
+    {
+        if (_draft is not { } draft || Module(draft.Module) is not { } module) return;
+        if (!Validate(draft, module)) { StateHasChanged(); await SafeFocus.Async(_errorSummary); return; }
+        var secretKeys = module.Settings.Where(s => s.Kind == "Secret").Select(s => s.Key).ToHashSet();
+        var request = new IntegrationConnectionRequest(draft.Module, draft.Name.Trim(),
+            draft.Values.Where(v => !secretKeys.Contains(v.Key) && !string.IsNullOrWhiteSpace(v.Value)).ToDictionary(),
+            draft.Values.Where(v => secretKeys.Contains(v.Key) && !string.IsNullOrWhiteSpace(v.Value)).ToDictionary(),
+            draft.Enabled, draft.AutoSyncMinutes);
+        _saving = true; _error = null;
+        try
+        {
+            await Session.Save<IntegrationConnectionDto>(draft.Id is { } id ? HttpMethod.Put : HttpMethod.Post,
+                Session.TeamPath(draft.Id is { } existing ? $"integrations/{existing}" : "integrations"), request);
+            _draft = null;
+            await Load();
+        }
+        catch (Exception e) when (e is HttpRequestException or InvalidOperationException or NotSupportedException) { _error = PageFeedback.Describe(e); }
+        finally { _saving = false; }
+    }
+
+    private async Task Sync(IntegrationConnectionDto connection, bool full)
+    {
+        _running = connection.Id; _outcome.Remove(connection.Id);
+        try
+        {
+            var run = await Session.Save<IntegrationRunDto>(HttpMethod.Post, Session.TeamPath($"integrations/{connection.Id}/sync{(full ? "?full=true" : "")}"), new { });
+            _outcome[connection.Id] = run.Ok
+                ? new(true, Strings.T("Синхронизация завершена"), Summary(run))
+                : new(false, Strings.T("Синхронизация не удалась"), run.Message);
+            await Load();
+            if (_runs.ContainsKey(connection.Id)) await LoadRuns(connection.Id);
+        }
+        catch (Exception e) when (e is HttpRequestException or InvalidOperationException or NotSupportedException)
+        {
+            _outcome[connection.Id] = new(false, Strings.T("Синхронизация не удалась"), PageFeedback.Describe(e));
+        }
+        finally { _running = null; }
+    }
+
+    private async Task Check(IntegrationConnectionDto connection)
+    {
+        _running = connection.Id; _outcome.Remove(connection.Id);
+        try
+        {
+            var check = await Session.Save<IntegrationCheckDto>(HttpMethod.Post, Session.TeamPath($"integrations/{connection.Id}/check"), new { });
+            _outcome[connection.Id] = new(check.Ok, check.Ok ? Strings.T("Подключение работает") : Strings.T("Подключение не работает"), check.Message);
+        }
+        catch (Exception e) when (e is HttpRequestException or InvalidOperationException or NotSupportedException)
+        {
+            _outcome[connection.Id] = new(false, Strings.T("Подключение не работает"), PageFeedback.Describe(e));
+        }
+        finally { _running = null; }
+    }
+
+    private async Task ToggleRuns(IntegrationConnectionDto connection)
+    {
+        if (!_runs.Remove(connection.Id)) await LoadRuns(connection.Id);
+    }
+
+    private async Task LoadRuns(Guid id)
+    {
+        try { _runs[id] = await Session.Get<IntegrationRunDto[]>(Session.TeamPath($"integrations/{id}/runs")); }
+        catch (Exception e) when (e is HttpRequestException or InvalidOperationException or NotSupportedException) { _error = PageFeedback.Describe(e); }
+    }
+
+    private async Task Delete(IntegrationConnectionDto connection)
+    {
+        if (!await DestructivePrompt.ConfirmAsync(Confirm, Strings.T("Удалить подключение"),
+                string.Format(Strings.T("Подключение «{0}» будет удалено. Задачи, пришедшие из него, останутся в Alva, но больше не будут обновляться."), connection.Name),
+                Strings.T("Удалить"))) return;
+        try
+        {
+            await Session.Send(HttpMethod.Delete, Session.TeamPath($"integrations/{connection.Id}"), new { });
+            _runs.Remove(connection.Id); _outcome.Remove(connection.Id);
+            await Load();
+        }
+        catch (Exception e) when (e is HttpRequestException or InvalidOperationException or NotSupportedException) { _error = PageFeedback.Describe(e); }
+    }
+
+    private static string Summary(IntegrationRunDto run) =>
+        string.Format(Strings.T("создано {0}, обновлено {1}, без изменений {2}, пропущено {3}."), run.Created, run.Updated, run.Unchanged, run.Skipped);
+}
