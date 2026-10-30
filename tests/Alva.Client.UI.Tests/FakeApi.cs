@@ -51,12 +51,16 @@ public sealed class FakeApi : IApiService
     public int Imports { get; private set; }
     public Task Import(string format, Stream stream) { if (OnImport() is { } error) return Task.FromException(error); Imports++; return Task.CompletedTask; }
 
-    public Task<T> Get<T>(string path)
+    /// <summary>Медленный сервер: чтение ждёт эту задачу, прежде чем ответить.</summary>
+    public Task? GetGate { get; set; }
+
+    public async Task<T> Get<T>(string path)
     {
         Reads.Add(path);
+        if (GetGate is not null) await GetGate;
         var resource = path.StartsWith(TeamPath(""), StringComparison.Ordinal) ? path[TeamPath("").Length..] : path;
         foreach (var (prefix, answer) in _gets)
-            if (resource.StartsWith(prefix, StringComparison.Ordinal)) return Task.FromResult((T)answer(resource));
+            if (resource.StartsWith(prefix, StringComparison.Ordinal)) return (T)answer(resource);
         throw new InvalidOperationException($"Нет ответа для {path}");
     }
 

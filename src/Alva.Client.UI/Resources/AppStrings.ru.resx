@@ -1014,4 +1014,8 @@
   <data name="Не удалось выполнить действие. Повторите." xml:space="preserve"><value>Не удалось выполнить действие. Повторите.</value></data>
   <data name="Неверный email или пароль, либо вход временно заблокирован." xml:space="preserve"><value>Неверный email или пароль, либо вход временно заблокирован.</value></data>
   <data name="Аккаунт с этой почтой уже существует." xml:space="preserve"><value>Аккаунт с этой почтой уже существует.</value></data>
+  <data name="Первый запуск" xml:space="preserve"><value>Первый запуск</value></data>
+  <data name="Настройте команду по шагам — подсказки появятся здесь." xml:space="preserve"><value>Настройте команду по шагам — подсказки появятся здесь.</value></data>
+  <data name="Люди и графики" xml:space="preserve"><value>Люди и графики</value></data>
+  <data name="Следующий шаг" xml:space="preserve"><value>Следующий шаг</value></data>
 </root>

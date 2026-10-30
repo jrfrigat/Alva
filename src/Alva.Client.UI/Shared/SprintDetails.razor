@@ -1,5 +1,8 @@
 @* Страница спринта по макету p7: шапка с ходом цикла, KPI риска и ёмкости, таблица задач. *@
 @inject AlvaSession Session
+@if (!_loaded) { <LoadingSkeleton Height="18rem" /> }
+else
+{
 <section class="alva-sprint-head">
     <FlareBreadcrumb Items="Crumbs" Separator="/" AriaLabel="@(Strings.T("Путь к спринту"))" />
     <div class="alva-sprint-head__chips">
@@ -178,6 +181,7 @@
         <FlareButton Loading="_busy" Disabled="@(Open.Any(t => Decision(t) == SprintCarry.Next) && _next is null)" OnClick="Complete">@(Strings.T("Завершить спринт"))</FlareButton>
     </ActionsContent>
 </FlareDialog>
+}
 
 @code {
     [Parameter, EditorRequired] public SprintModel Sprint { get; set; } = default!;
@@ -225,6 +229,7 @@
     private Dictionary<Guid, (decimal Available, decimal Allocated)> _load = [];
     private string _filter = "all";
     private string? _error;
+    private bool _loaded;
     private bool _busy;
     private Guid _loadedFor;
 
@@ -277,7 +282,7 @@
 
     protected override async Task OnParametersSetAsync()
     {
-        if (_loadedFor == Sprint.Id) return;
+        if (_loadedFor == Sprint.Id) { _loaded = true; return; }
         try
         {
             _risks = await Session.Get<RiskDto[]>(Session.TeamPath("risks"));
@@ -288,6 +293,7 @@
             _loadedFor = Sprint.Id;
         }
         catch (Exception e) when (e is HttpRequestException or InvalidOperationException or NotSupportedException) { _error = PageFeedback.Describe(e); }
+        finally { _loaded = true; }
     }
 
     private Task Edit() => OnEdit.InvokeAsync();

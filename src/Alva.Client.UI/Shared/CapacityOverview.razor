@@ -41,7 +41,9 @@
     <FlareCheckbox TValue="bool" @bind-Value="_highlight" Label="@(Strings.T("Показывать перегрузы (>100%)"))" Class="alva-capacity-bar__check" />
 </div>
 <PageFeedback Error="@_error" Loading="_busy" OnRetry="Load" />
-
+@if (!_loaded) { <LoadingSkeleton Height="20rem" /> }
+else
+{
 <div class="alva-kpis">
     <section class="alva-kpi">
         <div class="alva-kpi__head"><div><span class="alva-kpi__label">@(Strings.T("Доступный фонд (номинал)"))</span><span class="alva-num"><span class="alva-kpi__value">@AlvaFormat.Hours(Fund)</span> <span class="alva-kpi__unit">@(Strings.T("чел/час"))</span></span></div><span class="alva-kpi__icon"><FlareIconView Value="@MaterialDesign3Icons.Regular.CalendarMonth" Size="18px" /></span></div>
@@ -143,6 +145,7 @@
         <p class="alva-chart-summary"><strong>@(Strings.T("Ключевой вывод:"))</strong> @ForecastSummary</p>
     </section>
 }
+}
 
 @code {
     private sealed record Period(string Title, string Subtitle, DateOnly From, DateOnly To);
@@ -156,7 +159,7 @@
     private Period[] _periods = [];
     private string _mode = "sprints";
     private Guid? _department;
-    private bool _highlight = true, _busy;
+    private bool _highlight = true, _busy, _loaded;
     private string? _error;
 
     private static DateOnly Today => DateOnly.FromDateTime(DateTime.Today);
@@ -252,7 +255,7 @@
             await LoadPeriods();
         }
         catch (Exception e) when (e is HttpRequestException or InvalidOperationException or NotSupportedException) { _error = PageFeedback.Describe(e); }
-        finally { _busy = false; }
+        finally { _busy = false; _loaded = true; }
     }
 
     private async Task SetMode(string mode)

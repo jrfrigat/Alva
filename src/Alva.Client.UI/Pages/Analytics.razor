@@ -12,7 +12,11 @@
 </section>
 <PageFeedback Loading="_busy" Error="@_error" OnRetry="Load" />
 @if (Session.TeamId is null) { <TeamRequired /> }
-else if (!_busy)
+else if (_busy)
+{
+    <LoadingSkeleton Height="18rem" />
+}
+else
 {
 <div class="alva-kpis">
     <section class="alva-kpi">
@@ -58,7 +62,7 @@ else if (!_busy)
 
 @if (_tasks.Length == 0)
 {
-    <FlareEmptyState Title="@(Strings.T("Нет задач для оценки"))" Description="@(Strings.T("Добавьте задачи — тогда появятся сроки, прогноз и риски."))" />
+    <FlareEmptyState Title="@(Strings.T("Нет задач для оценки"))" Description="@(Strings.T("Добавьте задачи — тогда появятся сроки, прогноз и риски."))"><ActionContent><FlareButton Href="tasks">@(Strings.T("К задачам"))</FlareButton></ActionContent></FlareEmptyState>
 }
 else if (_risks.Length == 0)
 {

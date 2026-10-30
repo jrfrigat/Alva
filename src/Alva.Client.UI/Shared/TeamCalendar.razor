@@ -16,7 +16,9 @@
     </div>
 </section>
 <PageFeedback Error="@_error" Loading="_busy" OnRetry="Load" />
-
+@if (!_loaded) { <LoadingSkeleton Height="20rem" /> }
+else
+{
 <div class="alva-kpis">
     <section class="alva-kpi"><div class="alva-kpi__head"><div><span class="alva-kpi__label">@(Strings.T("Активный состав команды"))</span><span class="alva-num"><span class="alva-kpi__value">@People.Length</span> <span class="alva-kpi__unit">@AlvaFormat.Plural(People.Length, "person")</span></span></div><span class="alva-kpi__icon"><FlareIconView Value="@MaterialDesign3Icons.Regular.Badge" Size="18px" /></span></div><p class="alva-kpi__note">@(Strings.T("С рабочим графиком в этом месяце"))</p></section>
     <section class="alva-kpi"><div class="alva-kpi__head"><div><span class="alva-kpi__label">@(Strings.T("Запланированные отсутствия"))</span><span class="alva-num"><span class="alva-kpi__value">@MonthAbsences.Count()</span> <span class="alva-kpi__unit">(−@AlvaFormat.Hours(AbsenceHours) @(Strings.T("ч")))</span></span></div><span class="alva-kpi__icon"><FlareIconView Value="@MaterialDesign3Icons.Regular.BeachAccess" Size="18px" /></span></div><p class="alva-kpi__note">@(MonthAbsences.Any() && MonthAbsences.First() is var a ? $"{a.Name}: {a.Ex.From:d}–{a.Ex.To:d MMM}" : Strings.T("Отпусков в месяце нет"))</p></section>
@@ -103,6 +105,7 @@
         </section>
     </aside>
 </div>
+}
 
 @code {
     private static readonly string[] WeekDays = [Strings.T("Понедельник"), Strings.T("Вторник"), Strings.T("Среда"), Strings.T("Четверг"), Strings.T("Пятница"), Strings.T("Суббота"), Strings.T("Воскресенье")];
@@ -113,7 +116,7 @@
     private Dictionary<Guid, CalendarDto> _calendars = [];
     private Guid? _focus;
     private string? _error;
-    private bool _busy;
+    private bool _busy, _loaded;
 
     private static DateOnly Today => DateOnly.FromDateTime(DateTime.Today);
     private DateOnly GridStart => _month.AddDays(-(((int)_month.DayOfWeek + 6) % 7));
@@ -172,6 +175,6 @@
         _busy = true; _error = null;
         try { await action(); }
         catch (Exception e) when (e is HttpRequestException or InvalidOperationException or NotSupportedException) { _error = PageFeedback.Describe(e); }
-        finally { _busy = false; }
+        finally { _busy = false; _loaded = true; }
     }
 }

@@ -23,7 +23,7 @@ else if (TaskId.HasValue)
     @* Ссылка на конкретную задачу никогда не превращается в список: пока грузится — прогресс, ошибка — ошибка,
        а если задачи нет — так и сказано. *@
     <PageFeedback Error="@_error" Loading="_busy" OnRetry="Load" />
-    @if (_loaded) { <UnavailableState Title="@(Strings.T("Задача не найдена или недоступна"))" BackHref="tasks" BackLabel="@(Strings.T("К задачам"))" /> }
+    @if (_loaded && _error is null) { <UnavailableState Title="@(Strings.T("Задача не найдена или недоступна"))" BackHref="tasks" BackLabel="@(Strings.T("К задачам"))" /> }
 }
 else
 {
@@ -42,7 +42,9 @@ else
 <FlareStack Row Wrap Gap="FlareSpacing.Small"><FlareButton Href="tasks" Variant="ButtonVariant.Text" Size="ButtonSize.Sm">@(Strings.T("Все задачи"))</FlareButton><FlareButton Href="unassigned" Variant="ButtonVariant.Text" Size="ButtonSize.Sm">@(Strings.T("Без исполнителя"))</FlareButton><FlareButton Href="my-work" Variant="ButtonVariant.Text" Size="ButtonSize.Sm">@(Strings.T("Моя работа"))</FlareButton><FlareButton OnClick="Load" Variant="ButtonVariant.Text" Size="ButtonSize.Sm">@(Strings.T("Обновить"))</FlareButton></FlareStack>
 <FlareGrid MinColumnWidth="min(100%, 26rem)" Gap="FlareSpacing.Large">
 <FlareCard Variant="CardVariant.Outlined"><FlareCardContent>
-    @if (!Filtered.Any()) { <FlareEmptyState Compact Title="@(Strings.T("Задач пока нет"))" Description="@(Strings.T("Добавьте первую задачу или измените фильтры."))" /> }
+    @if (!_loaded) { <LoadingSkeleton Height="24rem" /> }
+    else if (_error is not null) { }
+    else if (!Filtered.Any()) { <FlareEmptyState Compact Title="@(Strings.T("Задач пока нет"))" Description="@(Strings.T("Добавьте первую задачу или измените фильтры."))" /> }
     else {
     <FlareDataTree TItem="TaskModel" Items="Roots" KeySelector="t => t!.Id" ChildrenProvider="Children" HasChildren="HasChildren" ItemClick="Open" Height="34rem" id="@TaskListState.TreeElementId">
         <ItemTemplate Context="task"><FlareStack Row Align="FlareAlignItems.Center" Gap="FlareSpacing.Small" Wrap>
@@ -174,7 +176,7 @@ else
         _focusCard = true;
     }
     private async Task Open(TaskModel? task){ if(task is null) return; await Session.TaskList.SaveFilters(_search, _projectFilter, _statusFilter); await Session.TaskList.SaveScroll(await Session.TaskList.Scroll()); Navigation.NavigateTo($"tasks/{task.Id}"); }
-    private async Task Run(Func<Task> action) { _busy=true; _error=null;try{await action();}catch(Exception e) when(e is HttpRequestException or InvalidOperationException){_error=PageFeedback.Describe(e);}finally{_busy=false;} }
+    private async Task Run(Func<Task> action) { _busy=true; _error=null;try{await action();}catch(Exception e) when(e is HttpRequestException or InvalidOperationException){_error=PageFeedback.Describe(e);}finally{_busy=false;_loaded=true;} }
     private Task Load()=>Run(async()=>{await Session.Initialize();if(Session.TeamId is null)return;_tasks=await Session.Get<TaskModel[]>(Session.TeamPath("tasks"));_projects=await Session.Get<ProjectModel[]>(Session.TeamPath("projects"));_actors=await Session.Get<ActorModel[]>(Session.TeamPath("actors"));_sprints=await Session.Get<SprintModel[]>(Session.TeamPath("sprints"));_loaded=true;});
     private void NewTask(){_editing=new TaskModel { TeamId=Session.TeamId!.Value };_history=[];_editingSnapshot=DraftSnapshot.Of(_editing);}
     private void NewChild(Guid id){NewTask();_editing!.ParentId=id;_editingSnapshot=DraftSnapshot.Of(_editing);}

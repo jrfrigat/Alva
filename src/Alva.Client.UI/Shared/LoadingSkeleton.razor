@@ -1,0 +1,8 @@
+@* Стабильное место загрузки: скринридер слышит ожидание, а контент не прыгает после ответа. *@
+<div class="alva-loading" role="status" aria-busy="true" aria-label="@(Strings.T("Загрузка данных"))">
+    <FlareSkeleton Height="@Height" Announce />
+</div>
+
+@code {
+    [Parameter] public string Height { get; set; } = "12rem";
+}

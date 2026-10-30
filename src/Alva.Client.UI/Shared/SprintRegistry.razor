@@ -1,5 +1,8 @@
 @* Реестр спринтов по макету p4: KPI, фильтр, текущая итерация, запланированные и архив. *@
 @inject AlvaSession Session
+@if (!_loaded) { <LoadingSkeleton Height="12rem" /> }
+else
+{
 <div class="alva-kpis">
     <section class="alva-kpi">
         <div class="alva-kpi__head">
@@ -230,6 +233,7 @@
         }
     </section>
 }
+}
 
 @code {
     [Parameter] public SprintModel[] Sprints { get; set; } = [];
@@ -240,6 +244,7 @@
     private Dictionary<Guid, (decimal Available, decimal Allocated, int Overloaded, int People)> _capacity = [];
     private int _filter;
     private string? _search, _error;
+    private bool _loaded;
     private Guid[] _loadedFor = [];
 
     private static DateOnly Today => DateOnly.FromDateTime(DateTime.Today);
@@ -297,7 +302,7 @@
     protected override async Task OnParametersSetAsync()
     {
         var open = Sprints.Where(s => s.Status != "Completed").Select(s => s.Id).OrderBy(x => x).ToArray();
-        if (open.SequenceEqual(_loadedFor) && _actors.Length > 0) return;
+        if (open.SequenceEqual(_loadedFor) && _actors.Length > 0) { _loaded = true; return; }
         try
         {
             _risks = await Session.Get<RiskDto[]>(Session.TeamPath("risks"));
@@ -312,5 +317,6 @@
             _loadedFor = open;
         }
         catch (Exception e) when (e is HttpRequestException or InvalidOperationException or NotSupportedException) { _error = PageFeedback.Describe(e); }
+        finally { _loaded = true; }
     }
 }

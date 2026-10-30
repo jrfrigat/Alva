@@ -7,7 +7,7 @@
         </FlareStack>
     </FlareAlert>
 }
-@if (Loading) { <FlareProgressLinear Value="null" aria-label="@(Strings.T("Загрузка данных"))" /> }
+@if (Loading) { <div class="alva-page-loading" role="status" aria-busy="true"><FlareProgressLinear Value="null" aria-label="@(Strings.T("Загрузка данных"))" /></div> }
 @code {
     [Parameter] public string? Error { get; set; }
     [Parameter] public bool Loading { get; set; }

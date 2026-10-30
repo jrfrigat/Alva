@@ -706,3 +706,4 @@ a.alva-chip:hover,a.alva-chip:focus-visible{text-decoration:underline}
   .alva-page-header__desc,.alva-panel__subtitle,.alva-kpi__note,.alva-chart-summary,.alva-form-errors,.alva-risk-panel__details{font-size:13px;line-height:18px}
   input,select,textarea{font-size:16px}
 }
+.alva-page-loading{min-height:4px}
