@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Alva.Data.Tests" />
+    <ProjectReference Include="../Alva.Integrations.Abstractions/Alva.Integrations.Abstractions.csproj" />
+    <ProjectReference Include="../YandexTracker.Client/YandexTracker.Client.csproj" />
+  </ItemGroup>
+</Project>

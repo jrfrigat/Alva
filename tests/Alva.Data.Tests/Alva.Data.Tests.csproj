@@ -14,5 +14,6 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\Alva.Integrations.Abstractions\Alva.Integrations.Abstractions.csproj" />
+    <ProjectReference Include="..\..\src\Alva.Integrations.YandexTracker\Alva.Integrations.YandexTracker.csproj" />
   </ItemGroup>
 </Project>
