@@ -10,12 +10,10 @@
     <Project Path="src/Alva.Contracts/Alva.Contracts.csproj" />
     <Project Path="src/Alva.Domain/Alva.Domain.csproj" />
     <Project Path="src/Alva.Infrastructure/Alva.Infrastructure.csproj" />
-    <Project Path="src/YandexTracker/YandexTracker.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Alva.Data.Tests/Alva.Data.Tests.csproj" />
     <Project Path="tests/Alva.Client.UI.Tests/Alva.Client.UI.Tests.csproj" />
     <Project Path="tests/Flare.Components.Gantt.Tests/Flare.Components.Gantt.Tests.csproj" />
-    <Project Path="tests/YandexTracker.Tests/YandexTracker.Tests.csproj" />
   </Folder>
 </Solution>
