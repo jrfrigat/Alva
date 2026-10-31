@@ -30,6 +30,9 @@ production behaviour never changes by accident.
 | `POSTGRES_PORT` | `5432` | Database port on loopback |
 | `ALVA_PORT` | `8080` | Application port on loopback |
 | `ALVA_IMAGE` | `alva:latest` | Image name built by compose and used by `publish-docker.bat` |
+| `ALVA_RUN_MODE` | `npm` | Script mode: `npm` without host ports, or `local` with loopback ports; command-line argument wins |
+| `NPM_PROXY_CONTAINER` | `nginx-proxy` | Container whose IP the script detects on external `proxy_network` |
+| `NPM_PROXY_IP` | detected by script | Explicit trusted NPM IP; required in `.env` for manual use of `compose.npm.yaml` |
 | `ASPNETCORE_ENVIRONMENT` | `Production` | Application environment |
 | `ALVA_DOMAIN` | `localhost` | Domain for the Caddy HTTPS profile |
 | `REVERSE_PROXY_ENABLED` | `false` | Trust forwarded headers from Caddy |

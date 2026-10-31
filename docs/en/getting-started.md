@@ -21,7 +21,7 @@ dotnet run --project src/Alva.Client.Demo --urls http://localhost:5200
 ## Docker: the whole production stack
 
 ```powershell
-./run-docker-compose.bat
+./run-docker-compose.bat local
 ```
 
 On the first run the script creates `.env` with a generated database password, builds the image and starts
@@ -39,6 +39,9 @@ docker compose up --build -d --wait
 
 The ports come from `.env` (`ALVA_PORT`, `POSTGRES_PORT`); the application and the database are bound to
 loopback only. See [Deployment](deployment.md) for details.
+
+
+For Nginx Proxy Manager use `./run-docker-compose.bat npm` (default without an argument): no host ports, upstream `http://alva-app:8080` on the existing `proxy_network`. See [Deployment](deployment.md) for network and trusted-proxy configuration.
 
 ## Locally, without Docker
 

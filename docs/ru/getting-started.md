@@ -22,7 +22,7 @@ dotnet run --project src/Alva.Client.Demo --urls http://localhost:5200
 ## Docker: прод-версия целиком
 
 ```powershell
-./run-docker-compose.bat
+./run-docker-compose.bat local
 ```
 
 Скрипт при первом запуске создаёт `.env` с сгенерированным паролем базы, собирает образ
@@ -40,6 +40,9 @@ docker compose up --build -d --wait
 
 Порты задаются в `.env` (`ALVA_PORT`, `POSTGRES_PORT`); приложение и база доступны
 только через loopback. Подробности — в [Развёртывании](deployment.md).
+
+
+Для Nginx Proxy Manager запускайте `./run-docker-compose.bat npm` (режим по умолчанию без аргумента): без пробросов, upstream `http://alva-app:8080` в существующей `proxy_network`. Настройка сети и доверенного прокси — в [Развёртывании](deployment.md).
 
 ## Локально без Docker
 

@@ -22,7 +22,7 @@ meant to be pulled without a token.
 ## Compose
 
 `compose.yaml` describes three services: `db` (PostgreSQL 18), `app` (the application) and `caddy` (under the
-`https` profile). Locally the easiest start is `run-docker-compose.bat`; manually:
+`https` profile). For local loopback access use `run-docker-compose.bat local`; manually:
 
 ```powershell
 Copy-Item .env.example .env
@@ -33,6 +33,43 @@ docker compose up --build -d --wait
 - `app` and `db` are published on loopback only; the ports are `ALVA_PORT` and `POSTGRES_PORT`.
 - EF migrations run at startup (disable with `Database__MigrateOnStartup=false`).
 - `docker compose down` keeps the data in named volumes; `down -v` deletes it.
+
+## Nginx Proxy Manager: no published ports
+
+The script defaults to NPM mode. Docker Compose **2.24.4 or newer** is required:
+
+~~~powershell
+./run-docker-compose.bat
+# equivalent: ./run-docker-compose.bat npm
+~~~
+
+NPM must already be connected to the existing external network **proxy_network**. The script reads
+NPM_PROXY_CONTAINER (default nginx-proxy), detects its current IP on that network, and trusts only that IP.
+Alternatively set NPM_PROXY_IP explicitly in .env. If NPM gets a new IP, rerun the script or update the explicit
+value and recreate the app. No application-code change or trust of the whole shared network is needed.
+
+In NPM create a Proxy Host with scheme **http**, Forward Hostname **alva-app**, Forward Port **8080**.
+TLS terminates at NPM; forwarded HTTPS headers are processed by Alva from the trusted NPM address.
+Do not use localhost, the generic app alias, or a host-published port.
+
+compose.npm.yaml is an explicitly selected override, not an automatically loaded compose.override.yaml.
+It resets inherited port mappings and connects only the application to proxy_network. Containers are named
+alva-app and alva-db. PostgreSQL remains on the private default network. The script starts only app and db;
+Caddy is not started, even if COMPOSE_PROFILES includes https. Docker may display internal 8080/tcp or
+5432/tcp; there must be no host-to-container mappings such as 18082:8080 or 15433:5432.
+
+For manual use, put the concrete NPM_PROXY_IP in .env (find it with docker network inspect proxy_network):
+
+~~~powershell
+docker compose -f compose.yaml -f compose.npm.yaml config --quiet
+docker compose -f compose.yaml -f compose.npm.yaml up -d --build --wait app db
+docker compose -f compose.yaml -f compose.npm.yaml logs -f app
+docker compose -f compose.yaml -f compose.npm.yaml down
+~~~
+
+Switching mode recreates app/db to remove/add port bindings but keeps the same named data volumes.
+Do not use down -v for a mode switch. Stable container names allow one such Alva deployment per host.
+For loopback mode use run-docker-compose.bat local; its displayed URL respects ALVA_PORT.
 
 ## HTTPS and reverse proxy
 

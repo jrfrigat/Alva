@@ -43,11 +43,13 @@ Open <https://jrfrigat.github.io/Alva/> — the data lives in `localStorage`, no
 ### Docker (production: application + PostgreSQL)
 
 ```powershell
-./run-docker-compose.bat
+./run-docker-compose.bat local
 ```
 
 The script creates `.env` with a generated password, builds the image and starts the stack.
 Application: <http://localhost:8080>. See [Getting started](docs/en/getting-started.md) for details.
+
+For Nginx Proxy Manager on `proxy_network`, run `./run-docker-compose.bat npm` (also the default with no argument). It publishes no host ports; use `http://alva-app:8080` as the NPM upstream. See [Deployment](docs/en/deployment.md).
 
 To build the image without starting the stack, or publish a built image:
 

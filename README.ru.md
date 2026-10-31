@@ -49,7 +49,7 @@
 ### Docker (прод-версия: приложение + PostgreSQL)
 
 ```powershell
-./run-docker-compose.bat
+./run-docker-compose.bat local
 ```
 
 Скрипт создаст `.env` со сгенерированным паролем, соберёт образ и поднимет стек.
@@ -62,6 +62,9 @@
 docker build -f build/Dockerfile -t alva:latest .
 ./publish-docker.bat ВАШ_DOCKERHUB latest
 ```
+
+
+Для Nginx Proxy Manager в `proxy_network` используйте `./run-docker-compose.bat npm` (также режим по умолчанию без аргумента). Пробросов портов не будет; upstream в NPM — `http://alva-app:8080`. См. [Развёртывание](docs/ru/deployment.md).
 
 ### Локально без Docker
 
