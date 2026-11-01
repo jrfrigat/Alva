@@ -31,8 +31,8 @@ Persist the Data Protection keys (cookies) on a volume. Set a stable
 
 ## Compose
 
-The repository ships `compose.yaml` with PostgreSQL and an optional Caddy HTTPS profile. Locally the
-easiest start is `run-docker-compose.bat`; `publish-docker.bat` tags and pushes the built image.
+The repository ships `docker-compose.yml` with PostgreSQL and an optional Caddy HTTPS profile. Locally the
+prepare .env and a local docker-compose.override.yml, then run `run-docker-compose.bat`; `publish-docker.bat` tags and pushes the built image.
 
 ## Links
 

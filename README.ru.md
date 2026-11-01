@@ -37,7 +37,7 @@
   владельцы, opt-in матрица прав.
 - **Данные** — экспорт и импорт snapshot команды в JSON/CSV/XLSX, атомарно и со свежими
   идентификаторами.
-- **Интерфейс** — PWA на Flare (тема MaterialDesign3Expressive, палитра Sapphire),
+- **Интерфейс** — PWA на Flare (тема Alva Stitch на базе Material 3 Expressive, палитра Sapphire),
   адаптивная оболочка и доступность на десктопе.
 
 ## Быстрый старт
@@ -46,25 +46,18 @@
 
 Откройте <https://jrfrigat.github.io/Alva/> — данные живут в `localStorage`, сервер не нужен.
 
-### Docker (прод-версия: приложение + PostgreSQL)
+### Docker (приложение + PostgreSQL)
+
+Подготовьте .env и docker-compose.override.yml по [Началу работы](docs/ru/getting-started.md).
+Из корня проекта запустите:
 
 ```powershell
-./run-docker-compose.bat local
+./run-docker-compose.bat
 ```
 
-Скрипт создаст `.env` со сгенерированным паролем, соберёт образ и поднимет стек.
-Приложение: <http://localhost:8080>. Подробности — в
-[Начале работы](docs/ru/getting-started.md).
-
-Собрать образ без запуска стека и опубликовать его:
-
-```powershell
-docker build -f build/Dockerfile -t alva:latest .
-./publish-docker.bat ВАШ_DOCKERHUB latest
-```
-
-
-Для Nginx Proxy Manager в `proxy_network` используйте `./run-docker-compose.bat npm` (также режим по умолчанию без аргумента). Пробросов портов не будет; upstream в NPM — `http://alva-app:8080`. См. [Развёртывание](docs/ru/deployment.md).
+Образец override подключает приложение к существующей proxy_network для Nginx Proxy Manager.
+Upstream: **http://alva-app:8080**, без пробросов портов. Задайте пароль базы и IP NPM вручную.
+Локальный доступ через loopback и Caddy: [Развёртывание](docs/ru/deployment.md).
 
 ### Локально без Docker
 
@@ -96,7 +89,7 @@ docker run -p 8080:8080 \
 | `Alva.Api` | Minimal API, аутентификация, права, раздача WASM |
 | `Alva.Client.UI` | Общая библиотека интерфейса и `IApiService` |
 | `Alva.Client`, `Alva.Client.Demo` | Прод- и демо-оболочки |
-| `Alva.Theme.Alva`, `Flare.Components.Gantt` | Тема и компонент Ганта |
+| `Alva.Theme.Alva` | Тема Alva; Гантт подключён пакетом Flare.Components.Gantt |
 
 ## Документация
 

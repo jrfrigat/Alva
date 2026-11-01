@@ -2,6 +2,7 @@
   <PropertyGroup>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <IsPackable>false</IsPackable>
     <WarningsAsErrors>$(WarningsAsErrors);RZ10012</WarningsAsErrors>
   </PropertyGroup>
 </Project>

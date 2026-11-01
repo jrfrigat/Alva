@@ -10,8 +10,8 @@ Docker Engine с Linux-контейнерами и Docker Compose v2 — для 
 ## Демо без сервера
 
 Откройте [демо](https://jrfrigat.github.io/Alva/). Оно работает целиком в браузере:
-данные живут в `localStorage`, к сети приложение не обращается. Это общая библиотека
-интерфейса с другим подключением данных, а не отдельная сборка.
+данные живут в `localStorage`, API-сервер не требуется. Это общая библиотека
+интерфейса с другим подключением данных, с отдельной demo-оболочкой.
 
 Демо поднимается и локально:
 
@@ -21,28 +21,25 @@ dotnet run --project src/Alva.Client.Demo --urls http://localhost:5200
 
 ## Docker: прод-версия целиком
 
-```powershell
-./run-docker-compose.bat local
-```
-
-Скрипт при первом запуске создаёт `.env` с сгенерированным паролем базы, собирает образ
-и запускает приложение вместе с PostgreSQL, дожидаясь готовности. Откройте
-[Alva](http://localhost:8080).
-
-Вручную, без скрипта:
+Из корня проекта подготовьте .env и локальный override (существующие файлы сохраните):
 
 ```powershell
-Copy-Item .env.example .env
-# впишите пароль в POSTGRES_PASSWORD (Base64 от 32 случайных байт)
+if (!(Test-Path .env)) { Copy-Item .env.example .env }
+if (!(Test-Path docker-compose.override.yml)) {
+    Copy-Item docker-compose.override.example.yml docker-compose.override.yml
+}
+# Задайте уникальный POSTGRES_PASSWORD в .env.
+# Задайте NPM_PROXY_IP: адрес Nginx Proxy Manager в proxy_network.
 docker compose config --quiet
-docker compose up --build -d --wait
+./run-docker-compose.bat
 ```
 
-Порты задаются в `.env` (`ALVA_PORT`, `POSTGRES_PORT`); приложение и база доступны
-только через loopback. Подробности — в [Развёртывании](deployment.md).
+NPM должен уже находиться в сети `proxy_network`. Для Proxy Host укажите схему `http`,
+Forward Hostname `alva-app`, Forward Port `8080`. Приложение и PostgreSQL не публикуют
+порты на хост. BAT только запускает Compose; он не создаёт .env и не определяет IP.
 
-
-Для Nginx Proxy Manager запускайте `./run-docker-compose.bat npm` (режим по умолчанию без аргумента): без пробросов, upstream `http://alva-app:8080` в существующей `proxy_network`. Настройка сети и доверенного прокси — в [Развёртывании](deployment.md).
+Для доступа через http://localhost:8080 используйте loopback override из
+[Развёртывания](deployment.md). Там же описаны HTTPS, логи и остановка.
 
 ## Локально без Docker
 

@@ -9,8 +9,8 @@ containers plus Docker Compose v2 for Docker.
 ## Demo without a server
 
 Open the [demo](https://jrfrigat.github.io/Alva/). It runs entirely in the browser: the data lives in
-`localStorage` and the application never talks to the network. It is the shared interface library with a
-different data implementation, not a separate build.
+`localStorage` and no API server is required. It is the shared interface library with a
+different data implementation, built with a dedicated demo shell.
 
 The demo can also be started locally:
 
@@ -20,28 +20,25 @@ dotnet run --project src/Alva.Client.Demo --urls http://localhost:5200
 
 ## Docker: the whole production stack
 
-```powershell
-./run-docker-compose.bat local
-```
-
-On the first run the script creates `.env` with a generated database password, builds the image and starts
-the application together with PostgreSQL, waiting until it is ready. Open
-[Alva](http://localhost:8080).
-
-Manually, without the script:
+From the repository root, prepare .env and the local override (keep existing files):
 
 ```powershell
-Copy-Item .env.example .env
-# put a password into POSTGRES_PASSWORD (Base64 of 32 random bytes)
+if (!(Test-Path .env)) { Copy-Item .env.example .env }
+if (!(Test-Path docker-compose.override.yml)) {
+    Copy-Item docker-compose.override.example.yml docker-compose.override.yml
+}
+# Set a unique POSTGRES_PASSWORD in .env.
+# Set NPM_PROXY_IP: the Nginx Proxy Manager address on proxy_network.
 docker compose config --quiet
-docker compose up --build -d --wait
+./run-docker-compose.bat
 ```
 
-The ports come from `.env` (`ALVA_PORT`, `POSTGRES_PORT`); the application and the database are bound to
-loopback only. See [Deployment](deployment.md) for details.
+NPM must already be on `proxy_network`. Set the Proxy Host scheme to `http`, Forward Hostname
+`alva-app`, Forward Port `8080`. Neither the application nor PostgreSQL publishes host ports.
+The BAT only starts Compose; it does not create .env or discover an IP address.
 
-
-For Nginx Proxy Manager use `./run-docker-compose.bat npm` (default without an argument): no host ports, upstream `http://alva-app:8080` on the existing `proxy_network`. See [Deployment](deployment.md) for network and trusted-proxy configuration.
+For access through http://localhost:8080, use the loopback override in
+[Deployment](deployment.md), which also covers HTTPS, logs and stopping the stack.
 
 ## Locally, without Docker
 

@@ -27,15 +27,12 @@ production behaviour never changes by accident.
 | `POSTGRES_DB` | `alva` | Database name |
 | `POSTGRES_USER` | `alva` | Database user |
 | `POSTGRES_PASSWORD` | — (required) | Database password; Base64 of 32 bytes is safe in a connection string |
-| `POSTGRES_PORT` | `5432` | Database port on loopback |
-| `ALVA_PORT` | `8080` | Application port on loopback |
+| `POSTGRES_PORT` | `5432` | Database loopback port when enabled in the local override |
+| `ALVA_PORT` | `8080` | Application loopback port when enabled in the local override |
 | `ALVA_IMAGE` | `alva:latest` | Image name built by compose and used by `publish-docker.bat` |
-| `ALVA_RUN_MODE` | `npm` | Script mode: `npm` without host ports, or `local` with loopback ports; command-line argument wins |
-| `NPM_PROXY_CONTAINER` | `nginx-proxy` | Container whose IP the script detects on external `proxy_network` |
-| `NPM_PROXY_IP` | detected by script | Explicit trusted NPM IP; required in `.env` for manual use of `compose.npm.yaml` |
+| `NPM_PROXY_IP` | - | Trusted NPM IP on proxy_network; required by the NPM override, set manually |
 | `ASPNETCORE_ENVIRONMENT` | `Production` | Application environment |
 | `ALVA_DOMAIN` | `localhost` | Domain for the Caddy HTTPS profile |
-| `REVERSE_PROXY_ENABLED` | `false` | Trust forwarded headers from Caddy |
 | `CADDY_IP` | `172.30.10.10` | Caddy address on the dedicated network |
 | `PROXY_SUBNET` | `172.30.10.0/24` | Subnet of the `proxy` network |
 | `CADDY_HTTP_PORT` | `80` | Caddy HTTP port |

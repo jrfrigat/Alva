@@ -18,7 +18,7 @@ $temporaryDirectory = Join-Path ([IO.Path]::GetTempPath()) $project
 $overridePath = Join-Path $temporaryDirectory 'compose.override.yaml'
 $emptyEnvironment = Join-Path $temporaryDirectory '.env'
 $compose = @('compose', '--project-directory', $repo, '--env-file', $emptyEnvironment,
-    '-p', $project, '-f', (Join-Path $repo 'compose.yaml'), '-f', $overridePath)
+    '-p', $project, '-f', (Join-Path $repo 'docker-compose.yml'), '-f', $overridePath)
 $environmentOverrides = @{
     POSTGRES_PASSWORD = [Convert]::ToHexString([Security.Cryptography.RandomNumberGenerator]::GetBytes(32))
     POSTGRES_DB = 'alva'; POSTGRES_USER = 'alva'; ALVA_PORT = '0'
@@ -99,17 +99,13 @@ try {
     $probe.Start()
     $hostPort = ([Net.IPEndPoint]$probe.LocalEndpoint).Port
     $probe.Stop()
-    # Override network IPAM to let Docker choose a free subnet; PostgreSQL is private.
+    # Publish only the disposable application's HTTP port; PostgreSQL stays private.
     [IO.File]::WriteAllText($overridePath, @"
 services:
   db:
     ports: !reset []
   app:
     ports: !override ["127.0.0.1:${hostPort}:8080"]
-networks:
-  proxy:
-    ipam:
-      config: !reset []
 "@)
     foreach ($name in $environmentOverrides.Keys) {
         $previousEnvironment[$name] = [Environment]::GetEnvironmentVariable($name, 'Process')

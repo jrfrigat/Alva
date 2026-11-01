@@ -1,10 +1,5 @@
 name: Release
 
-# Runs when a version tag is pushed, e.g. v0.1.0: builds and tests, builds the application image,
-# pushes it to the GitHub Container Registry and, when DOCKERHUB_USERNAME is set, to Docker Hub.
-# The version comes from the tag (v1.2.3 -> 1.2.3). GHCR works with the workflow's own token, so a
-# release publishes an image even before Docker Hub is configured.
-
 on:
   push:
     tags: [ 'v*' ]
@@ -14,29 +9,64 @@ concurrency:
   cancel-in-progress: false
 
 permissions:
-  contents: write   # create the GitHub Release
-  packages: write   # push the container image to GHCR
+  contents: read
+  actions: read
+  checks: read
 
 jobs:
-  release:
+  wait-for-ci:
+    uses: ./.github/workflows/wait-for-ci.yml
+
+  build:
+    needs: wait-for-ci
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
-
-      - uses: actions/setup-dotnet@v6
+      - name: Build the tagged application image
+        run: |
+          docker build -f build/Dockerfile -t alva-release:build .
+          docker save alva-release:build -o "$RUNNER_TEMP/alva-image.tar"
+      - uses: actions/upload-artifact@v6
         with:
-          global-json-file: global.json
+          name: container-image
+          path: ${{ runner.temp }}/alva-image.tar
+          if-no-files-found: error
+          retention-days: 1
 
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+      actions: read
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@v6
+        with:
+          name: container-image
+          path: ${{ runner.temp }}/container-image
+      - name: Load the verified image
+        run: docker load -i "$RUNNER_TEMP/container-image/alva-image.tar"
       - name: Resolve version from tag
         id: version
-        run: echo "value=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
-
-      - run: dotnet restore Alva.slnx
-      - run: dotnet build Alva.slnx -c Release --no-restore
-      - run: dotnet test Alva.slnx -c Release --no-build
-
+        shell: bash
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "Expected a semantic version tag, got $GITHUB_REF_NAME" >&2
+            exit 1
+          fi
+          echo "value=$version" >> "$GITHUB_OUTPUT"
+          if [[ "$version" == *-* ]]; then
+            echo "prerelease=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "prerelease=false" >> "$GITHUB_OUTPUT"
+          fi
       # GHCR needs a lowercase repository path; github.repository preserves the repo's case.
       # Docker Hub tags are added only when DOCKERHUB_USERNAME is set, so GHCR alone is enough.
       - name: Compute image tags
@@ -44,15 +74,16 @@ jobs:
         env:
           DOCKERHUB_USER: ${{ vars.DOCKERHUB_USERNAME }}
           VERSION: ${{ steps.version.outputs.value }}
+          PRERELEASE: ${{ steps.version.outputs.prerelease }}
         run: |
           GHCR="ghcr.io/${GITHUB_REPOSITORY,,}"
           {
             echo "list<<EOF"
             echo "${GHCR}:${VERSION}"
-            echo "${GHCR}:latest"
+            if [[ "$PRERELEASE" == false ]]; then echo "${GHCR}:latest"; fi
             if [ -n "${DOCKERHUB_USER}" ]; then
               echo "docker.io/${DOCKERHUB_USER}/alva:${VERSION}"
-              echo "docker.io/${DOCKERHUB_USER}/alva:latest"
+              if [[ "$PRERELEASE" == false ]]; then echo "docker.io/${DOCKERHUB_USER}/alva:latest"; fi
             fi
             echo "EOF"
           } >> "$GITHUB_OUTPUT"
@@ -71,18 +102,20 @@ jobs:
           username: ${{ vars.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build and push image
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: build/Dockerfile
-          push: true
-          tags: ${{ steps.tags.outputs.list }}
+      - name: Publish the built image
+        env:
+          IMAGE_TAGS: ${{ steps.tags.outputs.list }}
+        run: |
+          while IFS= read -r tag; do
+            [[ -n "$tag" ]] || continue
+            docker tag alva-release:build "$tag"
+            docker push "$tag"
+          done <<< "$IMAGE_TAGS"
 
       # Keep the Docker Hub repository overview in sync with build/dockerhub-overview.md.
       # Non-fatal so a description hiccup never fails a release.
       - name: Update Docker Hub description
-        if: ${{ vars.DOCKERHUB_USERNAME != '' }}
+        if: ${{ vars.DOCKERHUB_USERNAME != '' && steps.version.outputs.prerelease == 'false' }}
         continue-on-error: true
         uses: peter-evans/dockerhub-description@v4
         with:
@@ -95,4 +128,16 @@ jobs:
       - name: Create GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "${GITHUB_REF_NAME}" --generate-notes --title "${GITHUB_REF_NAME}"
+          PRERELEASE: ${{ steps.version.outputs.prerelease }}
+        run: |
+          args=(--generate-notes --title "$GITHUB_REF_NAME")
+          if [[ "$PRERELEASE" == true ]]; then
+            args+=(--prerelease --latest=false)
+          else
+            args+=(--latest)
+          fi
+          if gh release view "$GITHUB_REF_NAME" > /dev/null 2>&1; then
+            gh release edit "$GITHUB_REF_NAME" --prerelease="$PRERELEASE" --latest="$([[ "$PRERELEASE" == false ]] && echo true || echo false)"
+          else
+            gh release create "$GITHUB_REF_NAME" "${args[@]}"
+          fi

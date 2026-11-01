@@ -50,4 +50,4 @@ dotnet run --project src/Alva.Client.Demo --urls http://localhost:5200
 ## Коммиты и ветки
 
 Ветка `main` защищена CI. Изменения приходят через pull request: сборка без предупреждений,
-зелёные тесты, понятное описание. Подробнее — в [CONTRIBUTING.md](../CONTRIBUTING.md).
+зелёные тесты, понятное описание. Подробнее — в [CONTRIBUTING.md](../../CONTRIBUTING.md).

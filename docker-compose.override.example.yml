@@ -1,23 +1,19 @@
-# Docker Compose >= 2.24.4. Use together with compose.yaml.
-# Nginx Proxy Manager must already be attached to external proxy_network.
+# Copy to docker-compose.override.yml and set NPM_PROXY_IP in .env.
+# Nginx Proxy Manager must already be connected to proxy_network.
 services:
-  db:
-    container_name: alva-db
-    ports: !reset []
   app:
     container_name: alva-app
-    ports: !reset []
     environment:
       ReverseProxy__Enabled: "true"
       ReverseProxy__KnownProxy: ${NPM_PROXY_IP:?Set NPM_PROXY_IP to the NPM address on proxy_network}
-    networks: !override
+    networks:
       default: {}
       proxy_network:
         aliases:
           - alva-app
-  # Even accidental https profile activation must not publish ports in this mode.
-  caddy:
-    ports: !reset []
+  db:
+    container_name: alva-db
+
 networks:
   proxy_network:
     external: true

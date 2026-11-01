@@ -7,8 +7,6 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-alva}
       POSTGRES_USER: ${POSTGRES_USER:-alva}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
-    ports:
-      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres-data:/var/lib/postgresql
     healthcheck:
@@ -30,13 +28,6 @@ services:
       ConnectionStrings__Alva: "Host=db;Port=5432;Database=${POSTGRES_DB:-alva};Username=${POSTGRES_USER:-alva};Password=${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}"
       Database__MigrateOnStartup: "true"
       DataProtection__KeysPath: /var/alva/keys
-      ReverseProxy__Enabled: ${REVERSE_PROXY_ENABLED:-false}
-      ReverseProxy__KnownProxy: ${CADDY_IP:-172.30.10.10}
-    networks:
-      - default
-      - proxy
-    ports:
-      - "127.0.0.1:${ALVA_PORT:-8080}:8080"
     volumes:
       - protection-keys:/var/alva/keys
     depends_on:
@@ -55,13 +46,6 @@ services:
     profiles: ["https"]
     environment:
       ALVA_DOMAIN: ${ALVA_DOMAIN:-localhost}
-    networks:
-      proxy:
-        ipv4_address: ${CADDY_IP:-172.30.10.10}
-    ports:
-      - "${CADDY_HTTP_PORT:-80}:80"
-      - "${CADDY_HTTPS_PORT:-443}:443"
-      - "${CADDY_HTTPS_PORT:-443}:443/udp"
     volumes:
       - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy-data:/data
@@ -76,9 +60,3 @@ volumes:
   protection-keys:
   caddy-data:
   caddy-config:
-
-networks:
-  proxy:
-    ipam:
-      config:
-        - subnet: ${PROXY_SUBNET:-172.30.10.0/24}

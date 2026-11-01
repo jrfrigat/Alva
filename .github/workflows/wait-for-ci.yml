@@ -1,0 +1,62 @@
+name: Wait for branch CI
+
+on:
+  workflow_call:
+    inputs:
+      branch:
+        description: Optional branch restriction for the exact commit
+        type: string
+        default: ''
+
+permissions:
+  actions: read
+  checks: read
+  contents: read
+
+jobs:
+  wait:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Wait for the branch-push CI of this commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TARGET_SHA: ${{ github.sha }}
+          TARGET_BRANCH: ${{ inputs.branch }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          args=(--repo "$GH_REPO" --workflow ci.yml --event push --commit "$TARGET_SHA" --limit 100)
+          if [[ -n "$TARGET_BRANCH" ]]; then
+            args+=(--branch "$TARGET_BRANCH")
+          fi
+          run_id=''
+          for attempt in {1..30}; do
+            run_id=$(gh run list "${args[@]}" --json databaseId --jq '.[0].databaseId // empty')
+            if [[ -n "$run_id" ]]; then
+              break
+            fi
+            sleep 10
+          done
+          if [[ ! "$run_id" =~ ^[0-9]+$ ]]; then
+            echo "No branch-push ci.yml run registered for $TARGET_SHA within 5 minutes" >&2
+            exit 1
+          fi
+          echo "Waiting for ci.yml run $run_id at $TARGET_SHA"
+          while true; do
+            run=$(gh run view "$run_id" --repo "$GH_REPO" --json status,conclusion,headSha,headBranch,event)
+            jq -e --arg sha "$TARGET_SHA" --arg branch "$TARGET_BRANCH" \
+              '.headSha == $sha and .event == "push" and ($branch == "" or .headBranch == $branch)' \
+              <<< "$run" > /dev/null
+            if [[ $(jq -r '.status' <<< "$run") == completed ]]; then
+              conclusion=$(jq -r '.conclusion' <<< "$run")
+              if [[ "$conclusion" != success ]]; then
+                echo "CI run $run_id ended with $conclusion" >&2
+                exit 1
+              fi
+              echo "CI run $run_id succeeded"
+              break
+            fi
+            sleep 10
+          done

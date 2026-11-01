@@ -27,15 +27,12 @@
 | `POSTGRES_DB` | `alva` | Имя базы |
 | `POSTGRES_USER` | `alva` | Пользователь базы |
 | `POSTGRES_PASSWORD` | — (обязательно) | Пароль базы; Base64 от 32 байт безопасен для строки подключения |
-| `POSTGRES_PORT` | `5432` | Порт базы на loopback |
-| `ALVA_PORT` | `8080` | Порт приложения на loopback |
+| `POSTGRES_PORT` | `5432` | Порт базы на loopback, если задан в локальном override |
+| `ALVA_PORT` | `8080` | Порт приложения на loopback, если задан в локальном override |
 | `ALVA_IMAGE` | `alva:latest` | Имя образа, который собирает compose и публикует `publish-docker.bat` |
-| `ALVA_RUN_MODE` | `npm` | Режим скрипта: `npm` без пробросов или `local` с loopback-портами; аргумент командной строки имеет приоритет |
-| `NPM_PROXY_CONTAINER` | `nginx-proxy` | Контейнер, IP которого скрипт определяет во внешней `proxy_network` |
-| `NPM_PROXY_IP` | определяется скриптом | Явный доверенный IP NPM; для ручного запуска с `compose.npm.yaml` задаётся в `.env` |
+| `NPM_PROXY_IP` | - | IP доверенного NPM в proxy_network; обязателен для NPM override, задаётся вручную |
 | `ASPNETCORE_ENVIRONMENT` | `Production` | Окружение приложения |
 | `ALVA_DOMAIN` | `localhost` | Домен для HTTPS-профиля Caddy |
-| `REVERSE_PROXY_ENABLED` | `false` | Доверять forwarded headers от Caddy |
 | `CADDY_IP` | `172.30.10.10` | Адрес Caddy в выделенной сети |
 | `PROXY_SUBNET` | `172.30.10.0/24` | Подсеть сети `proxy` |
 | `CADDY_HTTP_PORT` | `80` | HTTP-порт Caddy |

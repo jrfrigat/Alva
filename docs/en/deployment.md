@@ -21,70 +21,88 @@ meant to be pulled without a token.
 
 ## Compose
 
-`compose.yaml` describes three services: `db` (PostgreSQL 18), `app` (the application) and `caddy` (under the
-`https` profile). For local loopback access use `run-docker-compose.bat local`; manually:
+`docker-compose.yml` defines the application, PostgreSQL 18 and optional Caddy (https profile).
+The base file publishes no ports and does not require NPM. `docker-compose.override.yml`
+contains machine settings, loads automatically and is excluded from Git and the Docker build context.
+.env also stays local. Preserve existing values when upgrading.
+
+For NPM, copy `docker-compose.override.example.yml` to `docker-compose.override.yml`.
+Set a unique POSTGRES_PASSWORD and a concrete NPM_PROXY_IP on the existing proxy_network
+in .env. Find the address with `docker network inspect proxy_network`.
+The BAT does not discover it. If the NPM address changes, update the value and recreate the app.
+
+Only the application joins the NPM network; PostgreSQL stays on the private network.
+The NPM upstream is **http://alva-app:8080** (scheme http, hostname alva-app, port 8080).
+No host ports are published. Forwarded headers are accepted only from the configured IP.
+NPM handles HTTPS; do not start Caddy with this configuration.
+
+From the repository root:
 
 ```powershell
-Copy-Item .env.example .env
-# put POSTGRES_PASSWORD in
-docker compose up --build -d --wait
-```
-
-- `app` and `db` are published on loopback only; the ports are `ALVA_PORT` and `POSTGRES_PORT`.
-- EF migrations run at startup (disable with `Database__MigrateOnStartup=false`).
-- `docker compose down` keeps the data in named volumes; `down -v` deletes it.
-
-## Nginx Proxy Manager: no published ports
-
-The script defaults to NPM mode. Docker Compose **2.24.4 or newer** is required:
-
-~~~powershell
+docker compose config --quiet
 ./run-docker-compose.bat
-# equivalent: ./run-docker-compose.bat npm
-~~~
-
-NPM must already be connected to the existing external network **proxy_network**. The script reads
-NPM_PROXY_CONTAINER (default nginx-proxy), detects its current IP on that network, and trusts only that IP.
-Alternatively set NPM_PROXY_IP explicitly in .env. If NPM gets a new IP, rerun the script or update the explicit
-value and recreate the app. No application-code change or trust of the whole shared network is needed.
-
-In NPM create a Proxy Host with scheme **http**, Forward Hostname **alva-app**, Forward Port **8080**.
-TLS terminates at NPM; forwarded HTTPS headers are processed by Alva from the trusted NPM address.
-Do not use localhost, the generic app alias, or a host-published port.
-
-compose.npm.yaml is an explicitly selected override, not an automatically loaded compose.override.yaml.
-It resets inherited port mappings and connects only the application to proxy_network. Containers are named
-alva-app and alva-db. PostgreSQL remains on the private default network. The script starts only app and db;
-Caddy is not started, even if COMPOSE_PROFILES includes https. Docker may display internal 8080/tcp or
-5432/tcp; there must be no host-to-container mappings such as 18082:8080 or 15433:5432.
-
-For manual use, put the concrete NPM_PROXY_IP in .env (find it with docker network inspect proxy_network):
-
-~~~powershell
-docker compose -f compose.yaml -f compose.npm.yaml config --quiet
-docker compose -f compose.yaml -f compose.npm.yaml up -d --build --wait app db
-docker compose -f compose.yaml -f compose.npm.yaml logs -f app
-docker compose -f compose.yaml -f compose.npm.yaml down
-~~~
-
-Switching mode recreates app/db to remove/add port bindings but keeps the same named data volumes.
-Do not use down -v for a mode switch. Stable container names allow one such Alva deployment per host.
-For loopback mode use run-docker-compose.bat local; its displayed URL respects ALVA_PORT.
-
-## HTTPS and reverse proxy
-
-The `https` profile starts Caddy with automatic certificates:
-
-```powershell
-docker compose --profile https up -d
+docker compose logs -f app
+docker compose down
 ```
 
-Set a real domain in `ALVA_DOMAIN` and trust forwarded headers (`REVERSE_PROXY_ENABLED=true`). The
-application trusts only Caddy's address (`CADDY_IP`) on the dedicated network `PROXY_SUBNET`. If that subnet
-is taken, change `PROXY_SUBNET` and `CADDY_IP` together.
+The BAT contains one command: `docker compose up -d --build --force-recreate`.
+It does not create .env or the override. To wait for readiness after starting:
+`docker compose up -d --wait app`.
+The project name alva and volumes postgres-data/protection-keys are preserved when migrating
+from compose.yaml; keep the project name when upgrading an existing stack.
+`docker compose down` keeps volumes; `down -v` deletes the data.
 
-With `ALVA_DOMAIN=localhost` Caddy uses a local CA, which the browser has to trust separately. With your own
-proxy keep the same trust boundary: direct access to the API stays closed.
+## Local access without NPM
+
+Use this docker-compose.override.yml instead of the NPM contents.
+Uncomment db only when the host needs database access.
+
+```yaml
+services:
+  app:
+    ports:
+      - "127.0.0.1:${ALVA_PORT:-8080}:8080"
+  # db:
+  #   ports:
+  #     - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+```
+
+After starting, open http://localhost:8080 (or ALVA_PORT).
+Migrations run at startup; disable with Database__MigrateOnStartup=false.
+
+## HTTPS with Caddy
+
+As an alternative to NPM, replace the local override with the configuration below. Set ALVA_DOMAIN
+and matching CADDY_IP/PROXY_SUBNET values in .env, then run
+`docker compose --profile https up -d --build`.
+
+```yaml
+services:
+  app:
+    environment:
+      ReverseProxy__Enabled: "true"
+      ReverseProxy__KnownProxy: ${CADDY_IP:-172.30.10.10}
+    networks:
+      default: {}
+      proxy: {}
+  caddy:
+    networks:
+      default: {}
+      proxy:
+        ipv4_address: ${CADDY_IP:-172.30.10.10}
+    ports:
+      - "${CADDY_HTTP_PORT:-80}:80"
+      - "${CADDY_HTTPS_PORT:-443}:443"
+      - "${CADDY_HTTPS_PORT:-443}:443/udp"
+networks:
+  proxy:
+    ipam:
+      config:
+        - subnet: ${PROXY_SUBNET:-172.30.10.0/24}
+```
+
+With ALVA_DOMAIN=localhost, Caddy uses a local CA that the browser must trust separately.
+For a public certificate, set a real domain pointing to the server.
 
 ## Backups and upgrades
 
@@ -97,14 +115,3 @@ proxy keep the same trust boundary: direct access to the API stays closed.
 
 The application answers on `/health/ready` (the database is reachable) and `/health/live` (the process).
 `docker compose up --wait` waits for the first one.
-
-## Release
-
-1. Make sure `main` is green (CI).
-2. Tag: `git tag v0.1.0 && git push origin v0.1.0`.
-3. The `Release` workflow builds and tests the solution, publishes the image to GHCR and, when the
-   `DOCKERHUB_USERNAME` variable is set, to Docker Hub, then creates a GitHub Release.
-
-GHCR works with the workflow's own token; no extra secret is needed. For Docker Hub set the
-`DOCKERHUB_USERNAME` variable and the `DOCKERHUB_TOKEN` secret. For the demo, enable Pages with the
-"GitHub Actions" source.

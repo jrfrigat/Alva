@@ -11,8 +11,8 @@ Browser (Blazor WASM)                 Server (ASP.NET Core)
 │ Alva.Client / .Demo        │        │ Alva.Api                  │
 │   └ Alva.Client.UI         │  HTTP  │   ├ Minimal API endpoints │
 │        └ IApiService       │ ─────► │   ├ cookie authentication │
-│             ├ HttpApiService│       │   └ team-scoped access    │
-│             └ LocalApiService│      │ Alva.Infrastructure       │
+│             ├ ApiServiceHttp│       │   └ team-scoped access    │
+│             └ ApiServiceLocalStorage│      │ Alva.Infrastructure       │
 └───────────────────────────┘        │   └ EF Core → PostgreSQL  │
                                      └───────────────────────────┘
 ```
@@ -28,8 +28,8 @@ Browser (Blazor WASM)                 Server (ASP.NET Core)
 | `Alva.Client.UI` | Interface library: pages, layout, models, `IApiService`, `AlvaSession` |
 | `Alva.Client` | Production shell: an `IApiService` implementation over HTTP |
 | `Alva.Client.Demo` | Demo shell: an `IApiService` implementation on `localStorage` |
-| `Alva.Theme.Alva` | The Flare "Alva Sapphire" theme |
-| `Flare.Components.Gantt` | Local Gantt component (growing into a Flare package) |
+| `Alva.Theme.Alva` | The Alva Stitch theme derived from Material 3 Expressive |
+| `Flare.Components.Gantt` | External Flare NuGet package used by Alva.Client.UI |
 
 ## Data flow
 
@@ -59,7 +59,7 @@ the interface never breaks. `CultureService` picks the language (`localStorage` 
 
 ## Demo edition
 
-The demo works without a server: `LocalApiService` keeps the data in `localStorage` and repeats the
+The demo works without a server: `ApiServiceLocalStorage` keeps the data in `localStorage` and repeats the
 `IApiService` contract. That is what lets the application be shown on GitHub Pages without running an API
 or a database.
 

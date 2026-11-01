@@ -1,3 +1,5 @@
+<p align="center"><b>English</b> - <a href="README.ru.md">Русский</a></p>
+
 <p align="center">
   <a href="https://github.com/jrfrigat/Alva/actions/workflows/ci.yml"><img src="https://github.com/jrfrigat/Alva/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="https://github.com/jrfrigat/Alva/actions/workflows/pages.yml"><img src="https://github.com/jrfrigat/Alva/actions/workflows/pages.yml/badge.svg" alt="Pages"></a>
@@ -31,7 +33,7 @@ by assignee), capacity and risk analysis, sprint auto-balancing and a full direc
 - **Authentication** — sign in, sign up and sign out; workspaces and teams, members and owners, an opt-in
   permission matrix.
 - **Data** — export and import of a team snapshot in JSON/CSV/XLSX, atomic and with fresh identifiers.
-- **Interface** — a PWA built on Flare (MaterialDesign3Expressive theme, Sapphire palette), with an
+- **Interface** — a PWA built on Flare (Alva Stitch theme derived from Material 3 Expressive, Sapphire palette), with an
   adaptive shell and desktop accessibility. English and Russian, chosen per browser and switchable.
 
 ## Quick start
@@ -40,23 +42,18 @@ by assignee), capacity and risk analysis, sprint auto-balancing and a full direc
 
 Open <https://jrfrigat.github.io/Alva/> — the data lives in `localStorage`, no server is needed.
 
-### Docker (production: application + PostgreSQL)
+### Docker (application + PostgreSQL)
+
+Prepare .env and docker-compose.override.yml using [Getting started](docs/en/getting-started.md).
+From the repository root, run:
 
 ```powershell
-./run-docker-compose.bat local
+./run-docker-compose.bat
 ```
 
-The script creates `.env` with a generated password, builds the image and starts the stack.
-Application: <http://localhost:8080>. See [Getting started](docs/en/getting-started.md) for details.
-
-For Nginx Proxy Manager on `proxy_network`, run `./run-docker-compose.bat npm` (also the default with no argument). It publishes no host ports; use `http://alva-app:8080` as the NPM upstream. See [Deployment](docs/en/deployment.md).
-
-To build the image without starting the stack, or publish a built image:
-
-```powershell
-docker build -f build/Dockerfile -t alva:latest .
-./publish-docker.bat YOUR_DOCKERHUB latest
-```
+The example override joins the existing proxy_network for Nginx Proxy Manager.
+Upstream: **http://alva-app:8080**, with no host ports. Set the database password and NPM IP manually.
+For loopback access and Caddy, see [Deployment](docs/en/deployment.md).
 
 ### Locally, without Docker
 
@@ -89,7 +86,7 @@ Full configuration is in [Configuration](docs/en/configuration.md).
 | `Alva.Api` | Minimal API, authentication, permissions, serves the WASM client |
 | `Alva.Client.UI` | Shared interface library and `IApiService` |
 | `Alva.Client`, `Alva.Client.Demo` | Production and demo shells |
-| `Alva.Theme.Alva`, `Flare.Components.Gantt` | Theme and Gantt component |
+| `Alva.Theme.Alva` | Alva theme; Gantt comes from the Flare.Components.Gantt package |
 
 ## Documentation
 

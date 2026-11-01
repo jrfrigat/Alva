@@ -2,7 +2,7 @@ name: Build and test
 
 on:
   push:
-    branches: [ main ]
+    branches: [ '**' ]
   pull_request:
     branches: [ main ]
   workflow_dispatch:
@@ -30,6 +30,11 @@ jobs:
           path: TestResults/**/*.trx
           if-no-files-found: ignore
       - name: Validate Compose
-        run: POSTGRES_PASSWORD=ci-validation-only docker compose config --quiet
+        env:
+          POSTGRES_PASSWORD: ci-validation-only
+          NPM_PROXY_IP: 192.0.2.10
+        run: |
+          docker compose -f docker-compose.yml config --quiet
+          docker compose -f docker-compose.yml -f docker-compose.override.example.yml config --quiet
       - name: Build container
         run: docker build -f build/Dockerfile -t alva:ci .

@@ -11,8 +11,8 @@ Alva — PWA на Blazor WebAssembly с серверной частью на ASP
 │ Alva.Client / .Demo        │        │ Alva.Api                  │
 │   └ Alva.Client.UI         │  HTTP  │   ├ Minimal API endpoints │
 │        └ IApiService       │ ─────► │   ├ cookie-аутентификация │
-│             ├ HttpApiService│       │   └ доступ по командам   │
-│             └ LocalApiService│      │ Alva.Infrastructure       │
+│             ├ ApiServiceHttp│       │   └ доступ по командам   │
+│             └ ApiServiceLocalStorage│      │ Alva.Infrastructure       │
 └───────────────────────────┘        │   └ EF Core → PostgreSQL  │
                                      └───────────────────────────┘
 ```
@@ -28,8 +28,8 @@ Alva — PWA на Blazor WebAssembly с серверной частью на ASP
 | `Alva.Client.UI` | Библиотека интерфейса: страницы, макет, модели, `IApiService`, `AlvaSession` |
 | `Alva.Client` | Прод-оболочка: реализация `IApiService` поверх HTTP |
 | `Alva.Client.Demo` | Демо-оболочка: реализация `IApiService` на `localStorage` |
-| `Alva.Theme.Alva` | Тема Flare «Alva Sapphire» |
-| `Flare.Components.Gantt` | Локальный компонент диаграммы Ганта (растёт как пакет Flare) |
+| `Alva.Theme.Alva` | Тема Alva Stitch на базе Material 3 Expressive |
+| `Flare.Components.Gantt` | Внешний NuGet-пакет Flare, используемый Alva.Client.UI |
 
 ## Поток данных
 
@@ -40,6 +40,13 @@ Alva — PWA на Blazor WebAssembly с серверной частью на ASP
 `IApiService` покрывает сессию (вход, выход, выбор пространства и команды), чтение и
 запись ресурсов команды, импорт и экспорт. `AlvaSession` добавляет удобные обёртки
 (`Get<T>`, `Send`, `Save`) и контекст списка задач.
+
+## Локализация
+
+Ресурсы Alva.Client.UI/Resources/AppStrings.resx (English) и AppStrings.ru.resx
+(Русский) читаются через Strings.T(key) и IStringLocalizer. Отсутствующий ключ
+возвращается как есть. CultureService выбирает язык: localStorage, затем язык
+браузера, затем English. Переключатель EN/RU сохраняет выбор на устройстве.
 
 ## Серверная часть
 
@@ -54,7 +61,7 @@ Alva — PWA на Blazor WebAssembly с серверной частью на ASP
 
 ## Демо-версия
 
-Демо работает без сервера: `LocalApiService` держит данные в `localStorage` и повторяет
+Демо работает без сервера: `ApiServiceLocalStorage` держит данные в `localStorage` и повторяет
 контракт `IApiService`. Это позволяет показывать приложение на GitHub Pages, не поднимая
 API и базу.
 

@@ -12,6 +12,7 @@
 .clinerules
 .claude
 .env
+docker-compose.override.yml
 .env.*
 TestResults
 artifacts
