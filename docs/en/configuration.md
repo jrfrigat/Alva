@@ -13,7 +13,7 @@ file for Docker Compose and from user secrets during local development.
 | `Database:MigrateOnStartup` | `Database__MigrateOnStartup` | `true` | Create/migrate the schema at startup |
 | `DataProtection:KeysPath` | `DataProtection__KeysPath` | — | Directory for the Data Protection keys (in Docker: `/var/alva/keys`) |
 | `ReverseProxy:Enabled` | `ReverseProxy__Enabled` | `false` | Trust forwarded headers from a reverse proxy |
-| `ReverseProxy:KnownProxy` | `ReverseProxy__KnownProxy` | — | IP of the trusted proxy (required when `Enabled=true`) |
+| `ReverseProxy:KnownProxy` | `ReverseProxy__KnownProxy` | — | DNS name or IP of the trusted proxy (required when `Enabled=true`) |
 | `ASPNETCORE_ENVIRONMENT` | `ASPNETCORE_ENVIRONMENT` | `Production` | Environment |
 | `ASPNETCORE_HTTP_PORTS` | `ASPNETCORE_HTTP_PORTS` | `8080` | Application port |
 
@@ -30,7 +30,7 @@ production behaviour never changes by accident.
 | `POSTGRES_PORT` | `5432` | Database loopback port when enabled in the local override |
 | `ALVA_PORT` | `8080` | Application loopback port when enabled in the local override |
 | `ALVA_IMAGE` | `alva:latest` | Image name built by compose and used by `publish-docker.bat` |
-| `NPM_PROXY_IP` | - | Trusted NPM IP on proxy_network; required by the NPM override, set manually |
+| `NPM_PROXY_HOST` | `nginx-proxy` | NPM container name or alias on `proxy_network`. The override also accepts the older `NPM_PROXY_IP` when `NPM_PROXY_HOST` is unset. |
 | `ASPNETCORE_ENVIRONMENT` | `Production` | Application environment |
 | `ALVA_DOMAIN` | `localhost` | Domain for the Caddy HTTPS profile |
 | `CADDY_IP` | `172.30.10.10` | Caddy address on the dedicated network |

@@ -1014,6 +1014,7 @@
   <data name="Сервер не ответил вовремя. Повторите." xml:space="preserve"><value>The server did not respond in time. Try again.</value></data>
   <data name="Не удалось выполнить действие. Повторите." xml:space="preserve"><value>The action could not be completed. Try again.</value></data>
   <data name="Неверный email или пароль, либо вход временно заблокирован." xml:space="preserve"><value>Wrong email or password, or sign-in is temporarily blocked.</value></data>
+  <data name="Сервер отклонил запрос входа или регистрации. Обратитесь к администратору Alva." xml:space="preserve"><value>The server rejected the sign-in or registration request. Contact your Alva administrator.</value></data>
   <data name="Аккаунт с этой почтой уже существует." xml:space="preserve"><value>An account with this email already exists.</value></data>
   <data name="Первый запуск" xml:space="preserve"><value>First run</value></data>
   <data name="Настройте команду по шагам — подсказки появятся здесь." xml:space="preserve"><value>Set up the team step by step; hints will appear here.</value></data>

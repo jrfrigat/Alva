@@ -52,7 +52,8 @@ From the repository root, run:
 ```
 
 The example override joins the existing proxy_network for Nginx Proxy Manager.
-Upstream: **http://alva-app:8080**, with no host ports. Set the database password and NPM IP manually.
+Upstream is **http://alva-app:8080**, with no host ports. Set the database password in `.env`.
+If NPM uses a different network name, set `NPM_PROXY_HOST` to that name. The default is `nginx-proxy`.
 For loopback access and Caddy, see [Deployment](docs/en/deployment.md).
 
 ### Locally, without Docker

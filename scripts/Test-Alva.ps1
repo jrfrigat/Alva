@@ -53,6 +53,7 @@ function Invoke-Api {
         [string] $Path,
         [object] $Body = $null,
         [int[]] $ExpectedStatus = @(200),
+        [string] $Origin,
         [switch] $WithoutRequestHeader,
         [switch] $Raw,
         [switch] $Bytes,
@@ -60,6 +61,7 @@ function Invoke-Api {
     )
     $request = [Net.Http.HttpRequestMessage]::new([Net.Http.HttpMethod]::new($Method), $Path)
     if (-not $WithoutRequestHeader) { [void]$request.Headers.TryAddWithoutValidation('X-Alva-Request', '1') }
+    if ($Origin) { [void]$request.Headers.TryAddWithoutValidation('Origin', $Origin) }
     if ($null -ne $Body) {
         if ($Body -is [byte[]]) { $request.Content = [Net.Http.ByteArrayContent]::new($Body) }
         elseif ($UnencodedBody) { $request.Content = [Net.Http.StringContent]::new([string]$Body, [Text.Encoding]::UTF8, 'application/octet-stream') }
@@ -143,7 +145,9 @@ services:
     $password = [Convert]::ToHexString([Security.Cryptography.RandomNumberGenerator]::GetBytes(24))
     $registration = @{ email = "owner-$runId@example.invalid"; password = $password;
         displayName = 'Smoke owner'; workspaceName = 'Smoke workspace' }
-    [void](Invoke-Api $owner POST 'api/auth/register' $registration -ExpectedStatus @(200, 201))
+    $browserOrigin = $script:baseUrl.TrimEnd('/')
+    [void](Invoke-Api $owner POST 'api/auth/register' $registration -Origin 'https://foreign.example.invalid' -ExpectedStatus @(403))
+    [void](Invoke-Api $owner POST 'api/auth/register' $registration -Origin $browserOrigin -ExpectedStatus @(200, 201))
     $workspaces = Invoke-Api $owner GET 'api/workspaces'
     Assert-True ($workspaces.Count -eq 1) 'Registration should create exactly one workspace.'
     $workspaceId = $workspaces[0].id
@@ -194,8 +198,10 @@ services:
     if ($AuthOnly) {
         [void](Invoke-Api $owner POST 'api/auth/logout' -ExpectedStatus @(200, 204))
         [void](Invoke-Api $owner GET 'api/workspaces' -ExpectedStatus @(401))
-        [void](Invoke-Api $owner POST 'api/auth/login' @{ email = $registration.email; password = $password } `
-            -ExpectedStatus @(200, 204))
+        $login = @{ email = $registration.email; password = $password }
+        [void](Invoke-Api $owner POST 'api/auth/login' $login -Origin 'https://foreign.example.invalid' -ExpectedStatus @(403))
+        [void](Invoke-Api $owner POST 'api/auth/login' $login -Origin $browserOrigin -ExpectedStatus @(200, 204))
+        [void](Invoke-Api $owner GET 'api/auth/me')
         Write-Host 'Alva authentication smoke passed (business checks not requested).'
         return
     }

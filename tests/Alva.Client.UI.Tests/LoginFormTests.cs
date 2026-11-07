@@ -124,6 +124,28 @@ public sealed class LoginFormTests : UiTestBase
         Assert.Single(Api.Authentications);
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void A_forbidden_authentication_request_does_not_blame_workspace_permissions(bool register)
+    {
+        Api.OnAuthenticate = _ => new HttpRequestException("Недопустимый источник запроса.", null, HttpStatusCode.Forbidden);
+        var cut = Page(register);
+        Field(cut, "Электронная почта").Change("anna@company.ru");
+        Field(cut, "Пароль").Change("достаточно-длинный");
+        if (register)
+        {
+            Field(cut, "Ваше имя").Change("Анна");
+            Field(cut, "Название рабочего пространства").Change("Продукт");
+            Field(cut, "Повторите пароль").Change("достаточно-длинный");
+        }
+
+        Submit(cut);
+
+        Assert.Contains("Сервер отклонил запрос входа или регистрации.", cut.Find(".flare-alert").TextContent);
+        Assert.Single(Api.Authentications);
+    }
+
     [Fact]
     public void The_password_can_be_shown_and_hidden_without_losing_focus()
     {

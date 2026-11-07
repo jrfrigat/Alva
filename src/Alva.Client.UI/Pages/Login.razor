@@ -133,6 +133,7 @@
         // Занятая почта — ошибка конкретного поля; неверный вход — своя подсказка, а не «сессия истекла».
         catch (HttpRequestException error) when (_register && error.StatusCode == System.Net.HttpStatusCode.Conflict) { _errors[Field.Email] = Strings.T("Аккаунт с этой почтой уже существует."); await FocusFirstError(); }
         catch (HttpRequestException error) when (!_register && error.StatusCode == System.Net.HttpStatusCode.Unauthorized) { _error = Strings.T("Неверный email или пароль, либо вход временно заблокирован."); }
+        catch (HttpRequestException error) when (error.StatusCode == System.Net.HttpStatusCode.Forbidden) { _error = Strings.T("Сервер отклонил запрос входа или регистрации. Обратитесь к администратору Alva."); }
         catch (Exception error) when (error is HttpRequestException or InvalidOperationException) { _error = PageFeedback.Describe(error); }
         finally { _busy = false; }
     }

@@ -27,13 +27,14 @@ contains machine settings, loads automatically and is excluded from Git and the 
 .env also stays local. Preserve existing values when upgrading.
 
 For NPM, copy `docker-compose.override.example.yml` to `docker-compose.override.yml`.
-Set a unique POSTGRES_PASSWORD and a concrete NPM_PROXY_IP on the existing proxy_network
-in .env. Find the address with `docker network inspect proxy_network`.
-The BAT does not discover it. If the NPM address changes, update the value and recreate the app.
+Set a unique `POSTGRES_PASSWORD` in `.env`. The override uses the DNS name `nginx-proxy`.
+Set `NPM_PROXY_HOST` if NPM has a different container name or alias on `proxy_network`.
+To switch an older installation from `NPM_PROXY_IP` to DNS, set `NPM_PROXY_HOST` and update the
+local override from the example. Alva refreshes the resolved addresses during requests without a restart.
 
 Only the application joins the NPM network; PostgreSQL stays on the private network.
 The NPM upstream is **http://alva-app:8080** (scheme http, hostname alva-app, port 8080).
-No host ports are published. Forwarded headers are accepted only from the configured IP.
+No host ports are published. Alva accepts forwarded headers only from the configured proxy's addresses.
 NPM handles HTTPS; do not start Caddy with this configuration.
 
 From the repository root:

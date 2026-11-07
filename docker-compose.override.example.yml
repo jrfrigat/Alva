@@ -1,11 +1,11 @@
-# Copy to docker-compose.override.yml and set NPM_PROXY_IP in .env.
+# Copy to docker-compose.override.yml. Set NPM_PROXY_HOST if NPM uses a different name.
 # Nginx Proxy Manager must already be connected to proxy_network.
 services:
   app:
     container_name: alva-app
     environment:
       ReverseProxy__Enabled: "true"
-      ReverseProxy__KnownProxy: ${NPM_PROXY_IP:?Set NPM_PROXY_IP to the NPM address on proxy_network}
+      ReverseProxy__KnownProxy: ${NPM_PROXY_HOST:-${NPM_PROXY_IP:-nginx-proxy}}
     networks:
       default: {}
       proxy_network:

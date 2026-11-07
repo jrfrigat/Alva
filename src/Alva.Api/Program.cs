@@ -5,7 +5,6 @@ using Alva.Api;
 using Alva.Domain;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.DataProtection;
-using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using System.Net;
 using System.Threading.RateLimiting;
@@ -37,19 +36,18 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
 builder.Services.AddAuthorization();
 var protection = builder.Services.AddDataProtection().SetApplicationName("Alva");
 if (builder.Configuration["DataProtection:KeysPath"] is { Length: > 0 } keysPath) protection.PersistKeysToFileSystem(new DirectoryInfo(keysPath));
-var proxyEnabled = builder.Configuration.GetValue("ReverseProxy:Enabled", false);
-if (proxyEnabled)
-{
-    if (!IPAddress.TryParse(builder.Configuration["ReverseProxy:KnownProxy"], out var knownProxy)) throw new InvalidOperationException("ReverseProxy:KnownProxy must specify the trusted proxy IP.");
-    builder.Services.Configure<ForwardedHeadersOptions>(o => { o.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto; o.KnownProxies.Add(knownProxy); });
-}
 // Модули интеграции задач: каждый подключается одной строкой, ядро знает их только через контракт.
 builder.Services.AddYandexTrackerModule();
 builder.Services.AddScoped<IntegrationSync>();
 if (builder.Configuration.GetValue("Integrations:AutoSync", true)) builder.Services.AddHostedService<IntegrationSyncWorker>();
 builder.Services.AddRateLimiter(o => { o.RejectionStatusCode = 429; o.AddPolicy("auth", ctx => RateLimitPartition.GetFixedWindowLimiter(ctx.Connection.RemoteIpAddress?.ToString() ?? "unknown", _ => new FixedWindowRateLimiterOptions { PermitLimit = 30, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 })); });
 var app = builder.Build();
-if (proxyEnabled) app.UseForwardedHeaders();
+if (builder.Configuration.GetValue("ReverseProxy:Enabled", false))
+{
+    var proxy = builder.Configuration["ReverseProxy:KnownProxy"]?.Trim();
+    var loggerFactory = app.Services.GetRequiredService<ILoggerFactory>();
+    app.Use(next => new TrustedProxyForwarding(next, loggerFactory, proxy, Dns.GetHostAddressesAsync, TimeProvider.System).InvokeAsync);
+}
 app.UseExceptionHandler();
 app.Use(async (context, next) =>
 {

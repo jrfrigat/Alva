@@ -28,14 +28,14 @@ if (!(Test-Path docker-compose.override.yml)) {
     Copy-Item docker-compose.override.example.yml docker-compose.override.yml
 }
 # Set a unique POSTGRES_PASSWORD in .env.
-# Set NPM_PROXY_IP: the Nginx Proxy Manager address on proxy_network.
+# If NPM uses a different network name, set NPM_PROXY_HOST in .env.
 docker compose config --quiet
 ./run-docker-compose.bat
 ```
 
 NPM must already be on `proxy_network`. Set the Proxy Host scheme to `http`, Forward Hostname
 `alva-app`, Forward Port `8080`. Neither the application nor PostgreSQL publishes host ports.
-The BAT only starts Compose; it does not create .env or discover an IP address.
+The BAT starts Compose using the prepared files.
 
 For access through http://localhost:8080, use the loopback override in
 [Deployment](deployment.md), which also covers HTTPS, logs and stopping the stack.

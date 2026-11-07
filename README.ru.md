@@ -56,7 +56,8 @@
 ```
 
 Образец override подключает приложение к существующей proxy_network для Nginx Proxy Manager.
-Upstream: **http://alva-app:8080**, без пробросов портов. Задайте пароль базы и IP NPM вручную.
+Upstream — **http://alva-app:8080**, без проброса портов. Задайте пароль базы в `.env`.
+Если сетевое имя NPM отличается от `nginx-proxy`, укажите его в `NPM_PROXY_HOST`.
 Локальный доступ через loopback и Caddy: [Развёртывание](docs/ru/deployment.md).
 
 ### Локально без Docker

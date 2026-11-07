@@ -13,7 +13,7 @@
 | `Database:MigrateOnStartup` | `Database__MigrateOnStartup` | `true` | Создание/миграция схемы при запуске |
 | `DataProtection:KeysPath` | `DataProtection__KeysPath` | — | Каталог для ключей Data Protection (в Docker — `/var/alva/keys`) |
 | `ReverseProxy:Enabled` | `ReverseProxy__Enabled` | `false` | Доверять ли forwarded headers от reverse proxy |
-| `ReverseProxy:KnownProxy` | `ReverseProxy__KnownProxy` | — | IP доверенного прокси (обязателен при `Enabled=true`) |
+| `ReverseProxy:KnownProxy` | `ReverseProxy__KnownProxy` | — | DNS-имя или IP доверенного прокси (обязательно при `Enabled=true`) |
 | `ASPNETCORE_ENVIRONMENT` | `ASPNETCORE_ENVIRONMENT` | `Production` | Окружение |
 | `ASPNETCORE_HTTP_PORTS` | `ASPNETCORE_HTTP_PORTS` | `8080` | Порт приложения |
 
@@ -30,7 +30,7 @@
 | `POSTGRES_PORT` | `5432` | Порт базы на loopback, если задан в локальном override |
 | `ALVA_PORT` | `8080` | Порт приложения на loopback, если задан в локальном override |
 | `ALVA_IMAGE` | `alva:latest` | Имя образа, который собирает compose и публикует `publish-docker.bat` |
-| `NPM_PROXY_IP` | - | IP доверенного NPM в proxy_network; обязателен для NPM override, задаётся вручную |
+| `NPM_PROXY_HOST` | `nginx-proxy` | Имя контейнера или алиас NPM в `proxy_network`. Если `NPM_PROXY_HOST` не задан, override также поддерживает прежний `NPM_PROXY_IP`. |
 | `ASPNETCORE_ENVIRONMENT` | `Production` | Окружение приложения |
 | `ALVA_DOMAIN` | `localhost` | Домен для HTTPS-профиля Caddy |
 | `CADDY_IP` | `172.30.10.10` | Адрес Caddy в выделенной сети |
