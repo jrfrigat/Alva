@@ -1,8 +1,11 @@
 using AngleSharp.Dom;
 using Bunit;
+using Flare.Abstractions;
+using Flare.Components;
 using Flare.Components.Gantt;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
+using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
 namespace Flare.Components.Gantt.Tests;
@@ -132,6 +135,9 @@ public sealed class GanttInteractionTests : GanttTestBase
     [Fact]
     public void Links_are_created_from_the_keyboard_and_cycles_are_refused()
     {
+        var localization = Services.GetRequiredService<IFlareLocalization>();
+        localization.SetCulture(Ru);
+        RenderTree.Add<FlareLocalizationProvider>();
         var created = new List<GanttLink>();
         var rejected = new List<GanttLinkRejectedEventArgs>();
         var items = new[] { new Work("a", "r1", Day(0), Day(1)), new Work("b", "r1", Day(2), Day(3)), new Work("c", "r2", Day(4), Day(5)) };
@@ -147,7 +153,8 @@ public sealed class GanttInteractionTests : GanttTestBase
         var refusal = Assert.Single(rejected);
         Assert.Equal(GanttValidationCode.Cycle, refusal.Validation.Code);
         Assert.Equal("Связь создает цикл: c → a → b → c.", refusal.Message);
-        Assert.Equal("Связь создает цикл: C → A → B → C.", GanttTexts.For(new System.Globalization.CultureInfo("ru-RU")).Describe(refusal.Validation, key => key.ToUpperInvariant()));
+        Assert.Equal("Связь создает цикл: C → A → B → C.", GanttStrings.Describe(
+            refusal.Validation, key => key.ToUpperInvariant(), localization.GetLocalizer<GanttStrings>()));
         Assert.Equal(refusal.Message, cut.Find("[role=status]").TextContent);
 
         Bar(cut, "a").KeyDown(new KeyboardEventArgs { Key = "L" });

@@ -1,5 +1,6 @@
 using System.Globalization;
 using Flare.Components.Gantt;
+using Flare.Theming;
 using Xunit;
 
 namespace Flare.Components.Gantt.Tests;
@@ -236,7 +237,10 @@ public sealed class GanttGraphTests
         var cycle = GanttGraph.Validate(links, new GanttLink("c", "a"));
         Assert.Equal(GanttValidationCode.Cycle, cycle.Code);
         Assert.Equal(["c", "a", "b", "c"], cycle.Path);
-        Assert.Equal("Связь создает цикл: c → a → b → c.", GanttTexts.For(new System.Globalization.CultureInfo("ru-RU")).Describe(cycle));
+        var localization = new FlareLocalization();
+        localization.SetCulture(CultureInfo.GetCultureInfo("ru-RU"));
+        Assert.Equal("Связь создает цикл: c → a → b → c.",
+            GanttStrings.Describe(cycle, localizer: localization.GetLocalizer<GanttStrings>()));
 
         Assert.Equal(GanttValidationCode.SelfLink, GanttGraph.Validate(links, new GanttLink("a", "a")).Code);
         Assert.Equal(GanttValidationCode.Duplicate, GanttGraph.Validate(links, new GanttLink("a", "b")).Code);
