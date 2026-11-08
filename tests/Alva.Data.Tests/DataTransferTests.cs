@@ -137,4 +137,20 @@ public sealed class DataTransferTests
         Assert.Equal(1, upgraded.Rows.Count(row => row.Kind == "taskSkill"));
         Assert.Contains(upgraded.Rows, row => row.Kind == "taskSkill" && row.Payload.GetProperty("skillId").GetGuid() == sql.Id);
     }
+
+    [Fact]
+    public void Upgrade_fills_the_legacy_membership_identity_and_start()
+    {
+        var team = Guid.NewGuid();
+        var actor = Guid.NewGuid();
+        var department = Guid.NewGuid();
+        var rowId = Guid.NewGuid();
+        var row = new DataRow("actorDepartment", rowId, JsonDocument.Parse($$"""{"actorId":"{{actor}}","departmentId":"{{department}}"}""").RootElement.Clone());
+
+        var upgraded = DataTransfer.Upgrade(new DataPackage(1, team, [row]));
+
+        var membership = Assert.Single(upgraded.Rows);
+        Assert.Equal(rowId, membership.Payload.GetProperty("id").GetGuid());
+        Assert.Equal("0001-01-01", membership.Payload.GetProperty("from").GetString());
+    }
 }

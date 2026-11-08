@@ -45,6 +45,31 @@ public sealed class DemoSkillsTests
         Assert.False(SkillMath.Compatible(saved.RequiredSkillIds,actor.SkillIds));
     }
 
+    [Fact]
+    public async Task Demo_membership_periods_survive_reload()
+    {
+        var storage = new Storage();
+        var api = new ApiServiceLocalStorage(storage);
+        await api.Initialize();
+        var department = (await api.Get<ActorModel[]>(api.TeamPath("actors"))).Single(x => x.Kind == "Department");
+        var today = DateOnly.FromDateTime(DateTime.Today);
+        await api.Send(HttpMethod.Post, api.TeamPath("actors"), new ActorRequest("Period person", "Person",
+            DepartmentMemberships:
+            [
+                new DepartmentMembershipRequest(null, department.Id, today.AddDays(-30), today.AddDays(-1)),
+                new DepartmentMembershipRequest(null, department.Id, today, null)
+            ]));
+        var actor = (await api.Get<ActorModel[]>(api.TeamPath("actors"))).Single(x => x.Name == "Period person");
+        Assert.Equal(2, actor.DepartmentMemberships.Length);
+
+        var reloaded = new ApiServiceLocalStorage(storage);
+        await reloaded.Initialize();
+        var saved = (await reloaded.Get<ActorModel[]>(reloaded.TeamPath("actors"))).Single(x => x.Id == actor.Id);
+        Assert.Equal(2, saved.DepartmentMemberships.Length);
+        Assert.Equal([department.Id], saved.DepartmentIds);
+        Assert.Equal(department.Id, saved.ParentId);
+    }
+
     private sealed class Storage : IJSRuntime
     {
         private readonly Dictionary<string,string> _values=[];

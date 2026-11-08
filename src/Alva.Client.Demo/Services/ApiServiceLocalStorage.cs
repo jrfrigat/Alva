@@ -228,18 +228,19 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
         var people = store.Actors.Where(a => a.TeamId == teamId && a.Kind == "Person").ToArray();
         var work = PlannedTasks(store, teamId).Select(x => (x, Person: PersonOf(store, x.Task))).Where(w => w.Person.HasValue)
             .Select(w => new CapacityWork(w.Person!.Value, w.x.Task.EstimateHours ?? 0m, w.x.Start, w.x.End, w.x.Task.Deadline, w.x.Task.DailyHoursLimit));
-        return CapacityMath.Build(people.Select(p => (p.Id, p.Name)), (id, _) => CalendarOf(store, people.First(p => p.Id == id)), work, from, to);
+        return CapacityMath.Build(people.Select(p => (p.Id, p.Name)), (id, day) => CalendarOf(store, people.First(p => p.Id == id), day), work, from, to);
     }
 
     /// <summary>Кто делает задачу — тем же правилом, что в API: выбранный человек, иначе цель назначения, если это человек.</summary>
     private static Guid? PersonOf(DemoStore store, TaskModel task) =>
         task.ResolvedPersonId ?? (store.Actors.FirstOrDefault(a => a.Id == task.AssignmentTargetId) is { Kind: "Person" } target ? target.Id : null);
 
-    /// <summary>Календарь человека вместе с общими графиками его подкоманд и их родителей.</summary>
-    private static CalendarDto CalendarOf(DemoStore store, ActorModel person)
+    /// <summary>Календарь человека вместе с графиками подкоманд, активных в эту дату, и их родителей.</summary>
+    private static CalendarDto CalendarOf(DemoStore store, ActorModel person, DateOnly day)
     {
         var departments = store.Actors.Where(a => a.Kind == "Department").ToDictionary(a => a.Id, a => a.ParentId);
-        var own = person.DepartmentIds.Append(person.ParentId ?? Guid.Empty).Where(departments.ContainsKey);
+        var own = person.DepartmentMemberships.Where(m => m.From <= day && (m.To is null || day <= m.To))
+            .Select(m => m.DepartmentId).Where(departments.ContainsKey);
         var shared = CapacityMath.DepartmentsWithParents(own, id => departments.GetValueOrDefault(id) is { } parent && departments.ContainsKey(parent) ? parent : null);
         return CapacityMath.Combine(Calendar(store, person.Id), shared.Select(id => store.Calendars.FirstOrDefault(c => c.ActorId == id)).OfType<CalendarDto>());
     }
@@ -255,7 +256,7 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
             return new RiskTask(x.Task.Id, x.Task.ParentId, x.Task.Title, x.Task.EstimateHours, x.Start, x.End, x.Task.Deadline, person?.Id, person?.Name, target, x.Task.Status, x.Task.RemainingHours, x.Task.Priority, x.Task.BacklogRank, x.Task.DailyHoursLimit);
         }).ToArray();
         var dependencies = store.Dependencies.Select(d => new RiskDependency(d.PredecessorId, d.SuccessorId, d.Kind, d.LagDays));
-        return RiskMath.Assess(tasks, dependencies, id => CalendarOf(store, actors[id]), today);
+        return RiskMath.Assess(tasks, dependencies, id => CalendarOf(store, actors[id], today), today);
     }
 
     /// <summary>
@@ -274,7 +275,7 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
         var tasks = OpenTasks(store, teamId, includeClosed: true).Select(x => new BalanceTaskInput(x.Task.Id, x.Task.Title, x.Task.Status, x.Task.ParentId,
             x.Task.EstimateHours, x.Start, x.End, x.Task.Deadline, x.Task.AssignmentTargetId, x.Task.ResolvedPersonId, x.Task.RequiredSkillIds, x.Task.Priority, x.Task.DatesFixed, x.Task.DailyHoursLimit)).ToArray();
         var links = TeamDependencies(store, teamId).Select(d => new BalanceLinkInput(d.PredecessorId, d.SuccessorId, d.Kind, d.LagDays)).ToArray();
-        var problem = BalanceMath.Build(mode, sprintId, sprint.StartDate, sprint.EndDate, persons, id => CalendarOf(store, people.First(p => p.Id == id)), tasks, links);
+        var problem = BalanceMath.Build(mode, sprintId, sprint.StartDate, sprint.EndDate, persons, id => CalendarOf(store, people.First(p => p.Id == id), sprint.StartDate), tasks, links);
         if (problem.Infeasible is not null) return BalanceMath.Proposal(problem, [], BalanceMath.Infeasible);
         return BalanceMath.Proposal(problem, BalanceMath.Greedy(problem), BalanceMath.Heuristic, "Demo: простой поиск без решателя OR-Tools.");
     }
@@ -412,8 +413,9 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
         var actor = new ActorModel
         {
             Id = Guid.NewGuid(), TeamId = teamId, Name = request.Name, Kind = request.Kind, Email = request.Email,
-            ParentId = request.ParentId, UserId = request.UserId, SkillIds = request.SkillIds ?? [], DepartmentIds = request.DepartmentIds ?? []
+            ParentId = request.ParentId, UserId = request.UserId, SkillIds = request.SkillIds ?? []
         };
+        ApplyMemberships(actor, request);
         store.Actors.Add(actor);
         if (actor.Kind == "Person") store.Calendars.Add(new CalendarDto(actor.Id, "Europe/Moscow", 8m, 8m, 8m, 8m, 8m, 0m, 0m, [], []));
     }
@@ -425,10 +427,27 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
         actor.Name = request.Name;
         actor.Kind = request.Kind;
         actor.Email = request.Email;
-        actor.ParentId = request.ParentId;
         actor.UserId = request.UserId;
         actor.SkillIds = request.SkillIds ?? [];
-        actor.DepartmentIds = request.DepartmentIds ?? [];
+        if (actor.Kind == "Department") actor.ParentId = request.ParentId;
+        ApplyMemberships(actor, request);
+    }
+
+    private static void ApplyMemberships(ActorModel actor, ActorRequest request)
+    {
+        var today = DateOnly.FromDateTime(DateTime.Today);
+        if (actor.Kind != "Person")
+        {
+            actor.DepartmentMemberships = [];
+            actor.DepartmentIds = [];
+            return;
+        }
+        actor.DepartmentMemberships = request.DepartmentMemberships is not null
+            ? [.. request.DepartmentMemberships.Select(m => new DepartmentMembershipModel { Id = m.Id ?? Guid.NewGuid(), DepartmentId = m.DepartmentId, From = m.From, To = m.To })]
+            : (request.DepartmentIds ?? []).Select(id => new DepartmentMembershipModel { Id = Guid.NewGuid(), DepartmentId = id, From = new DateOnly(1, 1, 1) }).ToArray();
+        var active = actor.DepartmentMemberships.Where(m => m.From <= today && (m.To is null || today <= m.To)).Select(m => m.DepartmentId).Distinct().ToArray();
+        actor.DepartmentIds = active;
+        actor.ParentId = active.FirstOrDefault() is var first && first != Guid.Empty ? first : null;
     }
 
     /// <summary>Родитель охватывает детей — то же правило, что в API; версия предков не меняется.</summary>
@@ -885,9 +904,9 @@ internal static class DemoSeed
                 new ActorModel { Id = DemoIds.Department, Name = "Разработка", Kind = "Department" },
                 new ActorModel { Id = DemoIds.BackendRole, Name = "Backend", Kind = "Skill" },
                 new ActorModel { Id = DemoIds.FrontendRole, Name = "Frontend", Kind = "Skill" },
-                new ActorModel { Id = DemoIds.Anna, Name = "Анна Ковалёва", Kind = "Person", Email = "anna@alva.local", UserId = DemoIds.User, ParentId = DemoIds.Department, SkillIds = [DemoIds.BackendRole], DepartmentIds = [DemoIds.Department] },
-                new ActorModel { Id = DemoIds.Petr, Name = "Пётр Смирнов", Kind = "Person", Email = "petr@alva.local", ParentId = DemoIds.Department, SkillIds = [DemoIds.FrontendRole], DepartmentIds = [DemoIds.Department] },
-                new ActorModel { Id = DemoIds.Olga, Name = "Ольга Демидова", Kind = "Person", Email = "olga@alva.local", ParentId = DemoIds.Department, SkillIds = [DemoIds.BackendRole], DepartmentIds = [DemoIds.Department] }
+                new ActorModel { Id = DemoIds.Anna, Name = "Анна Ковалёва", Kind = "Person", Email = "anna@alva.local", UserId = DemoIds.User, ParentId = DemoIds.Department, SkillIds = [DemoIds.BackendRole], DepartmentIds = [DemoIds.Department], DepartmentMemberships = [new DepartmentMembershipModel { Id = Guid.NewGuid(), DepartmentId = DemoIds.Department, From = new DateOnly(2026, 1, 1) }] },
+                new ActorModel { Id = DemoIds.Petr, Name = "Пётр Смирнов", Kind = "Person", Email = "petr@alva.local", ParentId = DemoIds.Department, SkillIds = [DemoIds.FrontendRole], DepartmentIds = [DemoIds.Department], DepartmentMemberships = [new DepartmentMembershipModel { Id = Guid.NewGuid(), DepartmentId = DemoIds.Department, From = new DateOnly(2026, 1, 1) }] },
+                new ActorModel { Id = DemoIds.Olga, Name = "Ольга Демидова", Kind = "Person", Email = "olga@alva.local", ParentId = DemoIds.Department, SkillIds = [DemoIds.BackendRole], DepartmentIds = [DemoIds.Department], DepartmentMemberships = [new DepartmentMembershipModel { Id = Guid.NewGuid(), DepartmentId = DemoIds.Department, From = new DateOnly(2026, 1, 1) }] }
             ],
             Calendars =
             [

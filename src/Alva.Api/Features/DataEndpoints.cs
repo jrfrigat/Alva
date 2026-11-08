@@ -177,6 +177,14 @@ public static class DataTransfer
         var upgraded = new List<DataRow>(rows.Count);
         foreach (var row in rows)
         {
+            if (row.Kind == "actorDepartment")
+            {
+                var membership = JsonNode.Parse(row.Payload.GetRawText())!.AsObject();
+                if (!membership.ContainsKey("id")) membership["id"] = row.Id;
+                if (!membership.ContainsKey("from")) membership["from"] = "0001-01-01";
+                upgraded.Add(row with { Payload = JsonSerializer.SerializeToElement(membership, Json) });
+                continue;
+            }
             if (row.Kind is not ("actor" or "task" or "actorRole"))
             {
                 upgraded.Add(row);
@@ -304,7 +312,8 @@ public static class DataTransfer
                     if (values.GetValueOrDefault(x.SkillId) is Actor requiredSkill && requiredSkill.Kind != ActorKind.Skill) Error(id, "skill", "Требование задачи должно указывать на навык."); break;
                 case ActorDepartment x:
                     Ref<Actor>(id, x.ActorId, "actorId"); Ref<Actor>(id, x.DepartmentId, "departmentId");
-                    if (values.GetValueOrDefault(x.ActorId) is Actor personActor && personActor.Kind != ActorKind.Person || values.GetValueOrDefault(x.DepartmentId) is Actor department && department.Kind != ActorKind.Department) Error(id, "department", "Подразделение связывается только с человеком."); break;
+                    if (values.GetValueOrDefault(x.ActorId) is Actor personActor && personActor.Kind != ActorKind.Person || values.GetValueOrDefault(x.DepartmentId) is Actor department && department.Kind != ActorKind.Department) Error(id, "department", "Подразделение связывается только с человеком.");
+                    if (x.To is { } to && to < x.From) Error(id, "period", "Окончание периода раньше начала."); break;
                 case Assignment x:
                     Ref<TaskCard>(id, x.TaskId, "taskId"); Ref<Actor>(id, x.TargetId, "targetId"); Ref<Actor>(id, x.ResolvedPersonId, "resolvedPersonId", true);
                     if (values.Values.OfType<TaskCard>().Any(t => t.ParentId == x.TaskId)) Error(id, "taskId", "Назначение допустимо только для листовой задачи.");
@@ -332,7 +341,14 @@ public static class DataTransfer
             bool Walk(Guid start) { var seen = new HashSet<Guid>(); for (Guid? current = start; current.HasValue && seen.Add(current.Value); current = (values.GetValueOrDefault(current.Value) as Actor)?.ParentId) if (current == department) return true; return false; }
             return Walk(person) || values.Values.OfType<ActorDepartment>().Where(x => x.ActorId == person).Any(x => Walk(x.DepartmentId));
         }
-        Duplicate<Assignment>(x => x.TaskId, "assignment"); Duplicate<WorkCalendar>(x => x.ActorId, "calendar"); Duplicate<TaskDependency>(x => (x.PredecessorId, x.SuccessorId), "dependency"); Duplicate<ActorSkill>(x => (x.ActorId, x.SkillId), "actorSkill"); Duplicate<TaskSkill>(x => (x.TaskId, x.SkillId), "taskSkill"); Duplicate<ActorDepartment>(x => (x.ActorId, x.DepartmentId), "actorDepartment");
+        Duplicate<Assignment>(x => x.TaskId, "assignment"); Duplicate<WorkCalendar>(x => x.ActorId, "calendar"); Duplicate<TaskDependency>(x => (x.PredecessorId, x.SuccessorId), "dependency"); Duplicate<ActorSkill>(x => (x.ActorId, x.SkillId), "actorSkill"); Duplicate<TaskSkill>(x => (x.TaskId, x.SkillId), "taskSkill"); Duplicate<ActorDepartment>(x => (x.ActorId, x.DepartmentId, x.From), "actorDepartment");
+        foreach (var group in values.Values.OfType<ActorDepartment>().GroupBy(x => x.ActorId))
+        {
+            var periods = group.OrderBy(x => x.From).ToArray();
+            for (var i = 1; i < periods.Length; i++)
+                if (periods[i - 1].To is null || periods[i].From <= periods[i - 1].To!.Value)
+                    Error(group.First().Id, "periods", "Периоды членства не могут пересекаться.");
+        }
         void Duplicate<T>(Func<T, object> key, string field) { foreach (var group in values.Where(x => x.Value is T).GroupBy(x => key((T)x.Value)).Where(x => x.Count() > 1)) foreach (var entry in group) Error(entry.Key, field, "Повторяющаяся связь."); }
         Cycles(values.Where(x => x.Value is TaskCard).Select(x => (x.Key, ((TaskCard)x.Value).ParentId)), "task.parent");
         Cycles(values.Where(x => x.Value is Actor).Select(x => (x.Key, ((Actor)x.Value).ParentId)), "actor.parent");
