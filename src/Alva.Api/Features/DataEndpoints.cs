@@ -35,8 +35,8 @@ public static class DataEndpoints
             var taskIds = tasks.Select(x => x.Id).ToArray(); var actorIds = actors.Select(x => x.Id).ToArray();
             Add("assignment", await db.Assignments.AsNoTracking().Where(x => taskIds.Contains(x.TaskId)).ToArrayAsync(ct));
             Add("dependency", await db.Dependencies.AsNoTracking().Where(x => taskIds.Contains(x.PredecessorId) || taskIds.Contains(x.SuccessorId)).ToArrayAsync(ct));
-            foreach (var role in await db.ActorRoles.AsNoTracking().Where(x => actorIds.Contains(x.ActorId) || actorIds.Contains(x.RoleId)).ToArrayAsync(ct))
-                rows.Add(new("actorRole", Guid.NewGuid(), JsonSerializer.SerializeToElement(role, DataTransfer.Json)));
+            foreach (var skill in await db.ActorSkills.AsNoTracking().Where(x => actorIds.Contains(x.ActorId) || actorIds.Contains(x.SkillId)).ToArrayAsync(ct))
+                rows.Add(new("actorSkill", Guid.NewGuid(), JsonSerializer.SerializeToElement(skill, DataTransfer.Json)));
             foreach (var department in await db.ActorDepartments.AsNoTracking().Where(x => actorIds.Contains(x.ActorId) || actorIds.Contains(x.DepartmentId)).ToArrayAsync(ct))
                 rows.Add(new("actorDepartment", Guid.NewGuid(), JsonSerializer.SerializeToElement(department, DataTransfer.Json)));
             var calendars = await db.Calendars.AsNoTracking().Where(x => actorIds.Contains(x.ActorId)).ToArrayAsync(ct);
@@ -94,10 +94,9 @@ public static class DataEndpoints
                             x.StartDate ??= x.EndDate is { } end && end < window.StartDate ? end : window.StartDate;
                             x.EndDate ??= x.StartDate > window.EndDate ? x.StartDate : window.EndDate;
                         }
-                        x.RequiredSkills = SkillMath.Normalize(x.RequiredSkills);
                         x.TeamId = teamId; x.ProjectId = Optional(x.ProjectId); x.ParentId = Optional(x.ParentId); x.Version = 1; db.Tasks.Add(x); break;
-                    case Actor x: x.Skills = SkillMath.Normalize(x.Skills); x.TeamId = teamId; x.ParentId = Optional(x.ParentId); x.UserId = null; db.Actors.Add(x); break;
-                    case ActorRole x: x.ActorId = Map(x.ActorId); x.RoleId = Map(x.RoleId); db.ActorRoles.Add(x); break;
+                    case Actor x: x.TeamId = teamId; x.ParentId = Optional(x.ParentId); x.UserId = null; db.Actors.Add(x); break;
+                    case ActorSkill x: x.ActorId = Map(x.ActorId); x.SkillId = Map(x.SkillId); db.ActorSkills.Add(x); break;
                     case ActorDepartment x: x.ActorId = Map(x.ActorId); x.DepartmentId = Map(x.DepartmentId); db.ActorDepartments.Add(x); break;
                     case Assignment x: x.TaskId = Map(x.TaskId); x.TargetId = Map(x.TargetId); x.ResolvedPersonId = Optional(x.ResolvedPersonId); db.Assignments.Add(x); break;
                     case TaskDependency x: x.PredecessorId = Map(x.PredecessorId); x.SuccessorId = Map(x.SuccessorId); db.Dependencies.Add(x); break;
@@ -127,7 +126,7 @@ public static class DataTransfer
     public static object Entity(DataRow row) => row.Kind switch
     {
         "project" => Read<Project>(row), "sprint" => Read<Sprint>(row), "task" => ReadTask(row), "actor" => Read<Actor>(row),
-        "actorRole" => Read<ActorRole>(row), "actorDepartment" => Read<ActorDepartment>(row), "assignment" => Read<Assignment>(row), "dependency" => Read<TaskDependency>(row),
+        "actorSkill" => Read<ActorSkill>(row), "actorDepartment" => Read<ActorDepartment>(row), "assignment" => Read<Assignment>(row), "dependency" => Read<TaskDependency>(row),
         "calendar" => Read<WorkCalendar>(row), "exception" => Read<CalendarException>(row), "block" => Read<RecurringBlock>(row),
         _ => throw new FormatException("Неизвестный тип записи.")
     };
@@ -185,7 +184,6 @@ public static class DataTransfer
                 case Sprint x: Team(id, x.TeamId); Name(id, x.Name); Dates(id, x.StartDate, x.EndDate); break;
                 case TaskCard x:
                     if (x.RemainingHours is < 0 or > 100000) Error(id, "remainingHours", "Остаток должен быть от 0 до 100000 часов.");
-                    ValidateSkills(id, x.RequiredSkills);
                     Team(id, x.TeamId); Name(id, x.Title); Ref<Project>(id, x.ProjectId, "projectId", true); Ref<Sprint>(id, legacy.GetValueOrDefault(id), "sprintId", true); Ref<TaskCard>(id, x.ParentId, "parentId", true);
                     if (x.ParentId == id) Error(id, "parentId", "Задача не может быть собственным родителем.");
                     if (x.StartDate.HasValue && x.EndDate.HasValue) Dates(id, x.StartDate.Value, x.EndDate.Value);
@@ -193,24 +191,23 @@ public static class DataTransfer
                     if (x.DailyHoursLimit is <= 0 or > 24) Error(id, "dailyHoursLimit", "Лимит в день должен быть больше 0 и не больше 24 часов.");
                     if (x.Version < 1 || x.Order < 0) Error(id, "version/order", "Версия должна быть положительной, порядок — неотрицательным."); break;
                 case Actor x:
-                    ValidateSkills(id, x.Skills);
-                    if (x.Kind != ActorKind.Person && x.Skills is { Length: > 0 }) Error(id, "skills", "Навыки задаются только для человека.");
                     Team(id, x.TeamId); Name(id, x.Name); Ref<Actor>(id, x.ParentId, "parentId", true);
                     if (x.UserId.HasValue) Error(id, "userId", "Привязки пользователей нельзя импортировать.");
-                    if (x.ParentId is { } parent && values.TryGetValue(parent, out var p) && p is Actor pa && (pa.Kind != ActorKind.Department || x.Kind == ActorKind.Role)) Error(id, "parentId", "Родителем участника может быть только подразделение; роль не имеет родителя."); break;
-                case ActorRole x:
-                    Ref<Actor>(id, x.ActorId, "actorId"); Ref<Actor>(id, x.RoleId, "roleId");
-                    if (values.GetValueOrDefault(x.ActorId) is Actor a && a.Kind != ActorKind.Person || values.GetValueOrDefault(x.RoleId) is Actor role && role.Kind != ActorKind.Role) Error(id, "role", "Роль связывается только с человеком."); break;
+                    if (x.ParentId is { } parent && values.TryGetValue(parent, out var p) && p is Actor pa && (pa.Kind != ActorKind.Department || x.Kind == ActorKind.Skill)) Error(id, "parentId", "Родителем участника может быть только подразделение; навык не имеет родителя."); break;
+                case ActorSkill x:
+                    Ref<Actor>(id, x.ActorId, "actorId"); Ref<Actor>(id, x.SkillId, "skillId");
+                    if (values.GetValueOrDefault(x.ActorId) is Actor a && a.Kind != ActorKind.Person || values.GetValueOrDefault(x.SkillId) is Actor skill && skill.Kind != ActorKind.Skill) Error(id, "skill", "Навык связывается только с человеком."); break;
                 case ActorDepartment x:
                     Ref<Actor>(id, x.ActorId, "actorId"); Ref<Actor>(id, x.DepartmentId, "departmentId");
                     if (values.GetValueOrDefault(x.ActorId) is Actor personActor && personActor.Kind != ActorKind.Person || values.GetValueOrDefault(x.DepartmentId) is Actor department && department.Kind != ActorKind.Department) Error(id, "department", "Подразделение связывается только с человеком."); break;
                 case Assignment x:
                     Ref<TaskCard>(id, x.TaskId, "taskId"); Ref<Actor>(id, x.TargetId, "targetId"); Ref<Actor>(id, x.ResolvedPersonId, "resolvedPersonId", true);
                     if (values.Values.OfType<TaskCard>().Any(t => t.ParentId == x.TaskId)) Error(id, "taskId", "Назначение допустимо только для листовой задачи.");
+                    if (values.GetValueOrDefault(x.TargetId) is Actor skillTarget && skillTarget.Kind == ActorKind.Skill) Error(id, "targetId", "Задачу нельзя назначить на навык.");
                     if (x.ResolvedPersonId is { } person)
                     {
                         if (values.GetValueOrDefault(person) is not Actor { Kind: ActorKind.Person }) Error(id, "resolvedPersonId", "Исполнитель должен быть человеком.");
-                        if (values.GetValueOrDefault(x.TargetId) is Actor target && !(target.Id == person || target.Kind == ActorKind.Role && values.Values.OfType<ActorRole>().Any(r => r.ActorId == person && r.RoleId == target.Id) || target.Kind == ActorKind.Department && Descendant(person, target.Id))) Error(id, "resolvedPersonId", "Исполнитель не принадлежит назначенной роли/подразделению.");
+                        if (values.GetValueOrDefault(x.TargetId) is Actor target && !(target.Id == person || target.Kind == ActorKind.Department && Descendant(person, target.Id))) Error(id, "resolvedPersonId", "Исполнитель не принадлежит назначенной подкоманде.");
                     }
                     break;
                 case TaskDependency x: Ref<TaskCard>(id, x.PredecessorId, "predecessorId"); Ref<TaskCard>(id, x.SuccessorId, "successorId"); if (x.PredecessorId == x.SuccessorId) Error(id, "dependency", "Задача не может зависеть от себя."); if (x.LagDays is < -3650 or > 3650) Error(id, "lagDays", "Сдвиг ограничен 3650 днями в обе стороны."); break;
@@ -222,12 +219,6 @@ public static class DataTransfer
                 case RecurringBlock x: Ref<WorkCalendar>(id, x.CalendarId, "calendarId"); Name(id, x.Name); if (x.Hours > 24) Error(id, "hours", "Не более 24 часов в сутки."); break;
             }
         }
-        void ValidateSkills(Guid id, string[]? tags)
-        {
-            if (tags is null) { Error(id, "skills", "Навыки не могут быть null."); return; }
-            try { SkillMath.Normalize(tags); }
-            catch (ArgumentException) { Error(id, "skills", "Укажите не более 50 навыков длиной до 80 символов."); }
-        }
         void Name(Guid id, string? name) { if (string.IsNullOrWhiteSpace(name) || name.Length > 200) Error(id, "name", "Название должно содержать 1–200 символов."); }
         void Team(Guid id, Guid team) { if (team != package.SourceTeamId) Error(id, "teamId", "Запись принадлежит другой команде."); }
         void Dates(Guid id, DateOnly start, DateOnly end) { if (end < start) Error(id, "dates", "Конец раньше начала."); }
@@ -236,7 +227,7 @@ public static class DataTransfer
             bool Walk(Guid start) { var seen = new HashSet<Guid>(); for (Guid? current = start; current.HasValue && seen.Add(current.Value); current = (values.GetValueOrDefault(current.Value) as Actor)?.ParentId) if (current == department) return true; return false; }
             return Walk(person) || values.Values.OfType<ActorDepartment>().Where(x => x.ActorId == person).Any(x => Walk(x.DepartmentId));
         }
-        Duplicate<Assignment>(x => x.TaskId, "assignment"); Duplicate<WorkCalendar>(x => x.ActorId, "calendar"); Duplicate<TaskDependency>(x => (x.PredecessorId, x.SuccessorId), "dependency"); Duplicate<ActorRole>(x => (x.ActorId, x.RoleId), "actorRole"); Duplicate<ActorDepartment>(x => (x.ActorId, x.DepartmentId), "actorDepartment");
+        Duplicate<Assignment>(x => x.TaskId, "assignment"); Duplicate<WorkCalendar>(x => x.ActorId, "calendar"); Duplicate<TaskDependency>(x => (x.PredecessorId, x.SuccessorId), "dependency"); Duplicate<ActorSkill>(x => (x.ActorId, x.SkillId), "actorSkill"); Duplicate<ActorDepartment>(x => (x.ActorId, x.DepartmentId), "actorDepartment");
         void Duplicate<T>(Func<T, object> key, string field) { foreach (var group in values.Where(x => x.Value is T).GroupBy(x => key((T)x.Value)).Where(x => x.Count() > 1)) foreach (var entry in group) Error(entry.Key, field, "Повторяющаяся связь."); }
         Cycles(values.Where(x => x.Value is TaskCard).Select(x => (x.Key, ((TaskCard)x.Value).ParentId)), "task.parent");
         Cycles(values.Where(x => x.Value is Actor).Select(x => (x.Key, ((Actor)x.Value).ParentId)), "actor.parent");

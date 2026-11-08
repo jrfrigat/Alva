@@ -76,9 +76,9 @@ public sealed class DataTransferTests
     public void Rejects_assignment_to_parent_and_unrelated_person_resolution()
     {
         var parent = new TaskCard { TeamId = TeamId, Title = "Parent" }; var child = new TaskCard { TeamId = TeamId, Title = "Child", ParentId = parent.Id };
-        var person = new Actor { TeamId = TeamId, Kind = ActorKind.Person, Name = "Person" }; var role = new Actor { TeamId = TeamId, Kind = ActorKind.Role, Name = "Role" };
-        var assignment = new Assignment { TaskId = parent.Id, TargetId = role.Id, ResolvedPersonId = person.Id };
-        var errors = DataTransfer.Validate(new(1, TeamId, [Row("task", parent), Row("task", child), Row("actor", person), Row("actor", role), Row("assignment", assignment)]));
+        var person = new Actor { TeamId = TeamId, Kind = ActorKind.Person, Name = "Person" }; var skill = new Actor { TeamId = TeamId, Kind = ActorKind.Skill, Name = "Skill" };
+        var assignment = new Assignment { TaskId = parent.Id, TargetId = skill.Id, ResolvedPersonId = person.Id };
+        var errors = DataTransfer.Validate(new(1, TeamId, [Row("task", parent), Row("task", child), Row("actor", person), Row("actor", skill), Row("assignment", assignment)]));
         Assert.Contains(errors, x => x.Field == "taskId"); Assert.Contains(errors, x => x.Field == "resolvedPersonId");
     }
 

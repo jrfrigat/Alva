@@ -34,12 +34,12 @@ public sealed class DataEndpointTests
         var project = new Project { WorkspaceId = Guid.NewGuid(), Name = "Imported project" };
         var parent = new TaskCard { TeamId = sourceTeam, Title = "Parent", ProjectId = project.Id };
         var child = new TaskCard { TeamId = sourceTeam, Title = "Child", ProjectId = project.Id, ParentId = parent.Id, EstimateHours = 1.25m };
-        var role = new Actor { TeamId = sourceTeam, Name = "Developer", Kind = ActorKind.Role };
+        var skill = new Actor { TeamId = sourceTeam, Name = "Developer", Kind = ActorKind.Skill };
         var person = new Actor { TeamId = sourceTeam, Name = "Person", Kind = ActorKind.Person };
         var department = new Actor { TeamId = sourceTeam, Name = "Department", Kind = ActorKind.Department };
         var calendar = new WorkCalendar { ActorId = person.Id };
         DataRow Row(string kind, object value) => new(kind, value is Entity e ? e.Id : Guid.NewGuid(), JsonSerializer.SerializeToElement(value, value.GetType(), DataTransfer.Json));
-        var package = new DataPackage(1, sourceTeam, [Row("project", project), Row("task", parent), Row("task", child), Row("actor", person), Row("actor", role), Row("actor", department), Row("actorRole", new ActorRole { ActorId = person.Id, RoleId = role.Id }), Row("actorDepartment", new ActorDepartment { ActorId = person.Id, DepartmentId = department.Id }), Row("calendar", calendar), Row("assignment", new Assignment { TaskId = child.Id, TargetId = role.Id, ResolvedPersonId = person.Id })]);
+        var package = new DataPackage(1, sourceTeam, [Row("project", project), Row("task", parent), Row("task", child), Row("actor", person), Row("actor", skill), Row("actor", department), Row("actorSkill", new ActorSkill { ActorId = person.Id, SkillId = skill.Id }), Row("actorDepartment", new ActorDepartment { ActorId = person.Id, DepartmentId = department.Id }), Row("calendar", calendar), Row("assignment", new Assignment { TaskId = child.Id, TargetId = department.Id, ResolvedPersonId = person.Id })]);
         var response = await server.Client.PostAsync($"/api/teams/{server.TeamId}/data/import?format={format}", new ByteArrayContent(DataTransfer.Encode(package, format)));
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var imported = await response.Content.ReadFromJsonAsync<DataImportResult>();
@@ -54,10 +54,10 @@ public sealed class DataEndpointTests
             Assert.Equal(imported.IdMap[project.Id], importedChild.ProjectId);
             Assert.Equal(server.WorkspaceId, (await db.Projects.SingleAsync()).WorkspaceId);
             Assert.Equal(server.TeamId, (await db.ProjectTeams.SingleAsync()).TeamId);
-            Assert.Equal(imported.IdMap[person.Id], (await db.ActorRoles.SingleAsync()).ActorId);
+            Assert.Equal(imported.IdMap[person.Id], (await db.ActorSkills.SingleAsync()).ActorId);
             Assert.Equal(imported.IdMap[department.Id], (await db.ActorDepartments.SingleAsync()).DepartmentId);
             Assert.Equal(imported.IdMap[person.Id], (await db.Calendars.SingleAsync()).ActorId);
-            Assert.Equal(imported.IdMap[role.Id], (await db.Assignments.SingleAsync()).TargetId);
+            Assert.Equal(imported.IdMap[department.Id], (await db.Assignments.SingleAsync()).TargetId);
         });
         var broken = package with { Rows = package.Rows.Concat([Row("task", new TaskCard { TeamId = sourceTeam, Title = "Broken", ParentId = Guid.NewGuid() })]).ToArray() };
         response = await server.Client.PostAsync($"/api/teams/{server.TeamId}/data/import?format=json", new ByteArrayContent(DataTransfer.Encode(broken, "json")));

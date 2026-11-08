@@ -34,4 +34,18 @@ public static class SkillMath
         Normalize(required).Except(Normalize(skills), StringComparer.OrdinalIgnoreCase).ToArray();
 
     public static bool Compatible(IEnumerable<string?>? required, IEnumerable<string?>? skills) => Missing(required, skills).Length == 0;
+
+    /// <summary>Distinct skill identifiers in their original order.</summary>
+    public static Guid[] Normalize(IEnumerable<Guid>? skills) => (skills ?? []).Distinct().ToArray();
+
+    public static Guid[] Missing(IEnumerable<Guid>? required, IEnumerable<Guid>? skills)
+    {
+        var have = Normalize(skills).ToHashSet();
+        return Normalize(required).Where(id => !have.Contains(id)).ToArray();
+    }
+
+    public static bool Compatible(IEnumerable<Guid>? required, IEnumerable<Guid>? skills) => Missing(required, skills).Length == 0;
+
+    /// <summary>The comparison name of a skill: normalized, whitespace-collapsed and trimmed.</summary>
+    public static string Name(string? tag) => NormalizeTag(tag ?? "");
 }

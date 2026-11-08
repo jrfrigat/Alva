@@ -35,7 +35,7 @@ public sealed class SkillTests
         Assert.Equal(["C#", "SQL Server"], SkillMath.Normalize([" C# ", "c#", " SQL  Server ", ""]));
         Assert.Empty(SkillMath.Missing(["Ｃ＃", "SQL Server"], ["c#", "sql\tserver"]));
         Assert.Equal(["Testing"], SkillMath.Missing(["C#", "Testing"], ["c#"]));
-        Assert.True(SkillMath.Compatible([], []));
+        Assert.True(SkillMath.Compatible(Array.Empty<string>(), Array.Empty<string>()));
         Assert.False(SkillMath.Compatible(["C#"], []));
     }
 
@@ -48,33 +48,25 @@ public sealed class SkillTests
     }
 
     [Fact]
+    public void Skill_identifiers_are_compared_without_duplicates()
+    {
+        var backend = Guid.NewGuid();
+        var sql = Guid.NewGuid();
+
+        Assert.Equal([backend, sql], SkillMath.Normalize([backend, sql, backend]));
+        Assert.Empty(SkillMath.Missing([backend, sql], [sql, backend]));
+        Assert.Equal([sql], SkillMath.Missing([backend, sql], [backend]));
+        Assert.True(SkillMath.Compatible(Array.Empty<Guid>(), Array.Empty<Guid>()));
+    }
+
+    [Fact]
     public void Tags_are_bounded_and_legacy_requests_do_not_clear_skills()
     {
         Assert.Throws<ArgumentException>(() => SkillMath.Normalize([new string('a', 81)]));
         Assert.Throws<ArgumentException>(() => SkillMath.Normalize(Enumerable.Range(0, 51).Select(i => i.ToString())));
         var request = JsonSerializer.Deserialize<TaskRequest>("{\"title\":\"Old client\"}", new JsonSerializerOptions(JsonSerializerDefaults.Web))!;
         Assert.Null(request.RequiredSkills);
-        var actor = JsonSerializer.Deserialize<Actor>("{}")!;
-        Assert.Empty(actor.Skills);
-    }
-
-    [Theory]
-    [InlineData("json")]
-    [InlineData("csv")]
-    [InlineData("xlsx")]
-    public void Transfers_preserve_skills_and_reject_invalid_tags(string format)
-    {
-        var team = Guid.NewGuid();
-        var actor = new Actor { TeamId = team, Name = "Person", Skills = ["C#", "Анализ"] };
-        var task = new TaskCard { TeamId = team, Title = "Task", RequiredSkills = ["C#", "SQL"] };
-        DataRow Row(string kind, Entity entity) => new(kind, entity.Id, JsonSerializer.SerializeToElement(entity, entity.GetType(), DataTransfer.Json));
-        var package = new DataPackage(1, team, [Row("actor", actor), Row("task", task)]);
-        var result = DataTransfer.Decode(DataTransfer.Encode(package, format), format);
-        Assert.Empty(DataTransfer.Validate(result));
-        Assert.Equal(actor.Skills, ((Actor)DataTransfer.Entity(result.Rows[0])).Skills);
-        Assert.Equal(task.RequiredSkills, ((TaskCard)DataTransfer.Entity(result.Rows[1])).RequiredSkills);
-        task.RequiredSkills = [new string('a', 81)];
-        Assert.Contains(DataTransfer.Validate(new(1, team, [Row("task", task)])), x => x.Field == "skills");
+        Assert.Null(request.RequiredSkillIds);
     }
 
     [Fact]
@@ -86,12 +78,17 @@ public sealed class SkillTests
         await db.Database.EnsureCreatedAsync();
         var workspace = new Workspace { Name = "Workspace" };
         var team = new Team { WorkspaceId = workspace.Id, Name = "Team" };
-        var actor = new Actor { TeamId = team.Id, Name = "Person", Skills = ["C#"] };
-        var task = new TaskCard { TeamId = team.Id, Title = "Task", RequiredSkills = ["SQL"] };
-        db.AddRange(workspace, team, actor, task);
+        var backend = new Actor { TeamId = team.Id, Name = "Backend", Kind = ActorKind.Skill };
+        var sql = new Actor { TeamId = team.Id, Name = "SQL", Kind = ActorKind.Skill };
+        var person = new Actor { TeamId = team.Id, Name = "Person", Kind = ActorKind.Person };
+        var task = new TaskCard { TeamId = team.Id, Title = "Task" };
+        db.AddRange(workspace, team, backend, sql, person, task);
+        db.Add(new ActorSkill { ActorId = person.Id, SkillId = backend.Id });
+        db.Add(new TaskSkill { TaskId = task.Id, SkillId = sql.Id });
         await db.SaveChangesAsync();
         db.ChangeTracker.Clear();
-        Assert.Equal(["C#"], (await db.Actors.SingleAsync()).Skills);
-        Assert.Equal(["SQL"], (await db.Tasks.SingleAsync()).RequiredSkills);
+
+        Assert.Equal(backend.Id, (await db.ActorSkills.SingleAsync()).SkillId);
+        Assert.Equal(sql.Id, (await db.TaskSkills.SingleAsync()).SkillId);
     }
 }

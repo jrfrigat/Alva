@@ -1,7 +1,7 @@
 namespace Alva.Domain;
 
 public abstract class Entity { public Guid Id { get; set; } = Guid.NewGuid(); }
-public enum ActorKind { Person, Department, Role }
+public enum ActorKind { Person, Department, Skill }
 public enum WorkStatus { Backlog, Planned, InProgress, Done, Cancelled }
 public enum TaskPriority { Low, Normal, High, Critical }
 public enum SprintStatus { Planned, Active, Completed }
@@ -51,7 +51,6 @@ public sealed class Sprint : Entity
 }
 public sealed class TaskCard : Entity
 {
-    public string[] RequiredSkills { get; set; } = [];
     public Guid TeamId { get; set; }
     public Guid? ProjectId { get; set; }
     public Guid? ParentId { get; set; }
@@ -88,7 +87,6 @@ public sealed class TaskSprint
 }
 public sealed class Actor : Entity
 {
-    public string[] Skills { get; set; } = [];
     public Guid TeamId { get; set; }
     public string Name { get; set; } = "";
     public ActorKind Kind { get; set; }
@@ -97,10 +95,16 @@ public sealed class Actor : Entity
     public Guid? UserId { get; set; }
     public bool Archived { get; set; }
 }
-public sealed class ActorRole
+public sealed class ActorSkill
 {
     public Guid ActorId { get; set; }
-    public Guid RoleId { get; set; }
+    public Guid SkillId { get; set; }
+}
+
+public sealed class TaskSkill
+{
+    public Guid TaskId { get; set; }
+    public Guid SkillId { get; set; }
 }
 public sealed class ActorDepartment
 {

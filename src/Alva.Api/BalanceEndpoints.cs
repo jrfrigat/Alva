@@ -67,19 +67,24 @@ public static class BalanceEndpoints
             ?? throw new ApiException(404, "Спринт не найден.");
         var (people, calendarOf) = await PlanningEndpoints.PeopleCalendars(db, teamId);
         var ids = people.Select(x => x.Id).ToArray();
-        var roles = (await db.ActorRoles.AsNoTracking().Where(x => ids.Contains(x.ActorId)).ToListAsync()).ToLookup(x => x.ActorId, x => x.RoleId);
+        var actorSkills = (await db.ActorSkills.AsNoTracking().Where(x => ids.Contains(x.ActorId)).ToListAsync()).ToLookup(x => x.ActorId, x => x.SkillId);
         var departments = (await db.ActorDepartments.AsNoTracking().Where(x => ids.Contains(x.ActorId)).ToListAsync()).ToLookup(x => x.ActorId, x => x.DepartmentId);
-        var persons = people.Select(x => new BalancePersonInput(x.Id, x.Name, [.. roles[x.Id]], [.. departments[x.Id]], x.Skills)).ToArray();
+        var skillNames = await db.Actors.AsNoTracking().Where(a => a.TeamId == teamId && a.Kind == ActorKind.Skill)
+            .ToDictionaryAsync(a => a.Id, a => a.Name);
+        var persons = people.Select(x => new BalancePersonInput(x.Id, x.Name, [],
+            [.. departments[x.Id]], actorSkills[x.Id].Select(id => skillNames.GetValueOrDefault(id)).OfType<string>().ToArray())).ToArray();
 
         // Все неархивные задачи: готовые и «в работе» с датами нужны как якоря связей, даже когда не двигаются.
         var tasks = await db.Tasks.AsNoTracking().Where(x => x.TeamId == teamId && !x.Archived).ToListAsync();
         var taskIds = tasks.Select(x => x.Id).ToArray();
         var assignments = await db.Assignments.AsNoTracking().Where(x => taskIds.Contains(x.TaskId)).ToDictionaryAsync(x => x.TaskId);
+        var taskSkills = (await db.TaskSkills.AsNoTracking().Where(x => taskIds.Contains(x.TaskId)).ToListAsync()).ToLookup(x => x.TaskId, x => x.SkillId);
         var inputs = tasks.Select(x =>
         {
             var assignment = assignments.GetValueOrDefault(x.Id);
+            var required = taskSkills[x.Id].Select(id => skillNames.GetValueOrDefault(id)).OfType<string>().ToArray();
             return new BalanceTaskInput(x.Id, x.Title, x.Status.ToString(), x.ParentId, x.EstimateHours,
-                x.StartDate, x.EndDate, x.Deadline, assignment?.TargetId, assignment?.ResolvedPersonId, x.RequiredSkills, x.Priority.ToString(), x.DatesFixed, x.DailyHoursLimit);
+                x.StartDate, x.EndDate, x.Deadline, assignment?.TargetId, assignment?.ResolvedPersonId, required, x.Priority.ToString(), x.DatesFixed, x.DailyHoursLimit);
         }).ToArray();
         var links = await db.Dependencies.AsNoTracking().Where(x => taskIds.Contains(x.SuccessorId))
             .Select(x => new BalanceLinkInput(x.PredecessorId, x.SuccessorId, x.Kind.ToString(), x.LagDays)).ToListAsync();

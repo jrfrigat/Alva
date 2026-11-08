@@ -14,7 +14,8 @@ public class AlvaDbContext(DbContextOptions<AlvaDbContext> options) : DbContext(
     public DbSet<TaskCard> Tasks => Set<TaskCard>();
     public DbSet<TaskSprint> TaskSprints => Set<TaskSprint>();
     public DbSet<Actor> Actors => Set<Actor>();
-    public DbSet<ActorRole> ActorRoles => Set<ActorRole>();
+    public DbSet<ActorSkill> ActorSkills => Set<ActorSkill>();
+    public DbSet<TaskSkill> TaskSkills => Set<TaskSkill>();
     public DbSet<ActorDepartment> ActorDepartments => Set<ActorDepartment>();
     public DbSet<Assignment> Assignments => Set<Assignment>();
     public DbSet<TaskDependency> Dependencies => Set<TaskDependency>();
@@ -68,7 +69,10 @@ public class AlvaDbContext(DbContextOptions<AlvaDbContext> options) : DbContext(
         b.Entity<PermissionGrant>().HasIndex(x => new { x.TeamId, x.UserId, x.Area }).IsUnique();
         b.Entity<Actor>().HasOne<UserAccount>().WithMany().HasForeignKey(x => x.UserId);
         b.Entity<ProjectTeam>().HasKey(x => new { x.ProjectId, x.TeamId });
-        b.Entity<ActorRole>().HasKey(x => new { x.ActorId, x.RoleId });
+        b.Entity<ActorSkill>().HasKey(x => new { x.ActorId, x.SkillId });
+        b.Entity<TaskSkill>().HasKey(x => new { x.TaskId, x.SkillId });
+        b.Entity<TaskSkill>().HasOne<TaskCard>().WithMany().HasForeignKey(x => x.TaskId);
+        b.Entity<TaskSkill>().HasOne<Actor>().WithMany().HasForeignKey(x => x.SkillId);
         b.Entity<ActorDepartment>().HasKey(x => new { x.ActorId, x.DepartmentId });
         b.Entity<ActorDepartment>().HasOne<Actor>().WithMany().HasForeignKey(x => x.ActorId);
         b.Entity<ActorDepartment>().HasOne<Actor>().WithMany().HasForeignKey(x => x.DepartmentId);
@@ -83,8 +87,8 @@ public class AlvaDbContext(DbContextOptions<AlvaDbContext> options) : DbContext(
         b.Entity<TaskCard>().HasOne<TaskCard>().WithMany().HasForeignKey(x => x.ParentId);
         b.Entity<Actor>().HasOne<Team>().WithMany().HasForeignKey(x => x.TeamId);
         b.Entity<Actor>().HasOne<Actor>().WithMany().HasForeignKey(x => x.ParentId);
-        b.Entity<ActorRole>().HasOne<Actor>().WithMany().HasForeignKey(x => x.ActorId);
-        b.Entity<ActorRole>().HasOne<Actor>().WithMany().HasForeignKey(x => x.RoleId);
+        b.Entity<ActorSkill>().HasOne<Actor>().WithMany().HasForeignKey(x => x.ActorId);
+        b.Entity<ActorSkill>().HasOne<Actor>().WithMany().HasForeignKey(x => x.SkillId);
         b.Entity<Assignment>().HasOne<TaskCard>().WithMany().HasForeignKey(x => x.TaskId);
         b.Entity<Assignment>().HasOne<Actor>().WithMany().HasForeignKey(x => x.TargetId);
         b.Entity<Assignment>().HasOne<Actor>().WithMany().HasForeignKey(x => x.ResolvedPersonId);

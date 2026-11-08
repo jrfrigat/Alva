@@ -46,10 +46,6 @@ namespace Alva.Infrastructure.Migrations
                     b.Property<Guid?>("ParentId")
                         .HasColumnType("uuid");
 
-                    b.PrimitiveCollection<string[]>("Skills")
-                        .IsRequired()
-                        .HasColumnType("text[]");
-
                     b.Property<Guid>("TeamId")
                         .HasColumnType("uuid");
 
@@ -82,19 +78,19 @@ namespace Alva.Infrastructure.Migrations
                     b.ToTable("ActorDepartments");
                 });
 
-            modelBuilder.Entity("Alva.Domain.ActorRole", b =>
+            modelBuilder.Entity("Alva.Domain.ActorSkill", b =>
                 {
                     b.Property<Guid>("ActorId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("RoleId")
+                    b.Property<Guid>("SkillId")
                         .HasColumnType("uuid");
 
-                    b.HasKey("ActorId", "RoleId");
+                    b.HasKey("ActorId", "SkillId");
 
-                    b.HasIndex("RoleId");
+                    b.HasIndex("SkillId");
 
-                    b.ToTable("ActorRoles");
+                    b.ToTable("ActorSkills");
                 });
 
             modelBuilder.Entity("Alva.Domain.Assignment", b =>
@@ -414,10 +410,6 @@ namespace Alva.Infrastructure.Migrations
                         .HasPrecision(12, 2)
                         .HasColumnType("numeric(12,2)");
 
-                    b.PrimitiveCollection<string[]>("RequiredSkills")
-                        .IsRequired()
-                        .HasColumnType("text[]");
-
                     b.Property<DateOnly?>("StartDate")
                         .HasColumnType("date");
 
@@ -507,6 +499,21 @@ namespace Alva.Infrastructure.Migrations
                     b.HasIndex("TaskId");
 
                     b.ToTable("TaskHistory");
+                });
+
+            modelBuilder.Entity("Alva.Domain.TaskSkill", b =>
+                {
+                    b.Property<Guid>("TaskId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("SkillId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("TaskId", "SkillId");
+
+                    b.HasIndex("SkillId");
+
+                    b.ToTable("TaskSkills");
                 });
 
             modelBuilder.Entity("Alva.Domain.TaskSourceConnection", b =>
@@ -835,7 +842,7 @@ namespace Alva.Infrastructure.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Alva.Domain.ActorRole", b =>
+            modelBuilder.Entity("Alva.Domain.ActorSkill", b =>
                 {
                     b.HasOne("Alva.Domain.Actor", null)
                         .WithMany()
@@ -845,7 +852,7 @@ namespace Alva.Infrastructure.Migrations
 
                     b.HasOne("Alva.Domain.Actor", null)
                         .WithMany()
-                        .HasForeignKey("RoleId")
+                        .HasForeignKey("SkillId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
@@ -987,6 +994,21 @@ namespace Alva.Infrastructure.Migrations
 
             modelBuilder.Entity("Alva.Domain.TaskHistory", b =>
                 {
+                    b.HasOne("Alva.Domain.TaskCard", null)
+                        .WithMany()
+                        .HasForeignKey("TaskId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Alva.Domain.TaskSkill", b =>
+                {
+                    b.HasOne("Alva.Domain.Actor", null)
+                        .WithMany()
+                        .HasForeignKey("SkillId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("Alva.Domain.TaskCard", null)
                         .WithMany()
                         .HasForeignKey("TaskId")
