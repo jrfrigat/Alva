@@ -39,11 +39,11 @@ public sealed class DataEndpointTests
         var department = new Actor { TeamId = sourceTeam, Name = "Department", Kind = ActorKind.Department };
         var calendar = new WorkCalendar { ActorId = person.Id };
         DataRow Row(string kind, object value) => new(kind, value is Entity e ? e.Id : Guid.NewGuid(), JsonSerializer.SerializeToElement(value, value.GetType(), DataTransfer.Json));
-        var package = new DataPackage(1, sourceTeam, [Row("project", project), Row("task", parent), Row("task", child), Row("actor", person), Row("actor", skill), Row("actor", department), Row("actorSkill", new ActorSkill { ActorId = person.Id, SkillId = skill.Id }), Row("taskSkill", new TaskSkill { TaskId = child.Id, SkillId = skill.Id }), Row("actorDepartment", new ActorDepartment { ActorId = person.Id, DepartmentId = department.Id }), Row("calendar", calendar), Row("assignment", new Assignment { TaskId = child.Id, TargetId = department.Id, ResolvedPersonId = person.Id })]);
+        var package = new DataPackage(1, sourceTeam, [Row("project", project), Row("task", parent), Row("task", child), Row("actor", person), Row("actor", skill), Row("actor", department), Row("actorSkill", new ActorSkill { ActorId = person.Id, SkillId = skill.Id }), Row("taskSkill", new TaskSkill { TaskId = child.Id, SkillId = skill.Id }), Row("actorDepartment", new ActorDepartment { ActorId = person.Id, DepartmentId = department.Id }), Row("departmentParentPeriod", new DepartmentParentPeriod { DepartmentId = department.Id, From = new DateOnly(1, 1, 1) }), Row("calendar", calendar), Row("assignment", new Assignment { TaskId = child.Id, TargetId = department.Id, ResolvedPersonId = person.Id })]);
         var response = await server.Client.PostAsync($"/api/teams/{server.TeamId}/data/import?format={format}", new ByteArrayContent(DataTransfer.Encode(package, format)));
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var imported = await response.Content.ReadFromJsonAsync<DataImportResult>();
-        Assert.NotNull(imported); Assert.Equal(11, imported.Imported);
+        Assert.NotNull(imported); Assert.Equal(12, imported.Imported);
         Assert.All(imported.IdMap, x => Assert.NotEqual(x.Key, x.Value));
         await server.WithDb(async db =>
         {
@@ -56,6 +56,7 @@ public sealed class DataEndpointTests
             Assert.Equal(server.TeamId, (await db.ProjectTeams.SingleAsync()).TeamId);
             Assert.Equal(imported.IdMap[person.Id], (await db.ActorSkills.SingleAsync()).ActorId);
             Assert.Equal(imported.IdMap[child.Id], (await db.TaskSkills.SingleAsync()).TaskId);
+            Assert.Equal(imported.IdMap[department.Id], (await db.DepartmentParentPeriods.SingleAsync()).DepartmentId);
             Assert.Equal(imported.IdMap[department.Id], (await db.ActorDepartments.SingleAsync()).DepartmentId);
             Assert.Equal(imported.IdMap[person.Id], (await db.Calendars.SingleAsync()).ActorId);
             Assert.Equal(imported.IdMap[department.Id], (await db.Assignments.SingleAsync()).TargetId);

@@ -40,6 +40,9 @@ public static class DataEndpoints
                 rows.Add(new("actorSkill", Guid.NewGuid(), JsonSerializer.SerializeToElement(skill, DataTransfer.Json)));
             foreach (var skill in await db.TaskSkills.AsNoTracking().Where(x => taskIds.Contains(x.TaskId)).ToArrayAsync(ct))
                 rows.Add(new("taskSkill", Guid.NewGuid(), JsonSerializer.SerializeToElement(skill, DataTransfer.Json)));
+            var departmentIds = actors.Where(a => a.Kind == ActorKind.Department).Select(a => a.Id).ToArray();
+            foreach (var period in await db.DepartmentParentPeriods.AsNoTracking().Where(x => departmentIds.Contains(x.DepartmentId)).ToArrayAsync(ct))
+                rows.Add(new("departmentParentPeriod", period.Id, JsonSerializer.SerializeToElement(period, DataTransfer.Json)));
             foreach (var department in await db.ActorDepartments.AsNoTracking().Where(x => actorIds.Contains(x.ActorId) || actorIds.Contains(x.DepartmentId)).ToArrayAsync(ct))
                 rows.Add(new("actorDepartment", department.Id, JsonSerializer.SerializeToElement(department, DataTransfer.Json)));
             var calendars = await db.Calendars.AsNoTracking().Where(x => actorIds.Contains(x.ActorId)).ToArrayAsync(ct);
@@ -102,6 +105,7 @@ public static class DataEndpoints
                     case Actor x: x.TeamId = teamId; x.ParentId = Optional(x.ParentId); x.UserId = null; db.Actors.Add(x); break;
                     case ActorSkill x: x.ActorId = Map(x.ActorId); x.SkillId = Map(x.SkillId); db.ActorSkills.Add(x); break;
                     case TaskSkill x: x.TaskId = Map(x.TaskId); x.SkillId = Map(x.SkillId); db.TaskSkills.Add(x); break;
+                    case DepartmentParentPeriod x: x.DepartmentId = Map(x.DepartmentId); x.ParentId = Optional(x.ParentId); db.DepartmentParentPeriods.Add(x); break;
                     case ActorDepartment x: x.ActorId = Map(x.ActorId); x.DepartmentId = Map(x.DepartmentId); db.ActorDepartments.Add(x); break;
                     case Assignment x: x.TaskId = Map(x.TaskId); x.TargetId = Map(x.TargetId); x.ResolvedPersonId = Optional(x.ResolvedPersonId); db.Assignments.Add(x); break;
                     case TaskDependency x: x.PredecessorId = Map(x.PredecessorId); x.SuccessorId = Map(x.SuccessorId); db.Dependencies.Add(x); break;
@@ -131,7 +135,8 @@ public static class DataTransfer
     public static object Entity(DataRow row) => row.Kind switch
     {
         "project" => Read<Project>(row), "sprint" => Read<Sprint>(row), "task" => ReadTask(row), "actor" => Read<Actor>(row),
-        "actorSkill" => Read<ActorSkill>(row), "taskSkill" => Read<TaskSkill>(row), "actorDepartment" => Read<ActorDepartment>(row), "assignment" => Read<Assignment>(row), "dependency" => Read<TaskDependency>(row),
+        "actorSkill" => Read<ActorSkill>(row), "taskSkill" => Read<TaskSkill>(row), "actorDepartment" => Read<ActorDepartment>(row),
+        "departmentParentPeriod" => Read<DepartmentParentPeriod>(row), "assignment" => Read<Assignment>(row), "dependency" => Read<TaskDependency>(row),
         "calendar" => Read<WorkCalendar>(row), "exception" => Read<CalendarException>(row), "block" => Read<RecurringBlock>(row),
         _ => throw new FormatException("Неизвестный тип записи.")
     };
@@ -220,6 +225,18 @@ public static class DataTransfer
                 node.Remove("requiredSkills");
             }
             upgraded.Add(row with { Payload = JsonSerializer.SerializeToElement(node, Json) });
+        }
+        // A v1 package has no hierarchy history; the current parent becomes the first open period.
+        var recordedDepartments = upgraded.Where(r => r.Kind == "departmentParentPeriod")
+            .Select(r => r.Payload.GetProperty("departmentId").GetGuid()).ToHashSet();
+        foreach (var row in upgraded.Where(r => r.Kind == "actor").ToArray())
+        {
+            if (!row.Payload.TryGetProperty("kind", out var kind) || kind.ValueKind != JsonValueKind.String
+                || kind.GetString() != "Department" || recordedDepartments.Contains(row.Id)) continue;
+            Guid? parent = row.Payload.TryGetProperty("parentId", out var parentElement) && parentElement.ValueKind == JsonValueKind.String
+                ? parentElement.GetGuid() : null;
+            var period = new DepartmentParentPeriod { Id = Guid.NewGuid(), DepartmentId = row.Id, ParentId = parent, From = new DateOnly(1, 1, 1) };
+            upgraded.Add(new DataRow("departmentParentPeriod", period.Id, JsonSerializer.SerializeToElement(period, Json)));
         }
         // A v1 person can carry both a role link and the same name in skills; keep each link once.
         var actorLinks = new HashSet<(Guid ActorId, Guid SkillId)>();
@@ -314,6 +331,12 @@ public static class DataTransfer
                     Ref<Actor>(id, x.ActorId, "actorId"); Ref<Actor>(id, x.DepartmentId, "departmentId");
                     if (values.GetValueOrDefault(x.ActorId) is Actor personActor && personActor.Kind != ActorKind.Person || values.GetValueOrDefault(x.DepartmentId) is Actor department && department.Kind != ActorKind.Department) Error(id, "department", "Подразделение связывается только с человеком.");
                     if (x.To is { } to && to < x.From) Error(id, "period", "Окончание периода раньше начала."); break;
+                case DepartmentParentPeriod x:
+                    Ref<Actor>(id, x.DepartmentId, "departmentId"); Ref<Actor>(id, x.ParentId, "parentId", true);
+                    if (values.GetValueOrDefault(x.DepartmentId) is Actor hierarchyChild && hierarchyChild.Kind != ActorKind.Department
+                        || x.ParentId is { } hierarchyParentId && values.GetValueOrDefault(hierarchyParentId) is Actor hierarchyParent && hierarchyParent.Kind != ActorKind.Department)
+                        Error(id, "hierarchy", "Период иерархии связывает подразделения.");
+                    if (x.To is { } hierarchyEnd && hierarchyEnd < x.From) Error(id, "period", "Окончание периода раньше начала."); break;
                 case Assignment x:
                     Ref<TaskCard>(id, x.TaskId, "taskId"); Ref<Actor>(id, x.TargetId, "targetId"); Ref<Actor>(id, x.ResolvedPersonId, "resolvedPersonId", true);
                     if (values.Values.OfType<TaskCard>().Any(t => t.ParentId == x.TaskId)) Error(id, "taskId", "Назначение допустимо только для листовой задачи.");
@@ -341,7 +364,14 @@ public static class DataTransfer
             bool Walk(Guid start) { var seen = new HashSet<Guid>(); for (Guid? current = start; current.HasValue && seen.Add(current.Value); current = (values.GetValueOrDefault(current.Value) as Actor)?.ParentId) if (current == department) return true; return false; }
             return Walk(person) || values.Values.OfType<ActorDepartment>().Where(x => x.ActorId == person).Any(x => Walk(x.DepartmentId));
         }
-        Duplicate<Assignment>(x => x.TaskId, "assignment"); Duplicate<WorkCalendar>(x => x.ActorId, "calendar"); Duplicate<TaskDependency>(x => (x.PredecessorId, x.SuccessorId), "dependency"); Duplicate<ActorSkill>(x => (x.ActorId, x.SkillId), "actorSkill"); Duplicate<TaskSkill>(x => (x.TaskId, x.SkillId), "taskSkill"); Duplicate<ActorDepartment>(x => (x.ActorId, x.DepartmentId, x.From), "actorDepartment");
+        Duplicate<Assignment>(x => x.TaskId, "assignment"); Duplicate<WorkCalendar>(x => x.ActorId, "calendar"); Duplicate<TaskDependency>(x => (x.PredecessorId, x.SuccessorId), "dependency"); Duplicate<ActorSkill>(x => (x.ActorId, x.SkillId), "actorSkill"); Duplicate<TaskSkill>(x => (x.TaskId, x.SkillId), "taskSkill"); Duplicate<ActorDepartment>(x => (x.ActorId, x.DepartmentId, x.From), "actorDepartment"); Duplicate<DepartmentParentPeriod>(x => (x.DepartmentId, x.From), "departmentParentPeriod");
+        foreach (var group in values.Values.OfType<DepartmentParentPeriod>().GroupBy(x => x.DepartmentId))
+        {
+            var periods = group.OrderBy(x => x.From).ToArray();
+            for (var i = 1; i < periods.Length; i++)
+                if (periods[i - 1].To is null || periods[i].From <= periods[i - 1].To!.Value)
+                    Error(group.First().Id, "periods", "Периоды иерархии не могут пересекаться.");
+        }
         foreach (var group in values.Values.OfType<ActorDepartment>().GroupBy(x => x.ActorId))
         {
             var periods = group.OrderBy(x => x.From).ToArray();

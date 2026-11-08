@@ -139,6 +139,22 @@ public sealed class DataTransferTests
     }
 
     [Fact]
+    public void Upgrade_creates_a_hierarchy_period_for_an_old_department()
+    {
+        var team = Guid.NewGuid();
+        var department = Guid.NewGuid();
+        var parent = Guid.NewGuid();
+        var row = new DataRow("actor", department, JsonDocument.Parse($$"""{"id":"{{department}}","teamId":"{{team}}","name":"Платформа","kind":"Department","archived":false,"parentId":"{{parent}}"}""").RootElement.Clone());
+
+        var upgraded = DataTransfer.Upgrade(new DataPackage(1, team, [row]));
+
+        var period = Assert.Single(upgraded.Rows, item => item.Kind == "departmentParentPeriod");
+        Assert.Equal(department, period.Payload.GetProperty("departmentId").GetGuid());
+        Assert.Equal(parent, period.Payload.GetProperty("parentId").GetGuid());
+        Assert.Equal("0001-01-01", period.Payload.GetProperty("from").GetString());
+    }
+
+    [Fact]
     public void Upgrade_fills_the_legacy_membership_identity_and_start()
     {
         var team = Guid.NewGuid();

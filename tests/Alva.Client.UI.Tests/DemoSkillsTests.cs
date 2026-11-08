@@ -70,6 +70,24 @@ public sealed class DemoSkillsTests
         Assert.Equal(department.Id, saved.ParentId);
     }
 
+    [Fact]
+    public async Task Demo_department_move_records_parent_history()
+    {
+        var storage = new Storage();
+        var api = new ApiServiceLocalStorage(storage);
+        await api.Initialize();
+        var department = (await api.Get<ActorModel[]>(api.TeamPath("actors"))).Single(x => x.Kind == "Department");
+        await api.Send(HttpMethod.Post, api.TeamPath("actors"), new ActorRequest("Продукт", "Department"));
+        var product = (await api.Get<ActorModel[]>(api.TeamPath("actors"))).Single(x => x.Name == "Продукт");
+
+        await api.Send(HttpMethod.Put, api.TeamPath($"actors/{department.Id}"), new ActorRequest("Разработка", "Department", ParentId: product.Id));
+
+        var moved = (await api.Get<ActorModel[]>(api.TeamPath("actors"))).Single(x => x.Id == department.Id);
+        Assert.Equal(product.Id, moved.ParentId);
+        Assert.Equal(2, moved.DepartmentParentPeriods.Length);
+        Assert.Equal(product.Id, moved.DepartmentParentPeriods.Single(p => p.To is null).ParentId);
+    }
+
     private sealed class Storage : IJSRuntime
     {
         private readonly Dictionary<string,string> _values=[];

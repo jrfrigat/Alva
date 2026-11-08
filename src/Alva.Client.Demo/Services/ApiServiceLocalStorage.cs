@@ -239,9 +239,11 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
     private static CalendarDto CalendarOf(DemoStore store, ActorModel person, DateOnly day)
     {
         var departments = store.Actors.Where(a => a.Kind == "Department").ToDictionary(a => a.Id, a => a.ParentId);
+        var periods = store.Actors.Where(a => a.Kind == "Department").ToDictionary(a => a.Id,
+            a => a.DepartmentParentPeriods.Select(p => new DepartmentParentPeriodDto(p.Id, p.ParentId, p.From, p.To)).ToArray());
         var own = person.DepartmentMemberships.Where(m => m.From <= day && (m.To is null || day <= m.To))
             .Select(m => m.DepartmentId).Where(departments.ContainsKey);
-        var shared = CapacityMath.DepartmentsWithParents(own, id => departments.GetValueOrDefault(id) is { } parent && departments.ContainsKey(parent) ? parent : null);
+        var shared = CapacityMath.DepartmentsWithParents(own, id => DepartmentHierarchy.ParentOf(periods.GetValueOrDefault(id), id, day, departments.GetValueOrDefault(id)));
         return CapacityMath.Combine(Calendar(store, person.Id), shared.Select(id => store.Calendars.FirstOrDefault(c => c.ActorId == id)).OfType<CalendarDto>());
     }
 
@@ -419,6 +421,7 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
             ParentId = request.ParentId, UserId = request.UserId, SkillIds = request.SkillIds ?? []
         };
         ApplyMemberships(actor, request);
+        ApplyParentPeriods(actor, request);
         store.Actors.Add(actor);
         if (actor.Kind == "Person") store.Calendars.Add(new CalendarDto(actor.Id, "Europe/Moscow", 8m, 8m, 8m, 8m, 8m, 0m, 0m, [], []));
     }
@@ -432,8 +435,38 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
         actor.Email = request.Email;
         actor.UserId = request.UserId;
         actor.SkillIds = request.SkillIds ?? [];
-        if (actor.Kind == "Department") actor.ParentId = request.ParentId;
         ApplyMemberships(actor, request);
+        ApplyParentPeriods(actor, request);
+    }
+
+    private static void ApplyParentPeriods(ActorModel actor, ActorRequest request)
+    {
+        if (actor.Kind != "Department")
+        {
+            actor.DepartmentParentPeriods = [];
+            return;
+        }
+        var today = DateOnly.FromDateTime(DateTime.Today);
+        if (request.DepartmentParentPeriods is not null)
+            actor.DepartmentParentPeriods = [.. request.DepartmentParentPeriods.Select(p => new DepartmentParentPeriodModel { Id = p.Id ?? Guid.NewGuid(), ParentId = p.ParentId, From = p.From, To = p.To })];
+        else
+        {
+            var periods = actor.DepartmentParentPeriods.Select(p => new DepartmentParentPeriodModel { Id = p.Id, ParentId = p.ParentId, From = p.From, To = p.To }).ToList();
+            var active = periods.Where(p => p.From <= today && (p.To is null || today <= p.To)).OrderByDescending(p => p.From).FirstOrDefault();
+            if (active is null) periods.Add(new DepartmentParentPeriodModel { Id = Guid.NewGuid(), ParentId = request.ParentId, From = new DateOnly(1, 1, 1) });
+            else if (active.ParentId != request.ParentId)
+            {
+                if (active.From == today) active.ParentId = request.ParentId;
+                else
+                {
+                    active.To = today.AddDays(-1);
+                    periods.Add(new DepartmentParentPeriodModel { Id = Guid.NewGuid(), ParentId = request.ParentId, From = today });
+                }
+            }
+            actor.DepartmentParentPeriods = [.. periods];
+        }
+        var current = actor.DepartmentParentPeriods.Where(p => p.From <= today && (p.To is null || today <= p.To)).OrderByDescending(p => p.From).FirstOrDefault();
+        actor.ParentId = current?.ParentId;
     }
 
     private static void ApplyMemberships(ActorModel actor, ActorRequest request)
@@ -904,7 +937,7 @@ internal static class DemoSeed
             ],
             Actors =
             [
-                new ActorModel { Id = DemoIds.Department, Name = "Разработка", Kind = "Department" },
+                new ActorModel { Id = DemoIds.Department, Name = "Разработка", Kind = "Department", DepartmentParentPeriods = [new DepartmentParentPeriodModel { Id = Guid.NewGuid(), From = new DateOnly(2026, 1, 1) }] },
                 new ActorModel { Id = DemoIds.BackendRole, Name = "Backend", Kind = "Skill" },
                 new ActorModel { Id = DemoIds.FrontendRole, Name = "Frontend", Kind = "Skill" },
                 new ActorModel { Id = DemoIds.Anna, Name = "Анна Ковалёва", Kind = "Person", Email = "anna@alva.local", UserId = DemoIds.User, ParentId = DemoIds.Department, SkillIds = [DemoIds.BackendRole], DepartmentIds = [DemoIds.Department], DepartmentMemberships = [new DepartmentMembershipModel { Id = Guid.NewGuid(), DepartmentId = DemoIds.Department, From = new DateOnly(2026, 1, 1) }] },
