@@ -7,7 +7,7 @@ using Xunit;
 
 namespace Alva.Client.UI.Tests;
 
-/// <summary>Человека можно назначить на задачу без перетаскивания — кнопкой в блоке «Люди спринта».</summary>
+/// <summary>A person can be assigned to a task without dragging - with a button in the Sprint people block.</summary>
 public sealed class SprintPeopleTests : UiTestBase
 {
     [Fact]

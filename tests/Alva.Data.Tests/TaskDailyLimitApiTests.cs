@@ -7,7 +7,7 @@ using Xunit;
 
 namespace Alva.Data.Tests;
 
-/// <summary>Лимит часов в день через API: сохраняется явно, служебные правки его не стирают, неверное значение отклоняется.</summary>
+/// <summary>Daily hour limit over the API: saved explicitly, plain edits do not erase it, an invalid value is rejected.</summary>
 public sealed class TaskDailyLimitApiTests
 {
     private static readonly DateOnly Monday = new(2026, 10, 5);
@@ -23,7 +23,7 @@ public sealed class TaskDailyLimitApiTests
         var task = (await created.Content.ReadFromJsonAsync<TaskDto>())!;
         Assert.Equal(2m, task.DailyHoursLimit);
 
-        // Перенос с Гантта не знает о лимите и не должен его снять.
+        // A move from the Gantt does not know about the limit and must not remove it.
         var moved = await server.Client.PutAsJsonAsync(server.Team($"tasks/{task.Id}"), new TaskRequest("Отчёт", EstimateHours: 10,
             StartDate: Monday.AddDays(1), EndDate: Monday.AddDays(5), Version: task.Version));
         Assert.Equal(2m, (await moved.Content.ReadFromJsonAsync<TaskDto>())!.DailyHoursLimit);

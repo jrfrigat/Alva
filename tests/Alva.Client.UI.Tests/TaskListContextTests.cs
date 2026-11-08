@@ -7,7 +7,7 @@ using Xunit;
 
 namespace Alva.Client.UI.Tests;
 
-/// <summary>После перехода в задачу и Back список возвращается с прежним контекстом.</summary>
+/// <summary>After navigating to a task and pressing Back, the list returns with its previous context.</summary>
 public sealed class TaskListContextTests : UiTestBase
 {
     private readonly TaskModel _release = new() { Id = Guid.NewGuid(), Title = "Релиз", Status = "Planned" };
@@ -30,15 +30,15 @@ public sealed class TaskListContextTests : UiTestBase
         var cut = Render<Tasks>();
         cut.WaitForAssertion(() => Assert.Equal(2, cut.FindAll(".flare-vtree a[href^='tasks/']").Count));
 
-        // Поиск сужает список до одной задачи.
+        // The search narrows the list to one task.
         Field(cut, "Поиск задач").Input("Релиз");
         cut.WaitForAssertion(() => Assert.Single(cut.FindAll(".flare-vtree a[href^='tasks/']")));
 
-        // Открытие задачи уходит на её маршрут.
+        // Opening a task navigates to its route.
         cut.FindAll("[role='treeitem']").First(n => n.TextContent.Contains("Релиз")).Click();
         cut.WaitForAssertion(() => Assert.Contains($"/tasks/{_release.Id}", Navigation.Uri));
 
-        // Back: страница списка создаётся заново, но контекст возвращается из состояния списка.
+        // Back: the list page is created anew, but the context returns from the list state.
         Navigation.NavigateTo("/tasks");
         var back = Render<Tasks>();
         back.WaitForAssertion(() => Assert.Single(back.FindAll(".flare-vtree a[href^='tasks/']")));

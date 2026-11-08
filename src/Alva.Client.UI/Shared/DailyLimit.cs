@@ -3,16 +3,16 @@ using Alva.Client.Models;
 namespace Alva.Client.Shared;
 
 /// <summary>
-/// Лимит часов в день на задачу: сколько рабочих дней ей нужно и что сказать под полем. Окно короче нужного — не ошибка:
-/// работа уйдёт за окончание, риск и автобаланс это покажут.
+/// The daily hours limit for a task: how many workdays it needs and what to say under the field. A window
+/// shorter than needed is not an error: the work will run past the finish, and the risk view and auto-balance will show it.
 /// </summary>
 public static class DailyLimit
 {
-    /// <summary>Рабочих дней, нужных оценке при лимите; null — лимита или оценки нет.</summary>
+    /// <summary>The workdays the estimate needs at the limit; null means there is no limit or no estimate.</summary>
     public static int? DaysNeeded(TaskModel task) =>
         task.DailyHoursLimit is > 0 && task.EstimateHours is > 0 ? (int)Math.Ceiling(task.EstimateHours.Value / task.DailyHoursLimit.Value) : null;
 
-    /// <summary>Подсказка под полем лимита.</summary>
+    /// <summary>The hint under the limit field.</summary>
     public static string Hint(TaskModel task)
     {
         if (task.DailyHoursLimit is not > 0) return AlvaStrings.Common_EmptyMeansNoLimitForExample2HADayForATaskDoneAlongsideOtherWork;
@@ -24,7 +24,7 @@ public static class DailyLimit
         return string.Format(AlvaStrings.Common_NoMoreThanHADayTheTaskNeeds, limit, needed, AlvaFormat.Plural(needed, "workday"));
     }
 
-    /// <summary>Проверка поля формы; null — значение допустимо.</summary>
+    /// <summary>Form field validation; null means the value is valid.</summary>
     public static string? Error(decimal? limit) =>
         limit is <= 0 or > 24 ? AlvaStrings.Common_TheDailyLimitMustBeAbove0AndNoMoreThan24Hours : null;
 }

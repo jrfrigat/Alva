@@ -3,25 +3,25 @@ using Microsoft.JSInterop;
 
 namespace Alva.Client.Services;
 
-/// <summary>Ширина колонки шапок и ширина единицы оси одного вида Гантта; null — значение вида по умолчанию.</summary>
+/// <summary>The header column width and the axis unit width for one Gantt view; null means the view's default value.</summary>
 public sealed record GanttLayoutPreference(string? Side, Dictionary<string, double> Units)
 {
     public GanttLayoutPreference() : this(null, []) { }
 }
 
 /// <summary>
-/// Как человек настроил диаграммы Ганта на этом устройстве: ширину колонки и масштаб каждого вида («plan», «tasks»,
-/// «people»). Это настройка устройства, не данные команды, поэтому она живёт в localStorage, как уведомления о рисках.
+/// How a person configured the Gantt charts on this device: the column width and zoom for each view ("plan", "tasks",
+/// "people"). This is a device setting, not team data, so it lives in localStorage like the risk notifications.
 /// </summary>
 public sealed class GanttPreferences(IJSRuntime js)
 {
     private const string StorageKey = "alva-gantt";
     private Dictionary<string, GanttLayoutPreference>? _views;
 
-    /// <summary>Настройки вида <paramref name="view"/>.</summary>
+    /// <summary>The settings for the <paramref name="view"/> view.</summary>
     public async Task<GanttLayoutPreference> Get(string view) => (await Views()).GetValueOrDefault(view) ?? new GanttLayoutPreference();
 
-    /// <summary>Ширина единицы оси для масштаба <paramref name="scale"/>, или <paramref name="fallback"/>.</summary>
+    /// <summary>The axis unit width for the <paramref name="scale"/> zoom, or <paramref name="fallback"/>.</summary>
     public async Task<double> Unit(string view, string scale, double fallback) =>
         (await Get(view)).Units.TryGetValue(scale, out var width) ? width : fallback;
 
@@ -55,6 +55,6 @@ public sealed class GanttPreferences(IJSRuntime js)
     private async Task Store(Dictionary<string, GanttLayoutPreference> views)
     {
         try { await js.InvokeVoidAsync("localStorage.setItem", StorageKey, JsonSerializer.Serialize(views)); }
-        catch (JSException) { /* Хранилище недоступно (приватный режим) — настройки живут до перезагрузки. */ }
+        catch (JSException) { /* Storage is unavailable (private mode) - the settings last until reload. */ }
     }
 }

@@ -1,5 +1,5 @@
-@* «Люди спринта»: кому ещё можно дать работу. Свободные часы в окне спринта, загрузка, роли и
-   отсутствия; человека перетаскивают на задачу или назначают кнопкой. Подённая загрузка — в ячейках Гантта. *@
+@* Sprint people: who else can be given work. Free hours in the sprint window, load, skills and
+   absences; a person is dragged onto a task or assigned with a button. Daily load is shown in the Gantt cells. *@
 <FlareCard Variant="CardVariant.Outlined" Class="alva-plan-people">
     <FlareCardHeader Title="@(AlvaStrings.Sprint_SprintPeople)" Subtitle="@(AlvaStrings.Sprint_DragAPersonOntoATaskOrAssignWithTheButtonClickToShowOnTheGantt)">
         <AvatarContent><FlareIconView Value="@MaterialDesign3Icons.Regular.Groups" Size="20px" /></AvatarContent>
@@ -77,26 +77,26 @@
     [Parameter, EditorRequired] public SprintModel Sprint { get; set; } = default!;
     [Parameter] public ActorModel[] Actors { get; set; } = [];
 
-    /// <summary>Ёмкость по дням на окно спринта.</summary>
+    /// <summary>Capacity by day over the sprint window.</summary>
     [Parameter] public CapacityDto[] Capacity { get; set; } = [];
 
-    /// <summary>Задачи, которые можно назначить человеку из диалога.</summary>
+    /// <summary>Tasks that can be assigned to a person from the dialog.</summary>
     [Parameter] public TaskModel[] Tasks { get; set; } = [];
 
-    /// <summary>Человек в фокусе — его строка подсвечена на Гантте.</summary>
+    /// <summary>The person in focus - their row is highlighted on the Gantt.</summary>
     [Parameter] public Guid? Focus { get; set; }
     [Parameter] public EventCallback<Guid?> FocusChanged { get; set; }
 
-    /// <summary>Сколько часов предложение автобаланса добавит человеку в спринте (минус — снимет).</summary>
+    /// <summary>How many hours the auto-balance suggestion adds to the person in the sprint (negative - removes).</summary>
     [Parameter] public IReadOnlyDictionary<Guid, decimal> Shift { get; set; } = new Dictionary<Guid, decimal>();
 
-    /// <summary>Человек и задача, выбранные в диалоге назначения.</summary>
+    /// <summary>The person and task selected in the assignment dialog.</summary>
     [Parameter] public EventCallback<(Guid PersonId, Guid TaskId)> OnAssign { get; set; }
 
     private bool _assignOpen;
     private Guid? _assignPerson, _assignTask;
 
-    // Свободные — выше: им и отдавать работу.
+    // People with free time come first: they should get the work.
     private IReadOnlyList<PersonLoad> Rows => Actors.Where(a => a.Kind == "Person")
         .Select(person =>
         {
@@ -122,7 +122,7 @@
         _ => FlareColor.Success
     };
 
-    /// <summary>Рабочие дни без доступных часов у человека с графиком, свёрнутые в диапазоны: «20–23 окт: нет в графике».</summary>
+    /// <summary>Working days without available hours for a person who has a schedule, collapsed into ranges such as "20-23 Oct: not in the schedule".</summary>
     private static string[] Absences(CapacityDto[] days)
     {
         if (!days.Any(d => d.AvailableHours > 0)) return [];
@@ -131,7 +131,7 @@
         for (var i = 0; i < off.Length;)
         {
             var j = i;
-            // Соседние рабочие дни (через выходные тоже) — один диапазон.
+            // Adjacent working days (across weekends too) form one range.
             while (j + 1 < off.Length && Enumerable.Range(1, off[j + 1].DayNumber - off[j].DayNumber - 1).All(k => GanttData.IsWeekend(off[j].AddDays(k)))) j++;
             ranges.Add(i == j ? string.Format(AlvaStrings.Sprint_NotScheduled, off[i]) : string.Format(AlvaStrings.Sprint_NotScheduledRange, off[i], off[j]));
             i = j + 1;

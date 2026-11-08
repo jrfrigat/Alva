@@ -5,7 +5,7 @@ using Xunit;
 
 namespace Alva.Client.UI.Tests;
 
-/// <summary>Склонения берутся из ресурсов и следуют грамматике текущего языка, а не русской по умолчанию.</summary>
+/// <summary>Plural forms come from resources and follow the grammar of the current language, not Russian by default.</summary>
 public sealed class PluralTests
 {
     [Theory]

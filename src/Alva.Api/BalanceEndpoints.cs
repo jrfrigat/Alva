@@ -8,12 +8,12 @@ namespace Alva.Api;
 
 public static class BalanceEndpoints
 {
-    /// <summary>Сколько решатель думает над спринтом: хватает на команды в десятки задач, ответ укладывается в ожидание кнопки.</summary>
+    /// <summary>How long the solver thinks about a sprint: enough for teams with dozens of tasks, and the answer fits the wait expected from a button.</summary>
     private static readonly TimeSpan Limit = TimeSpan.FromSeconds(3);
 
     public static void MapBalance(this WebApplication app)
     {
-        // Только расчёт: предложение применяют обычные правки задач и назначений, ничего здесь не сохраняется.
+        // Calculation only: the proposal is applied by the normal task and assignment edits; nothing is saved here.
         app.MapPost("/api/teams/{teamId:guid}/sprints/{sprintId:guid}/balance", async (Guid teamId, Guid sprintId, BalanceRequest request, ClaimsPrincipal user, AlvaDbContext db) =>
         {
             await AccessControl.RequireTeam(db, user, teamId, "tasks", "view");
@@ -22,8 +22,8 @@ public static class BalanceEndpoints
             return BalanceMath.Proposal(problem, choice, status);
         }).RequireAuthorization();
 
-        // Применение предложения — одна транзакция: или все отмеченные изменения, или ни одного. Версии задач должны совпасть
-        // с теми, на которых строилось предложение, иначе план успел измениться и его нужно пересчитать.
+        // Applying the proposal is a single transaction: either all selected changes or none. Task versions must match
+        // those the proposal was built on; otherwise the plan has changed and must be recalculated.
         app.MapPost("/api/teams/{teamId:guid}/sprints/{sprintId:guid}/balance/apply", async (Guid teamId, Guid sprintId, BalanceApplyRequest request, ClaimsPrincipal user, AlvaDbContext db) =>
         {
             await AccessControl.RequireTeam(db, user, teamId, "tasks", "edit");
@@ -35,7 +35,7 @@ public static class BalanceEndpoints
                 var task = await TaskEndpoints.Find(db, teamId, change.TaskId);
                 if (task.Version != change.Version) throw new ApiException(409, "Задачи изменились после расчёта. Пересчитайте автобаланс.");
                 if (change.ToEnd < change.ToStart) throw new ApiException(400, "Окончание задачи раньше начала.");
-                // Фиксируются даты, а не исполнитель: смена человека допустима, сдвиг — нет.
+                // Dates are fixed, not the assignee: changing the person is allowed, moving the task is not.
                 if (task.DatesFixed && (change.ToStart != task.StartDate || change.ToEnd != task.EndDate))
                     throw new ApiException(409, "Даты задачи зафиксированы — автобаланс не может её перенести.");
                 var person = await db.Actors.AsNoTracking().SingleOrDefaultAsync(x => x.TeamId == teamId && x.Id == change.ToPersonId && x.Kind == ActorKind.Person && !x.Archived)
@@ -80,7 +80,7 @@ public static class BalanceEndpoints
         Guid[] Closure(Guid personId) => [.. CapacityMath.DepartmentsWithParents(departments[personId], ParentAt)];
         var persons = people.Select(x => new BalancePersonInput(x.Id, x.Name, [.. departments[x.Id]], [.. actorSkills[x.Id]], Closure(x.Id))).ToArray();
 
-        // Все неархивные задачи: готовые и «в работе» с датами нужны как якоря связей, даже когда не двигаются.
+        // All non-archived tasks: done and in-progress tasks with dates are needed as link anchors even when they do not move.
         var tasks = await db.Tasks.AsNoTracking().Where(x => x.TeamId == teamId && !x.Archived).ToListAsync();
         var taskIds = tasks.Select(x => x.Id).ToArray();
         var assignments = await db.Assignments.AsNoTracking().Where(x => taskIds.Contains(x.TaskId)).ToDictionaryAsync(x => x.TaskId);

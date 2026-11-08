@@ -2,62 +2,62 @@ using System.Globalization;
 
 namespace Alva.Contracts;
 
-/// <summary>Запрос автобаланса спринта: режим оптимизации.</summary>
+/// <summary>A sprint auto-balance request: the optimization mode.</summary>
 public record BalanceRequest(string Mode);
 
-/// <summary>Метрики плана спринта, которые оптимизирует автобаланс.</summary>
-/// <param name="OverloadHours">Часы сверх ёмкости людей, сумма по дням.</param>
-/// <param name="PeakOverloadHours">Перегруз самого загруженного человека.</param>
-/// <param name="LateDays">Дни просрочки задач после их сроков.</param>
-/// <param name="OverflowHours">Часы работы после конца спринта.</param>
-/// <param name="LinkViolationDays">Дни нарушения связей FS/SS/FF/SF.</param>
-/// <param name="SpreadHours">Разброс свободных часов внутри ролей и подкоманд.</param>
-/// <param name="UnassignedHours">Часы задач, где человек не выбран.</param>
-/// <param name="Changes">Сколько задач меняется относительно текущего плана.</param>
+/// <summary>Sprint plan metrics that auto-balance optimizes.</summary>
+/// <param name="OverloadHours">Hours beyond people's capacity, summed over days.</param>
+/// <param name="PeakOverloadHours">The overload of the busiest person.</param>
+/// <param name="LateDays">Task days late after their deadlines.</param>
+/// <param name="OverflowHours">Work hours after the end of the sprint.</param>
+/// <param name="LinkViolationDays">Days of FS/SS/FF/SF dependency violations.</param>
+/// <param name="SpreadHours">Spread of free hours within departments.</param>
+/// <param name="UnassignedHours">Hours of tasks with no person selected.</param>
+/// <param name="Changes">How many tasks change relative to the current plan.</param>
 public record BalanceMetricsDto(decimal OverloadHours, decimal PeakOverloadHours, int LateDays, decimal OverflowHours, int LinkViolationDays,
     decimal SpreadHours, decimal UnassignedHours, int Changes);
 
-/// <summary>Одно изменение предложения: кто делает задачу и когда.</summary>
+/// <summary>A single proposal change: who does the task and when.</summary>
 public record BalanceChangeDto(Guid TaskId, string Title, Guid? FromPersonId, string? FromPersonName, Guid ToTargetId, Guid ToPersonId, string ToPersonName,
     DateOnly FromStart, DateOnly FromEnd, DateOnly ToStart, DateOnly ToEnd, ReasonDto[] Reasons);
 
-/// <summary>Предложение автобаланса: изменения и метрики до и после. Ничего не сохранено.</summary>
-/// <param name="Status">Optimal — оптимум доказан; Feasible — лучшее за отведённое время; Heuristic — простой алгоритм.</param>
-/// <param name="Considered">Сколько задач спринта решатель мог двигать.</param>
-/// <param name="Excluded">Задачи спринта, которые он не трогал, и почему: без этого «менять нечего» звучит как «план готов».</param>
+/// <summary>An auto-balance proposal: changes and metrics before and after. Nothing is saved.</summary>
+/// <param name="Status">Optimal - the optimum is proven; Feasible - the best found in the allotted time; Heuristic - a simple algorithm.</param>
+/// <param name="Considered">How many sprint tasks the solver could move.</param>
+/// <param name="Excluded">Sprint tasks it did not touch, and why: without this, "nothing to change" sounds like "the plan is ready".</param>
 public record BalanceProposalDto(string Mode, string Status, BalanceMetricsDto Before, BalanceMetricsDto After, BalanceChangeDto[] Changes, string? Note,
     int Considered = 0, BalanceExcludedDto[]? Excluded = null);
 
-/// <summary>Задача спринта, которую автобаланс не двигал, и причина.</summary>
+/// <summary>A sprint task that auto-balance did not move, and the reason.</summary>
 public record BalanceExcludedDto(Guid TaskId, string Title, ReasonDto Reason);
 
-/// <summary>Человек команды для автобаланса: подкоманды и навыки определяют, какие задачи ему можно дать.</summary>
+/// <summary>A team member for auto-balance: departments and skills determine which tasks can be given to them.</summary>
 /// <param name="DepartmentClosure">Direct sub-teams plus their parents; a task targeted at any of them admits this person.</param>
 public record BalancePersonInput(Guid Id, string Name, Guid[] Departments, Guid[] SkillIds, Guid[]? DepartmentClosure = null)
 {
-    /// <summary>Transitional shape for callers that still pass roles first; the roles are read as sub-teams.</summary>
+    /// <summary>Transitional shape for older callers that passed roles and skills separately; only departments are kept.</summary>
     public BalancePersonInput(Guid Id, string Name, Guid[] Roles, Guid[] Departments, string[]? Skills)
         : this(Id, Name, Departments, []) { }
 }
 
-/// <summary>Задача команды для автобаланса: двигаемая, фон или якорь связи. Start и End — окно задачи; Deadline — срок.</summary>
+/// <summary>A team task for auto-balance: movable, background or a dependency anchor. Start and End are the task window; Deadline is the deadline.</summary>
 public record BalanceTaskInput(Guid Id, string Title, string Status, Guid? ParentId, decimal? EstimateHours,
     DateOnly? Start, DateOnly? End, DateOnly? Deadline, Guid? TargetId, Guid? ResolvedPersonId, Guid[]? RequiredSkillIds = null, string Priority = "Normal",
     bool DatesFixed = false, decimal? DailyHoursLimit = null, decimal? RemainingHours = null);
 
-/// <summary>Связь задач: тип FS, SS, FF или SF и лаг в днях.</summary>
+/// <summary>A task link: type FS, SS, FF or SF and the lag in days.</summary>
 public record BalanceLinkInput(Guid PredecessorId, Guid SuccessorId, string Kind, int LagDays);
 
-/// <summary>Режимы автобаланса.</summary>
+/// <summary>Auto-balance modes.</summary>
 public static class BalanceModes
 {
-    /// <summary>Только переназначения внутри подкоманды; даты не трогаются.</summary>
+    /// <summary>Reassignments within the sub-team only; dates are not touched.</summary>
     public const string Gentle = "Gentle";
 
-    /// <summary>Переназначения и сдвиг дат внутри спринта; главное — сроки и связи.</summary>
+    /// <summary>Reassignments and date shifts within the sprint; deadlines and links come first.</summary>
     public const string Deadlines = "Deadlines";
 
-    /// <summary>Всё сразу, включая людей с общими навыками из других подкоманд.</summary>
+    /// <summary>Everything at once, including people with shared skills from other sub-teams.</summary>
     public const string Maximum = "Maximum";
 
     public static string Normalize(string? mode) => mode switch
@@ -68,8 +68,8 @@ public static class BalanceModes
     };
 }
 
-/// <summary>Цена единицы каждой метрики в целевой функции; часы считаются в десятых долях. День просрочки ещё умножается
-/// на вес приоритета задачи (BalanceMath.PriorityWeight): у обычной задачи он 2, поэтому LateDay — половина цены дня.</summary>
+/// <summary>The cost of one unit of each metric in the objective function; hours are counted in tenths. A late day is also multiplied
+/// by the task's priority weight (BalanceMath.PriorityWeight): for a normal task it is 2, so LateDay is half the cost of a day.</summary>
 public sealed record BalanceWeights(long Overload, long Peak, long LateDay, long Overflow, long LinkDay, long Spread, long Unassigned, long Change)
 {
     public static BalanceWeights For(string mode) => mode switch
@@ -80,37 +80,37 @@ public sealed record BalanceWeights(long Overload, long Peak, long LateDay, long
     };
 }
 
-/// <summary>Вариант задачи: кто её делает и с какого дня. Нагрузка по дням — в десятых долях часа.</summary>
-/// <param name="Person">Индекс человека в задаче или −1, если человек не выбран.</param>
-/// <param name="Start">День начала, считая от начала спринта.</param>
-/// <param name="Length">Окно задачи в днях — то, что попадёт в её даты.</param>
-/// <param name="Tail">Дни после окна, на которые работа переходит из-за лимита часов в день, когда даты менять нельзя;
-/// фактический конец — Start + Length + Tail, и по нему держатся связи.</param>
+/// <summary>A task option: who does it and from which day. Load by day is in tenths of an hour.</summary>
+/// <param name="Person">The person's index in the problem, or -1 if no person is selected.</param>
+/// <param name="Start">The start day, counted from the sprint start.</param>
+/// <param name="Length">The task window in days - what will end up in its dates.</param>
+/// <param name="Tail">Days after the window that the work moves into because of the daily hours limit when the dates cannot be changed;
+/// the actual end is Start + Length + Tail, and dependencies are held to it.</param>
 public sealed record BalanceOption(int Person, int Start, int Length, int[] Load, int LateDays, int OverflowTenths, int Tail = 0)
 {
-    /// <summary>Дней от начала до фактического конца работы.</summary>
+    /// <summary>Days from the start to the actual end of the work.</summary>
     public int Span => Length + Tail;
 }
 
-/// <summary>Задача, которую автобаланс может двигать. Вариант 0 — текущий план.</summary>
-/// <param name="Weight">Вес просрочки по приоритету: важную задачу решатель удерживает в сроке охотнее.</param>
-/// <param name="Window">Длина окна в сохранённых датах; 0 — как у варианта 0. Отличается, когда лимит в день растягивает задачу.</param>
-/// <param name="DailyLimit">Лимит часов в день, если задан.</param>
+/// <summary>A task that auto-balance can move. Option 0 is the current plan.</summary>
+/// <param name="Weight">The lateness weight by priority: the solver keeps an important task on time more willingly.</param>
+/// <param name="Window">The window length in the saved dates; 0 means the same as option 0. It differs when the daily limit stretches the task.</param>
+/// <param name="DailyLimit">The daily hours limit, if set.</param>
 public sealed record BalanceTask(Guid Id, string Title, int Tenths, Guid? TargetId, bool TargetIsGroup, int? Deadline, BalanceOption[] Options, int Weight = 2,
     int Window = 0, decimal? DailyLimit = null)
 {
-    /// <summary>Длина окна в сохранённых датах задачи.</summary>
+    /// <summary>The window length in the task's saved dates.</summary>
     public int StoredLength => Window > 0 ? Window : Options[0].Length;
 }
 
-/// <summary>Связь двигаемых задач по их индексам.</summary>
+/// <summary>A link between movable tasks by their indexes.</summary>
 public sealed record BalanceLink(int From, int To, string Kind, int Lag);
 
 /// <summary>
-/// Задача оптимизации спринта. Дни — календарные от начала спринта до горизонта (конец спринта плюс самая длинная задача),
-/// ёмкость и фоновая загрузка людей — по этим дням в десятых долях часа.
+/// The sprint optimization problem. Days are calendar days from the sprint start to the horizon (the sprint end plus the longest task),
+/// and people's capacity and background load are given for these days in tenths of an hour.
 /// </summary>
-/// <param name="Infeasible">Почему допустимого плана нет ещё до решения; null — ограничения совместимы.</param>
+/// <param name="Infeasible">Why no feasible plan exists even before solving; null means the constraints are compatible.</param>
 public sealed record BalanceProblem(string Mode, BalanceWeights Weights, DateOnly Start, int SprintDays, int Horizon,
     BalancePersonInput[] People, int[][] Capacity, int[][] Background, int[][] Groups, BalanceTask[] Tasks, BalanceLink[] Links, BalanceExcludedDto[]? Excluded = null,
     string? Infeasible = null)
@@ -119,25 +119,25 @@ public sealed record BalanceProblem(string Mode, BalanceWeights Weights, DateOnl
 }
 
 /// <summary>
-/// Автобаланс спринта без решателя: сборка задачи из данных команды, оценка плана, жадная эвристика и предложение.
-/// Решатель CP-SAT живёт в API; здесь — то, что одинаково нужно серверу, demo и тестам.
+/// Sprint auto-balance without a solver: building the problem from team data, evaluating the plan, the greedy heuristic and the proposal.
+/// The CP-SAT solver lives in the API; here is what the server, the demo and the tests all need.
 /// </summary>
 public static class BalanceMath
 {
     public const string Optimal = "Optimal";
     public const string Feasible = "Feasible";
     public const string Heuristic = "Heuristic";
-    /// <summary>Ограничения (фиксированные даты, связи с якорями или друг с другом) несовместимы.</summary>
+    /// <summary>The constraints (fixed dates, links to anchors or to each other) are incompatible.</summary>
     public const string Infeasible = "Infeasible";
 
     private const int Tenth = 10;
 
-    /// <summary>Вес дня просрочки по приоритету задачи: Low 1, Normal 2, High 4, Critical 6.</summary>
+    /// <summary>The weight of a late day by task priority: Low 1, Normal 2, High 4, Critical 6.</summary>
     public static int PriorityWeight(string? priority) => priority switch { "Low" => 1, "High" => 4, "Critical" => 6, _ => 2 };
 
     /// <summary>
-    /// Собирает задачу. Двигаются задачи спринта: открытые и не «В работе», листовые, с оценкой, окном внутри спринта и назначением.
-    /// Остальная открытая работа — фоновая загрузка людей; готовые и задачи «в работе» с датами служат якорями связей.
+    /// Builds the problem. Sprint tasks move if they are open and not in progress, are leaves, and have an estimate, a window inside the sprint and an assignment.
+    /// The rest of the open work is people's background load; done and in-progress tasks with dates serve as dependency anchors.
     /// </summary>
     public static BalanceProblem Build(string mode, Guid sprintId, DateOnly sprintStart, DateOnly sprintEnd, IReadOnlyList<BalancePersonInput> people,
         Func<Guid, CalendarDto> calendarOf, IReadOnlyList<BalanceTaskInput> openTasks, IReadOnlyList<BalanceLinkInput> links, DateOnly? today = null)
@@ -160,7 +160,7 @@ public static class BalanceMath
             && s >= sprintStart && s <= sprintEnd && e >= s;
 
         var movable = openTasks.Where(Movable).ToArray();
-        // С лимитом в день задача может занять больше своего окна: горизонт берётся с запасом на выходные.
+        // With a daily limit a task can take longer than its window: the horizon is taken with room for weekends.
         var longest = movable.Select(t => Math.Max(t.End!.Value.DayNumber - t.Start!.Value.DayNumber + 1,
             t.DailyHoursLimit is > 0 ? (int)Math.Ceiling(t.EstimateHours!.Value / t.DailyHoursLimit.Value) * 2 + 7 : 0)).DefaultIfEmpty(1).Max();
         var horizon = sprintDays + longest;
@@ -175,7 +175,7 @@ public static class BalanceMath
         (DateOnly? Start, DateOnly? End) FromToday(BalanceTaskInput t) =>
             (t.Start is { } start && start < firstPlannableDay ? firstPlannableDay : t.Start,
              t.End is { } end && end < firstPlannableDay ? firstPlannableDay : t.End);
-        // Готовые и отменённые задачи не занимают будущую ёмкость, даже если пришли как якоря связей.
+        // Done and cancelled tasks do not occupy future capacity, even if they came in as dependency anchors.
         var backgroundWork = openTasks.Where(t => t.Status is not ("Done" or "Cancelled") && !movableIds.Contains(t.Id)
                 && PersonOf(t) is not null && WorkHours(t) > 0)
             .Select(t =>
@@ -192,7 +192,7 @@ public static class BalanceMath
             return row;
         }).ToArray();
 
-        // Группы для разброса свободных часов: подкоманды, где есть хотя бы двое.
+        // Groups for free-hours spread: departments with at least two people.
         var groups = people.SelectMany((p, i) => p.Departments.Distinct().Select(g => (g, i)))
             .GroupBy(x => x.g).Select(g => g.Select(x => x.i).ToArray()).Where(g => g.Length > 1).ToArray();
 
@@ -206,13 +206,13 @@ public static class BalanceMath
             var targetIsGroup = !personIndex.ContainsKey(t.TargetId!.Value);
             var candidates = Candidates(mode, people, t.TargetId!.Value, targetIsGroup, current)
                 .Where(i => SkillMath.Compatible(t.RequiredSkillIds, people[i].SkillIds)).ToArray();
-            // Фиксированная задача остаётся на своём дне начала при любом режиме; меняться может только человек.
+            // A fixed task stays on its start day in any mode; only the person can change.
             var keepDates = t.DatesFixed || mode == BalanceModes.Gentle;
             var starts = keepDates ? [start]
                 : Enumerable.Range(firstPlannableOffset, Math.Max(0, sprintDays - firstPlannableOffset)).Prepend(start).Distinct().ToArray();
             var limit = t.DailyHoursLimit is > 0 ? ToTenths(t.DailyHoursLimit.Value) : (int?)null;
-            // С лимитом в день работа может не уложиться в окно. Если даты менять можно, окно растягивается до её конца;
-            // если нельзя — окно прежнее, а остаток идёт хвостом, по которому держатся связи и считается просрочка.
+            // With a daily limit the work may not fit into the window. If the dates can change, the window stretches to its end;
+            // if not, the window stays and the remainder goes into a tail that dependencies follow and lateness is counted against.
             BalanceOption Option(int person, int s)
             {
                 var (load, last) = Spread(person >= 0 ? capacity[person] : null, tenths, s, length, horizon, limit);
@@ -228,8 +228,8 @@ public static class BalanceMath
             return new BalanceTask(t.Id, t.Title, tenths, t.TargetId, targetIsGroup, deadline, [.. options], PriorityWeight(t.Priority), length, t.DailyHoursLimit);
         }).ToArray();
 
-        // Якоря — задачи вне модели с обеими датами. Связь с ними нельзя нарушить, поэтому варианты
-        // двигаемой задачи сразу ограничиваются допустимым окном; пустое окно — явная несовместимость.
+        // Anchors are tasks outside the model with both dates. A link to them cannot be violated, so the movable
+        // task's options are immediately limited to the feasible window; an empty window is an explicit incompatibility.
         var anchors = openTasks.Where(t => t.Status != "Cancelled" && t.Start is not null && t.End is not null)
             .ToDictionary(t => t.Id, t => (Start: t.Start!.Value.DayNumber - sprintStart.DayNumber,
                 End: t.End!.Value.DayNumber - sprintStart.DayNumber + 1, t.Title));
@@ -277,13 +277,13 @@ public static class BalanceMath
         var modelLinks = links.Where(l => taskIndex.ContainsKey(l.PredecessorId) && taskIndex.ContainsKey(l.SuccessorId))
             .Select(l => new BalanceLink(taskIndex[l.PredecessorId], taskIndex[l.SuccessorId], l.Kind.ToUpperInvariant(), l.LagDays)).ToArray();
 
-        // Открытые задачи спринта, которые не двигаются: человеку нужно знать, что расчёт их не видел, и почему.
+        // Open sprint tasks that do not move: the user needs to know the calculation did not see them, and why.
         var excluded = openTasks.Where(t => !movableIds.Contains(t.Id) && t.Status is not ("Done" or "Cancelled") && SprintWindows.Overlaps(t.Start, t.End, sprintStart, sprintEnd))
             .Select(t => new BalanceExcludedDto(t.Id, t.Title, ExclusionReason(t, parents, sprintStart))).ToArray();
         return new BalanceProblem(mode, BalanceWeights.For(mode), sprintStart, sprintDays, horizon, [.. people], capacity, background, groups, tasks, modelLinks, excluded, infeasible);
     }
 
-    // Почему задача спринта не двигается — в порядке условий Movable, чтобы причина совпадала с правилом.
+    // Why a sprint task does not move - in the order of the Movable conditions so the reason matches the rule.
     private static ReasonDto ExclusionReason(BalanceTaskInput t, HashSet<Guid> parents, DateOnly sprintStart) =>
         new(t.Status == "InProgress" ? ReasonCodes.BalanceExcludedInProgress
             : parents.Contains(t.Id) ? ReasonCodes.BalanceExcludedParent
@@ -293,7 +293,7 @@ public static class BalanceMath
             : s < sprintStart ? ReasonCodes.BalanceExcludedStartsBeforeSprint
             : ReasonCodes.BalanceExcludedBeyondSprint);
 
-    // Кому можно дать задачу: назначенный человек; люди группы цели; в «Максимальном» — ещё люди с общей ролью.
+    // Who can be given the task: the assigned person; the people of the target group; in Maximum mode - also people with a shared skill.
     private static IEnumerable<int> Candidates(string mode, IReadOnlyList<BalancePersonInput> people, Guid target, bool targetIsGroup, int current)
     {
         var result = new HashSet<int>();
@@ -307,9 +307,9 @@ public static class BalanceMath
         return result.Order();
     }
 
-    // Как CapacityMath.Spread: оценка делится по доступным часам человека в окне, а если их нет — поровну. С лимитом
-    // день получает не больше лимита, а не поместившееся в окно переходит на следующие дни с доступными часами.
-    // Last — последний день с работой; за горизонтом — оценка, сколько дней ещё понадобится.
+    // Like CapacityMath.Spread: the estimate is split by the person's available hours in the window, or evenly if there are none. With a limit,
+    // a day gets no more than the limit, and what does not fit into the window moves to the following days with available hours.
+    // Last is the last day with work; beyond the horizon it is an estimate of how many more days are needed.
     private static (int[] Load, int Last) Spread(int[]? capacity, int tenths, int start, int length, int horizon, int? limit = null)
     {
         var load = new int[horizon];
@@ -333,7 +333,7 @@ public static class BalanceMath
         var shares = CapacityMath.Fill([.. weights.Select(w => (decimal)w)], tenths, cap);
         var placed = 0;
         for (var i = 0; i < days.Length; i++) placed += load[days[i]] = (int)Math.Floor(shares[i]);
-        // Округление вниз оставило десятые: раздаём их дням окна, где до лимита есть место.
+        // Rounding down left some tenths: they are handed out to window days that still have room up to the limit.
         for (var i = 0; placed < tenths && i < days.Length; i++)
             if (shares[i] > 0 && load[days[i]] < cap)
             {
@@ -350,7 +350,7 @@ public static class BalanceMath
             placed += take;
             last = d;
         }
-        // Не поместилось и в горизонт: конец работы за ним, остаток уйдёт в выход за спринт.
+        // It did not fit into the horizon either: the work ends beyond it, and the remainder spills past the sprint.
         if (placed < tenths) last = horizon - 1 + (tenths - placed + cap - 1) / cap;
         return (load, last);
     }
@@ -359,10 +359,10 @@ public static class BalanceMath
 
     private static decimal Hours(long tenths) => tenths / (decimal)Tenth;
 
-    /// <summary>Подробная оценка плана: метрики, цель и загрузка людей по дням.</summary>
+    /// <summary>A detailed plan evaluation: metrics, objective and people's load by day.</summary>
     public sealed record Evaluation(BalanceMetricsDto Metrics, long Objective, int[][] Load, long[] OverloadByPerson, long[] FreeByPerson);
 
-    /// <summary>Оценивает план: choice[t] — индекс варианта задачи t.</summary>
+    /// <summary>Evaluates the plan: choice[t] is the option index of task t.</summary>
     public static Evaluation Evaluate(BalanceProblem problem, IReadOnlyList<int> choice)
     {
         var people = problem.People.Length;
@@ -402,7 +402,7 @@ public static class BalanceMath
         return new Evaluation(metrics, objective, load, overByPerson, freeByPerson);
     }
 
-    /// <summary>На сколько дней связь нарушена при этих вариантах предшественника и последователя.</summary>
+    /// <summary>How many days the link is violated for these predecessor and successor options.</summary>
     public static int Violation(BalanceLink link, BalanceOption from, BalanceOption to)
     {
         var required = link.Kind switch
@@ -416,16 +416,16 @@ public static class BalanceMath
     }
 
     /// <summary>
-    /// Жадный поиск: по одной задаче меняет вариант на лучший, пока цель уменьшается. Для demo, где нет решателя,
-    /// и как запасной путь сервера.
+    /// Greedy search: changes one task's option to the best one at a time while the objective decreases. For the demo, which has no solver,
+    /// and as the server's fallback path.
     /// </summary>
     public static int[] Greedy(BalanceProblem problem, int maxSteps = 200)
     {
         var choice = new int[problem.Tasks.Length];
-        // Несовместимые ограничения уже известны: запасной поиск не должен делать вид, что план возможен.
+        // The incompatible constraints are already known: the fallback search must not pretend a plan is possible.
         if (problem.Infeasible is not null) return choice;
-        // Жёсткие связи: сначала выравниваем нарушения, и только потом цель — так запасной поиск не
-        // остаётся на плане, который нарушает FS/SS/FF/SF, если исправимый вариант существует.
+        // Hard links: violations are leveled first, and only then the objective - this way the fallback search does not
+        // stay on a plan that violates FS/SS/FF/SF if a fixable option exists.
         long ViolationDays() => problem.Links.Sum(link =>
             Violation(link, problem.Tasks[link.From].Options[choice[link.From]], problem.Tasks[link.To].Options[choice[link.To]]));
         long Score() => (ViolationDays() << 32) + Evaluate(problem, choice).Objective;
@@ -452,10 +452,10 @@ public static class BalanceMath
         return choice;
     }
 
-    /// <summary>Предложение: что меняется против текущего плана, почему, и метрики до и после.</summary>
+    /// <summary>The proposal: what changes against the current plan, why, and the metrics before and after.</summary>
     public static BalanceProposalDto Proposal(BalanceProblem problem, IReadOnlyList<int> choice, string status, string? note = null)
     {
-        // У несовместимой задачи выбора нет: показываем текущий план и причину, а не нарушающий связи.
+        // An infeasible problem has no choice: show the current plan and the reason instead of a link-violating one.
         if (choice.Count != problem.Tasks.Length) choice = new int[problem.Tasks.Length];
         var before = Evaluate(problem, new int[problem.Tasks.Length]);
         var after = Evaluate(problem, choice);
@@ -465,7 +465,7 @@ public static class BalanceMath
             var task = problem.Tasks[t];
             var from = task.Options[0];
             var to = task.Options[choice[t]];
-            // Тот же человек и начало, но лимит в день не даёт уложиться в окно — предлагаем растянуть даты.
+            // The same person and start, but the daily limit does not fit into the window - propose stretching the dates.
             if (choice[t] == 0 && to.Length == task.StoredLength) continue;
             if (to.Person < 0) continue;
             var fromPerson = from.Person >= 0 ? problem.People[from.Person] : null;
@@ -491,7 +491,7 @@ public static class BalanceMath
         {
             var toName = problem.People[to.Person].Name;
             var free = Hours(Math.Max(0, after.FreeByPerson[to.Person]));
-            // Имена без падежей: «Анна Ковалёва: …» читается при любом имени.
+            // Names are used as-is, without grammatical case: the reason text puts the name before a colon.
             if (from.Person >= 0 && before.OverloadByPerson[from.Person] > 0)
                 parts.Add(new ReasonDto(ReasonCodes.BalanceOverloadDrop,
                 [
@@ -520,8 +520,8 @@ public static class BalanceMath
     }
 }
 
-/// <summary>Применение отмеченных изменений предложения одной операцией.</summary>
+/// <summary>Applying the selected proposal changes in one operation.</summary>
 public record BalanceApplyRequest(BalanceApplyItem[] Changes);
 
-/// <summary>Изменение задачи из предложения. Version — версия задачи, на которой построено предложение.</summary>
+/// <summary>A task change from the proposal. Version is the task version the proposal was built on.</summary>
 public record BalanceApplyItem(Guid TaskId, long Version, DateOnly ToStart, DateOnly ToEnd, Guid ToTargetId, Guid ToPersonId);

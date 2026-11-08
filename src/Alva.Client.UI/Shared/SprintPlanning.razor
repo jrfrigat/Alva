@@ -1,6 +1,6 @@
-@* Доска планирования спринта по макетам p6 и p6_2d: KPI ёмкости, бэклог, Гантт спринта 2D, баланс специальностей
-   и люди спринта. Всё связано перетаскиванием: задача на день Гантта получает срок, на строку человека — ещё и
-   исполнителя; человек на задачу становится исполнителем; задача в бэклог выходит из спринта. *@
+@* Sprint planning board: capacity KPIs, backlog, sprint 2D Gantt, skill balance
+   and sprint people. Everything is connected by dragging: a task dropped on a Gantt day gets a deadline, on a person's row it also
+   gets an assignee; a person dropped on a task becomes its assignee; a task dropped into the backlog leaves the sprint. *@
 @using Flare.Components.Gantt
 @inject AlvaSession Session
 @inject NavigationManager Navigation
@@ -82,7 +82,7 @@
                 </div>
             }
         </div>
-        @* Расчёт двигает не всё: задачи в работе, родительские, без оценки или назначения остаются как есть. *@
+        @* The calculation does not move everything: in-progress, parent, unestimated or unassigned tasks stay as they are. *@
         <p class="alva-plan-proposal__scope alva-num">@(AlvaStrings.Sprint_TasksConsidered) @proposal.Considered@(proposal.Excluded is { Length: > 0 } skipped ? $" · {AlvaStrings.Sprint_LeftOut} {skipped.Length}" : "")</p>
         @if (proposal.Excluded is { Length: > 0 } excluded)
         {
@@ -214,7 +214,7 @@
     [CascadingParameter] public FlareConfirmDialogProvider? Confirm { get; set; }
 
     private FlareButton? _paramsButton;
-    /// <summary>Возвращает фокус на «Параметры спринта», когда закрыт открытый ею редактор.</summary>
+    /// <summary>Returns focus to the sprint settings button when the editor it opened is closed.</summary>
     public ValueTask FocusParams() => _paramsButton?.FocusAsync() ?? ValueTask.CompletedTask;
 
     private ActorModel[] _actors = [];
@@ -249,7 +249,7 @@
         _ => AlvaStrings.Sprint_SimpleSearch
     };
 
-    /// <summary>Метрики, которые есть до или после; дни и часы рядом, чтобы было видно, что улучшилось.</summary>
+    /// <summary>Metrics present before or after; days and hours are shown next to them so it is visible what improved.</summary>
     private static IEnumerable<(string Label, decimal Before, decimal After, string Unit)> Metrics(BalanceProposalDto p) => new (string, decimal, decimal, string)[]
     {
         (AlvaStrings.Common_OverloadShort, p.Before.OverloadHours, p.After.OverloadHours, AlvaStrings.Sprint_HoursShort),
@@ -261,10 +261,10 @@
         (AlvaStrings.Common_Unassigned, p.Before.UnassignedHours, p.After.UnassignedHours, AlvaStrings.Sprint_HoursShort)
     }.Where(m => m.Item2 != 0 || m.Item3 != 0);
 
-    /// <summary>Отмеченные изменения предложения — их показывают призраки и применяет кнопка.</summary>
+    /// <summary>Selected changes of the proposal - they are shown as ghosts and applied by the button.</summary>
     private IReadOnlyList<BalanceChangeDto> Chosen => _proposal?.Changes.Where(c => _chosen.Contains(c.TaskId)).ToArray() ?? [];
 
-    /// <summary>Часы спринта, которые отмеченные изменения переносят между людьми.</summary>
+    /// <summary>Sprint hours that the selected changes move between people.</summary>
     private IReadOnlyDictionary<Guid, decimal> Shift
     {
         get
@@ -282,18 +282,18 @@
 
     private IEnumerable<SprintModel> Choices => Sprints.Where(s => s.Status != "Completed" || s.Id == Sprint.Id).OrderBy(s => s.StartDate);
     private string SprintLabel(Guid id) => Sprints.FirstOrDefault(s => s.Id == id) is { } s ? $"{s.Name} ({s.StartDate:d MMM}–{s.EndDate:d MMM})" : "";
-    // Пул — задачи без плановых дат: в спринт задачу ставят её даты. Порядок — ручной ранг команды, затем приоритет и срок.
+    // The pool is tasks without planned dates: a task enters the sprint through its dates. Order is the team's manual rank, then priority and deadline.
     private IEnumerable<TaskModel> Pool => Tasks.Where(t => !t.Planned && t.Status is not ("Done" or "Cancelled"))
         .OrderBy(t => t.BacklogRank ?? int.MaxValue).ThenByDescending(t => Array.IndexOf(Labels.Priorities, t.Priority)).ThenBy(t => t.Deadline ?? DateOnly.MaxValue);
-    /// <summary>Готова к плану: оценена и назначена на человека, роль или подкоманду — её можно ставить в спринт без уточнений.</summary>
+    /// <summary>Ready for planning: estimated and assigned to a person, skill or sub-team - it can be put into the sprint without clarification.</summary>
     private static bool Ready(TaskModel t) => t.EstimateHours > 0 && t.AssignmentTargetId is not null;
-    // Задачи спринта считаются один раз на набор задач и спринт: доска спрашивает о них в каждой строке баланса.
+    // Sprint tasks are computed once per task set and sprint: the board asks about them in every balance row.
     private TaskModel[] InSprint => _inSprint.Tasks == Tasks && _inSprint.Sprint == Sprint.Id ? _inSprint.Value
         : (_inSprint = (Tasks, Sprint.Id, Tasks.Where(t => t.SprintIds.Contains(Sprint.Id) && t.Status != "Cancelled").OrderBy(t => t.Order).ToArray())).Value;
     private (TaskModel[]? Tasks, Guid Sprint, TaskModel[] Value) _inSprint = (null, Guid.Empty, []);
     private decimal Planned => SprintHours.Sum(InSprint, Sprint);
     private decimal Capacity => _load.Values.Sum(l => l.Available);
-    // Перегруз по дням: свободные дни спринта не гасят перегруженные (так же считает автобаланс).
+    // Overload by day: free days of the sprint do not offset overloaded ones (auto-balance counts the same way).
     private decimal Overtime => CapacityMath.Overload(_capacity);
     private int OvertimePeople => _capacity.Where(r => r.AllocatedHours > r.AvailableHours).Select(r => r.ActorId).Distinct().Count();
     private static int Pct(decimal part, decimal whole) => whole <= 0 ? 0 : (int)Math.Round(part / whole * 100);
@@ -345,7 +345,7 @@
         return (active.Length > 0 ? active : person.DepartmentIds).Any(id => DepartmentInTree(id, rootId));
     }
 
-    /// <summary>Подкоманды: план — задачи спринта на подкоманду или на её людей; доступно — ёмкость этих людей.</summary>
+    /// <summary>Sub-teams: plan - sprint tasks for the sub-team or its people; available - capacity of those people.</summary>
     private IEnumerable<(ActorModel Team, decimal Plan, decimal Available)> SubTeams => _actors.Where(a => a.Kind == "Department")
         .Select(team =>
         {
@@ -370,7 +370,7 @@
         catch (Exception e) when (e is HttpRequestException or InvalidOperationException or NotSupportedException) { _error = PageFeedback.Describe(e); }
     }
 
-    /// <summary>После правки: задачи страницы, ёмкость спринта и данные Гантта — всё, что показывает доска. Предложение автобаланса устаревает.</summary>
+    /// <summary>After an edit: page tasks, sprint capacity and Gantt data - everything the board shows. The auto-balance proposal becomes stale.</summary>
     private async Task Refresh(bool tasks = true)
     {
         _proposal = null;
@@ -378,7 +378,7 @@
         _capacity = await Session.Get<CapacityDto[]>(Session.TeamPath($"capacity?from={Sprint.StartDate:yyyy-MM-dd}&to={Sprint.EndDate:yyyy-MM-dd}"));
         _load = _capacity.GroupBy(r => r.ActorId).ToDictionary(g => g.Key, g => (g.Sum(r => r.AvailableHours), g.Sum(r => r.AllocatedHours)));
         _gantt = await GanttData.Load(Session);
-        // Ось доски: спринты плана и всё, до чего уже докрутили; ёмкость — на всё это окно.
+        // Board axis: the plan's sprints and everything already scrolled to; capacity covers this whole window.
         var plan = _gantt.PlanRange(Sprint);
         _axis = _axisFor == Sprint.Id ? new GanttSpan(Min(_axis.Start, plan.Start), Max(_axis.End, plan.End)) : plan;
         _axisFor = Sprint.Id;
@@ -388,7 +388,7 @@
     private GanttSpan _axis;
     private Guid? _axisFor;
 
-    /// <summary>Бесконечная ось просит больше времени: ёмкость людей догружается только для добавленных отрезков.</summary>
+    /// <summary>The endless axis asks for more time: people's capacity is loaded only for the added segments.</summary>
     private async Task Grow(GanttSpan range)
     {
         _axis = range;
@@ -405,8 +405,8 @@
     private static bool IsPerson(object? payload) => payload is PersonDrag;
 
     /// <summary>
-    /// Сброс на доске. Задача: в бэклог — выходит из спринта; на день Гантта — входит в спринт этого дня с этим днём начала,
-    /// а на строке человека или роли проекции 2 ещё и назначается. Человек: на полосу или карточку — исполнитель задачи.
+    /// Drop on the board. Task: into the backlog - leaves the sprint; onto a Gantt day - joins the sprint of that day with that start
+    /// date, and on a person or skill row of projection 2 it is also assigned. Person: onto a bar or card - the task's assignee.
     /// </summary>
     private Task Drop(FlareDropEventArgs<PlanDrag?> e) => Run(async () =>
     {
@@ -439,7 +439,7 @@
         await Refresh();
     });
 
-    // Задача под человеком: полоса Гантта или карточка бэклога.
+    // A task under a person: a Gantt bar or a backlog card.
     private TaskModel? TaskOf(string targetId) =>
         GanttItemDropTarget.TryParse(targetId, out var item) ? _gantt!.Task(item!.ItemKey)
         : targetId.StartsWith("task:", StringComparison.Ordinal) && Guid.TryParse(targetId[5..], out var id) ? _gantt!.Tasks.FirstOrDefault(t => t.Id == id)
@@ -467,10 +467,10 @@
     private void Rejected(GanttLinkRejectedEventArgs args) => _error = args.Message;
 
     /// <summary>
-    /// В спринт — задача получает даты с начала спринта (или с сегодняшнего дня, если спринт уже идёт); в пул — теряет
-    /// плановые даты. Спринт задачи следует из дат.
+    /// Into the sprint - the task gets dates from the sprint start (or from today if the sprint is already running); into the pool - loses
+    /// its planned dates. The task's sprint follows from the dates.
     /// </summary>
-    /// <summary>Назначение из блока «Люди спринта» без перетаскивания: человек и задача выбраны в диалоге.</summary>
+    /// <summary>Assignment from the Sprint people block without dragging: the person and task are chosen in a dialog.</summary>
     private Task AssignPerson((Guid PersonId, Guid TaskId) assignment) => Run(async () =>
     {
         if (_people is null) return;
@@ -488,7 +488,7 @@
         await Refresh();
     });
 
-    /// <summary>Просит предложение автобаланса; сервер только считает, план не меняется.</summary>
+    /// <summary>Requests an auto-balance proposal; the server only calculates, the plan does not change.</summary>
     private async Task Balance(string mode)
     {
         _balancing = true;
@@ -501,7 +501,7 @@
         _balancing = false;
     }
 
-    /// <summary>Сдвигает задачу в ручном порядке пула и сохраняет весь порядок одной записью.</summary>
+    /// <summary>Moves a task in the pool's manual order and saves the whole order in one record.</summary>
     private Task Rerank(TaskModel task, int by) => Run(async () =>
     {
         var order = Pool.ToList();
@@ -521,7 +521,7 @@
 
     private void RejectProposal() => _proposal = null;
 
-    /// <summary>Применяет отмеченные изменения одной операцией сервера: все или ни одного, с проверкой версий задач.</summary>
+    /// <summary>Applies the selected changes in one server operation: all or none, with task version checks.</summary>
     private async Task ApplyProposal()
     {
         if (!await DestructivePrompt.ConfirmAsync(Confirm, AlvaStrings.Sprint_ApplyChanges,

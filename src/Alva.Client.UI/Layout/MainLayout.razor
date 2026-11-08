@@ -6,11 +6,10 @@
 @inject CultureService Cultures
 @inject DraftGuard Drafts
 <a class="skip-link" href="#main-content">@(AlvaStrings.Nav_SkipToContent)</a>
-@* Подтверждения (уход с несохранёнными правками и др.) — штатный диалог Flare, один на приложение. *@
+@* Confirmations (leaving with unsaved edits and the like) use the standard Flare dialog, one per application. *@
 <FlareConfirmDialogProvider @ref="_confirm">
 <FlareLayout>
     <FlareLayoutAppBar DrawerToggle="true">
-        @* Шапка макета: знак и название, переключатель команды, справа пользователь. *@
         <div class="alva-appbar">
             <a href="@AppRoutes.Home" class="alva-brand" aria-label="@(AlvaStrings.Nav_AlvaHome)">
                 <span class="alva-brand__mark" aria-hidden="true">A</span>
@@ -25,8 +24,8 @@
             <FlareSpacer />
             @if (_mobile && Session.User is not null)
             {
-                @* На телефоне в шапке остаются колокольчик и аватар; язык, профиль и выход — в меню за аватаром,
-                   иначе «Выйти» обрезается, а имя команды исчезает. *@
+                @* On a phone the header keeps only the notification bell and the avatar; language, profile and sign-out
+                   go into the menu behind the avatar, otherwise the sign-out label is truncated and the team name disappears. *@
                 <RiskBell />
                 <FlareMenu Anchor="MenuAnchor.BottomRight" AriaLabel="@(AlvaStrings.Nav_ProfileAndSettings)">
                     <Activator>
@@ -84,8 +83,8 @@
             }
         </FlareNavMenu>
     </FlareLayoutDrawer>
-    @* FlareLayoutContent уже рендерит единственный <main>; id и tabindex уходят на него через AdditionalAttributes,
-       поэтому своя обёртка <main> не нужна, а skip-link «К содержимому» попадает прямо в основной landmark. *@
+    @* FlareLayoutContent already renders the single <main>; id and tabindex reach it through AdditionalAttributes,
+       so no separate <main> wrapper is needed, and the skip-to-content link targets the main landmark directly. *@
     <FlareLayoutContent id="main-content" tabindex="-1"><FlareContainer MaxWidth="PageWidth"><SkillAssignmentNotice /><FlareStack @key="PagePath" Gap="FlareSpacing.XLarge">@Body</FlareStack></FlareContainer></FlareLayoutContent>
 </FlareLayout>
 </FlareConfirmDialogProvider>
@@ -94,7 +93,7 @@
     <FlareBottomNav Position="BottomNavPosition.Fixed" LabelMode="BottomNavLabelMode.Wrap" AriaLabel="@(AlvaStrings.Nav_MainSections)">
         @foreach (var item in NavigationItems.Primary)
         {
-            @* Короткая подпись помещается на телефоне; полное название остаётся подсказкой и доступным именем. *@
+            @* A short label fits on a phone; the full name stays as the tooltip and accessible name. *@
             <FlareBottomNavItem Href="@item.Path" Match="NavMatchMode.Exact" Tooltip="@item.Label" aria-label="@item.Label">
                 <IconContent><FlareIconView Value="@item.Icon" Size="1.35rem" /></IconContent>
                 <ChildContent>@(item.ShortLabel ?? item.Label)</ChildContent>
@@ -106,11 +105,11 @@
     private bool _open;
     private bool _mobile;
     private IAsyncDisposable? _viewportSubscription;
-    // Страницы с несколькими маршрутами (/team и /team/roles, /capacity и /capacity/people) получают одинаковые
-    // параметры, и Blazor не перерисовывает их при переходе из меню; ключ по пути создаёт страницу заново.
+    // Pages with several routes (/team and /team/roles, /capacity and /capacity/people) receive the same
+    // parameters, and Blazor does not re-render them when navigating from the menu; a key by path recreates the page.
     private string PagePath => AppRoutes.Current(Navigation);
 
-    // Доски на оси времени (Гантты и планирование спринта) занимают всю ширину; остальные страницы читаются в колонке.
+    // Boards on the time axis (Gantt charts and sprint planning) take the full width; other pages read better in a column.
     private ContainerMaxWidth PageWidth => PagePath.StartsWith("gantt", StringComparison.OrdinalIgnoreCase) || PagePath.EndsWith("/plan", StringComparison.OrdinalIgnoreCase) ? ContainerMaxWidth.Full : ContainerMaxWidth.Xl;
     protected override void OnInitialized() => Session.Changed += Refresh;
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -120,7 +119,7 @@
     private void Refresh() => InvokeAsync(StateHasChanged);
     private FlareConfirmDialogProvider? _confirm;
     // Switching the language reloads the shell: the whole tree must render in the new language.
-    // Тот же диалог Flare, что и при уходе со страницы с черновиком, а не системное окно браузера.
+    // The same Flare dialog as when leaving a page with a draft, not the browser's system dialog.
     private async Task ToggleCulture()
     {
         if (Drafts.HasDirty && !await DestructivePrompt.ConfirmAsync(_confirm, AlvaStrings.Common_UnsavedChanges,
@@ -129,7 +128,6 @@
         await Cultures.SetAsync(Cultures.Current == "ru" ? "en" : "ru");
         Navigation.NavigateTo(Navigation.Uri, forceLoad: true);
     }
-    // Выход доступен прямо из шапки, а не только в настройках.
     private async Task Logout()
     {
         await Session.Logout();

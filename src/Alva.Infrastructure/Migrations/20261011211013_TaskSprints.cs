@@ -36,8 +36,8 @@ namespace Alva.Infrastructure.Migrations
                         onDelete: ReferentialAction.Restrict);
                 });
 
-            // Спринт задачи становится следствием дат: задаче со спринтом недостающие даты ставятся по окну спринта,
-            // чтобы она не выпала из плана, затем кэш заполняется по правилу SprintWindows, и только потом колонка уходит.
+            // A task's sprint becomes a consequence of its dates: a task with a sprint gets missing dates from the sprint window,
+            // so it does not fall out of the plan; then the cache is filled by the SprintWindows rule, and only after that the column is dropped.
             migrationBuilder.Sql("""
                 UPDATE "Tasks" AS t
                 SET "StartDate" = COALESCE(t."StartDate", LEAST(s."StartDate", t."EndDate")),
@@ -100,7 +100,7 @@ namespace Alva.Infrastructure.Migrations
                 type: "uuid",
                 nullable: true);
 
-            // Обратно: задаче возвращается самый ранний из её спринтов.
+            // Back: the task gets its earliest sprint back.
             migrationBuilder.Sql("""
                 UPDATE "Tasks" AS t
                 SET "SprintId" = (SELECT x."SprintId" FROM "TaskSprints" AS x JOIN "Sprints" AS s ON s."Id" = x."SprintId"

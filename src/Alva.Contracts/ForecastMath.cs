@@ -116,7 +116,7 @@ public static class ForecastMath
                 var proposed = new List<(int Day, decimal Hours)>();
                 for (var day = candidate; day < HorizonDays && remaining > 0; day++)
                 {
-                    // Лимит в день: задача не забирает у человека больше договорённых часов, даже если день свободен.
+                    // Daily limit: a task takes no more than the agreed hours per day from a person, even if the day is free.
                     var take = Math.Min(Math.Min(remaining, Math.Max(0, available[day] - used[personId][day])), t.DailyHoursLimit ?? decimal.MaxValue);
                     if (take <= 0) continue;
                     proposed.Add((day, take)); remaining -= take;

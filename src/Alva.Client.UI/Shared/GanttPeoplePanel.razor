@@ -1,6 +1,6 @@
 @using Flare.Components.Gantt
-@* Проекция 2 (макет p6_2d): дорожки людей и ролей с часами ёмкости и задачами исполнителя. Кладётся внутрь
-   FlareGantt — на «Гантте по людям» и на доске планирования спринта. *@
+@* Projection 2: lanes of people and skills with capacity hours and the assignee's tasks. Placed inside
+   FlareGantt - on the Gantt by people page and on the sprint planning board. *@
 <FlareGanttPanel TRow="PeopleRow" TItem="TaskModel" Rows="@People.Rows" RowKey="r => r.Key" RowChildren="r => r.Children.Count > 0 ? r.Children : null"
                  RowClass="RowClass" Items="@People.Items" ItemKey="t => GanttData.Key(t.Id)" ItemRow="People.RowOf"
                  ItemSpan="People.Data.Span" ItemCover="People.Data.Cover" ItemKind="People.Data.Kind" ItemSegments="People.Data.Segments" ItemLabel="t => t.Title" ItemTitle="People.Data.Title"
@@ -29,21 +29,21 @@
     [Parameter, EditorRequired] public GanttSpan Range { get; set; }
     [Parameter] public RenderFragment? Header { get; set; }
 
-    /// <summary>Человек, чья строка подсвечена.</summary>
+    /// <summary>Person whose row is highlighted.</summary>
     [Parameter] public Guid? Focus { get; set; }
 
     [Parameter] public EventCallback<GanttChangeEventArgs> OnChange { get; set; }
     [Parameter] public EventCallback<GanttLinkEventArgs> OnLinkCreate { get; set; }
     [Parameter] public EventCallback<GanttLinkRejectedEventArgs> OnLinkRejected { get; set; }
 
-    /// <summary>Клик по полосе задачи — страница открывает панель задачи.</summary>
+    /// <summary>Click on a task bar - the page opens the task panel.</summary>
     [Parameter] public EventCallback<TaskModel> OnItemClick { get; set; }
     [Parameter] public string? DropGroup { get; set; }
     [Parameter] public Func<object?, bool>? DropAccepts { get; set; }
     [Parameter] public string? ItemDropGroup { get; set; }
     [Parameter] public Func<object?, bool>? ItemDropAccepts { get; set; }
 
-    /// <summary>Предложенные даты и строки задач — призрачные полосы поверх плана.</summary>
+    /// <summary>Suggested task dates and rows - ghost bars over the plan.</summary>
     [Parameter] public IEnumerable<GanttChange>? Suggested { get; set; }
 
     private string RowClass(PeopleRow row) =>

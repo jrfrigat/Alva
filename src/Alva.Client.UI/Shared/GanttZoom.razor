@@ -1,17 +1,17 @@
 @using Flare.Components.Gantt
 @inject GanttPreferences Preferences
-@* Ползунок «Масштаб» диаграммы Ганта: ширина единицы оси для текущей шкалы. Запоминается на устройстве отдельно для
-   каждого вида и каждой шкалы; минимум — половина обычной ширины, максимум — две с половиной. *@
+@* Gantt "Scale" slider: the width of one axis unit for the current scale. Stored on the device separately for
+   each view and each scale; the minimum is half the normal width, the maximum is two and a half. *@
 <div class="alva-gantt-zoom">
     <FlareSlider Value="Value" ValueChanged="Change" Min="Min" Max="Max" Step="Step" Label="@(AlvaStrings.Gantt_Scale)" AriaLabel="@(AlvaStrings.Gantt_AxisUnitWidth)" />
 </div>
 
 @code {
-    /// <summary>Вид, чьи настройки хранятся: «plan», «tasks», «people».</summary>
+    /// <summary>View whose settings are stored: "plan", "tasks", "people".</summary>
     [Parameter, EditorRequired] public string View { get; set; } = "";
     [Parameter] public GanttScale Scale { get; set; } = GanttScale.Day;
 
-    /// <summary>Ширина по умолчанию; без неё — обычная ширина шкалы.</summary>
+    /// <summary>Default width; without it, the normal width of the scale.</summary>
     [Parameter] public double? Default { get; set; }
 
     [Parameter] public double Value { get; set; }
@@ -24,7 +24,7 @@
     private double Max => Math.Round(Base * 2.5 / Step) * Step;
     private double Step => Scale == GanttScale.Day ? 2 : 4;
 
-    // Своя ширина у каждой шкалы: при смене шкалы подставляется сохранённая для неё.
+    // Each scale keeps its own width: switching the scale restores the width stored for it.
     protected override async Task OnParametersSetAsync()
     {
         if (_loaded == Scale) return;

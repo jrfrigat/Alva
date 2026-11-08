@@ -1,7 +1,7 @@
 @using Flare.Components.Gantt
-@* Одна легенда для всех диаграмм Ганта: образцы рисует библиотека теми же элементами, что и график, поэтому цвета
-   берутся из тех же правил .alva-gantt. Свои пункты страницы (спринты, ячейки ёмкости, предложение) идут перед видами
-   полос, ссылка и уведомление страницы — после. *@
+@* A single legend for all Gantt charts: the library draws the samples with the same elements as the chart, so the
+   colors come from the same .alva-gantt rules. Page-specific items (sprints, capacity cells, suggestion) come before
+   the bar kinds; the page's link and notice come after. *@
 <FlareGanttLegend Items="@AllItems" AriaLabel="@(AlvaStrings.Gantt_Legend)" Class="@($"alva-gantt alva-gantt-legend {Class}".Trim())">
     @Trailing
     @if (Notice is not null)
@@ -20,10 +20,10 @@
         new("done", AlvaStrings.Common_DoneStatus)
     ];
 
-    /// <summary>Пункты страницы перед видами полос.</summary>
+    /// <summary>Page items shown before the bar kinds.</summary>
     [Parameter] public IEnumerable<GanttLegendItem> Items { get; set; } = [];
 
-    /// <summary>Пункты после видов полос, например ссылка.</summary>
+    /// <summary>Items shown after the bar kinds, for example a link.</summary>
     [Parameter] public RenderFragment? Trailing { get; set; }
 
     [Parameter] public string? Notice { get; set; }

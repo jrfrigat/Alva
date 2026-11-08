@@ -1,4 +1,4 @@
-@* Страница спринта по макету p7: шапка с ходом цикла, KPI риска и ёмкости, таблица задач. *@
+@* Sprint page: header with cycle progress, risk and capacity KPIs, and the task table. *@
 @inject AlvaSession Session
 @if (!_loaded) { <LoadingSkeleton Height="18rem" /> }
 else
@@ -248,7 +248,7 @@ else
 @code {
     [Parameter, EditorRequired] public SprintModel Sprint { get; set; } = default!;
     [Parameter] public TaskModel[] Tasks { get; set; } = [];
-    /// <summary>Спринты команды: из незакрытых выбирается тот, куда переносится остаток.</summary>
+    /// <summary>Team sprints: the remaining work is carried into one of the unfinished ones.</summary>
     [Parameter] public SprintModel[] Sprints { get; set; } = [];
 
     private bool _closing;
@@ -256,7 +256,7 @@ else
     private ElementReference _heading;
     private bool _focused;
     private readonly Dictionary<Guid, string> _decisions = [];
-    /// <summary>Незавершённые задачи спринта — по каждой нужно решение при закрытии.</summary>
+    /// <summary>Unfinished sprint tasks - each one needs a decision when the sprint is closed.</summary>
     private TaskModel[] Open => SprintTasks.Where(t => t.Status != "Done").ToArray();
     private SprintModel[] NextChoices => Sprints.Where(s => s.Id != Sprint.Id && s.Status != "Completed" && s.EndDate >= Sprint.StartDate).OrderBy(s => s.StartDate).ToArray();
     private string NextLabel(Guid? id) => Sprints.FirstOrDefault(s => s.Id == id) is { } s ? $"{s.Name} ({AlvaFormat.Period(s.StartDate, s.EndDate)})" : "";
@@ -267,7 +267,7 @@ else
         SprintCarry.Backlog => AlvaStrings.Sprint_BackToThePool,
         _ => AlvaStrings.Sprint_MarkAsDone
     };
-    // По умолчанию — безопасный возврат в пул, а не перенос в следующий спринт: решение должно быть явным.
+    // By default - a safe return to the pool, not a carry-over to the next sprint: the decision must be explicit.
     private string Decision(TaskModel task) => _decisions.TryGetValue(task.Id, out var action) && Actions.Contains(action) ? action : SprintCarry.Backlog;
     private string CloseSummary => string.Join(" · ", Actions
         .Select(a => (Label: ActionLabel(a), Hours: Open.Where(t => Decision(t) == a).Sum(Hours)))
@@ -280,10 +280,10 @@ else
         _closing = true;
     }
 
-    /// <summary>Открыть редактирование состава (планирование спринта).</summary>
+    /// <summary>Open editing of the scope (sprint planning).</summary>
     [Parameter] public EventCallback OnEdit { get; set; }
 
-    /// <summary>Спринт изменён (например, завершён) — страница перечитывает данные.</summary>
+    /// <summary>The sprint changed (for example, was completed) - the page reloads the data.</summary>
     [Parameter] public EventCallback Changed { get; set; }
 
     private static readonly (string Key, string Label)[] Filters = [("all", AlvaStrings.Sprint_All), ("risk", AlvaStrings.Sprint_WithRisks), ("unassigned", AlvaStrings.Sprint_Unassigned), ("work", AlvaStrings.Common_InProgress)];
@@ -300,12 +300,12 @@ else
     private static DateOnly Today => DateOnly.FromDateTime(DateTime.Today);
     private TaskModel[] SprintTasks => Tasks.Where(t => t.SprintIds.Contains(Sprint.Id) && t.Status != "Cancelled").OrderBy(t => t.Order).ToArray();
     private RiskDto[] Risks => _risks.Where(r => SprintTasks.Any(t => t.Id == r.TaskId)).ToArray();
-    // Часы задачи в этом спринте: задача на стыке спринтов делит оценку между ними (SprintWindows.Share).
+    // Task hours in this sprint: a task spanning sprint boundaries splits its estimate between them (SprintWindows.Share).
     private decimal Hours(TaskModel t) => SprintHours.Of(t, Sprint);
     private decimal Total => SprintTasks.Sum(Hours);
     private decimal Done => SprintTasks.Where(t => t.Status == "Done").Sum(Hours);
     private decimal InWork => SprintTasks.Where(t => t.Status == "InProgress").Sum(Hours);
-    // Закрытый спринт показывает итог при закрытии: перенесённый остаток уже ушёл из него, но в истории он был.
+    // A closed sprint shows the result at closing: the carried-over remaining work has already left it, but it was part of its history.
     private decimal HeadDone => Sprint.Result?.DoneHours ?? Done;
     private decimal HeadTotal => Sprint.Result?.Hours ?? Total;
     private int DayOf => AlvaFormat.SprintDay(Sprint.StartDate, Sprint.EndDate, Today);
@@ -313,21 +313,21 @@ else
     private static int Percent(decimal part, decimal whole) => whole <= 0 ? 0 : (int)Math.Round(part / whole * 100);
     private static FlareColor ToneColor(int pct) => pct > 100 ? FlareColor.Error : pct > 80 ? FlareColor.Primary : FlareColor.Success;
     private int LoadOf(Guid id) => Percent(_load[id].Allocated, _load[id].Available);
-    // Процент — доля занятого времени; рядом свободные часы или перегруз, чтобы число не читалось как «свободно N%».
+    // The percentage is the share of booked time; free hours or overload are shown next to it so the number is not read as "N% free".
     private string LoadText(Guid id, int pct)
     {
         var (available, allocated) = _load[id];
         var rest = available - allocated;
         return $"{AlvaStrings.Sprint_Busy} {pct}% · {(rest >= 0 ? AlvaStrings.Common_FreeLower : AlvaStrings.Common_Overload)} {AlvaFormat.Hours(Math.Abs(rest))} {AlvaStrings.Sprint_HoursShort}";
     }
-    /// <summary>Оценка в таблице: доля спринта и, если задача идёт дальше, её полный объём.</summary>
+    /// <summary>Estimate in the table: the sprint share and, if the task continues beyond it, its full volume.</summary>
     private string EstimateText(TaskModel t) => t.EstimateHours is not { } all ? "—"
         : Hours(t) is var part && part < all ? $"{AlvaFormat.Hours(part)} {AlvaStrings.Sprint_OutOf} {AlvaFormat.Hours(all)} {AlvaStrings.Sprint_HoursShort}" : $"{AlvaFormat.Hours(all)} {AlvaStrings.Sprint_HoursShort}";
     private string ProjectName(Guid? id) => _projects.FirstOrDefault(p => p.Id == id)?.Name ?? AlvaStrings.Sprint_Ongoing;
 
     private IEnumerable<BreadcrumbItem> Crumbs => [new(AlvaStrings.Sprint_Sprints, "sprints"), new(Sprint.Name)];
 
-    /// <summary>Люди спринта (исполнители его задач) по убыванию загрузки за окно спринта.</summary>
+    /// <summary>Sprint people (assignees of its tasks) by descending load over the sprint window.</summary>
     private (ActorModel Actor, int Pct)[] People => _actors
         .Where(a => a.Kind == "Person" && _load.ContainsKey(a.Id) && SprintTasks.Any(t => t.ResolvedPersonId == a.Id || t.AssignmentTargetId == a.Id))
         .Select(a => (a, LoadOf(a.Id))).OrderByDescending(x => x.Item2).ToArray();
@@ -346,7 +346,7 @@ else
 
     private void SetFilter(string? value) => _filter = value ?? "all";
 
-    // Страница принимает фокус, когда данные загрузились: после перехода человек не остаётся на body.
+    // The page takes focus when the data has loaded: after navigation the person is not left on body.
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (_focused || !_loaded) return;
@@ -378,7 +378,7 @@ else
         _busy = true; _error = null;
         try
         {
-            // Закрытие и перенос остатка — одна операция сервера: итог фиксируется до того, как задачи уйдут из спринта.
+            // Closing and carrying over the remaining work are one server operation: the result is fixed before the tasks leave the sprint.
             var moves = Open.Select(t => new SprintCarryDto(t.Id, Decision(t))).ToArray();
             await Session.Save<SprintModel>(HttpMethod.Post, Session.TeamPath($"sprints/{Sprint.Id}/close"), new SprintCloseRequest(moves, moves.Any(m => m.Action == SprintCarry.Next) ? _next : null));
             _closing = false;

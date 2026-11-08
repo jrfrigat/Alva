@@ -1,8 +1,6 @@
 @page "/analytics"
 @inject AlvaSession Session
 @inject NavigationManager Navigation
-@* Риски и причины сдвига сроков: сводка, быстрые фильтры по видам причин и список задач под риском.
-   Макета для страницы нет — разметка по DESIGN.md и образцам реестра спринтов и обзора ёмкости. *@
 <PageTitle>@(AlvaStrings.Risks_AnalyticsAlva)</PageTitle>
 <AlvaPageHeader Category="@(AlvaStrings.Risks_AnalyticsRisks)" Title="@(AlvaStrings.Risks_RisksAndReasonsForSlippingDeadlines)" Description="@(AlvaStrings.Risks_WhichTasksMayBeLateAndWhyAssigneeOverloadAndVacationsWorkWithoutAPersonM_250586)" />
 <PageFeedback Loading="_busy" Error="@_error" OnRetry="Load" />
@@ -150,7 +148,7 @@ else
     private string PersonName(Guid? id) => id is { } value ? Actor(value)?.Name ?? "—" : AlvaStrings.Risks_AllAssignees;
     private IEnumerable<ActorModel> People => _risks.Select(r => TaskOf(r.TaskId)?.ResolvedPersonId).OfType<Guid>().Distinct().Select(Actor).OfType<ActorModel>().OrderBy(a => a.Name);
 
-    /// <summary>Вид причины по её коду: коды задаёт расчёт рисков (RiskMath).</summary>
+    /// <summary>Reason kind by its code: the codes are defined by the risk calculation (RiskMath).</summary>
     private static RiskKind KindOf(ReasonDto reason) => reason.Code switch
     {
         ReasonCodes.RiskOverdue => RiskKind.Overdue,
@@ -195,7 +193,7 @@ else
         .Where(r => string.IsNullOrWhiteSpace(_search) || r.Title.Contains(_search, StringComparison.OrdinalIgnoreCase)
             || r.Reasons.Any(x => ReasonText.Describe(x).Contains(_search, StringComparison.OrdinalIgnoreCase)));
 
-    /// <summary>На сколько дней прогноз позже срока задачи.</summary>
+    /// <summary>How many days the forecast is later than the task deadline.</summary>
     private static DateOnly? DueOf(TaskModel? task) => task?.EffectiveDeadline ?? task?.Deadline;
     private int Slip(RiskDto risk) => DueOf(TaskOf(risk.TaskId)) is { } due && risk.ForecastDate is { } forecast ? Math.Max(0, forecast.DayNumber - due.DayNumber) : 0;
 

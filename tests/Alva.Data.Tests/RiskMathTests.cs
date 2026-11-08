@@ -44,7 +44,7 @@ public sealed class RiskMathTests
 
         Assert.Equal(Monday.AddDays(3), risk.ForecastDate);
         Assert.Equal("Medium", risk.Severity);
-        // Отпуск сжимает окно до среды: 16 ч на 8-часовой день — это и есть перегрузка.
+        // The vacation compresses the window to Wednesday: 16 h in an 8-hour day - that is the overload.
         Assert.Equal([ReasonCodes.RiskForecastLate, ReasonCodes.RiskAbsence, ReasonCodes.RiskOverload], risk.Reasons.Select(r => r.Code));
         Assert.Equal(["Отпуск", "2026-10-12", "2026-10-13"], risk.Reasons.Single(r => r.Code == ReasonCodes.RiskAbsence).Args!);
         Assert.Equal(["Анна"], risk.Reasons.Single(r => r.Code == ReasonCodes.RiskOverload).Args!);

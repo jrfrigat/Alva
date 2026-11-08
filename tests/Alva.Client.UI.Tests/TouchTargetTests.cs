@@ -2,7 +2,7 @@ using Xunit;
 
 namespace Alva.Client.UI.Tests;
 
-/// <summary>На сенсорном экране цели не меньше 44px, поля 16px, а desktop-плотность не тронута.</summary>
+/// <summary>On a touch screen targets are at least 44px, inputs 16px, and desktop density is untouched.</summary>
 public sealed class TouchTargetTests
 {
     [Fact]

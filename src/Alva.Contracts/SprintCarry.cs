@@ -1,6 +1,6 @@
 namespace Alva.Contracts;
 
-/// <summary>Правила переноса незавершённой работы при закрытии спринта — общие для API и demo.</summary>
+/// <summary>Rules for carrying unfinished work over when a sprint closes - shared by the API and the demo.</summary>
 public static class SprintCarry
 {
     public const string Next = "next";
@@ -9,7 +9,7 @@ public static class SprintCarry
 
     public static bool Known(string action) => action is Next or Backlog or Done;
 
-    /// <summary>Окно задачи переезжает к началу следующего спринта и сохраняет длину: остаток работы не сжимается.</summary>
+    /// <summary>The task window moves to the start of the next sprint and keeps its length: the remaining work is not compressed.</summary>
     public static (DateOnly Start, DateOnly End) Move(DateOnly? start, DateOnly? end, DateOnly nextStart)
     {
         var length = SprintWindows.Window(start, end) is { } w ? w.End.DayNumber - w.Start.DayNumber : 0;
@@ -17,8 +17,8 @@ public static class SprintCarry
     }
 
     /// <summary>
-    /// Порядок переноса: сначала самые глубокие подзадачи, потом их родители. Родитель расширяется под детей, поэтому,
-    /// перенесённый раньше них, он снова растянулся бы на закрытый спринт.
+    /// Carry order: the deepest sub-tasks first, then their parents. A parent is expanded to cover its children, so
+    /// carrying it before them would stretch it over the closed sprint again.
     /// </summary>
     public static IEnumerable<T> LeavesFirst<T>(IEnumerable<T> items, Func<T, Guid> id, Func<Guid, Guid?> parentOf)
     {

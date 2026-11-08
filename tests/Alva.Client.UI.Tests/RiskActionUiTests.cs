@@ -8,7 +8,7 @@ using Xunit;
 
 namespace Alva.Client.UI.Tests;
 
-/// <summary>Причина риска ведёт к исправлению, а пустые состояния честно различают причины.</summary>
+/// <summary>A risk reason leads to a fix, and empty states honestly distinguish the reasons.</summary>
 public sealed class RiskActionUiTests : UiTestBase
 {
     [Fact]

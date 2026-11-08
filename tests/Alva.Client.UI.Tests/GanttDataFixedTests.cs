@@ -8,7 +8,7 @@ using Xunit;
 
 namespace Alva.Client.UI.Tests;
 
-/// <summary>Ручной перенос на Гантте: фиксированные задачи и ухудшение связей отклоняются до отправки запросов.</summary>
+/// <summary>Manual drag on the Gantt: fixed tasks and worsening links are rejected before requests are sent.</summary>
 public sealed class GanttDataFixedTests : UiTestBase
 {
     private static DateOnly Day(int day) => new(2026, 10, day);
@@ -56,7 +56,7 @@ public sealed class GanttDataFixedTests : UiTestBase
         var (data, session) = await Load([first, second],
             [new DependencyDto(Guid.NewGuid(), first.Id, second.Id, "FS", 0)]);
 
-        // Flare присылает первичную задачу и сдвинутого последователя одним жестом.
+        // Flare sends the primary task and the shifted successor in one gesture.
         await Assert.ThrowsAsync<InvalidOperationException>(() =>
             data.Apply(session, Move(first, 2, 3, (second, 4, 5))));
 

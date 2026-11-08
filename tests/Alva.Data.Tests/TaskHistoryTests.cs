@@ -6,7 +6,7 @@ using Xunit;
 
 namespace Alva.Data.Tests;
 
-/// <summary>История задачи: отдаётся и на SQLite, новые записи — первыми.</summary>
+/// <summary>Task history: served on SQLite too, with the newest entries first.</summary>
 public sealed class TaskHistoryTests
 {
     [Fact]

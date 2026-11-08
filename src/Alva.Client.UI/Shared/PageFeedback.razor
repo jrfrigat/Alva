@@ -16,10 +16,10 @@
     private Task Retry() => OnRetry.HasDelegate ? OnRetry.InvokeAsync() : Task.CompletedTask;
 
     /// <summary>
-    /// Текст ошибки для страницы. Отказ, который сервер объяснил (400/404/409/422), и правило демо-API
-    /// показываются их же словами: «сначала переместите подзадачи» полезнее, чем «проверьте данные».
-    /// Остальное — понятная фраза по классу ошибки: 403 объясняет, что делать; 404 — что запись исчезла;
-    /// 409 — что данные уже изменились; 5xx и сеть — что повторить.
+    /// Error text for the page. A refusal the server explained (400/404/409/422) and a demo API rule are
+    /// shown in the server's own words: "move the subtasks first" is more useful than "check the data".
+    /// Everything else is a clear phrase per error class: 403 explains what to do; 404 - that the record is gone;
+    /// 409 - that the data has already changed; 5xx and network errors - to try again.
     /// </summary>
     public static string Describe(Exception error) => error switch
     {

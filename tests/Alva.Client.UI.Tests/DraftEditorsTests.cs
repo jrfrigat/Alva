@@ -8,7 +8,7 @@ using Xunit;
 
 namespace Alva.Client.UI.Tests;
 
-/// <summary>Ни один редактор не теряет правки молча: закрытие, уход и смена языка спрашивают.</summary>
+/// <summary>No editor loses edits silently: closing, navigating away and switching the language all ask.</summary>
 public sealed class DraftEditorsTests : UiTestBase
 {
     [Fact]

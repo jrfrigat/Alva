@@ -8,7 +8,7 @@ using Xunit;
 
 namespace Alva.Client.UI.Tests;
 
-/// <summary>Экран интеграций: форма по схеме модуля, секреты, синхронизация, удаление и ссылка на внешний ключ.</summary>
+/// <summary>The integrations screen: a form built from the module schema, secrets, synchronization, deletion and an external key link.</summary>
 public sealed class IntegrationsPageTests : UiTestBase
 {
     private static readonly IntegrationModuleDto Tracker = new("yandex-tracker", "Яндекс Трекер", "Задачи очередей", ["Tasks"],

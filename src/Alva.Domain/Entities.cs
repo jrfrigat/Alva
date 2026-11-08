@@ -38,8 +38,8 @@ public sealed class Sprint : Entity
     public DateOnly StartDate { get; set; }
     public DateOnly EndDate { get; set; }
     public SprintStatus Status { get; set; }
-    // Снимки спринта: что команда взяла при старте и что было при закрытии. История спринта не должна меняться от
-    // поздних правок задач, поэтому цифры сохраняются, а не пересчитываются.
+    // Sprint snapshots: what the team took at the start and what was there at the close. Sprint history must not change
+    // because of later task edits, so the numbers are stored rather than recalculated.
     public int? CommitmentTasks { get; set; }
     public decimal? CommitmentHours { get; set; }
     public decimal? CommitmentDoneHours { get; set; }
@@ -58,26 +58,26 @@ public sealed class TaskCard : Entity
     public string Description { get; set; } = "";
     public WorkStatus Status { get; set; }
     public decimal? EstimateHours { get; set; }
-    /// <summary>Фактическая оценка оставшейся работы; null — остаток неизвестен, 0 — работы не осталось.</summary>
+    /// <summary>The actual estimate of the remaining work; null means the remainder is unknown, 0 means no work is left.</summary>
     public decimal? RemainingHours { get; set; }
     public DateOnly? Deadline { get; set; }
     public DateOnly? StartDate { get; set; }
     public DateOnly? EndDate { get; set; }
-    /// <summary>Даты зафиксированы: задача не переносится ни вручную, ни автобалансом. Требует обеих дат.</summary>
+    /// <summary>The dates are fixed: the task is not moved either manually or by auto-balance. Requires both dates.</summary>
     public bool DatesFixed { get; set; }
-    /// <summary>Сколько часов в день человек тратит на эту задачу; null — без ограничения.</summary>
+    /// <summary>How many hours a day a person spends on this task; null means no limit.</summary>
     public decimal? DailyHoursLimit { get; set; }
     public int Order { get; set; }
-    /// <summary>Ценность работы для команды: по ней упорядочивается пул и автобаланс держит важное в сроке.</summary>
+    /// <summary>The value of the work to the team: the backlog is ordered by it, and auto-balance keeps what matters on time.</summary>
     public TaskPriority Priority { get; set; } = TaskPriority.Normal;
-    /// <summary>Место в ручном порядке пула; без него задача идёт после упорядоченных.</summary>
+    /// <summary>The place in the manual backlog order; without it the task goes after the ordered ones.</summary>
     public int? BacklogRank { get; set; }
     public bool Archived { get; set; }
     public long Version { get; set; } = 1;
 }
 /// <summary>
-/// Кэш «задача идёт в спринте»: производные данные из дат задачи и спринта (правило SprintWindows). Пишет только
-/// AlvaDbContext при сохранении изменённых задач и спринтов; API его не принимает.
+/// The "task runs in a sprint" cache: derived data from task and sprint dates (the SprintWindows rule). Only
+/// AlvaDbContext writes it when saving changed tasks and sprints; the API does not accept it.
 /// </summary>
 public sealed class TaskSprint
 {
@@ -175,30 +175,30 @@ public sealed class TaskHistory : Entity
     public string Summary { get; set; } = "";
 }
 /// <summary>
-/// Подключение команды к внешнему источнику задач (модулю интеграции). Несекретные настройки — JSON как есть, секреты —
-/// JSON под DataProtection: в ответах API их нет, видно только, какие заданы.
+/// A team's connection to an external task source (an integration module). Non-secret settings are JSON as is, secrets are
+/// JSON under DataProtection: API responses do not contain them, only which ones are set.
 /// </summary>
 public sealed class TaskSourceConnection : Entity
 {
     public Guid TeamId { get; set; }
-    /// <summary>Идентификатор модуля, например yandex-tracker.</summary>
+    /// <summary>The module identifier, for example yandex-tracker.</summary>
     public string Module { get; set; } = "";
     public string Name { get; set; } = "";
     public string SettingsJson { get; set; } = "{}";
     public string ProtectedSecrets { get; set; } = "";
     public bool Enabled { get; set; } = true;
-    /// <summary>Интервал автосинхронизации в минутах; null — только вручную.</summary>
+    /// <summary>The auto-sync interval in minutes; null means manual only.</summary>
     public int? AutoSyncMinutes { get; set; }
-    /// <summary>Начало последнего успешного прогона: следующий берёт изменённое после него.</summary>
+    /// <summary>The start of the last successful run: the next one takes what changed after it.</summary>
     public DateTimeOffset? SyncedThrough { get; set; }
     public DateTimeOffset? LastRunAt { get; set; }
     public bool? LastOk { get; set; }
     public string? LastMessage { get; set; }
-    /// <summary>Кто создал подключение: от его имени пишется история задач при фоновой синхронизации.</summary>
+    /// <summary>Who created the connection: task history is written on their behalf during background synchronization.</summary>
     public Guid CreatedBy { get; set; }
     public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
 }
-/// <summary>Один прогон синхронизации: что создано, обновлено, пропущено и чем кончилось.</summary>
+/// <summary>A single synchronization run: what was created, updated, skipped and how it ended.</summary>
 public sealed class TaskSourceRun : Entity
 {
     public Guid ConnectionId { get; set; }
@@ -211,7 +211,7 @@ public sealed class TaskSourceRun : Entity
     public int Skipped { get; set; }
     public string Message { get; set; } = "";
 }
-/// <summary>Задача Alva, пришедшая из внешнего источника: по ключу повторная синхронизация обновляет её, а не создаёт новую.</summary>
+/// <summary>An Alva task that came from an external source: by key, a repeated synchronization updates it instead of creating a new one.</summary>
 public sealed class ExternalTaskLink : Entity
 {
     public Guid ConnectionId { get; set; }

@@ -1,36 +1,36 @@
 namespace Alva.Integrations;
 
 /// <summary>
-/// Модуль интеграции: откуда берутся задачи (Яндекс Трекер, Jira, …). Модуль описывает свои настройки, а ядро хранит их
-/// как есть и не знает их смысла — так новый модуль не требует правок в ядре.
+/// An integration module: where tasks come from (Yandex Tracker, Jira, ...). The module describes its own settings, and the core stores them
+/// as is and does not know their meaning - this way a new module needs no changes in the core.
 /// </summary>
 public interface ITaskSourceModule
 {
-    /// <summary>Стабильный идентификатор: хранится в подключениях, менять его нельзя.</summary>
+    /// <summary>A stable identifier: it is stored in connections, and changing it is not allowed.</summary>
     string Id { get; }
     string Name { get; }
     string Description { get; }
     IReadOnlyList<IntegrationSetting> Settings { get; }
     IntegrationCapabilities Capabilities { get; }
 
-    /// <summary>Источник задач для конкретного подключения. Неверные настройки — <see cref="IntegrationException"/>.</summary>
+    /// <summary>A task source for a specific connection. Invalid settings throw <see cref="IntegrationException"/>.</summary>
     Task<ITaskSource> ConnectAsync(IntegrationConnection connection, CancellationToken ct);
 }
 
-/// <summary>Задачи одного подключения.</summary>
+/// <summary>Tasks of a single connection.</summary>
 public interface ITaskSource
 {
-    /// <summary>Проверка подключения: доступ есть и под какой учётной записью.</summary>
+    /// <summary>A connection check: whether access exists and under which account.</summary>
     Task<IntegrationCheck> CheckAsync(CancellationToken ct);
 
     /// <summary>
-    /// Задачи, изменённые после <paramref name="changedSince"/>; null — все задачи подключения. Источник может вернуть и
-    /// чуть больше (например, с точностью до дня): ядро обновляет задачи идемпотентно.
+    /// Tasks changed after <paramref name="changedSince"/>; null means all tasks of the connection. The source may return a
+    /// little more (for example, with day precision): the core updates tasks idempotently.
     /// </summary>
     IAsyncEnumerable<ExternalTask> ReadTasksAsync(DateTimeOffset? changedSince, CancellationToken ct);
 }
 
-/// <summary>Что модуль умеет приносить.</summary>
+/// <summary>What the module can bring.</summary>
 [Flags]
 public enum IntegrationCapabilities
 {
@@ -40,21 +40,21 @@ public enum IntegrationCapabilities
     Hierarchy = 4,
     Estimates = 8,
     Assignees = 16,
-    /// <summary>Умеет отдавать только изменённое с прошлого раза.</summary>
+    /// <summary>Can return only what changed since the last time.</summary>
     Incremental = 32
 }
 
-/// <summary>Подключение, как его хранит ядро: настройки по ключам схемы и отдельно секреты.</summary>
+/// <summary>A connection as the core stores it: settings by schema keys and secrets separately.</summary>
 public sealed record IntegrationConnection(Guid Id, string Name, IReadOnlyDictionary<string, string> Settings, IReadOnlyDictionary<string, string> Secrets)
 {
-    /// <summary>Значение настройки или секрета; пустое — null.</summary>
+    /// <summary>The value of a setting or secret; empty means null.</summary>
     public string? Value(string key) =>
         (Settings.TryGetValue(key, out var value) || Secrets.TryGetValue(key, out value)) && !string.IsNullOrWhiteSpace(value) ? value.Trim() : null;
 }
 
-/// <summary>Итог проверки подключения.</summary>
-/// <param name="Account">Под кем работает подключение — чтобы человек увидел, тот ли это токен.</param>
+/// <summary>The result of a connection check.</summary>
+/// <param name="Account">The account the connection runs as - so a person can see whether it is the right token.</param>
 public sealed record IntegrationCheck(bool Ok, string Message, string? Account = null);
 
-/// <summary>Ошибка модуля с текстом для человека: ядро показывает её как есть.</summary>
+/// <summary>A module error with human-readable text: the core shows it as is.</summary>
 public sealed class IntegrationException(string message, Exception? inner = null) : Exception(message, inner);

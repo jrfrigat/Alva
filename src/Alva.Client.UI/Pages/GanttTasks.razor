@@ -3,8 +3,8 @@
 @inject AlvaSession Session
 @inject GanttPreferences Preferences
 @using Flare.Components.Gantt
-@* Гантт по задачам (макет p6_2d, проекция 1): дерево работ, окна задач, сроки, спринт и связи.
-   Проекцию собирает Alva из примитивов Flare.Components.Gantt; сама библиотека о задачах не знает. *@
+@* Task Gantt (projection 1): work tree, task windows, deadlines, sprint and links.
+   Alva builds the projection from Flare.Components.Gantt primitives; the library itself knows nothing about tasks. *@
 <PageTitle>@(AlvaStrings.Gantt_TaskGanttAlva)</PageTitle>
 <AlvaPageHeader Category="@(AlvaStrings.Gantt_ChartsGantt)" Title="@(AlvaStrings.Gantt_TaskGantt)" Description="@(AlvaStrings.Gantt_WorkHierarchyOverTimeTaskAndSprintWindowsDeadlinesDependenciesAndRiskDra_692d07)" />
 <PageFeedback Loading="_busy" Error="@_error" OnRetry="Reload" />
@@ -37,8 +37,8 @@ else if (_data is not null)
     }
     else
     {
-        @* Обёртка ловит Enter с полосы (полоса фокусируема и сама помечена role="button") и держит фокус
-           после закрытия панели: события полосы всплывают сюда. *@
+        @* The wrapper catches Enter from a bar (the bar is focusable and marked role="button") and holds focus
+           after the panel closes: the bar's events bubble up here. *@
         <div class="alva-gantt__host" @ref="_host" tabindex="-1" @onkeydown="OnChartKey">
         <FlareGantt @ref="_chart" Range="@Axis()" RangeChanged="r => _range = r" Endless="true" Scale="_scale" UnitWidth="_unit" FillWidth="true" Virtualize="true" RowHeight="36" SideWidth="@_side" DefaultSideWidth="22rem" ResizableSide="true" SideWidthChanged="SaveSide"
                     NonWorking="GanttData.IsWeekend" Markers="@GanttData.TodayMarkers" Regions="@_data.SprintRegions(Sprint)" @bind-SelectedKey="_selected"
@@ -49,9 +49,9 @@ else if (_data is not null)
             </ChildContent>
         </FlareGantt>
         </div>
-        @* Панель задачи: клик по полосе или Enter открывают, Esc и щелчок по фону закрывают (CloseOnEsc
-           у FlareDrawer включён по умолчанию), после закрытия фокус возвращается к доске. Правки и
-           сохранение — те же, что на странице задачи: карточка переиспользуется целиком. *@
+        @* Task panel: a click on a bar or Enter opens it, Esc and a backdrop click close it (CloseOnEsc
+           is enabled on FlareDrawer by default), and focus returns to the board after closing. Edits and
+           saving are the same as on the task page: the card is reused as a whole. *@
         <FlareDrawer Anchor="DrawerAnchor.Right" Open="_panelOpen" OpenChanged="OnPanelOpen" Width="34rem" ContentPadding="FlareSpacing.Large" AriaLabel="@(AlvaStrings.Common_Task)">
             @if (_open is not null)
             {
@@ -75,8 +75,6 @@ else if (_data is not null)
     private string? _selected;
     private HashSet<GanttLinkType> _types = [.. AllTypes];
 
-    // Панель задачи: открытая задача, признак открытой панели, ссылка на доску (для возврата фокуса) и
-    // справочник проектов для карточки задачи.
     private TaskModel? _open;
     private TaskDetails? _details;
     [CascadingParameter] public FlareConfirmDialogProvider? Confirm { get; set; }
@@ -90,7 +88,7 @@ else if (_data is not null)
     private GanttSpan _range;
     private Guid? _rangeFor = Guid.Empty;
 
-    // Ось — окно спринта (или всех задач), пока пользователь не докрутил дальше; смена спринта начинает её заново.
+    // The axis is the sprint window (or all tasks) until the user scrolls further; changing the sprint starts it over.
     private GanttSpan Axis()
     {
         if (_rangeFor != _sprintId) (_range, _rangeFor) = (_data!.Range(Sprint, Today), _sprintId);
@@ -129,7 +127,7 @@ else if (_data is not null)
             if (Session.TeamId is not null)
             {
                 _data = await GanttData.Load(Session);
-                // Проект есть в карточке задачи, поэтому панель получает и справочник проектов — как страница списка.
+                // The task card includes the project, so the panel also receives the project dictionary - as on the list page.
                 _projects = await Session.Get<ProjectModel[]>(Session.TeamPath("projects"));
             }
         }
@@ -137,18 +135,18 @@ else if (_data is not null)
         finally { _busy = false; }
     }
 
-    /// <summary>Клик по полосе открывает панель задачи, не уводя со страницы.</summary>
+    /// <summary>A click on a bar opens the task panel without leaving the page.</summary>
     private void OpenTask(TaskModel task) { _open = task; _panelOpen = true; }
 
-    /// <summary>Enter на выбранной полосе делает то же, что клик: полоса фокусируема, но Enter у неё ничего не
-    /// делает, поэтому его ловит обёртка доски.</summary>
+    /// <summary>Enter on the selected bar does the same as a click: the bar is focusable, but Enter does nothing
+    /// on it, so the board wrapper catches it.</summary>
     private void OnChartKey(KeyboardEventArgs e)
     {
         if (e.Key != "Enter" || _selected is null || _panelOpen) return;
         if (_data?.Tasks.FirstOrDefault(t => GanttData.Key(t.Id) == _selected) is { } task) OpenTask(task);
     }
 
-    /// <summary>Панель закрылась (Esc, фон или кнопка): задача отпускается, фокус возвращается к доске.</summary>
+    /// <summary>The panel closed (Esc, backdrop or button): the task is released and focus returns to the board.</summary>
     private async Task OnPanelOpen(bool open)
     {
         if (!open && _details?.Dirty == true && !await DraftPrompt.CanDiscardAsync(Confirm, true))

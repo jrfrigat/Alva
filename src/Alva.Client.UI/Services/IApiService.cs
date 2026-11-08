@@ -4,8 +4,8 @@ using Alva.Contracts;
 namespace Alva.Client.Services;
 
 /// <summary>
-/// Доступ клиента Alva к данным: сессия, состояние и операции над данными.
-/// Реализация выбирается при сборке — HTTP-сервис (прод) или локальная (demo).
+/// Alva client's data access: session, state and data operations.
+/// The implementation is chosen at build time - an HTTP service (production) or a local one (demo).
 /// </summary>
 public interface IApiService
 {
@@ -17,7 +17,7 @@ public interface IApiService
     string TeamName { get; }
     bool Initialized { get; }
 
-    /// <summary>Импорт и экспорт файлов доступны (их выполняет сервер; демо без сервера их не поддерживает).</summary>
+    /// <summary>File import and export are available (the server performs them; the serverless demo does not support them).</summary>
     bool SupportsDataTransfer { get; }
     event Action? Changed;
 

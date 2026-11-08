@@ -7,7 +7,7 @@ using Xunit;
 
 namespace Alva.Data.Tests;
 
-/// <summary>Старт спринта фиксирует обязательство, закрытие — итог; поздние правки задач историю спринта не меняют.</summary>
+/// <summary>The sprint start records the commitment, closing records the outcome; later task edits do not change the sprint history.</summary>
 public sealed class SprintSnapshotTests
 {
     private static readonly DateOnly Monday = new(2026, 10, 26);

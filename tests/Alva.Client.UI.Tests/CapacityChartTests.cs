@@ -6,7 +6,7 @@ using Xunit;
 
 namespace Alva.Client.UI.Tests;
 
-/// <summary>График ёмкости: серии берут цвета темы, значения читаются, вывод продублирован текстом.</summary>
+/// <summary>Capacity chart: series take the theme colours, values are readable, output is duplicated in text.</summary>
 public sealed class CapacityChartTests : UiTestBase
 {
     private readonly Guid _person = Guid.NewGuid();

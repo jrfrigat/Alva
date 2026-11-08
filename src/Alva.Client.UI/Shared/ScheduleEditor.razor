@@ -1,6 +1,6 @@
-@* Редактор рабочего графика по макету p16: часы по дням недели, повторяющиеся вычеты, отпуска и
-   праздники, расчёт ёмкости и применение графика к другим сотрудникам. Для подкоманды — только общие
-   вычеты и нерабочие периоды, которые действуют на всех её участников. *@
+@* Work schedule editor: hours by day of week, recurring deductions, vacations and
+   holidays, capacity calculation and applying the schedule to other employees. For a sub-team - only the shared
+   deductions and non-working periods that apply to all its members. *@
 @implements IDisposable
 @inject AlvaSession Session
 @inject DraftGuard Drafts
@@ -232,7 +232,7 @@
     private ActorModel? Person => _people.FirstOrDefault(p => p.Id == ActorId);
     private bool IsDepartment => Actor?.Kind == "Department";
 
-    /// <summary>Люди подкоманды и всех вложенных в неё подкоманд.</summary>
+    /// <summary>People of the sub-team and of all sub-teams nested in it.</summary>
     private IEnumerable<ActorModel> Members
     {
         get
@@ -242,7 +242,7 @@
             return _people.Where(p => p.DepartmentIds.Any(scope.Contains) || p.ParentId is { } parent && scope.Contains(parent));
         }
     }
-    // Сохранённые часы недели: снимаются при каждой загрузке календаря, а не собираются на каждом рендере.
+    // Saved week hours are captured on every calendar load, not assembled on every render.
     private decimal[] Saved { get; set; } = new decimal[7];
     private bool Dirty => _calendar is not null && (!_hours.SequenceEqual(Saved) || _timeZone != _calendar.TimeZone);
     private IDisposable? _draft;
@@ -256,7 +256,7 @@
         if (!await DraftPrompt.CanDiscardAsync(Confirm, true)) context.PreventNavigation();
     }
 
-    /// <summary>Вычеты блоков в день недели (0 — понедельник в порядке экрана).</summary>
+    /// <summary>Block deductions on a day of week (0 - Monday in screen order).</summary>
     private decimal BlocksOn(int screenDay) => _calendar?.RecurringBlocks.Where(b => (b.DayOfWeek + 6) % 7 == screenDay).Sum(b => b.Hours) ?? 0;
     private decimal Remember(int day) { _lastHours[day] = _hours[day]; return 0; }
 
@@ -295,9 +295,9 @@
         });
     }
 
-    // Вычеты и периоды — свои ресурсы: после операции с ними обновляются списки и сохранённые часы, а несохранённые
-    // часы недели и часовой пояс остаются как их ввели (keepDraft). Черновик принимает сохранённое только при загрузке
-    // и после «Сохранить график».
+    // Deductions and periods are separate resources: after an operation on them the lists and saved hours are refreshed,
+    // while unsaved week hours and the time zone stay as they were entered (keepDraft). The draft accepts saved values
+    // only on load and after Save schedule.
     private async Task LoadCalendar(bool keepDraft = true)
     {
         _calendar = await Session.Get<CalendarDto>(CalendarPath);

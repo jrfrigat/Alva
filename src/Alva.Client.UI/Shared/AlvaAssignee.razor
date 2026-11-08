@@ -1,6 +1,6 @@
-@* Исполнитель или слот задачи: человек — аватар с инициалами; подкоманда — аватар с иконкой
-   и «Требуется человек», пока конкретный исполнитель не выбран. Загрузка, если передана, заменяет
-   подпись под именем: >100% — перегрузка. *@
+@* Task assignee or slot: a person is an avatar with initials; a sub-team is an avatar with an icon
+   and the "a person is required" label until a specific assignee is chosen. Load, when passed, replaces
+   the caption under the name: >100% means overload. *@
 @if (Target is null)
 {
     <FlareStack Row Align="FlareAlignItems.Center" Gap="FlareSpacing.XSmall">
@@ -45,7 +45,7 @@ else
     [Parameter, EditorRequired] public TaskModel Task { get; set; } = default!;
     [Parameter] public ActorModel[] Actors { get; set; } = [];
 
-    /// <summary>Загрузка исполнителя в процентах за период, если она известна.</summary>
+    /// <summary>Assignee load as a percentage for the period, when known.</summary>
     [Parameter] public int? Load { get; set; }
 
     private ActorModel? Target => Actors.FirstOrDefault(a => a.Id == Task.AssignmentTargetId);

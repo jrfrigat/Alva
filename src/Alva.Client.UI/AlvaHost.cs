@@ -9,9 +9,9 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Alva.Client;
 
 /// <summary>
-/// Общая настройка хоста Alva: культура, тема Flare, палитра, сессия и корневые компоненты.
-/// Оболочки (продовая и demo) добавляют только регистрацию
-/// <see cref="Services.IApiService"/> — в этом единственное различие версий.
+/// Shared Alva host configuration: culture, Flare theme, palette, session and root components.
+/// The shells (production and demo) only add the registration of
+/// <see cref="Services.IApiService"/> - that is the only difference between the versions.
 /// </summary>
 public static class AlvaHost
 {
@@ -23,12 +23,12 @@ public static class AlvaHost
         builder.RootComponents.Add<HeadOutlet>("head::after");
         builder.Services.AddFlare(options =>
         {
-            // Тема Alva выведена из MD3E и приносит цвета, форму и шкалу дизайна Stitch
-            // (проект Alva.Theme.Alva) — вместо стоковых значений Material.
+            // The Alva theme is derived from MD3E and brings the colors, shape and scale of the Stitch design
+            // (Alva.Theme.Alva project) instead of the stock Material values.
             options.DefaultTheme = AlvaTheme.Create();
             options.DefaultPalette = AlvaPalettes.Sapphire;
-            // Дизайн описывает только светлую схему. Без этого Flare берёт Auto,
-            // сам сохраняет его в localStorage и следует тёмной теме системы.
+            // The design only defines a light scheme. Without this, Flare picks Auto,
+            // saves it to localStorage itself and follows the system dark theme.
             options.DefaultMode = ThemeMode.Light;
         });
         builder.Services.AddFlareGantt();

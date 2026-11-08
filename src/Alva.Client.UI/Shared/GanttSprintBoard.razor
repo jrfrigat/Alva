@@ -1,8 +1,8 @@
 @using Flare.Components.Gantt
 @inject GanttPreferences Preferences
-@* Гантт спринтов на доске планирования (макет p6_2d): задачи всех незавершённых спринтов и дорожки людей на одной оси,
-   каждый спринт подписан, выбранный выделен. Полосы правятся как на страницах Гантта; день, на который бросили задачу или
-   передвинули полосу, решает, в какой спринт она попадёт. *@
+@* Sprint Gantt on the planning board: tasks of all unfinished sprints and people lanes on one axis,
+   each sprint is labelled and the selected one is highlighted. Bars are edited as on the Gantt pages; the day a task
+   is dropped on or a bar is moved to decides which sprint it lands in. *@
 <section class="alva-panel alva-plan-gantt">
     <header class="alva-panel__header">
         <FlareIconView Value="@MaterialDesign3Icons.Regular.AlignHorizontalLeft" Size="20px" Class="alva-panel__icon" />
@@ -53,7 +53,7 @@
     [Parameter] public GanttData? Data { get; set; }
     [Parameter] public GanttPeopleData? People { get; set; }
 
-    /// <summary>Окно оси: спринты доски и всё, до чего пользователь докрутил; ось бесконечная и просит больше через <see cref="RangeChanged"/>.</summary>
+    /// <summary>Axis window: the board's sprints and everything the user has scrolled to; the axis is endless and asks for more through <see cref="RangeChanged"/>.</summary>
     [Parameter, EditorRequired] public GanttSpan Range { get; set; }
 
     [Parameter] public EventCallback<GanttSpan> RangeChanged { get; set; }
@@ -64,10 +64,10 @@
     [Parameter] public EventCallback<GanttLinkRejectedEventArgs> OnLinkRejected { get; set; }
     [Parameter] public EventCallback<TaskModel> OnUnplan { get; set; }
 
-    /// <summary>Выбранные изменения автобаланса: показываются призраками, пока их не применят или не отклонят.</summary>
+    /// <summary>Selected auto-balance changes: shown as ghosts until they are applied or rejected.</summary>
     [Parameter] public IReadOnlyList<BalanceChangeDto> Suggested { get; set; } = [];
 
-    // На задачах — только новые даты; на людях — новые даты в строке нового человека.
+    // On tasks - only the new dates; on people - the new dates in the new person's row.
     private IEnumerable<GanttChange> TaskGhosts => Suggested.Where(c => c.ToStart != c.FromStart || c.ToEnd != c.FromEnd)
         .Select(c => new GanttChange(GanttData.Key(c.TaskId), GanttSpan.FromDays(c.ToStart, c.ToEnd)));
 
@@ -85,7 +85,7 @@
 
     protected override async Task OnInitializedAsync() => _side = (await Preferences.Get(View)).Side ?? _side;
 
-    // Ось длиннее экрана: после загрузки и смены спринта она встаёт на начало выбранного.
+    // The axis is longer than the screen: after loading and after a sprint change it scrolls to the start of the selected one.
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (_chart is null || Data is null || _scrolledTo == Sprint.Id) return;
@@ -101,14 +101,14 @@
         await Preferences.SaveSide(View, width);
     }
 
-    /// <summary>Строка и день сброса на Гантт доски: строку даёт зона, день — место, где отпустили указатель.</summary>
+    /// <summary>Row and day of a drop on the board Gantt: the zone gives the row, the day is where the pointer was released.</summary>
     public Task<GanttDropTarget?> ResolveDrop(string? targetId) =>
         _chart?.ResolveDrop(targetId) ?? Task.FromResult<GanttDropTarget?>(null);
 
-    // Задача с подзадачами уходит в бэклог вместе с ними — подсказка говорит об этом.
+    // A task with subtasks goes to the backlog together with them - the hint says so.
     private string UnplanHint(TaskModel task) => Data!.ChildrenOf(task).Any() ? AlvaStrings.Gantt_ReturnToBacklogWithSubtasksClearDates : AlvaStrings.Gantt_ReturnToBacklogClearDates;
 
-    // Свои пункты доски: окна спринтов, перегруз людей и призраки автобаланса, если он что-то предлагает.
+    // Board-specific items: sprint windows, people overload and auto-balance ghosts if it suggests something.
     private IEnumerable<GanttLegendItem> BoardKey => new GanttLegendItem[]
     {
         new("sprint", AlvaStrings.Gantt_SelectedSprint, GanttLegendShape.Region),

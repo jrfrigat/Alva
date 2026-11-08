@@ -3,10 +3,10 @@ using Xunit;
 
 namespace Alva.Data.Tests;
 
-/// <summary>Задача на стыке спринтов делит оценку между ними, а не засчитывается в каждый целиком.</summary>
+/// <summary>A task spanning sprints splits its estimate between them instead of counting fully in each.</summary>
 public sealed class SprintShareTests
 {
-    // Понедельник 26.10 — пятница 06.11: две рабочие недели, по одной в каждом спринте.
+    // Monday 26.10 - Friday 06.11: two working weeks, one in each sprint.
     private static readonly DateOnly Monday = new(2026, 10, 26);
     private static readonly (DateOnly Start, DateOnly End) First = (Monday.AddDays(-7), Monday.AddDays(4));
     private static readonly (DateOnly Start, DateOnly End) Second = (Monday.AddDays(5), Monday.AddDays(18));

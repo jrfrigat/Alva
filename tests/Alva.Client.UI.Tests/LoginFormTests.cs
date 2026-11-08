@@ -8,7 +8,7 @@ using Xunit;
 
 namespace Alva.Client.UI.Tests;
 
-/// <summary>Ошибки входа и регистрации стоят у своих полей, связаны с ними и уводят на них фокус.</summary>
+/// <summary>Sign-in and registration errors sit at their fields, are linked to them and move focus to them.</summary>
 public sealed class LoginFormTests : UiTestBase
 {
     private BunitNavigationManager Navigation => Services.GetRequiredService<BunitNavigationManager>();
@@ -22,7 +22,7 @@ public sealed class LoginFormTests : UiTestBase
 
     private static void Submit(IRenderedComponent<Login> cut) => cut.Find("form").Submit();
 
-    // Ошибка поля видна под ним и объявляется через aria-describedby поля.
+    // A field error is visible below it and is announced through the field's aria-describedby.
     private static string? ErrorOf(IRenderedComponent<Login> cut, string label)
     {
         var input = Field(cut, label);
@@ -43,7 +43,7 @@ public sealed class LoginFormTests : UiTestBase
         Assert.Equal("Введите пароль.", ErrorOf(cut, "Пароль"));
         Assert.Equal("Повторите пароль.", ErrorOf(cut, "Повторите пароль"));
         Assert.Empty(Api.Authentications);
-        // Фокус уходит на первое поле с ошибкой — после yield внутри формы.
+        // Focus moves to the first field with an error - after the yield inside the form.
         cut.WaitForAssertion(() => JSInterop.VerifyFocusAsyncInvoke());
     }
 
@@ -101,7 +101,7 @@ public sealed class LoginFormTests : UiTestBase
         Navigation.NavigateTo("/register");
         var cut = Render<Login>();
 
-        // Маршрут /register показывает форму регистрации, без переключения кнопкой.
+        // The /register route shows the registration form, without switching via a button.
         Assert.NotNull(Field(cut, "Ваше имя"));
         Assert.NotNull(Field(cut, "Название рабочего пространства"));
     }

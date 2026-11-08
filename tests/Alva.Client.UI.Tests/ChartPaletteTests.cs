@@ -4,7 +4,7 @@ using Xunit;
 
 namespace Alva.Client.UI.Tests;
 
-/// <summary>Серии графика ёмкости проходят 3:1 к подложке в светлой, тёмной и высококонтрастной темах.</summary>
+/// <summary>Capacity chart series pass 3:1 against the background in light, dark and high-contrast themes.</summary>
 public sealed class ChartPaletteTests
 {
     private static readonly string[] Series = ["fund", "planned", "deficit"];

@@ -1,18 +1,18 @@
 namespace Alva.Contracts;
 
-/// <summary>Работа, которая ложится на человека: оценка, окно задачи и лимит часов в день (null — без лимита).</summary>
+/// <summary>Work that falls on a person: the estimate, the task window and the daily hours limit (null means no limit).</summary>
 public record CapacityWork(Guid PersonId, decimal EstimateHours, DateOnly? Start, DateOnly? End, DateOnly? Deadline, decimal? DailyHoursLimit = null);
 
-/// <summary>Работа, назначенная на роль или подкоманду без выбранного человека.</summary>
+/// <summary>Work assigned to a skill or department with no person selected.</summary>
 public record DemandWork(Guid TargetId, string TargetName, string Kind, decimal EstimateHours, DateOnly? Start, DateOnly? End, DateOnly? Deadline, decimal? DailyHoursLimit = null);
 
 /// <summary>
-/// Расчёт ёмкости, общий для API и demo: доступные часы по графику и распределение оценки задачи по дням.
-/// Дни недели вычетов — в нумерации .NET (воскресенье = 0).
+/// Capacity calculation shared by the API and the demo: available hours from the calendar and distribution of a task estimate over days.
+/// Weekdays of recurring blocks use .NET numbering (Sunday = 0).
 /// </summary>
 public static class CapacityMath
 {
-    /// <summary>График человека, у которого нет своей записи: 8 ч с понедельника по пятницу.</summary>
+    /// <summary>The calendar of a person who has no record of their own: 8 hours Monday to Friday.</summary>
     public static CalendarDto DefaultCalendar(Guid actorId) => new(actorId, "Europe/Moscow", 8m, 8m, 8m, 8m, 8m, 0m, 0m, [], []);
 
     public static decimal Nominal(CalendarDto calendar, DayOfWeek day) => day switch
@@ -27,8 +27,8 @@ public static class CapacityMath
     };
 
     /// <summary>
-    /// Часы дня по графику или по исключению, минус повторяющиеся вычеты этого дня.
-    /// Если на день приходится несколько исключений, действует то, где часов меньше.
+    /// The day's hours by the calendar or by an exception, minus the recurring blocks of that day.
+    /// If several exceptions fall on a day, the one with the fewer hours applies.
     /// </summary>
     public static decimal Available(CalendarDto calendar, DateOnly day)
     {
@@ -41,8 +41,8 @@ public static class CapacityMath
     public static decimal Available(Func<DateOnly, CalendarDto> calendarOf, DateOnly day) => Available(calendarOf(day), day);
 
     /// <summary>
-    /// Календарь человека вместе с календарями его подразделений: часы недели — личные,
-    /// исключения и повторяющиеся вычеты подразделений добавляются к личным.
+    /// A person's calendar together with the calendars of their departments: weekly hours are personal,
+    /// while department exceptions and recurring blocks are added to the personal ones.
     /// </summary>
     public static CalendarDto Combine(CalendarDto person, IEnumerable<CalendarDto> departments)
     {
@@ -54,7 +54,7 @@ public static class CapacityMath
         };
     }
 
-    /// <summary>Подразделения, чьи графики действуют на человека: его собственные и все их родительские.</summary>
+    /// <summary>Departments whose calendars apply to a person: their own and all their parents.</summary>
     public static IReadOnlyCollection<Guid> DepartmentsWithParents(IEnumerable<Guid> departments, Func<Guid, Guid?> parentOf)
     {
         var result = new HashSet<Guid>();
@@ -63,7 +63,7 @@ public static class CapacityMath
         return result;
     }
 
-    /// <summary>Окно задачи: начало и конец с запасными датами; конец не раньше начала.</summary>
+    /// <summary>The task window: start and end with fallback dates; the end is not earlier than the start.</summary>
     public static (DateOnly Start, DateOnly End)? Window(DateOnly? start, DateOnly? end, DateOnly? deadline)
     {
         var from = start ?? end ?? deadline;
@@ -72,15 +72,15 @@ public static class CapacityMath
         return (from.Value, to.Value < from.Value ? from.Value : to.Value);
     }
 
-    /// <summary>Сколько дней после окончания окна ищется место для работы, не поместившейся в лимит.</summary>
+    /// <summary>How many days after the window end are searched for work that did not fit under the daily limit.</summary>
     public const int SpillDays = 730;
 
     /// <summary>
-    /// Делит оценку по дням окна пропорционально доступным часам. Если доступных часов в окне нет,
-    /// делит поровну на рабочие по графику дни, а если нет и их — на все дни: перегрузка остаётся видна.
-    /// С лимитом день получает не больше <paramref name="dailyLimit"/> часов: излишек уходит на дни окна, где место
-    /// ещё есть, а то, что в окно не помещается, — за окончание, по лимиту в каждый день с доступными часами.
-    /// Так человек остаётся занят задачей столько, сколько она действительно займёт.
+    /// Splits the estimate over the window days in proportion to available hours. If the window has no available hours,
+    /// it splits evenly over days that work by the calendar, and if there are none of those either, over all days: the overload stays visible.
+    /// With a limit, a day gets no more than <paramref name="dailyLimit"/> hours: the excess goes to window days that still have room,
+    /// and what does not fit into the window goes past its end, up to the limit for each day with available hours.
+    /// This way a person stays occupied with the task for as long as it will actually take.
     /// </summary>
     public static IEnumerable<(DateOnly Day, decimal Hours)> Spread(CalendarDto calendar, decimal estimate, DateOnly start, DateOnly end, decimal? dailyLimit = null) =>
         Spread(_ => calendar, estimate, start, end, dailyLimit);
@@ -114,13 +114,13 @@ public static class CapacityMath
         }
     }
 
-    /// <summary>Последний день, на который ложится работа задачи; позже окончания окна — если лимит в день не даёт уложиться.</summary>
+    /// <summary>The last day the task's work falls on; later than the window end if the daily limit does not allow fitting into it.</summary>
     public static DateOnly? Finish(CalendarDto calendar, decimal estimate, DateOnly start, DateOnly end, decimal? dailyLimit = null) =>
         Spread(calendar, estimate, start, end, dailyLimit).Select(x => (DateOnly?)x.Day).LastOrDefault();
 
     /// <summary>
-    /// Пропорциональная доля по весам, но не больше <paramref name="cap"/> в день: дни, упёршиеся в лимит, выходят из
-    /// дележа, а их излишек делится между остальными. Что не поместилось никуда, остаётся неразделённым.
+    /// A proportional share by weights, but no more than <paramref name="cap"/> per day: days that hit the limit leave
+    /// the split, and their excess is divided among the rest. What fits nowhere stays undistributed.
     /// </summary>
     internal static decimal[] Fill(decimal[] weights, decimal amount, decimal cap)
     {
@@ -142,8 +142,8 @@ public static class CapacityMath
     }
 
     /// <summary>
-    /// Нераспределённая потребность по ролям и подкомандам: оценка делится по рабочим дням графика
-    /// по умолчанию, в ответе только дни диапазона, где есть часы.
+    /// Undistributed demand by skills and departments: the estimate is split over the workdays of the default
+    /// calendar, and only the days in the range that have hours are returned.
     /// </summary>
     public static CapacityDemandDto[] Demand(IEnumerable<DemandWork> work, DateOnly from, DateOnly to)
     {
@@ -161,12 +161,12 @@ public static class CapacityMath
     }
 
     /// <summary>
-    /// Перегруз — сумма превышений по каждому человеку и дню. Свободный день не гасит перегруженный: в сумме периода
-    /// человек может выглядеть недогруженным, хотя в отдельные дни работы больше, чем часов.
+    /// Overload is the sum of excesses for each person and day. A free day does not offset an overloaded one: over a period
+    /// a person may look underloaded even though on some days there is more work than hours.
     /// </summary>
     public static decimal Overload(IEnumerable<CapacityDto> days) => days.Sum(d => Math.Max(0m, d.AllocatedHours - d.AvailableHours));
 
-    /// <summary>Строки ёмкости по людям и дням диапазона: доступные часы и распределённая на них работа.</summary>
+    /// <summary>Capacity rows by people and days of the range: available hours and the work allocated to them.</summary>
     public static CapacityDto[] Build(IEnumerable<(Guid Id, string Name)> people, Func<Guid, CalendarDto> calendarOf, IEnumerable<CapacityWork> work, DateOnly from, DateOnly to) =>
         Build(people, (id, _) => calendarOf(id), work, from, to);
 

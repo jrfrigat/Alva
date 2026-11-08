@@ -6,7 +6,7 @@ using DirectoryPage = Alva.Client.Pages.Directory;
 
 namespace Alva.Client.UI.Tests;
 
-/// <summary>Выбор записи в справочнике подсвечивает строку и не растягивает карточку списка.</summary>
+/// <summary>Selecting a record in the directory highlights the row and does not stretch the list card.</summary>
 public sealed class DirectorySelectionTests : UiTestBase
 {
     [Fact]

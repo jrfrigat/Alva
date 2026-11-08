@@ -7,7 +7,7 @@ using Xunit;
 
 namespace Alva.Client.UI.Tests;
 
-/// <summary>Один индикатор состояния: правки, сохранение, успех; ошибка не выдаёт себя за успех.</summary>
+/// <summary>A single status indicator: edits, saving, success; an error does not pass itself off as success.</summary>
 public sealed class EditorStatusTests : UiTestBase
 {
     private readonly ProjectModel _project = new() { Id = Guid.NewGuid(), Name = "Платформа", TeamIds = [] };

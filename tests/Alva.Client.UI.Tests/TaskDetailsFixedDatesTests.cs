@@ -8,7 +8,7 @@ using Xunit;
 
 namespace Alva.Client.UI.Tests;
 
-/// <summary>Карточка задачи: фиксированные даты блокируют перенос и уходят в запрос явно.</summary>
+/// <summary>Task card: fixed dates block moving and go into the request explicitly.</summary>
 public sealed class TaskDetailsFixedDatesTests : UiTestBase
 {
     private static readonly DateOnly Start = new(2026, 10, 5);

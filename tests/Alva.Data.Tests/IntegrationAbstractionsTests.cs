@@ -4,7 +4,7 @@ using Xunit;
 
 namespace Alva.Data.Tests;
 
-/// <summary>Контракт модулей: реестр по Id и общая проверка настроек по схеме модуля.</summary>
+/// <summary>Module contract: the registry by Id and the shared validation of settings against the module schema.</summary>
 public sealed class IntegrationAbstractionsTests
 {
     private sealed class Module(string id = "demo") : ITaskSourceModule

@@ -7,42 +7,40 @@ using Flare.Theming;
 namespace Alva.Theme.Alva;
 
 /// <summary>
-/// Тема Alva: дизайн Stitch, выраженный токенами Flare.
+/// The Alva theme: the Stitch design expressed in Flare tokens.
 /// </summary>
 /// <remarks>
-/// Тема выведена из Material 3 Expressive, а не написана с нуля: дизайн-источник сам говорит, что он
-/// «grounded in the tenets of Material Design 3 Expressive». Переопределяется только то, чем дизайн
-/// от Material отличается:
+/// The theme is derived from Material 3 Expressive rather than written from scratch: the design source itself says it is
+/// "grounded in the tenets of Material Design 3 Expressive". Only what differs from Material is overridden:
 /// <list type="bullet">
-/// <item><description><b>Цвет</b> — своей палитрой (<see cref="AlvaPalettes"/>), потому что стоковая
-/// палитра MD3E и делала экран похожим на MD3E.</description></item>
-/// <item><description><b>Типографика</b> — Inter и шкала дизайна: тесные строки, микро-лейблы
-/// 10–11px с трекингом.</description></item>
-/// <item><description><b>Форма</b> — единый радиус 6px для элементов данных вместо щедрого
-/// скругления Material.</description></item>
-/// <item><description><b>Глубина</b> — плоскости разделяются рамками, а не тональной высотой: тени
-/// оставлены только всплывающим слоям (уровни 2–3).</description></item>
+/// <item><description><b>Color</b> - with its own palette (<see cref="AlvaPalettes"/>), because the stock
+/// MD3E palette made the screen look like MD3E.</description></item>
+/// <item><description><b>Typography</b> - Inter and the design scale: tight line heights, 10-11px
+/// micro labels with letter spacing.</description></item>
+/// <item><description><b>Shape</b> - a single 6px radius for data elements instead of Material's
+/// generous rounding.</description></item>
+/// <item><description><b>Depth</b> - planes are separated by borders rather than tonal elevation: shadows
+/// are kept only for overlays (levels 2-3).</description></item>
 /// </list>
-/// Ассеты базовой темы не отключаются (<c>inheritStyleAssets</c> не передаётся): Alva остаётся в
-/// стилевой семье Material, и наши правила лишь добавляются после её таблиц — в отличие от темы
-/// StitchFlow, которая была отдельной стилевой семьёй.
+/// The base theme's assets are not disabled (<c>inheritStyleAssets</c> is not passed): Alva stays in the
+/// Material style family, and Alva's rules are only added after its stylesheets.
 /// </remarks>
 public static class AlvaTheme
 {
-    /// <summary>Стабильный id темы; он же CSS-класс, на который ограничены её правила.</summary>
+    /// <summary>The stable theme id; it is also the CSS class that scopes its rules.</summary>
     public const string ThemeId = "alva";
 
-    /// <summary>Гарнитура интерфейса — единственная, названная дизайном.</summary>
+    /// <summary>The interface typeface - the only one named by the design.</summary>
     public const string UiFont = "Inter";
 
-    /// <summary>Собирает тему. Регистрируется один раз, выбирается по <see cref="ThemeId"/>.</summary>
+    /// <summary>Builds the theme. Registered once, selected by <see cref="ThemeId"/>.</summary>
     public static ITheme Create() => new MaterialDesign3ExpressiveTheme().Derive(
         id: ThemeId,
         displayName: "Alva Sapphire",
         design: Apply,
         palettes: AlvaPalettes.All,
         defaultPaletteId: AlvaPalettes.SapphireId,
-        // Гарнитура дизайна и правила, которые токены не выражают (см. таблицу темы).
+        // The design typeface and rules that tokens do not express (see the theme stylesheet).
         styleAssets:
         [
             "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap",
@@ -53,7 +51,7 @@ public static class AlvaTheme
     {
         FocusRing = "2px solid var(--flare-color-primary)",
 
-        // Шкала дизайна: заголовки 30/22/18, тело 14/13/12, микро-лейблы 13/11/10.
+        // The design scale: headings 30/22/18, body 14/13/12, micro labels 13/11/10.
         Typography = d.Typography with
         {
             DisplayLarge = Type("700", "1.875rem", "2.375rem", "-0.02em"),
@@ -71,7 +69,7 @@ public static class AlvaTheme
             LabelSmall = Type("700", "0.625rem", "0.75rem", "0.04em"),
         },
 
-        // Единый радиус элементов данных; капсула остаётся только для статусов и счётчиков.
+        // A single radius for data elements; the pill stays only for statuses and counters.
         Shape = d.Shape with
         {
             None = "0px",
@@ -83,7 +81,7 @@ public static class AlvaTheme
             Full = "9999px",
         },
 
-        // Рамки вместо высоты: данные лежат плоскими плоскостями, тень поднимает только overlay.
+        // Borders instead of elevation: data lies on flat planes, only overlay raises a shadow.
         Elevation = d.Elevation with
         {
             Level0 = "none",
@@ -92,10 +90,10 @@ public static class AlvaTheme
             Level3 = "0 10px 15px -3px rgba(15, 23, 42, 0.08), 0 4px 6px -4px rgba(15, 23, 42, 0.04)",
         },
 
-        // Компоненты задаются токенами Flare, а не CSS: тема пишет их в свой стиль после
-        // таблиц ассетов, и переменная из style-asset с тем же селектором ему проигрывает.
+        // Components are defined by Flare tokens, not CSS: the theme writes them into its stylesheet after the
+        // asset stylesheets, and a variable from a style asset with the same selector loses to it.
 
-        // «Primary: ... height 32px (compact), radius 6px». Капсула MD3E заменена радиусом формы.
+        // "Primary: ... height 32px (compact), radius 6px". The MD3E pill is replaced by the shape radius.
         Button = d.Button with
         {
             ContainerRadius = Radius,
@@ -129,7 +127,7 @@ public static class AlvaTheme
             OutlinedBorderColor = BorderStrong,
         },
 
-        // «Standard Inputs: 30px compact height, #FFFFFF background, 1px border #CBD5E1».
+        // "Standard Inputs: 30px compact height, #FFFFFF background, 1px border #CBD5E1".
         Input = d.Input with
         {
             HeightSm = "28px",
@@ -141,8 +139,8 @@ public static class AlvaTheme
             OutlinedVariantBorderColor = BorderStrong,
         },
 
-        // Пункт меню макета: строка ~30px, радиус 4px; активный залит primary-container,
-        // текст белый и жирный, иконка 18px.
+        // The design's menu item: about a 30px row, 4px radius; the active one is filled with primary-container,
+        // the text is white and bold, the icon is 18px.
         Nav = d.Nav with
         {
             ItemHeight = "32px",
@@ -154,8 +152,8 @@ public static class AlvaTheme
             IconSize = "18px",
         },
 
-        // Оболочка макета: белая шапка 56px и белая боковая панель на канве #F8F9FF,
-        // разделённые лёгкой тенью, а не тональной заливкой MD3.
+        // The design shell: a white 56px app bar and a white side panel on a #F8F9FF canvas,
+        // separated by a light shadow rather than MD3 tonal fill.
         Layout = d.Layout with
         {
             AppBarHeight = "56px",
@@ -167,7 +165,7 @@ public static class AlvaTheme
             ContentPadding = "1rem 1.25rem",
         },
 
-        // «Level 1: Pure #FFFFFF cards ... bounded by an explicit 1px outline of #E2E8F0».
+        // "Level 1: Pure #FFFFFF cards ... bounded by an explicit 1px outline of #E2E8F0".
         Card = d.Card with
         {
             OutlinedBg = Plane,
@@ -177,23 +175,23 @@ public static class AlvaTheme
 
         Alert = d.Alert with { Radius = Radius },
 
-        // «Tree Indentation: 16px per hierarchy level»; пунктирная направляющая — в alva.css.
+        // "Tree Indentation: 16px per hierarchy level"; the dashed guide is in alva.css.
         Tree = d.Tree with { Indent = "16px" },
     };
 
-    /// <summary>Единый радиус дизайна для кнопок, полей, карточек и бейджей.</summary>
+    /// <summary>The design's single radius for buttons, fields, cards and badges.</summary>
     private const string Radius = "6px";
 
-    // Цвета плоскостей и рамок — роли палитры и переменные темы (alva.css), а не hex: так у каждого режима
-    // свои значения, а светлый совпадает с дизайном (#FFFFFF, #CBD5E1, #E2E8F0).
+    // Plane and border colors are palette roles and theme variables (alva.css), not hex: that way each mode has
+    // its own values, and the light one matches the design (#FFFFFF, #CBD5E1, #E2E8F0).
 
-    /// <summary>Плоскость шапки, меню и карточек: белая в светлой схеме, самая тёмная в тёмной.</summary>
+    /// <summary>The plane of the app bar, menu and cards: white in the light scheme, darkest in the dark one.</summary>
     private const string Plane = "var(--flare-color-surface-container-lowest)";
 
-    /// <summary>Рамка полей и контурных кнопок.</summary>
+    /// <summary>The border of fields and outlined buttons.</summary>
     private const string BorderStrong = "var(--alva-border-strong)";
 
-    /// <summary>Одна ступень шкалы: гарнитура, насыщенность, размер, интерлиньяж, трекинг.</summary>
+    /// <summary>One step of the scale: typeface, weight, size, line height and letter spacing.</summary>
     private static TypeStyle Type(string weight, string size, string lineHeight, string spacing) => new()
     {
         FontFamily = UiFont,

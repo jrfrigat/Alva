@@ -8,9 +8,9 @@ using YandexTracker.Models.Users;
 namespace Alva.Integrations.YandexTracker;
 
 /// <summary>
-/// Модуль Яндекс Трекера: задачи очередей (или собственного запроса) со статусом, приоритетом, оценками, датами, родителем,
-/// исполнителем и связями «зависит от». Клиент API — отдельная библиотека YandexTracker, модуль только переводит её
-/// модели в слова Alva.
+/// The Yandex Tracker module: queue tasks (or a custom query) with status, priority, estimates, dates, parent,
+/// assignee and "depends on" links. The API client is a separate YandexTracker library; the module only translates its
+/// models into Alva terms.
 /// </summary>
 public sealed class YandexTrackerModule : ITaskSourceModule
 {
@@ -26,14 +26,14 @@ public sealed class YandexTrackerModule : ITaskSourceModule
     public const string StatusMapKey = "statusMap";
     public const string ReadLinksKey = "readLinks";
 
-    // Один HttpClient на модуль: соединения переиспользуются между подключениями, а время жизни пула не даёт
-    // застрять на устаревшем DNS.
+    // One HttpClient per module: HTTP connections are reused across integration connections, and the pool lifetime prevents
+    // getting stuck on stale DNS.
     private static readonly HttpClient SharedHttp = new(new SocketsHttpHandler { PooledConnectionLifetime = TimeSpan.FromMinutes(5) });
     private readonly HttpClient _http;
 
     public YandexTrackerModule() : this(SharedHttp) { }
 
-    /// <summary>Модуль поверх заданного HttpClient — для тестов и особых прокси.</summary>
+    /// <summary>The module on top of a given HttpClient - for tests and special proxies.</summary>
     public YandexTrackerModule(HttpClient http) => _http = http;
 
     public string Id => ModuleId;
@@ -88,8 +88,8 @@ public sealed class YandexTrackerModule : ITaskSourceModule
     internal sealed record SourceSettings(string[] Queues, string? Query, string WebUrl, IReadOnlyDictionary<string, ExternalTaskStatus> StatusMap, bool ReadLinks)
     {
         /// <summary>
-        /// Запрос на языке Трекера. Свой запрос важнее очередей; инкремент добавляется условием на дату изменения с запасом
-        /// в сутки — точность до дня надёжнее, а лишнее ядро всё равно обновит без дублей.
+        /// A query in Tracker's language. A custom query takes precedence over queues; the incremental part is added as a condition on the update date with a margin
+        /// of one day - day precision is more reliable, and the core will update the extra anyway without duplicates.
         /// </summary>
         public string Build(DateTimeOffset? changedSince)
         {
@@ -126,8 +126,8 @@ public sealed class YandexTrackerModule : ITaskSourceModule
             }
         }
 
-        // Email исполнителя: в задаче только ссылка на пользователя, поэтому каждый встретившийся читается один раз.
-        // Не прочитался — задача приходит без email, а не обрывает всю синхронизацию.
+        // Assignee email: the issue contains only a user reference, so each one encountered is read once.
+        // If it cannot be read, the task comes without an email instead of breaking the whole synchronization.
         private async Task<User?> User(string uid, CancellationToken ct)
         {
             if (_users.TryGetValue(uid, out var cached)) return cached;
@@ -144,10 +144,10 @@ public sealed class YandexTrackerModule : ITaskSourceModule
         }
     }
 
-    /// <summary>Ошибка Трекера словами, которые подскажут, что исправить в подключении.</summary>
+    /// <summary>A Tracker error in words that suggest what to fix in the connection.</summary>
     internal static IntegrationException Explain(YandexTrackerApiException e)
     {
-        // Свои слова Трекера добавляются, только если он их прислал: иначе текст повторил бы код ответа дважды.
+        // Tracker's own words are added only if it sent them: otherwise the text would repeat the response code twice.
         var details = e.ErrorMessages.Count > 0 ? " " + string.Join(" ", e.ErrorMessages) : "";
         return e.StatusCode switch
         {
@@ -161,12 +161,12 @@ public sealed class YandexTrackerModule : ITaskSourceModule
 
 public static class YandexTrackerRegistration
 {
-    /// <summary>Подключает модуль Яндекс Трекера.</summary>
+    /// <summary>Registers the Yandex Tracker module.</summary>
     public static IServiceCollection AddYandexTrackerModule(this IServiceCollection services) =>
         services.AddTaskSourceModule(new YandexTrackerModule());
 }
 
-/// <summary>Перевод задачи Трекера в слова Alva.</summary>
+/// <summary>Conversion of a Tracker issue into Alva terms.</summary>
 internal static class YandexTrackerMapping
 {
     private const int DescriptionLimit = 10000;
@@ -176,7 +176,7 @@ internal static class YandexTrackerMapping
     private static readonly HashSet<string> ActiveStatuses = new(["inProgress", "inReview", "review", "testing", "needInfo"], StringComparer.OrdinalIgnoreCase);
     private static readonly HashSet<string> BacklogStatuses = new(["open", "new", "backlog"], StringComparer.OrdinalIgnoreCase);
 
-    /// <summary>«testing=InProgress, ready=Planned» → словарь; неизвестный статус Alva — ошибка с его названием.</summary>
+    /// <summary>"testing=InProgress, ready=Planned" -> a dictionary; an unknown Alva status is an error naming it.</summary>
     public static IReadOnlyDictionary<string, ExternalTaskStatus> ParseStatusMap(string? text)
     {
         var map = new Dictionary<string, ExternalTaskStatus>(StringComparer.OrdinalIgnoreCase);
@@ -211,8 +211,8 @@ internal static class YandexTrackerMapping
     };
 
     /// <summary>
-    /// Связи «зависит от» в виде пар (предшественник, последователь). Трекер отдаёт связь с обеих задач: у зависящей —
-    /// outward, у той, от которой зависят, — inward. Обе стороны дают одну и ту же пару, поэтому цикла не возникает.
+    /// "Depends on" links as (predecessor, successor) pairs. Tracker returns a link from both tasks: on the dependent one it is
+    /// outward, on the one others depend on it is inward. Both sides give the same pair, so no cycle arises.
     /// </summary>
     public static IReadOnlyList<ExternalLink> Links(string key, IEnumerable<IssueLink> links) =>
         links.Where(l => string.Equals(l.Type?.Id, "depends", StringComparison.OrdinalIgnoreCase) && l.Object?.Key is { Length: > 0 })

@@ -1,5 +1,5 @@
-@* Календарь сотрудника по макету p15.1: неделя с доступными и занятыми часами по дням, задачи
-   сотрудника, вычеты и предстоящие отсутствия. *@
+@* Employee calendar: a week with available and booked hours by day, the employee's tasks,
+   deductions and upcoming absences. *@
 @inject AlvaSession Session
 <FlarePageHeader Title="@(Person?.Name ?? AlvaStrings.Capacity_Employee)">
     <EyebrowContent>
@@ -151,7 +151,7 @@
 
     private TaskModel[] Mine => _tasks.Where(t => (t.ResolvedPersonId ?? t.AssignmentTargetId) == ActorId && t.Status is not ("Cancelled")).ToArray();
 
-    /// <summary>Окно задачи: её плановые даты, иначе дедлайн.</summary>
+    /// <summary>Task window: its planned dates, otherwise the deadline.</summary>
     private static (DateOnly From, DateOnly To)? Window(TaskModel t)
     {
         var from = t.StartDate ?? t.EndDate ?? t.Deadline;
@@ -170,7 +170,7 @@
             _tasks = await Session.Get<TaskModel[]>(Session.TeamPath("tasks"));
             _sprints = await Session.Get<SprintModel[]>(Session.TeamPath("sprints"));
             _calendar = await Session.Get<CalendarDto>(Session.TeamPath($"actors/{ActorId}/calendar"));
-            // Праздники и встречи подкоманд действуют на сотрудника так же, как в расчёте ёмкости.
+            // Holidays and sub-team meetings affect the employee just as in the capacity calculation.
             var departments = _actors.Where(a => a.Kind == "Department").ToDictionary(a => a.Id, a => a.ParentId);
             if (Person is { } person)
             {

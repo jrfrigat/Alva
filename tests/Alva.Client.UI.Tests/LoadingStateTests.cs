@@ -6,7 +6,7 @@ using Xunit;
 
 namespace Alva.Client.UI.Tests;
 
-/// <summary>До ответа — скелетон, а не нули и «пусто»; пустая команда получает первый запуск.</summary>
+/// <summary>Before the response there is a skeleton, not zeros and an empty state; an empty team gets the first run.</summary>
 public sealed class LoadingStateTests : UiTestBase
 {
     public LoadingStateTests()

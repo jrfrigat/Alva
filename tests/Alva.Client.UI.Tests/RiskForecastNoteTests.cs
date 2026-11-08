@@ -6,7 +6,7 @@ using Xunit;
 
 namespace Alva.Client.UI.Tests;
 
-/// <summary>Прогноз срока показан вместе с допущениями, на которых он построен.</summary>
+/// <summary>The deadline forecast is shown together with the assumptions it is built on.</summary>
 public sealed class RiskForecastNoteTests : UiTestBase
 {
     [Fact]

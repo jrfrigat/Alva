@@ -7,7 +7,7 @@ using Xunit;
 
 namespace Alva.Client.UI.Tests;
 
-/// <summary>Карточка задачи: риск с действиями, зависимости, снятие назначения и закреплённые действия.</summary>
+/// <summary>Task card: risk with actions, dependencies, unassignment and pinned actions.</summary>
 public sealed class TaskDetailsCardTests : UiTestBase
 {
     private readonly TaskModel _task = new() { Id = Guid.NewGuid(), Title = "Релиз", Status = "Planned", Version = 1 };

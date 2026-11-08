@@ -1,5 +1,5 @@
-@* Страница задачи по макету p9: крошки, закреплённые действия, риск с причинами, секции формы,
-   зависимости, подзадачи, история и боковая панель назначения исполнителя с загрузкой кандидатов. *@
+@* Task page: breadcrumbs, pinned actions, risk with reasons, form sections,
+   dependencies, subtasks, history and a side panel for assigning an assignee with candidate load. *@
 @implements IDisposable
 @inject AlvaSession Session
 @inject NavigationManager Navigation
@@ -12,7 +12,7 @@
         <DescriptionContent>
             <FlareStack Row Wrap Align="FlareAlignItems.Center" Gap="FlareSpacing.Small">
                 <AlvaStatusChip Tone="AlvaTones.Status(Item.Status)">@Labels.Status(Item.Status)</AlvaStatusChip>
-                @* Задача пришла из внешнего трекера: ключ ведёт туда, где её ведут, а синхронизация обновит её здесь. *@
+                @* The task came from an external tracker: the key leads to where it is managed, and synchronization updates it here. *@
                 @if (Item.ExternalKey is { } externalKey)
                 {
                     @if (Item.ExternalUrl is { Length: > 0 } externalUrl)
@@ -59,7 +59,7 @@
                         <FlareStack Row Wrap Align="FlareAlignItems.Center" Gap="FlareSpacing.Small">
                             @if (reason.Code is ReasonCodes.RiskNoAssignee or ReasonCodes.RiskRequiredPerson)
                             {
-                                @* Ссылка вела бы на эту же карточку: действие — сразу открыть назначение. *@
+                                @* A link would lead to this same card: the action is to open the assignment right away. *@
                                 <FlareText Typo="TypographyScale.BodySmall">@ReasonText.Describe(reason)</FlareText>
                                 <FlareButton Variant="ButtonVariant.Text" Size="ButtonSize.Sm" OnClick="OpenAssign">@(AlvaStrings.Common_AssignAnAssignee)</FlareButton>
                             }
@@ -326,19 +326,19 @@
 </FlareDialog>
 
 @code {
-    /// <summary>Открытая задача.</summary>
+    /// <summary>Open task.</summary>
     [Parameter, EditorRequired] public TaskModel Item { get; set; } = default!;
 
-    /// <summary>Уровень заголовка карточки: 1 на странице, 2 в панели поверх списка.</summary>
+    /// <summary>Card heading level: 1 on the page, 2 in a panel over the list.</summary>
     [Parameter] public int HeadingLevel { get; set; } = 1;
 
-    /// <summary>Все задачи команды: из них берутся подзадачи и родитель.</summary>
+    /// <summary>All team tasks: subtasks and the parent are taken from them.</summary>
     [Parameter] public TaskModel[] Tasks { get; set; } = [];
     [Parameter] public ProjectModel[] Projects { get; set; } = [];
     [Parameter] public SprintModel[] Sprints { get; set; } = [];
     [Parameter] public ActorModel[] Actors { get; set; } = [];
 
-    /// <summary>Вызывается после изменения задач: страница перечитывает их.</summary>
+    /// <summary>Called after tasks change: the page reloads them.</summary>
     [Parameter] public EventCallback Changed { get; set; }
 
     private static readonly string[] Statuses = ["Backlog", "Planned", "InProgress", "Done", "Cancelled"];
@@ -378,8 +378,8 @@
         }
     }
 
-    /// <summary>Полоса у заголовка: уровень риска с сервера, а без него — просрочка crimson, нет исполнителя amber,
-    /// иначе sapphire.</summary>
+    /// <summary>Bar next to the heading: risk level from the server, and without it - overdue crimson, no assignee amber,
+    /// otherwise sapphire.</summary>
     private AlvaTone RiskTone =>
         Item.Status is "Done" or "Cancelled" ? AlvaTone.Ok
         : _risk is not null ? AlvaTones.Severity(_risk.Severity)
@@ -387,7 +387,7 @@
         : Item.AssignmentTargetId is null ? AlvaTone.Warning
         : AlvaTone.Info;
 
-    /// <summary>Подтверждение потери правок; приходит от FlareConfirmDialogProvider в MainLayout.</summary>
+    /// <summary>Confirmation of losing edits; comes from FlareConfirmDialogProvider in MainLayout.</summary>
     [CascadingParameter] public FlareConfirmDialogProvider? Confirm { get; set; }
 
     private bool _leaving;
@@ -395,7 +395,7 @@
     protected override void OnInitialized() => _draft = Drafts.Track(() => Dirty);
     public void Dispose() => _draft?.Dispose();
 
-    // Карточка сама принимает фокус при первом появлении: после перехода по ссылке человек не остаётся на body.
+    // The card itself takes focus on its first appearance: after following a link the person is not left on body.
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (!firstRender) return;
@@ -403,19 +403,19 @@
         catch (JSDisconnectedException) { }
     }
 
-    // Черновик уступает свежим данным после конфликта версий: иначе сохранение уходило бы со старой версией.
+    // The draft yields to fresh data after a version conflict: otherwise saving would go out with the old version.
     private bool _adoptFresh;
 
-    /// <summary>Черновик расходится с задачей: уход со страницы или перечитывание её потеряли бы правки.</summary>
-    /// <summary>Есть ли в черновике несохранённые правки: страница по этому признаку решает, можно ли уйти по
-    /// Esc, не теряя работу.</summary>
+    /// <summary>The draft diverges from the task: leaving the page or reloading it would lose the edits.</summary>
+    /// <summary>Whether the draft has unsaved edits: by this flag the page decides whether it can leave via
+    /// Esc without losing work.</summary>
     public bool Dirty => _model.Id == Item.Id && (_model.Title != Item.Title || _model.Description != Item.Description
         || _model.Status != Item.Status || _model.ProjectId != Item.ProjectId || _model.ParentId != Item.ParentId
         || _model.RemainingHours != Item.RemainingHours || _model.EstimateHours != Item.EstimateHours || _model.Deadline != Item.Deadline
         || _model.StartDate != Item.StartDate || _model.EndDate != Item.EndDate || _model.Priority != Item.Priority
         || _model.DatesFixed != Item.DatesFixed || _model.DailyHoursLimit != Item.DailyHoursLimit || !_model.RequiredSkillIds.SequenceEqual(Item.RequiredSkillIds));
 
-    // Ссылки, меню и Back/Forward: несохранённые правки уходят только после явного согласия.
+    // Links, menu and Back/Forward: unsaved edits leave only after explicit consent.
     private async Task ConfirmLeave(LocationChangingContext context)
     {
         if (_leaving || !Dirty || Confirm is null) return;
@@ -428,12 +428,12 @@
     {
         if (_model.Id != Item.Id) _saved = false;
         if (_model.Id == Item.Id && _model.Version == Item.Version) return;
-        // Риск и связи читаются для каждой новой версии задачи, даже когда черновик ниже остаётся нетронутым.
+        // Risk and links are read for every new task version, even when the draft below remains untouched.
         if (_linksFor != (Item.Id, Item.Version)) await LoadLinks();
-        // Задачу перечитали (подзадача, назначение, чужая правка), а черновик ещё не сохранён — он остаётся;
-        // сохранение уйдёт со старой версией, и сервер сообщит о конфликте вместо тихой потери правок.
-        // После конфликта черновик, наоборот, уступает свежим данным (_adoptFresh): сохранять поверх
-        // устаревшей версии бессмысленно, а человеку нужно видеть актуальное состояние.
+        // The task was reloaded (subtask, assignment, someone else's edit) while the draft is not saved yet - it stays;
+        // saving will go out with the old version, and the server reports a conflict instead of silently losing edits.
+        // After a conflict the draft, conversely, yields to fresh data (_adoptFresh): saving over a stale
+        // version is pointless, and the person needs to see the current state.
         if (Dirty && !_adoptFresh) return;
         _adoptFresh = false;
         _model = Fresh();
@@ -444,20 +444,20 @@
 
     private static string Code(TaskModel task) => AlvaFormat.Code(task.Id);
 
-    /// <summary>Подсказка под переключателем: почему он недоступен или что включает.</summary>
+    /// <summary>Hint under the toggle: why it is unavailable or what it enables.</summary>
     private string FixedHint => _model.StartDate is null || _model.EndDate is null
         ? AlvaStrings.Task_SetBothStartAndFinishFirstThenTheDatesCanBeFixed
         : _model.DatesFixed
             ? AlvaStrings.Task_DatesAreFixedTheTaskCannotBeMovedManuallyOrByAutoBalance
             : AlvaStrings.Task_TurnOnToForbidMovingTheTaskOrChangingItsDates;
 
-    /// <summary>Копия задачи из параметра: черновик карточки — отдельный объект, поэтому правки не трогают
-    /// данные страницы, пока их не сохранили.</summary>
+    /// <summary>Copy of the task from the parameter: the card draft is a separate object, so edits do not touch
+    /// the page data until they are saved.</summary>
     private TaskModel Fresh() => System.Text.Json.JsonSerializer.Deserialize<TaskModel>(System.Text.Json.JsonSerializer.Serialize(Item))!;
     private string ProjectName(Guid? id) => Projects.FirstOrDefault(x => x.Id == id)?.Name ?? AlvaStrings.Sprint_Ongoing;
     private string SprintName(Guid? id) => Sprints.FirstOrDefault(x => x.Id == id)?.Name ?? AlvaStrings.Common_NoSprint;
     private string TaskName(Guid? id) => Tasks.FirstOrDefault(x => x.Id == id)?.Title ?? AlvaStrings.Common_RootTask;
-    /// <summary>Название связанной задачи; архивная или чужая задача не выдаётся за «корневую».</summary>
+    /// <summary>Title of the linked task; an archived or foreign task is not presented as the root task.</summary>
     private string LinkTitle(Guid id) => Tasks.FirstOrDefault(x => x.Id == id)?.Title ?? AlvaStrings.Task_TaskUnavailable;
     private string ActorName(Guid? id) => Actors.FirstOrDefault(x => x.Id == id)?.Name ?? AlvaStrings.Common_UnassignedTask;
     private string SkillName(Guid id) => Actors.FirstOrDefault(x => x.Id == id)?.Name ?? "";
@@ -494,12 +494,12 @@
     };
     private static string DirectionLabel(bool incoming) => incoming ? AlvaStrings.Task_PredecessorThisTaskWaitsForIt : AlvaStrings.Task_SuccessorWaitsForThisTask;
 
-    /// <summary>Задачи, с которыми ещё можно связать эту: не она сама и не уже связанные.</summary>
+    /// <summary>Tasks this one can still be linked to: not itself and not already linked.</summary>
     private IEnumerable<Guid?> LinkCandidates => Tasks
         .Where(t => t.Id != Item.Id && !_dependencies.Any(d => d.PredecessorId == t.Id || d.SuccessorId == t.Id))
         .Select(t => (Guid?)t.Id);
 
-    /// <summary>Риск задачи и её связи. Ошибка остаётся в блоке риска и не мешает редактировать форму.</summary>
+    /// <summary>Task risk and its links. An error stays in the risk block and does not prevent editing the form.</summary>
     private async Task LoadLinks()
     {
         _linksFor = (Item.Id, Item.Version);
@@ -545,7 +545,7 @@
         });
     }
 
-    /// <summary>Кандидаты одного вида. У людей — загрузка за окно спринта (или 14 дней).</summary>
+    /// <summary>Candidates of one kind. For people - load over the sprint window (or 14 days).</summary>
     private RenderFragment Candidates(string kind) => __builder =>
     {
         var list = Actors.Where(a => a.Kind == kind && (kind != "Person" || InTargetDepartment(a)) && (string.IsNullOrWhiteSpace(_assignSearch) || a.Name.Contains(_assignSearch, StringComparison.OrdinalIgnoreCase)))
@@ -612,7 +612,7 @@
         _assignPerson = Item.ResolvedPersonId;
         _assignTab = Math.Max(0, Array.IndexOf(Kinds, Actors.FirstOrDefault(a => a.Id == Item.AssignmentTargetId)?.Kind ?? "Person"));
         _assignOpen = true;
-        // Загрузка читается при каждом открытии: за время работы с карточкой назначения команды меняются.
+        // Load is read on every open: while working with the card, team assignments change.
         var sprint = Sprints.FirstOrDefault(s => Item.SprintIds.Contains(s.Id));
         var from = sprint?.StartDate ?? DateOnly.FromDateTime(DateTime.Today);
         var to = sprint?.EndDate ?? from.AddDays(13);
@@ -623,8 +623,8 @@
         });
     }
 
-    /// <summary>Панель закрылась любым способом — фокус возвращается на «Назначить исполнителя» в панели действий:
-    /// она закреплена и всегда на экране, даже если панель открыли из блока риска.</summary>
+    /// <summary>After the panel closes, focus returns to Assign assignee in the actions panel:
+    /// it is pinned and always on screen, even if the panel was opened from the risk block.</summary>
     private async Task AssignToggled()
     {
         if (!_assignOpen && _assignButton is not null) await _assignButton.FocusAsync();
@@ -705,8 +705,8 @@
     }
 
     /// <summary>
-    /// Подзадача наследует проект родителя и попадает в бэклог (без дат); порядок — в конец списка. Пока запрос идёт,
-    /// повторный Enter или клик ничего не отправляет; при ошибке введённое название остаётся для повтора.
+    /// A subtask inherits the parent's project and lands in the backlog (without dates); its order is at the end of the list. While the request
+    /// is running, a repeated Enter or click sends nothing; on error the entered title remains for retry.
     /// </summary>
     private async Task QuickAdd()
     {
@@ -747,9 +747,9 @@
         try { await action(); }
         catch (HttpRequestException e) when (e.StatusCode == System.Net.HttpStatusCode.Conflict)
         {
-            // Задачу изменили между чтением и сохранением: сервер отверг устаревшую версию. Говорим словами,
-            // что правки не сохранены, и показываем актуальное состояние: без этого человек сохранял бы
-            // поверх устаревшей версии снова и снова, видя только код ответа.
+            // The task was changed between reading and saving: the server rejected the stale version. Say in words
+            // that the edits were not saved and show the current state: without this the person would save
+            // over the stale version again and again, seeing only the response code.
             _error = AlvaStrings.Task_SomeoneElseChangedThisTaskSoYourEditsWereNotSavedTheLatestDataHasBeenRel_249809;
             _adoptFresh = true;
             if (Changed.HasDelegate) await Changed.InvokeAsync();

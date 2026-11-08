@@ -16,7 +16,7 @@ namespace Alva.Infrastructure.Migrations
                 type: "integer",
                 nullable: true);
 
-            // Существующие задачи получают Normal (1), а не Low (0): приоритет им ещё никто не ставил.
+            // Existing tasks get Normal (1), not Low (0): nobody has set a priority for them yet.
             migrationBuilder.AddColumn<int>(
                 name: "Priority",
                 table: "Tasks",

@@ -5,7 +5,7 @@ using Xunit;
 
 namespace Alva.Client.UI.Tests;
 
-/// <summary>Проект нескольких команд показывает общий прогресс по всем доступным командам, а вклад текущей — отдельно.</summary>
+/// <summary>A project spanning several teams shows overall progress across all available teams, and the current team's contribution separately.</summary>
 public sealed class ProjectSummaryTests : UiTestBase
 {
     private static readonly Guid OtherTeam = Guid.NewGuid();

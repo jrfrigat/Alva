@@ -3,7 +3,7 @@ using Xunit;
 
 namespace Alva.Data.Tests;
 
-/// <summary>Правило «родитель охватывает детей».</summary>
+/// <summary>The "parent spans its children" rule.</summary>
 public sealed class TaskWindowsTests
 {
     private static readonly Guid Root = Guid.NewGuid(), Parent = Guid.NewGuid(), Child = Guid.NewGuid(), Sibling = Guid.NewGuid();

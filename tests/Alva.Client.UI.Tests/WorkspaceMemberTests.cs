@@ -10,7 +10,7 @@ using Xunit;
 
 namespace Alva.Client.UI.Tests;
 
-/// <summary>Текущий контекст виден, а участника можно изменить или убрать с подтверждением.</summary>
+/// <summary>The current context is visible, and a member can be changed or removed with confirmation.</summary>
 public sealed class WorkspaceMemberTests : UiTestBase
 {
     private readonly Guid _workspace = Guid.NewGuid();

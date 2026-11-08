@@ -7,7 +7,7 @@ using Xunit;
 
 namespace Alva.Client.UI.Tests;
 
-/// <summary>Пока подзадача создаётся, повторный Enter или клик не создают её второй раз.</summary>
+/// <summary>While a subtask is being created, a repeated Enter or click does not create it a second time.</summary>
 public sealed class QuickAddTests : UiTestBase
 {
     private readonly TaskModel _task = new() { Id = Guid.NewGuid(), Title = "Релиз", Status = "Planned", Version = 1 };

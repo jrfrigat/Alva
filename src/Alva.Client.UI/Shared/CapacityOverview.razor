@@ -1,5 +1,5 @@
-@* Обзор ёмкости по макету p14: KPI фонда, матрица «человек × период» с тепловой шкалой,
-   вакантные роли с дефицитом и прогноз баланса по периодам. *@
+@* Capacity overview: fund KPIs, a "person x period" matrix with a heat scale,
+   vacant roles with a deficit and a balance forecast by period. *@
 @inject AlvaSession Session
 <AlvaPageHeader Category="@(AlvaStrings.Capacity_ResourcesCapacity)" Title="@(AlvaStrings.Capacity_TeamCapacityOverview)" Description="@($"{AlvaStrings.Capacity_CombinedWorkFundBalanceSubTeamUtilizationAndResourceDeficitsOverTheHoriz_d6d9ad} {Horizon}.")">
     <Actions>
@@ -164,7 +164,7 @@ else
     private ActorModel[] People => _actors.Where(a => a.Kind == "Person" && _rows.Any(r => r.ActorId == a.Id)).ToArray();
     private ActorModel[] VisiblePeople => People.Where(p => _department is null || GroupOf(p) == _department).ToArray();
 
-    /// <summary>Роли и подкоманды, на которые назначена работа без конкретного человека.</summary>
+    /// <summary>Roles and sub-teams that have work assigned without a specific person.</summary>
     private ActorModel[] Vacancies => _actors
         .Where(a => a.Kind != "Person" && (_department is null || GroupOfRole(a) == _department) && Demand(a) > 0).ToArray();
 
@@ -184,14 +184,14 @@ else
     private decimal Available(Guid id) => _periods.Sum(p => Cell(id, p).Available);
     private decimal Allocated(Guid id) => _periods.Sum(p => Cell(id, p).Allocated);
 
-    /// <summary>Часы задач на роль или подкоманду без человека в периоде — из capacity/demand.</summary>
+    /// <summary>Task hours for a skill or sub-team without a person in the period - from capacity/demand.</summary>
     private decimal Demand(ActorModel role, Period period) => _demand.Where(d => d.TargetId == role.Id && d.Date >= period.From && d.Date <= period.To).Sum(d => d.Hours);
 
     private decimal Demand(ActorModel role) => _periods.Sum(p => Demand(role, p));
 
     private decimal Fund => VisiblePeople.Sum(p => Available(p.Id));
     private decimal Planned => VisiblePeople.Sum(p => Allocated(p.Id));
-    // Дефицит людей — превышения по дням: резерв одного дня не покрывает перегруз другого.
+    // People deficit - per-day excesses: a reserve on one day does not cover an overload on another.
     private decimal Overload(Guid id, Period period) => CapacityMath.Overload(_rows.Where(r => r.ActorId == id && r.Date >= period.From && r.Date <= period.To));
     private decimal Overload(Guid id) => _periods.Sum(p => Overload(id, p));
     private decimal Deficit => VisiblePeople.Sum(p => Overload(p.Id)) + Vacancies.Sum(Demand);
@@ -226,7 +226,7 @@ else
         new ChartSeries(AlvaStrings.Capacity_Deficit, _periods.Select(p => (double)PeriodDeficit(p)).ToArray(), "var(--alva-chart-deficit)"),
     ], _periods.Select(p => p.Title).ToArray());
 
-    /// <summary>Видимый текстовый вывод: те же значения, что в графике, без опоры только на цвет и форму.</summary>
+    /// <summary>Visible text output: the same values as in the chart, without relying on color and shape alone.</summary>
     private string ForecastSummary
     {
         get

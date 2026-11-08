@@ -17,7 +17,7 @@ using System.Text.Json.Serialization;
 
 namespace Alva.Data.Tests;
 
-/// <summary>API на SQLite в памяти с одним пользователем, участником одной команды: для проверок правил через HTTP.</summary>
+/// <summary>API on in-memory SQLite with one user who is a member of one team: for checking rules over HTTP.</summary>
 public sealed class ApiServer(WebApplication app, SqliteConnection connection, Guid teamId) : IAsyncDisposable
 {
     public Guid TeamId => teamId;

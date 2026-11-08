@@ -4,8 +4,8 @@ using Microsoft.EntityFrameworkCore;
 namespace Alva.Api;
 
 /// <summary>
-/// Блокировка родительской строки на время изменения справочника, чтобы параллельные правки выстраивались в очередь.
-/// В SQLite нет FOR UPDATE: там пустая запись в той же транзакции сразу берёт write-lock базы и даёт тот же порядок.
+/// Locks the parent row while the reference data is being changed so that concurrent edits are queued.
+/// SQLite has no FOR UPDATE: there, a no-op write in the same transaction immediately takes the database write lock and gives the same ordering.
 /// </summary>
 public static class DbLocks
 {

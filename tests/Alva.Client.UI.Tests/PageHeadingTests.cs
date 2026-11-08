@@ -8,7 +8,7 @@ using Xunit;
 
 namespace Alva.Client.UI.Tests;
 
-/// <summary>У страницы планирования есть один заголовок первого уровня с именем спринта.</summary>
+/// <summary>The planning page has one level-one heading with the sprint name.</summary>
 public sealed class PageHeadingTests : UiTestBase
 {
     private readonly SprintModel _sprint = new()

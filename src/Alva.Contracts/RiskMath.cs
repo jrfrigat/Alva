@@ -3,8 +3,8 @@ using System.Globalization;
 namespace Alva.Contracts;
 
 /// <summary>
-/// Открытая задача для оценки рисков. Окно уже с датами спринта; <paramref name="PersonId"/> — выбранный
-/// человек, <paramref name="TargetName"/> — роль или подкоманда, если человек ещё не выбран.
+/// An open task for risk assessment. The window already includes the sprint dates; <paramref name="PersonId"/> is the selected
+/// person, <paramref name="TargetName"/> is the skill or department if a person has not been selected yet.
 /// </summary>
 public record RiskTask(Guid Id, Guid? ParentId, string Title, decimal? EstimateHours, DateOnly? Start, DateOnly? End, DateOnly? Deadline,
     Guid? PersonId, string? PersonName, string? TargetName, string Status = "Planned", decimal? RemainingHours = null,
@@ -13,8 +13,8 @@ public record RiskTask(Guid Id, Guid? ParentId, string Title, decimal? EstimateH
 public record RiskDependency(Guid PredecessorId, Guid SuccessorId, string Kind = "FS", int LagDays = 0);
 
 /// <summary>
-/// Риски сдвига сроков и их причины, общие для API и demo. Перегрузка и доступность считаются теми же
-/// правилами, что и ёмкость (<see cref="CapacityMath"/>), поэтому риски совпадают с экранами ёмкости.
+/// Deadline-slip risks and their reasons, shared by the API and the demo. Overload and availability are calculated by the same
+/// rules as capacity (<see cref="CapacityMath"/>), so the risks agree with the capacity screens.
 /// </summary>
 public static class RiskMath
 {
@@ -34,7 +34,7 @@ public static class RiskMath
         var calendars = new Dictionary<Guid, CalendarDto>();
         CalendarDto CalendarOf(Guid id) => calendars.TryGetValue(id, out var calendar) ? calendar : calendars[id] = calendarOf(id);
 
-        // Нагрузка людей по дням — та же, что в ёмкости: собственные оценки задач по их окнам.
+        // People's load by day is the same as in capacity: the tasks' own estimates over their windows.
         var load = new Dictionary<(Guid, DateOnly), decimal>();
         foreach (var task in tasks.Where(t => t.Status is not ("Done" or "Cancelled")))
             if (task.PersonId is { } person && CapacityMath.Window(task.Start, task.End, task.Deadline) is { } window)
@@ -82,7 +82,7 @@ public static class RiskMath
                         break;
                     }
             }
-            // Лимит в день растягивает работу за окончание окна: задача закончится позже, чем стоит в плане.
+            // The daily limit stretches the work past the window end: the task will finish later than the plan says.
             if (task.DailyHoursLimit is { } dailyLimit && window is { } planned && !children[task.Id].Any()
                 && CapacityMath.Finish(calendar, task.EstimateHours ?? 0m, planned.Start, planned.End, dailyLimit) is { } finish && finish > planned.End)
                 reasons.Add(new ReasonDto(ReasonCodes.RiskDailyLimit,
@@ -102,9 +102,9 @@ public static class RiskMath
     }
 
     /// <summary>
-    /// День, когда оценка наберётся доступными часами графика, начиная с <paramref name="start"/>; null — не набирается за два года.
-    /// Допущения: человек занят только этой задачей, предшественники не задерживают её начало, сделанная часть не вычитается.
-    /// Интерфейс показывает их рядом с прогнозом.
+    /// The day when the available calendar hours add up to the estimate, starting from <paramref name="start"/>; null if they do not add up within two years.
+    /// Assumptions: the person is occupied only with this task, predecessors do not delay its start, and the completed part is not subtracted.
+    /// The UI shows them next to the forecast.
     /// </summary>
     public static DateOnly? Forecast(CalendarDto calendar, decimal estimate, DateOnly start)
     {
@@ -115,7 +115,7 @@ public static class RiskMath
         return null;
     }
 
-    /// <summary>Первое отсутствие в периоде: исключение графика, дающее меньше часов, чем обычный день.</summary>
+    /// <summary>The first absence in the period: a calendar exception that gives fewer hours than a normal day.</summary>
     private static CalendarExceptionDto? Absence(CalendarDto calendar, DateOnly from, DateOnly to) =>
         calendar.Exceptions.Where(x => x.From <= to && x.To >= from).OrderBy(x => x.From).FirstOrDefault(x =>
         {

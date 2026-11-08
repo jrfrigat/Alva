@@ -7,14 +7,14 @@
 <FlareCard Variant="CardVariant.Outlined"><FlareCardContent><FlareStack Gap="FlareSpacing.Large">
     <FlareText Element="h1" Typo="TypographyScale.HeadlineLarge">@(_register ? AlvaStrings.Auth_CreateAWorkspaceForTheTeam : AlvaStrings.Auth_WelcomeToAlva)</FlareText>
     <FlareText>@(AlvaStrings.Common_PlanSprintsDistributeTheWorkAndSpotOverloadsEarly)</FlareText>
-    @* Общая сводка — для ответов сервера, которые не относятся к одному полю (неверный пароль, сбой). *@
+    @* General summary - for server responses that are not tied to a single field (wrong password, failure). *@
     <PageFeedback Error="@_error" />
-    @* novalidate: всплывающие подсказки браузера не связаны с полями и не читаются вместе с ними — проверяет сама форма. *@
+    @* novalidate: browser popups are not associated with the fields and are not read together with them - the form validates itself. *@
     <EditForm EditContext="_editContext" OnSubmit="Submit" novalidate>
-    @* Словарь «поле → id контрола» нужен FlareValidationSummary, чтобы связать пункт сводки с полем. *@
+    @* The "field -> control id" dictionary is needed by FlareValidationSummary to link a summary item to a field. *@
     <CascadingValue Value="_fieldRegistry" IsFixed="true">
     <FlareStack Gap="FlareSpacing.Medium">
-        @* Сводка Flare сама получает фокус после неудачной отправки и ведёт к своим полям. *@
+        @* The Flare summary itself receives focus after a failed submission and leads to its fields. *@
         <FlareValidationSummary />
         @if (_register)
         {
@@ -36,7 +36,7 @@
 </FlareStack></FlareCardContent></FlareCard>
 </FlareContainer>
 @code {
-    // Пределы совпадают с проверками API регистрации (AuthEndpoints).
+    // The limits match the registration API checks (AuthEndpoints).
     private const int MinPassword = 12, MaxPassword = 128;
 
     private enum Field { Name, Workspace, Email, Password, PasswordConfirm }
@@ -52,7 +52,7 @@
 
     private string? ErrorOf(Field field) => _errors.GetValueOrDefault(field);
 
-    // У входа и регистрации свои адреса: /register открывает форму регистрации.
+    // Sign-in and registration have their own URLs: /register opens the registration form.
     protected override void OnInitialized()
     {
         _editContext = new EditContext(this);
@@ -61,14 +61,14 @@
         _returnUrl = RequestedReturnUrl();
     }
 
-    // Правка поля снимает его ошибку: сообщение больше не описывает то, что введено.
+    // Editing a field clears its error: the message no longer describes what is entered.
     private void Edit(ref string? target, string? value, Field field)
     {
         target = value;
         if (_errors.Remove(field)) SyncMessages();
     }
 
-    // Переключение меняет и адрес: у каждой формы свой URL, который можно сохранить в закладки.
+    // Toggling also changes the URL: each form has its own URL that can be bookmarked.
     private void Toggle()
     {
         _register = !_register;
@@ -78,7 +78,7 @@
         Navigation.NavigateTo(WithReturn(_register ? "register" : "login"));
     }
 
-    /// <summary>Проверки до запроса: неверная форма не уходит на сервер и не тратит лимит попыток входа.</summary>
+    /// <summary>Checks before the request: an invalid form does not reach the server and does not spend the sign-in attempt limit.</summary>
     private void Validate()
     {
         _errors.Clear();
@@ -94,7 +94,7 @@
         SyncMessages();
     }
 
-    // Ошибки полей живут в одном месте: их читают и ErrorText поля, и сводка Flare.
+    // Field errors live in one place: both the field ErrorText and the Flare summary read them.
     private void SyncMessages()
     {
         if (_messages is null || _editContext is null) return;
@@ -118,7 +118,7 @@
         Validate();
         if (_errors.Count > 0)
         {
-            // Запрос валидации поднимает у сводки Flare фокус на себя; поля уже показывают ErrorText.
+            // The validation request moves focus to the Flare summary; the fields already show their ErrorText.
             _editContext?.Validate();
             return;
         }
@@ -126,10 +126,10 @@
         try
         {
             await Session.Authenticate(_register ? "register" : "login", new { email = _email?.Trim(), password = _password, displayName = _displayName, workspaceName = _workspaceName });
-            // Вернувшийся пользователь уже выбрал команду: обзор открывается сразу, без лишнего шага.
+            // A returning user has already chosen a team: the overview opens immediately, without an extra step.
             Navigation.NavigateTo(_returnUrl ?? (Session.TeamId is not null ? "/" : "workspaces"));
         }
-        // Занятая почта — ошибка конкретного поля; неверный вход — своя подсказка, а не «сессия истекла».
+        // A taken email is a specific field error; a wrong sign-in gets its own hint, not "session expired".
         catch (HttpRequestException error) when (_register && error.StatusCode == System.Net.HttpStatusCode.Conflict) { _errors[Field.Email] = AlvaStrings.Auth_AnAccountWithThisEmailAlreadyExists; SyncMessages(); _editContext?.Validate(); }
         catch (HttpRequestException error) when (!_register && error.StatusCode == System.Net.HttpStatusCode.Unauthorized) { _error = AlvaStrings.Auth_WrongEmailOrPasswordOrSignInIsTemporarilyBlocked; }
         catch (HttpRequestException error) when (error.StatusCode == System.Net.HttpStatusCode.Forbidden) { _error = AlvaStrings.Auth_TheServerRejectedTheSignInOrRegistrationRequestContactYourAlvaAdministra_4c9431; }
@@ -137,7 +137,7 @@
         finally { _busy = false; }
     }
 
-    // Возврат только на локальный относительный адрес: чужой URL не должен уводить после входа.
+    // Return only to a local relative address: a foreign URL must not redirect after sign-in.
     private string? RequestedReturnUrl()
     {
         foreach (var part in Navigation.ToAbsoluteUri(Navigation.Uri).Query.TrimStart('?').Split('&', StringSplitOptions.RemoveEmptyEntries))
@@ -150,7 +150,7 @@
         return null;
     }
 
-    // Только адрес того же origin: protocol-relative и внешние ссылки после входа не принимаются.
+    // Only a same-origin address: protocol-relative and external links are not accepted after sign-in.
     private bool IsLocal(string value)
     {
         if (value.Contains('\\') || value.Contains('\r') || value.Contains('\n')) return false;

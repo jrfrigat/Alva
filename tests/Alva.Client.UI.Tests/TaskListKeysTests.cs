@@ -10,9 +10,9 @@ using Xunit;
 
 namespace Alva.Client.UI.Tests;
 
-/// <summary>Клавиатура и возврат в списке задач: строку открывает и клик, и Enter по ссылке в строке (ссылка
-/// доступна с клавиатуры и ведёт на адрес задачи), перед переходом запоминаются фильтры, а Esc в открытой
-/// карточке возвращает к списку — но не выбрасывает несохранённые правки.</summary>
+/// <summary>Keyboard and back navigation in the task list: a row opens both by click and by Enter on the link in
+/// the row (the link is keyboard-accessible and leads to the task URL), filters are saved before navigation, and Esc on
+/// an open card returns to the list - but does not discard unsaved edits.</summary>
 public sealed class TaskListKeysTests : UiTestBase
 {
     private readonly TaskModel _task = new() { Id = Guid.NewGuid(), Title = "Релиз", Status = "Planned" };
@@ -36,8 +36,8 @@ public sealed class TaskListKeysTests : UiTestBase
 
         Row(cut).Click();
 
-        // Ссылка в строке ведёт на адрес задачи, поэтому Enter по ней идёт тем же путём, что клик: страница
-        // сначала запоминает фильтры, а потом уходит на задачу.
+        // The link in the row leads to the task URL, so Enter on it follows the same path as a click: the page
+        // first saves the filters and then navigates to the task.
         Assert.EndsWith($"tasks/{_task.Id}", Navigation.Uri);
     }
 
@@ -60,7 +60,7 @@ public sealed class TaskListKeysTests : UiTestBase
 
         cut.Find(".alva-task-card").KeyDown(new KeyboardEventArgs { Key = "Escape" });
 
-        // Черновик держит карточку: правки уходят только после явного согласия, поэтому ухода не происходит.
+        // The draft holds the card: edits are only sent after explicit confirmation, so no navigation happens.
         Assert.Equal(before, Navigation.Uri);
         Assert.NotEmpty(cut.FindAll(".alva-task-card"));
     }
@@ -72,7 +72,7 @@ public sealed class TaskListKeysTests : UiTestBase
         return cut;
     }
 
-    // Открытая карточка: страница рендерится прямо с адресом задачи, как в приложении после перехода.
+    // Open card: the page renders directly with the task URL, as in the application after navigation.
     private IRenderedComponent<FlareConfirmDialogProvider> Card()
     {
         Navigation.NavigateTo($"/tasks/{_task.Id}");

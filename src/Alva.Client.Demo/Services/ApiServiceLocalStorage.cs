@@ -7,8 +7,8 @@ using Microsoft.JSInterop;
 namespace Alva.Client.Services;
 
 /// <summary>
-/// Demo-реализация: данные живут в localStorage браузера, сеть не используется.
-/// Живёт в проекте <c>Alva.Client.Demo</c> — продовая сборка этот код не содержит.
+/// The demo implementation: data lives in the browser's localStorage, the network is not used.
+/// It lives in the <c>Alva.Client.Demo</c> project - the production build does not contain this code.
 /// </summary>
 public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
 {
@@ -28,7 +28,7 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
     public string TeamName => Teams.FirstOrDefault(t => t.Id == TeamId)?.Name ?? AlvaStrings.Common_ChooseTeam;
     public bool Initialized { get; private set; }
 
-    /// <summary>Разбор JSON/CSV/XLSX и выгрузка живут на сервере; демо хранит данные только в этом браузере.</summary>
+    /// <summary>JSON/CSV/XLSX parsing and export live on the server; the demo stores data only in this browser.</summary>
     public bool SupportsDataTransfer => false;
     public event Action? Changed;
 
@@ -99,13 +99,12 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
         await Task.CompletedTask;
     }
 
-    // Раньше файл читался и молча отбрасывался, а страница сообщала об успешном импорте.
     public Task<DataImportResult> Import(string format, Stream stream) => throw new NotSupportedException(DemoTransferNote);
 
-    /// <summary>Почему в демо нет импорта и экспорта — показывается на странице «Данные» до выбора файла.</summary>
+    /// <summary>Why the demo has no import and export - shown on the Data page before a file is chosen.</summary>
     internal static string DemoTransferNote => AlvaStrings.Data_InTheDemoTheDataLivesOnlyInThisBrowserFileImportAndExportWorkInTheServer_00b40a;
 
-    /// <summary>Почему в демо нет интеграций: токены хранит сервер, а браузер к внешнему трекеру напрямую не пустят.</summary>
+    /// <summary>Why the demo has no integrations: the server keeps the tokens, and the browser is not allowed to talk to an external tracker directly.</summary>
     internal static string DemoIntegrationsNote => AlvaStrings.Integrations_IntegrationsWorkInAlvaWithAServerItKeepsTheTokensAndTalksToTheTrackerIts_391ef1;
 
     public async Task<T> Get<T>(string path)
@@ -161,7 +160,7 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
         return [.. store.Dependencies.Where(d => ids.Contains(d.PredecessorId) && ids.Contains(d.SuccessorId))];
     }
 
-    /// <summary>Новая связь с теми же проверками, что в API: без петель, повторов и чужих задач.</summary>
+    /// <summary>A new link with the same checks as in the API: no loops, duplicates or tasks from another team.</summary>
     private static DependencyDto AddDependency(DemoStore store, object value)
     {
         var request = Read<DependencyRequest>(value);
@@ -177,7 +176,7 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
     private static HistoryDto[] History(DemoStore store, Guid taskId) =>
         store.History.TryGetValue(taskId, out var entries) ? [.. entries] : [];
 
-    /// <summary>Спринты задач по их датам — тем же правилом, что кэш API; спринты команды берутся один раз.</summary>
+    /// <summary>Task sprints by their dates - the same rule as the API cache; the team's sprints are fetched once.</summary>
     private static TaskModel[] WithSprints(DemoStore store, TaskModel[] tasks)
     {
         var sprints = store.Sprints.ToLookup(s => store.SprintTeam.GetValueOrDefault(s.Id));
@@ -186,7 +185,7 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
         return tasks;
     }
 
-    /// <summary>Оценка и срок с подъёмом по дереву, как их отдаёт API.</summary>
+    /// <summary>Estimate and deadline rolled up the tree, as the API returns them.</summary>
     private static TaskModel[] WithRollup(TaskModel[] tasks)
     {
         var children = tasks.Where(t => t.ParentId is not null).ToLookup(t => t.ParentId!.Value);
@@ -205,11 +204,11 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
     private static CalendarDto Calendar(DemoStore store, Guid actorId) =>
         store.Calendars.FirstOrDefault(c => c.ActorId == actorId) ?? CapacityMath.DefaultCalendar(actorId);
 
-    /// <summary>Открытые задачи команды с плановым окном — датами задачи (как в API).</summary>
+    /// <summary>The team's open tasks with a planned window - the task dates (as in the API).</summary>
     private static IEnumerable<(TaskModel Task, DateOnly? Start, DateOnly? End)> OpenTasks(DemoStore store, Guid teamId, bool includeClosed = false) =>
         store.Tasks.Where(t => t.TeamId == teamId && (includeClosed || t.Status is not ("Done" or "Cancelled"))).Select(t => (t, t.StartDate, t.EndDate));
 
-    /// <summary>Открытые задачи с плановыми датами: только они занимают людей; бэклог в ёмкость не входит (как в API).</summary>
+    /// <summary>Open tasks with planned dates: only they occupy people; the backlog does not count toward capacity (as in the API).</summary>
     private static IEnumerable<(TaskModel Task, DateOnly? Start, DateOnly? End)> PlannedTasks(DemoStore store, Guid teamId) =>
         OpenTasks(store, teamId).Where(x => SprintWindows.Planned(x.Start, x.End));
 
@@ -231,11 +230,11 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
         return CapacityMath.Build(people.Select(p => (p.Id, p.Name)), (id, day) => CalendarOf(store, people.First(p => p.Id == id), day), work, from, to);
     }
 
-    /// <summary>Кто делает задачу — тем же правилом, что в API: выбранный человек, иначе цель назначения, если это человек.</summary>
+    /// <summary>Who does the task - the same rule as in the API: the resolved person, otherwise the assignment target if it is a person.</summary>
     private static Guid? PersonOf(DemoStore store, TaskModel task) =>
         task.ResolvedPersonId ?? (store.Actors.FirstOrDefault(a => a.Id == task.AssignmentTargetId) is { Kind: "Person" } target ? target.Id : null);
 
-    /// <summary>Календарь человека вместе с графиками подкоманд, активных в эту дату, и их родителей.</summary>
+    /// <summary>The person's calendar together with the schedules of the sub-teams active on that date and their parents.</summary>
     private static CalendarDto CalendarOf(DemoStore store, ActorModel person, DateOnly day)
     {
         var departments = store.Actors.Where(a => a.Kind == "Department").ToDictionary(a => a.Id, a => a.ParentId);
@@ -247,7 +246,7 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
         return CapacityMath.Combine(Calendar(store, person.Id), shared.Select(id => store.Calendars.FirstOrDefault(c => c.ActorId == id)).OfType<CalendarDto>());
     }
 
-    /// <summary>Риски тем же расчётом, что в API, включая зависимости.</summary>
+    /// <summary>Risks by the same calculation as in the API, including dependencies.</summary>
     private static RiskDto[] Risks(DemoStore store, Guid teamId, DateOnly today)
     {
         var actors = store.Actors.ToDictionary(a => a.Id);
@@ -262,8 +261,8 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
     }
 
     /// <summary>
-    /// Автобаланс спринта той же моделью, что на сервере, но без решателя OR-Tools: в браузере есть только жадный
-    /// поиск, поэтому demo предлагает лишь бережный режим.
+    /// Sprint auto-balance with the same model as on the server but without the OR-Tools solver: the browser only has a greedy
+    /// search, so the demo offers only the gentle mode.
     /// </summary>
     private static BalanceProposalDto Balance(DemoStore store, Guid teamId, Guid sprintId, BalanceRequest request)
     {
@@ -275,7 +274,7 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
         var departments = store.Actors.Where(a => a.Kind == "Department").ToDictionary(a => a.Id, a => a.ParentId);
         Guid[] Closure(ActorModel person) => [.. CapacityMath.DepartmentsWithParents(person.DepartmentIds, id => departments.GetValueOrDefault(id))];
         var persons = people.Select(p => new BalancePersonInput(p.Id, p.Name, Departments: p.DepartmentIds, SkillIds: p.SkillIds, DepartmentClosure: Closure(p))).ToArray();
-        // Готовые задачи тоже нужны как якоря связей; фоном они не станут — Build их исключает.
+        // Completed tasks are also needed as link anchors; they will not become background work - Build excludes them.
         var tasks = OpenTasks(store, teamId, includeClosed: true).Select(x => new BalanceTaskInput(x.Task.Id, x.Task.Title, x.Task.Status, x.Task.ParentId,
             x.Task.EstimateHours, x.Start, x.End, x.Task.Deadline, x.Task.AssignmentTargetId, x.Task.ResolvedPersonId, x.Task.RequiredSkillIds, x.Task.Priority, x.Task.DatesFixed, x.Task.DailyHoursLimit, x.Task.RemainingHours)).ToArray();
         var links = TeamDependencies(store, teamId).Select(d => new BalanceLinkInput(d.PredecessorId, d.SuccessorId, d.Kind, d.LagDays)).ToArray();
@@ -289,7 +288,7 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
     {
         var store = await Load();
         var s = SplitQuery(path).Resource.Split('/', StringSplitOptions.RemoveEmptyEntries);
-        // Автобаланс только считает: хранилище не меняется.
+        // Auto-balance only computes: the store does not change.
         if (s is ["api", "teams", var bt, "sprints", var bs, "balance"]) return (T)(object)Balance(store, Id(bt), Id(bs), Read<BalanceRequest>(value));
         if (s is ["api", "teams", _, "integrations", ..]) throw new NotSupportedException(DemoIntegrationsNote);
         object saved = s switch
@@ -328,7 +327,7 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
                 store.Teams.Add(new TeamDto(Guid.NewGuid(), Id(w), Read<NameRequest>(value).Name, null));
                 break;
             case ["api", "workspaces", _, "members"]:
-                // Как на сервере: та же почта — правка участника, а не второй участник.
+                // As on the server: the same email edits a member instead of adding a second one.
                 var membership = Read<MembershipRequest>(value);
                 var existing = store.Members.FindIndex(m => string.Equals(m.Email, membership.Email.Trim(), StringComparison.OrdinalIgnoreCase));
                 if (existing < 0) store.Members.Add(new MemberDto(Guid.NewGuid(), membership.Email.Trim(), membership.Email.Trim().Split('@')[0], membership.IsOwner, membership.TeamIds));
@@ -486,7 +485,7 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
         actor.ParentId = active.FirstOrDefault() is var first && first != Guid.Empty ? first : null;
     }
 
-    /// <summary>Родитель охватывает детей — то же правило, что в API; версия предков не меняется.</summary>
+    /// <summary>A parent covers its children - the same rule as in the API; the ancestors' version does not change.</summary>
     private static List<(TaskModel Task, DateOnly? Start, DateOnly? End)> KeepParentsAroundChildren(DemoStore store, TaskModel task)
     {
         var dates = store.Tasks.Where(t => t.TeamId == task.TeamId).Select(t => new TaskDates(t.Id, t.ParentId, t.StartDate, t.EndDate, t.DatesFixed)).ToArray();
@@ -509,8 +508,8 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
     }
 
     /// <summary>
-    /// Проверяет фиксацию, рамку родителя и связи по предлагаемым датам — до изменения store, чтобы отказ
-    /// не оставлял демо-данные наполовину изменёнными. Те же правила, что в API.
+    /// Validates the fixed dates, the parent frame and the links against the proposed dates - before changing the store, so a refusal
+    /// does not leave demo data half-changed. The same rules as in the API.
     /// </summary>
     private static void ValidateTaskDates(DemoStore store, TaskModel task, TaskRequest request, bool datesFixed)
     {
@@ -530,7 +529,7 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
             ValidateLinks(store, affected, windows);
     }
 
-    /// <summary>Правка дат не должна ухудшать связи задачи — то же правило, что в API.</summary>
+    /// <summary>A date edit must not worsen the task's links - the same rule as in the API.</summary>
     private static void ValidateLinks(DemoStore store, Guid taskId, IReadOnlyDictionary<Guid, (DateOnly Start, DateOnly End)?> windows)
     {
         var links = store.Dependencies.Where(d => d.PredecessorId == taskId || d.SuccessorId == taskId).ToArray();
@@ -630,7 +629,7 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
         return sprint;
     }
 
-    /// <summary>Смена статуса со снимками, как в API: старт фиксирует обязательство, закрытие — итог.</summary>
+    /// <summary>Status change with snapshots, as in the API: the start records the commitment, the close records the result.</summary>
     private static void SetStatus(DemoStore store, SprintModel sprint, string status)
     {
         var before = sprint.Status;
@@ -645,7 +644,7 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
         if (status == "Completed") sprint.Result = snapshot;
     }
 
-    /// <summary>Закрытие спринта с решениями по остатку — то же правило, что в API: готовые, снимок итога, перенос.</summary>
+    /// <summary>Sprint closing with decisions on remaining work - the same rule as in the API: done, result snapshot, carry-over.</summary>
     private static SprintModel CloseSprint(DemoStore store, Guid teamId, Guid sprintId, object value)
     {
         var request = Read<SprintCloseRequest>(value);
@@ -656,14 +655,14 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
             if (!SprintCarry.Known(item.Action) || !decisions.TryAdd(item.TaskId, item.Action)) throw new InvalidOperationException("Неизвестное или повторное решение по задаче.");
         var open = store.Tasks.Where(t => t.TeamId == teamId && t.Status is not ("Done" or "Cancelled") && SprintWindows.Overlaps(t.StartDate, t.EndDate, sprint.StartDate, sprint.EndDate)).ToList();
         if (open.Any(t => !decisions.ContainsKey(t.Id))) throw new InvalidOperationException("Решите, что делать с каждой незавершённой задачей спринта.");
-        // Перенос в следующий спринт и возврат в пул меняют или очищают даты — фиксированную задачу так нельзя.
+        // Carry-over to the next sprint and return to the pool change or clear the dates - a fixed task cannot be treated this way.
         foreach (var task in open.Where(t => t.DatesFixed && (decisions[t.Id] is SprintCarry.Next or SprintCarry.Backlog)))
             throw new InvalidOperationException($"Даты задачи «{task.Title}» зафиксированы — при закрытии спринта её нельзя перенести в следующий спринт или вернуть в пул. Снимите фиксацию заранее.");
         var next = decisions.ContainsValue(SprintCarry.Next)
             ? store.Sprints.FirstOrDefault(s => s.Id == request.NextSprintId && s.Id != sprintId && s.Status != "Completed" && store.SprintTeam.GetValueOrDefault(s.Id) == teamId)
               ?? throw new InvalidOperationException("Выберите незакрытый спринт команды для переноса.")
             : null;
-        // Итоговые окна после решений: конфликт фиксированного родителя ловим до изменения store.
+        // Final windows after the decisions: a fixed parent conflict is caught before the store changes.
         var proposed = store.Tasks.Select(t =>
         {
             DateOnly? start = t.StartDate, end = t.EndDate;
@@ -708,21 +707,21 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
     }
 
 
-    /// <summary>Применение предложения автобаланса, как в API: сначала проверка всех изменений, потом запись — всё или ничего.</summary>
+    /// <summary>Applying an auto-balance proposal, as in the API: validate all changes first, then write - all or nothing.</summary>
     private static void ApplyBalance(DemoStore store, Guid teamId, BalanceApplyRequest request)
     {
         var changes = (request.Changes ?? []).Select(change =>
         {
             var task = store.Tasks.FirstOrDefault(t => t.Id == change.TaskId && t.TeamId == teamId) ?? throw new InvalidOperationException("Задача не найдена.");
             if (task.Version != change.Version) throw new InvalidOperationException("Задачи изменились после расчёта. Пересчитайте автобаланс.");
-            // Фиксируются даты, а не исполнитель: смена человека допустима, сдвиг — нет.
+            // Dates are fixed, not the assignee: changing the person is allowed, shifting is not.
             if (task.DatesFixed && (change.ToStart != task.StartDate || change.ToEnd != task.EndDate))
                 throw new InvalidOperationException("Даты задачи зафиксированы — автобаланс не может её перенести.");
             if (store.Actors.All(a => a.Id != change.ToPersonId || a.Kind != "Person")) throw new InvalidOperationException("Исполнитель должен быть человеком команды.");
             return (Task: task, Change: change);
         }).ToList();
 
-        // Предлагаемые окна и конфликты рамки — до изменения store, чтобы отказ не оставил данные наполовину.
+        // Proposed windows and frame conflicts - before changing the store, so a refusal does not leave the data half-changed.
         var proposed = store.Tasks.ToDictionary(t => t.Id, t => new TaskDates(t.Id, t.ParentId, t.StartDate, t.EndDate, t.DatesFixed));
         foreach (var (task, change) in changes)
             proposed[task.Id] = new TaskDates(task.Id, task.ParentId, change.ToStart, change.ToEnd, task.DatesFixed);
@@ -753,7 +752,7 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
             task.Version++;
             AddHistory(store, task.Id, "Применено предложение автобаланса");
         }
-        // Рамка родителя — после того как все даты уже итоговые: промежуточное состояние не должно расширять окна.
+        // The parent frame is applied after all dates are final: an intermediate state must not widen windows.
         foreach (var (task, _) in changes) KeepParentsAroundChildren(store, task);
     }
 
@@ -838,8 +837,8 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
     }
 
     /// <summary>
-    /// Данные демо, сохранённые до того, как спринт стал следствием дат: задаче со спринтом недостающие даты ставятся
-    /// по окну спринта (как в миграции API), чтобы она не выпала из плана.
+    /// Demo data saved before the sprint became a consequence of the dates: a task with a sprint gets its missing dates from
+    /// the sprint window (as in the API migration) so it does not drop out of the plan.
     /// </summary>
     private static string DatesFromSprints(string raw)
     {
@@ -874,7 +873,7 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
     private static Guid Id(string value) => Guid.Parse(value);
 }
 
-/// <summary>Стабильные идентификаторы демо-набора: ссылки между записями не зависят от порядка создания.</summary>
+/// <summary>Stable identifiers of the demo set: links between records do not depend on creation order.</summary>
 internal static class DemoIds
 {
     public static readonly Guid User = new("11111111-1111-1111-1111-111111111111");
@@ -897,7 +896,7 @@ internal static class DemoIds
     public static readonly Guid LateTask = new("99999999-9999-9999-9999-999999999993");
 }
 
-/// <summary>Демо-хранилище: то, что лежит в localStorage под ключом <c>alva-demo-data</c>.</summary>
+/// <summary>The demo store: what lives in localStorage under the <c>alva-demo-data</c> key.</summary>
 public sealed class DemoStore
 {
     public List<WorkspaceDto> Workspaces { get; set; } = [];
@@ -913,7 +912,7 @@ public sealed class DemoStore
     public Dictionary<Guid, List<HistoryDto>> History { get; set; } = [];
 }
 
-/// <summary>Начальный демо-набор: площадка, две команды, участники, календари, проекты, спринты и задачи.</summary>
+/// <summary>The initial demo set: a workspace, two teams, members, calendars, projects, sprints and tasks.</summary>
 internal static class DemoSeed
 {
     public static DemoStore Create()

@@ -1,5 +1,5 @@
-@* Заголовок страницы, которая рисуется после загрузки данных. FocusOnNavigate ищет h1 сразу после перехода, когда
-   его ещё нет, поэтому заголовок сам принимает фокус при первом появлении. Обычные обновления страницы его не трогают. *@
+@* Heading of a page that renders after data loads. FocusOnNavigate looks for an h1 right after navigation, when
+   it does not exist yet, so the heading takes focus on its first appearance. Ordinary page updates leave it alone. *@
 <h1 @ref="_heading" class="@Class" tabindex="-1">@ChildContent</h1>
 
 @code {

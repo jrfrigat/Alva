@@ -39,7 +39,7 @@ public sealed class CultureService(IJSRuntime js)
         Changed?.Invoke();
     }
 
-    // "ru-RU" and "ru" are the same language for us; anything unknown is not ours.
+    // "ru-RU" and "ru" are the same language; any other value is ignored.
     private static string? Normalize(string? value)
     {
         if (string.IsNullOrWhiteSpace(value)) return null;
@@ -71,6 +71,6 @@ public sealed class CultureService(IJSRuntime js)
     private async Task Write(string key, string value)
     {
         try { await js.InvokeVoidAsync("localStorage.setItem", key, value); }
-        catch (JSException) { /* Storage unavailable (private mode) — the choice lives until reload. */ }
+        catch (JSException) { /* Storage unavailable (private mode) - the choice lives until reload. */ }
     }
 }

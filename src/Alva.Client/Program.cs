@@ -2,8 +2,8 @@ using Alva.Client;
 using Alva.Client.Services;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 
-// Продовая оболочка: единственное отличие от demo-версии — реализация IApiService,
-// которая ходит в API сервера (same-origin, cookie).
+// The production shell: the only difference from the demo version is the IApiService implementation,
+// which calls the server API (same-origin, cookie).
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 AlvaHost.Configure(builder);
 builder.Services.AddScoped(_ =>

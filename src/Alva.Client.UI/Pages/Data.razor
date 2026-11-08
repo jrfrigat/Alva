@@ -7,7 +7,7 @@
 @if(Session.TeamId is null){<TeamRequired />}
 else
 {
-@* Демо без сервера не умеет ни разбирать файлы, ни выгружать их — говорим об этом до любых действий, а не после. *@
+@* The serverless demo can neither parse nor export files - say so before any actions, not after. *@
 @if(!Session.SupportsDataTransfer){<FlareAlert Severity="AlertSeverity.Info" Title="@(AlvaStrings.Data_ImportAndExportAreUnavailableInTheDemo)">@(AlvaStrings.Data_InTheDemoTheDataLivesOnlyInThisBrowserFileImportAndExportWorkInTheServer_00b40a)</FlareAlert>}
 <FlareGrid MinColumnWidth="min(100%,24rem)">
 <FlareCard Variant="CardVariant.Outlined"><FlareCardContent><FlareStack Gap="FlareSpacing.Large"><FlareText Element="h2" Typo="TypographyScale.TitleLarge">@(AlvaStrings.Data_ExportTeamData)</FlareText><FlareText>@(AlvaStrings.Data_DownloadTheDataForABackupOrToWorkInSpreadsheets)</FlareText><FlareText Typo="TypographyScale.BodySmall">@(AlvaStrings.Data_ExportOpensInANewTabSaveTheFileIfTheBrowserDidNotDownloadIt)</FlareText><FlareStack Row Wrap>@foreach(var format in Formats){<FlareButton Href="@(Session.SupportsDataTransfer ? Session.TeamPath("data/export?format="+format) : null)" Disabled="@(!Session.SupportsDataTransfer)" Variant="ButtonVariant.Tonal" Target="_blank">@format.ToUpperInvariant()</FlareButton>}</FlareStack></FlareStack></FlareCardContent></FlareCard>
@@ -69,7 +69,7 @@ else
     }
 
     private static string Size(long bytes)=>bytes>=1024*1024?$"{bytes/1024d/1024d:0.#} {AlvaStrings.Data_MegabytesShort}":bytes>=1024?$"{bytes/1024d:0.#} {AlvaStrings.Data_KilobytesShort}":$"{bytes} {AlvaStrings.Data_BytesShort}";
-    // Успех показывается только после того, как импорт действительно прошёл; любая ошибка — включая неподдерживаемую операцию — без «успеха».
+    // Success is shown only after the import actually succeeded; any error - including an unsupported operation - is shown without "success".
     private async Task Import()
     {
         _fileError=null;_formErrors.Clear();

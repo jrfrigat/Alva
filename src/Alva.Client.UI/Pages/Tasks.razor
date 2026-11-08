@@ -11,17 +11,17 @@
 @if (Current is not null)
 {
     <PageFeedback Error="@_error" Loading="_busy" OnRetry="Load" />
-    @* Esc закрывает карточку и возвращает к списку с прежними фильтрами; несохранённые правки не
-       выбрасываются — их держит сама карточка, и тогда Esc не делает ничего. Обёртка принимает фокус при
-       открытии задачи, в том числе по Enter из списка, чтобы фокус не падал на body. *@
+    @* Esc closes the card and returns to the list with the previous filters; unsaved edits are not
+       discarded - the card itself holds them, and then Esc does nothing. The wrapper takes focus when
+       the task opens, including via Enter from the list, so focus does not fall to body. *@
     <div class="alva-task-card" @ref="_card" tabindex="-1" aria-label="@Current.Title" @onkeydown="OnCardKey">
         <TaskDetails @ref="_details" Item="Current" Tasks="_tasks" Projects="_projects" Sprints="_sprints" Actors="_actors" Changed="Load" />
     </div>
 }
 else if (TaskId.HasValue)
 {
-    @* Ссылка на конкретную задачу никогда не превращается в список: пока грузится — прогресс, ошибка — ошибка,
-       а если задачи нет — так и сказано. *@
+    @* A link to a specific task never turns into a list: while loading - progress, on error - the error,
+       and if the task does not exist - it says so. *@
     <PageFeedback Error="@_error" Loading="_busy" OnRetry="Load" />
     @if (_loaded && _error is null) { <UnavailableState Title="@(AlvaStrings.Tasks_TaskNotFoundOrUnavailable)" BackHref="tasks" BackLabel="@(AlvaStrings.Common_ToTasks)" /> }
 }
@@ -48,9 +48,9 @@ else
     else {
     <FlareDataTree TItem="TaskModel" Items="Roots" KeySelector="t => t!.Id" ChildrenProvider="Children" HasChildren="HasChildren" ItemClick="Open" Height="34rem" id="@TaskListState.TreeElementId">
         <ItemTemplate Context="task"><FlareStack Row Align="FlareAlignItems.Center" Gap="FlareSpacing.Small" Wrap>
-            @* Ссылка делает задачу доступной с клавиатуры (Tab, Enter), а клик по ней идёт тем же путём Open,
-               что и строка: так перед переходом запоминаются фильтры и позиция списка. Обёртка гасит всплытие
-               и отменяет собственную навигацию ссылки, чтобы не было второй. *@
+            @* The link makes the task keyboard-accessible (Tab, Enter), and a click on it goes through the same Open
+               path as the row: that way the filters and list position are saved before navigation. The wrapper stops
+               propagation and cancels the link's own navigation so there is no second one. *@
             <span @onclick:stopPropagation="true" @onclick="() => Open(task)" @onclick:preventDefault="true"><FlareLink Href="@($"tasks/{task!.Id}")">@task.Title</FlareLink></span><AlvaStatusChip Tone="AlvaTones.Status(task.Status)">@Labels.Status(task.Status)</AlvaStatusChip>
             @if(task.Priority is "High" or "Critical") { <AlvaStatusChip Tone="AlvaTones.Priority(task.Priority)">@Labels.Priority(task.Priority)</AlvaStatusChip> }
             @if(task.EstimateHours.HasValue) { <FlareText Typo="TypographyScale.LabelSmall">@task.EstimateHours @(AlvaStrings.Sprint_HoursShort)</FlareText> }
@@ -123,8 +123,8 @@ else
     protected override async Task OnInitializedAsync()
     {
         _draft = Drafts.Track(() => IsDirty);
-        // Список пересоздаётся по ключу маршрута (MainLayout), поэтому поиск, фильтры и позиция возвращаются
-        // из TaskListState — после перехода в карточку и Back, а также после перезагрузки страницы.
+        // The list is recreated by the route key (MainLayout), so search, filters and position are restored
+        // from TaskListState - after going to the card and Back, and after a page reload.
         var context = await Session.TaskList.Load();
         _search = context.Search;
         _projectFilter = context.Project;
@@ -133,8 +133,8 @@ else
     }
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        // Открытая задача принимает фокус: Enter по ссылке в списке не оставляет человека без точки на
-        // странице. Возврат из карточки, наоборот, возвращает фокус на страницу списка.
+        // An open task takes focus: Enter on a link in the list does not leave the person without a point on
+        // the page. Returning from the card, conversely, returns focus to the list page.
         if (_focusCard)
         {
             _focusCard = false;
@@ -151,17 +151,17 @@ else
         _pendingScroll = 0;
         await Session.TaskList.RestoreScroll(scroll);
     }
-    // Esc в открытой карточке возвращает к списку; несохранённый черновик держит карточка, поэтому Esc при
-    // нём не срабатывает — правки уходят только после явного согласия.
+    // Esc in an open card returns to the list; the card holds an unsaved draft, so Esc does not fire
+    // with one - edits leave only after explicit consent.
     private void OnCardKey(KeyboardEventArgs e)
     {
         if (e.Key != "Escape" || _details?.Dirty == true || IsDirty) return;
         _returnFocus = true;
         Navigation.NavigateTo("tasks");
     }
-    // Фильтры сохраняются при каждом изменении (@bind-Value:after), чтобы контекст был готов к переходу.
+    // Filters are saved on every change (@bind-Value:after), so the context is ready for navigation.
     private Task SaveListContext() => Session.TaskList.SaveFilters(_search, _projectFilter, _statusFilter);
-    // Создание из другого экрана (проект): форма открывается сразу с его контекстом, а сохранение возвращает туда.
+    // Creation from another screen (project): the form opens immediately with that context, and saving returns there.
     [SupplyParameterFromQuery(Name = "new")] public int? NewFlag { get; set; }
     [SupplyParameterFromQuery(Name = "project")] public Guid? NewProject { get; set; }
     [SupplyParameterFromQuery(Name = "back")] public string? Back { get; set; }
@@ -172,7 +172,7 @@ else
         if (NewFlag == 1 && TaskId is null && Session.TeamId is not null) { NewTask(); _editing!.ProjectId = _projects.Any(p => p.Id == NewProject) ? NewProject : null; }
     }
 
-    // Открытие задачи (клик по строке или Enter по ссылке) помечает карточку как цель фокуса.
+    // Opening a task (clicking a row or pressing Enter on a link) marks the card as the focus target.
     private void FocusOpened()
     {
         if (Current is null) { _opened = null; return; }
@@ -186,15 +186,13 @@ else
     private void NewTask(){_editing=new TaskModel { TeamId=Session.TeamId!.Value };_history=[];_editingSnapshot=DraftSnapshot.Of(_editing);}
     private void NewChild(Guid id){NewTask();_editing!.ParentId=id;_editingSnapshot=DraftSnapshot.Of(_editing);}
     private FlareButton? _newButton;
-    // Открытая карточка задачи: её обёртка (фокус при открытии), сама карточка (несохранённые правки) и
-    // признаки, что после перерисовки нужно вернуть фокус.
     private ElementReference _card;
     private TaskDetails? _details;
     private Guid? _opened;
     private bool _focusCard;
     private bool _returnFocus;
     private void Hide(){_editing=null;_history=[];_editingSnapshot=null;}
-    // Закрытие редактора возвращает фокус на кнопку, которой его открыли, а не роняет его на body.
+    // Closing the editor returns focus to the button that opened it instead of dropping it to body.
     private async Task Close()
     {
         if (!await DraftPrompt.CanDiscardAsync(Confirm, IsDirty)) return;
@@ -243,7 +241,7 @@ else
         return _formErrors.Count == 0;
     }
 
-    // Идём от кандидата вверх: если дошли до самой задачи, она станет потомком собственного потомка.
+    // Walk up from the candidate: reaching the task itself would make it a descendant of its own descendant.
     private bool IsDescendant(Guid candidate, Guid taskId)
     {
         var byId=_tasks.ToDictionary(t=>t.Id); var seen=new HashSet<Guid>();

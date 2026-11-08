@@ -7,7 +7,7 @@ using Microsoft.JSInterop;
 
 namespace Alva.Client.Services;
 
-/// <summary>Продовая реализация: те же HTTP-вызовы к API сервера (same-origin, cookie).</summary>
+/// <summary>The production implementation: the same HTTP calls to the server API (same-origin, cookie).</summary>
 public sealed class ApiServiceHttp(HttpClient http, IJSRuntime js) : IApiService
 {
     public UserInfo? User { get; private set; }
@@ -102,8 +102,8 @@ public sealed class ApiServiceHttp(HttpClient http, IJSRuntime js) : IApiService
     private static async Task Check(HttpResponseMessage response)
     {
         if (response.IsSuccessStatusCode) return;
-        // Код ответа идёт в исключении: страницы отличают отказ в доступе (403) и занятую почту (409) от прочих ошибок.
-        // 401 на входе — неверный пароль, а не завершённый сеанс, поэтому текст сервера важнее заготовки.
+        // The response status goes into the exception: pages distinguish access denial (403) and a taken email (409) from other errors.
+        // A 401 during sign-in means a wrong password rather than an expired session, so the server text matters more than the fallback.
         var message = response.StatusCode == HttpStatusCode.Unauthorized
             ? AlvaStrings.Common_TheSessionHasEndedSignInToAlva
             : string.Format(AlvaStrings.Common_TheRequestFailed, (int)response.StatusCode);

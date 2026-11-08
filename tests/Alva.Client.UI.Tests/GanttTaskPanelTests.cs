@@ -10,8 +10,8 @@ using Xunit;
 
 namespace Alva.Client.UI.Tests;
 
-/// <summary>Клик по полосе задачи открывает панель задачи, не уводя со страницы: та же карточка, что на
-/// странице задачи, только в боковой панели. Enter на выбранной полосе делает то же, что клик.</summary>
+/// <summary>Clicking a task bar opens the task panel without leaving the page: the same card as on
+/// the task page, only in a side panel. Enter on the selected bar does the same as a click.</summary>
 public sealed class GanttTaskPanelTests : UiTestBase
 {
     private readonly TaskModel _task = new()
@@ -22,7 +22,7 @@ public sealed class GanttTaskPanelTests : UiTestBase
 
     public GanttTaskPanelTests()
     {
-        // Страница держит ширину колонки в настройках доски — в приложении сервис регистрируется в Program.cs.
+        // The page keeps the column width in the board settings - in the application the service is registered in Program.cs.
         Services.AddScoped<Alva.Client.Services.GanttPreferences>();
         Api.Answer("tasks", _ => new[] { _task })
            .Answer("tasks/dependencies", _ => Array.Empty<DependencyDto>())
@@ -31,7 +31,7 @@ public sealed class GanttTaskPanelTests : UiTestBase
            .Answer("risks", _ => Array.Empty<RiskDto>())
            .Answer("projects", _ => Array.Empty<ProjectModel>())
            .Answer("capacity", _ => Array.Empty<CapacityDto>())
-           // Своя история задачи: карточка запрашивает её по адресу задачи, поэтому ответ точнее общего «tasks».
+           // Its own task history: the card requests it at the task URL, so the answer is more precise than the generic "tasks".
            .Answer($"tasks/{_task.Id}/history", _ => Array.Empty<HistoryDto>());
     }
 
@@ -72,9 +72,9 @@ public sealed class GanttTaskPanelTests : UiTestBase
         Assert.Equal("5", Field(cut, "Остаток, часы").GetAttribute("value"));
     }
 
-    // Доска виртуализирует строки и колонки, поэтому сначала сообщаем ей размеры и видимую часть оси —
-    // в bUnit эти вызовы, которые в браузере делает gantt.js, не приходят сами. Окно ставим на полосу
-    // задачи: виртуализированный Gantt рисует только колонки вокруг видимой части, а не всю ось.
+    // The board virtualizes rows and columns, so the test first reports its dimensions and the visible part of the axis -
+    // in bUnit these calls, which gantt.js makes in the browser, do not arrive by themselves. The window is placed on the task
+    // bar: the virtualized Gantt draws only the columns around the visible part, not the whole axis.
     private IRenderedComponent<GanttTasks> Chart()
     {
         var cut = Render<GanttTasks>();

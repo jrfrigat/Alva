@@ -58,28 +58,28 @@ public sealed class TaskModel
     public DateOnly? Deadline { get; set; }
     public DateOnly? StartDate { get; set; }
     public DateOnly? EndDate { get; set; }
-    /// <summary>Даты зафиксированы: задача не переносится ни вручную, ни автобалансом.</summary>
+    /// <summary>The dates are fixed: the task is moved neither manually nor by auto-balance.</summary>
     public bool DatesFixed { get; set; }
-    /// <summary>Не больше стольких часов в день на эту задачу; null — без ограничения.</summary>
+    /// <summary>At most this many hours per day on this task; null means no limit.</summary>
     public decimal? DailyHoursLimit { get; set; }
-    /// <summary>Ключ задачи во внешнем источнике (TEST-1), если она пришла оттуда.</summary>
+    /// <summary>The task key in an external source (TEST-1), if the task came from there.</summary>
     public string? ExternalKey { get; set; }
     public string? ExternalUrl { get; set; }
     public int Order { get; set; }
     public Guid? AssignmentTargetId { get; set; }
     public Guid? ResolvedPersonId { get; set; }
     public long Version { get; set; }
-    /// <summary>Оценка с подъёмом по дереву: своя или сумма подзадач.</summary>
+    /// <summary>Estimate rolled up the tree: its own or the sum of its subtasks.</summary>
     public decimal EffectiveEstimateHours { get; set; }
-    /// <summary>Срок с подъёмом по дереву: самый поздний из своего и сроков подзадач.</summary>
+    /// <summary>Deadline rolled up the tree: the latest of its own and its subtasks' deadlines.</summary>
     public DateOnly? EffectiveDeadline { get; set; }
-    /// <summary>Спринты, с которыми пересекаются плановые даты задачи (по началу спринта); пусто — задача в бэклоге.</summary>
+    /// <summary>Sprints that the task's planned dates overlap (by sprint start); empty means the task is in the backlog.</summary>
     public Guid[] SprintIds { get; set; } = [];
-    /// <summary>Приоритет: Low, Normal, High, Critical.</summary>
+    /// <summary>Priority: Low, Normal, High, Critical.</summary>
     public string Priority { get; set; } = "Normal";
-    /// <summary>Место в ручном порядке пула; без него — после упорядоченных задач.</summary>
+    /// <summary>Position in the pool's manual order; when absent, after the ordered tasks.</summary>
     public int? BacklogRank { get; set; }
-    /// <summary>У задачи есть плановые даты — она в плане, а не в бэклоге.</summary>
+    /// <summary>The task has planned dates, so it is in the plan rather than the backlog.</summary>
     [System.Text.Json.Serialization.JsonIgnore] public bool Planned => StartDate is not null || EndDate is not null;
 }
 public sealed class SprintModel
@@ -90,27 +90,27 @@ public sealed class SprintModel
     public DateOnly StartDate { get; set; } = DateOnly.FromDateTime(DateTime.Today);
     public DateOnly EndDate { get; set; } = DateOnly.FromDateTime(DateTime.Today.AddDays(13));
     public string Status { get; set; } = "Planned";
-    /// <summary>Снимок при старте спринта: что команда взяла.</summary>
+    /// <summary>Snapshot at sprint start: what the team committed.</summary>
     public Alva.Contracts.SprintSnapshotDto? Commitment { get; set; }
-    /// <summary>Снимок при закрытии: с ним история спринта не меняется от поздних правок задач.</summary>
+    /// <summary>Snapshot at closing: it keeps the sprint history from changing with later task edits.</summary>
     public Alva.Contracts.SprintSnapshotDto? Result { get; set; }
 }
 /// <summary>
-/// Кто реально делает задачу. Назначение на роль или подкоманду становится работой человека, когда для него выбран
-/// конкретный исполнитель (ResolvedPersonId); все экраны должны отвечать на этот вопрос одинаково.
+/// Who actually does the task. An assignment to a skill or sub-team becomes a person's work once a
+/// specific assignee is resolved for it (ResolvedPersonId); all screens must answer this question the same way.
 /// </summary>
 public static class Assignees
 {
-    /// <summary>Эффективный исполнитель: выбранный человек, иначе цель назначения, если это человек.</summary>
+    /// <summary>The effective assignee: the resolved person, otherwise the assignment target if it is a person.</summary>
     public static Guid? Person(TaskModel task, IEnumerable<ActorModel> actors) =>
         task.ResolvedPersonId ?? (task.AssignmentTargetId is { } target && actors.FirstOrDefault(a => a.Id == target) is { Kind: "Person" } person ? person.Id : null);
 
-    /// <summary>Участники-люди текущего пользователя: связанные по UserId или с тем же email.</summary>
+    /// <summary>The current user's person actors: those linked by UserId or sharing the same email.</summary>
     public static HashSet<Guid> Me(IEnumerable<ActorModel> actors, UserInfo? user) => user is null ? [] : actors
         .Where(a => a.Kind == "Person" && (a.UserId == user.Id || (!string.IsNullOrWhiteSpace(a.Email) && string.Equals(a.Email, user.Email, StringComparison.OrdinalIgnoreCase))))
         .Select(a => a.Id).ToHashSet();
 }
-/// <summary>Часы задачи, которые приходятся на спринт (правило SprintWindows.Share).</summary>
+/// <summary>The task hours that fall within a sprint (the SprintWindows.Share rule).</summary>
 public static class SprintHours
 {
     public static decimal Of(TaskModel task, SprintModel sprint) =>

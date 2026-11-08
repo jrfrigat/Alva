@@ -3,7 +3,7 @@ using Xunit;
 
 namespace Alva.Data.Tests;
 
-/// <summary>Нарушение связей по датам: конец эксклюзивный, лаг сдвигает требуемую границу.</summary>
+/// <summary>Date link violations: the end is exclusive, and the lag shifts the required boundary.</summary>
 public sealed class DependencyWindowsTests
 {
     private static DateOnly Oct(int day) => new(2026, 10, day);
@@ -14,7 +14,7 @@ public sealed class DependencyWindowsTests
     [Fact]
     public void Finish_to_start_is_satisfied_from_the_day_after_the_predecessor_ends()
     {
-        // Предшественник 1–2: эксклюзивный конец — 3-й день.
+        // Predecessor 1-2: the exclusive end is day 3.
         Assert.Equal(0, Violation("FS", 0, (1, 2), (3, 4)));
         Assert.Equal(1, Violation("FS", 0, (1, 2), (2, 3)));
         Assert.Equal(0, Violation("FS", 1, (1, 2), (4, 5)));
@@ -40,7 +40,7 @@ public sealed class DependencyWindowsTests
     [Fact]
     public void Start_to_finish_compares_the_start_with_the_successors_end()
     {
-        // Успевающий закончить 4-го числа: эксклюзивный конец — 5-й день, ровно начало предшественника.
+        // A task that finishes on the 4th: its exclusive end is day 5, exactly the predecessor's start.
         Assert.Equal(0, Violation("SF", 0, (5, 6), (3, 4)));
         Assert.Equal(1, Violation("SF", 0, (5, 6), (2, 3)));
         Assert.Equal(0, Violation("SF", 1, (5, 6), (3, 5)));

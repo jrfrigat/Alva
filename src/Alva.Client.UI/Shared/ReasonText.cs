@@ -4,12 +4,12 @@ using Alva.Contracts;
 namespace Alva.Client.Shared;
 
 /// <summary>
-/// Единственное место, где <see cref="ReasonDto"/> превращается в текст: код выбирает строку
-/// <c>reason.&lt;code&gt;</c> текущего языка, аргументы подставляются с учётом их вида.
+/// The only place where <see cref="ReasonDto"/> becomes text: the code selects the
+/// <c>reason.&lt;code&gt;</c> string for the current language, and arguments are substituted according to their kind.
 /// </summary>
 public static class ReasonText
 {
-    /// <summary>Текст причины с подстановкой имён, дат и часов.</summary>
+    /// <summary>The reason text with names, dates and hours substituted.</summary>
     public static string Describe(ReasonDto reason) => reason.Code switch
     {
         ReasonCodes.RiskRequiredPerson => Text(reason, reason.Arg(0)),
@@ -22,7 +22,7 @@ public static class ReasonText
         _ => Text(reason)
     };
 
-    /// <summary>Несколько причин одной строкой.</summary>
+    /// <summary>Several reasons in one line.</summary>
     public static string Join(IEnumerable<ReasonDto> reasons, string separator = "; ") =>
         string.Join(separator, reasons.Select(Describe));
 

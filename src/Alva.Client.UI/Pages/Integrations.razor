@@ -7,7 +7,7 @@
 @if (Session.TeamId is null) { <TeamRequired /> }
 else
 {
-    @* Демо без сервера не может хранить токены и ходить в трекер — говорим об этом до любых действий. *@
+    @* The serverless demo cannot store tokens or talk to a tracker - say so before any actions. *@
     @if (!Session.SupportsDataTransfer)
     {
         <FlareAlert Severity="AlertSeverity.Info" Title="@(AlvaStrings.Integrations_IntegrationsAreNotAvailableInTheDemo)">@(AlvaStrings.Integrations_IntegrationsWorkInAlvaWithAServerItKeepsTheTokensAndTalksToTheTrackerIts_391ef1)</FlareAlert>
@@ -125,7 +125,7 @@ else
     }
 }
 @code {
-    /// <summary>Черновик формы подключения. Секреты не приходят с сервера: пустое поле секрета означает «не менять».</summary>
+    /// <summary>Connection form draft. Secrets do not come from the server: an empty secret field means keep unchanged.</summary>
     private sealed class Draft
     {
         public Guid? Id { get; init; }
@@ -204,7 +204,7 @@ else
 
     private void ClearErrors() { _fieldErrors.Clear(); _formErrors.Clear(); }
 
-    /// <summary>Те же правила, что проверит сервер: обязательные поля (сохранённый секрет считается заполненным) и интервал.</summary>
+    /// <summary>The same rules the server will check: required fields (a saved secret counts as filled) and the interval.</summary>
     private bool Validate(Draft draft, IntegrationModuleDto module)
     {
         ClearErrors();

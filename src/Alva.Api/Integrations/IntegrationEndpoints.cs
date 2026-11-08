@@ -9,8 +9,8 @@ using Microsoft.EntityFrameworkCore;
 namespace Alva.Api.Integrations;
 
 /// <summary>
-/// Подключения команды к источникам задач. Права — область «Данные»: смотреть — view, синхронизировать — edit,
-/// настраивать — manage. Секреты в ответах не появляются никогда.
+/// The team's connections to task sources. Permissions use the Data area: view to look, edit to synchronize,
+/// manage to configure. Secrets never appear in responses.
 /// </summary>
 public static class IntegrationEndpoints
 {
@@ -54,7 +54,7 @@ public static class IntegrationEndpoints
         {
             await AccessControl.RequireTeam(db, user, teamId, "data", "manage");
             var connection = await Find(db, teamId, id);
-            // Задачи остаются в Alva: снимаются только привязки и журнал.
+            // Tasks stay in Alva: only the links and the run log are removed.
             await db.ExternalTaskLinks.Where(x => x.ConnectionId == id).ExecuteDeleteAsync();
             await db.TaskSourceRuns.Where(x => x.ConnectionId == id).ExecuteDeleteAsync();
             db.Remove(connection);
@@ -91,8 +91,8 @@ public static class IntegrationEndpoints
         await db.TaskSources.SingleOrDefaultAsync(x => x.TeamId == teamId && x.Id == id) ?? throw new ApiException(404, "Подключение не найдено.");
 
     /// <summary>
-    /// Переносит запрос в подключение: только ключи схемы модуля, секретные — в зашифрованные секреты. Пустой секрет
-    /// оставляет сохранённый — форма не обязана знать его, чтобы поменять имя подключения.
+    /// Copies the request into the connection: only keys from the module schema, secrets into encrypted secrets. An empty secret
+    /// leaves the stored one - the form does not have to know it to change the connection name.
     /// </summary>
     private static async Task Apply(AlvaDbContext db, TaskSourceModules modules, IntegrationSync sync, TaskSourceConnection connection, IntegrationConnectionRequest request)
     {
@@ -129,7 +129,7 @@ public static class IntegrationEndpoints
     private static IntegrationConnectionDto Dto(TaskSourceConnection x, TaskSourceModules modules, int linked)
     {
         var module = modules.Find(x.Module);
-        // Какие секреты заданы — по схеме модуля, без расшифровки: имя ключа секретом не является.
+        // Which secrets are set comes from the module schema, without decryption: a key name is not a secret.
         var secrets = module?.Settings.Where(s => s.Kind == IntegrationSettingKind.Secret).Select(s => s.Key).ToArray() ?? [];
         return new(x.Id, x.Module, module?.Name ?? x.Module, x.Name, IntegrationSync.Settings(x), x.ProtectedSecrets.Length > 0 ? secrets : [],
             x.Enabled, x.AutoSyncMinutes, x.LastRunAt, x.LastOk, x.LastMessage, linked);
@@ -139,7 +139,7 @@ public static class IntegrationEndpoints
         new(x.Id, x.StartedAt, x.FinishedAt, x.Ok, x.Created, x.Updated, x.Unchanged, x.Skipped, x.Message);
 }
 
-/// <summary>Фоновая автосинхронизация: раз в минуту запускает подключения, у которых подошёл срок.</summary>
+/// <summary>Background auto-sync: starts the connections that are due once a minute.</summary>
 public sealed class IntegrationSyncWorker(IServiceScopeFactory scopes, ILogger<IntegrationSyncWorker> log) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -164,7 +164,7 @@ public sealed class IntegrationSyncWorker(IServiceScopeFactory scopes, ILogger<I
         }
         foreach (var id in due)
         {
-            // Своя область на прогон: ошибка одного подключения не оставляет мусор в контексте следующего.
+            // A separate scope per run: an error in one connection does not leave stale state in the next connection's context.
             await using var scope = scopes.CreateAsyncScope();
             var db = scope.ServiceProvider.GetRequiredService<AlvaDbContext>();
             if (await db.TaskSources.SingleOrDefaultAsync(x => x.Id == id, ct) is not { } connection) continue;

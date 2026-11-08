@@ -4,8 +4,8 @@ using Microsoft.AspNetCore.Components;
 namespace Alva.Client.Services;
 
 /// <summary>
-/// Черновики открытых редакторов. Смена языка и уход со страницы спрашивают, прежде чем
-/// потерять правки, а не выгружают приложение молча.
+/// Drafts of open editors. A language change and leaving the page ask before losing edits
+/// rather than unloading the application silently.
 /// </summary>
 public sealed class DraftGuard
 {
@@ -13,7 +13,7 @@ public sealed class DraftGuard
 
     public bool HasDirty => _drafts.Any(d => d());
 
-    /// <summary>Регистрирует признак черновика; возвращённое значение снимает регистрацию.</summary>
+    /// <summary>Registers a dirty-draft check; the returned value unregisters it.</summary>
     public IDisposable Track(Func<bool> dirty)
     {
         _drafts.Add(dirty);
@@ -26,13 +26,13 @@ public sealed class DraftGuard
     }
 }
 
-/// <summary>Снимок черновика для сравнения: модели — обычные классы без значимого равенства.</summary>
+/// <summary>A draft snapshot for comparison: the models are plain classes without value equality.</summary>
 public static class DraftSnapshot
 {
     public static string Of(params object?[] values) => System.Text.Json.JsonSerializer.Serialize(values);
 }
 
-/// <summary>Один вопрос на все редакторы: уходить с несохранёнными правками или остаться.</summary>
+/// <summary>One prompt for all editors: leave with unsaved changes or stay.</summary>
 public static class DraftPrompt
 {
     public static async Task<bool> CanDiscardAsync(FlareConfirmDialogProvider? confirm, bool dirty)
@@ -45,7 +45,7 @@ public static class DraftPrompt
     }
 }
 
-/// <summary>Подтверждение необратимого или массового действия с названием объекта и последствием.</summary>
+/// <summary>Confirmation of an irreversible or bulk action, with the object name and the consequence.</summary>
 public static class DestructivePrompt
 {
     public static async Task<bool> ConfirmAsync(FlareConfirmDialogProvider? confirm, string title, string message, string action)
@@ -55,7 +55,7 @@ public static class DestructivePrompt
     }
 }
 
-/// <summary>Фокус на элемент без падения вне браузера: bUnit и отключённый JS не дают ElementReference.</summary>
+/// <summary>Focus an element without crashing outside a browser: bUnit and disabled JS provide no ElementReference.</summary>
 public static class SafeFocus
 {
     public static async Task Async(ElementReference element)

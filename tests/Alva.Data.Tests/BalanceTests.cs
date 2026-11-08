@@ -4,12 +4,12 @@ using Xunit;
 
 namespace Alva.Data.Tests;
 
-/// <summary>Автобаланс спринта: сборка задачи, оценка, жадная эвристика и решатель CP-SAT на маленьких командах.</summary>
+/// <summary>Sprint auto-balance: task assembly, evaluation, the greedy heuristic and the CP-SAT solver on small teams.</summary>
 public sealed class BalanceTests
 {
     private static readonly Guid Sprint = Guid.NewGuid();
-    private static readonly DateOnly Start = new(2026, 10, 5);   // понедельник
-    private static readonly DateOnly End = new(2026, 10, 16);    // пятница второй недели
+    private static readonly DateOnly Start = new(2026, 10, 5);   // Monday
+    private static readonly DateOnly End = new(2026, 10, 16);    // Friday of the second week
     private static readonly Guid Role = Guid.NewGuid();
     private static readonly BalancePersonInput Anna = new(Guid.NewGuid(), "Анна", [Role], []);
     private static readonly BalancePersonInput Boris = new(Guid.NewGuid(), "Борис", [Role], []);
@@ -21,7 +21,7 @@ public sealed class BalanceTests
     private static BalanceProblem Problem(string mode, BalanceTaskInput[] tasks, BalanceLinkInput[]? links = null, Func<Guid, CalendarDto>? calendars = null) =>
         BalanceMath.Build(mode, Sprint, Start, End, [Anna, Boris], calendars ?? CapacityMath.DefaultCalendar, tasks, links ?? []);
 
-    // Две недели работы Анны в одной неделе: 80 ч при ёмкости 40.
+    // Two weeks of Anna's work in one week: 80 h against a capacity of 40.
     private static BalanceTaskInput[] AnnaOverloaded() =>
     [
         Task("API", 40, Start, Start.AddDays(4), Anna.Id),
@@ -159,7 +159,7 @@ public sealed class BalanceTests
         var problem = Problem(BalanceModes.Maximum, [parent, child, running, other]);
 
         Assert.Equal([child.Id], problem.Tasks.Select(t => t.Id));
-        Assert.True(problem.Background[0].Sum() > 0);   // остальное — фоновая загрузка Анны
+        Assert.True(problem.Background[0].Sum() > 0);   // the rest is Anna's background load
     }
 
     [Fact]
@@ -185,7 +185,7 @@ public sealed class BalanceTests
         var index = Array.FindIndex(problem.Tasks, t => t.Id == fixedTask.Id);
 
         Assert.All(problem.Tasks[index].Options, option => Assert.Equal(0, option.Start));
-        // В «Максимуме» доступен человек с общей ролью: даты те же, исполнитель может смениться.
+        // In Maximum mode a person with the shared role is available: the dates stay the same, the assignee may change.
         Assert.Contains(problem.Tasks[index].Options, option => option.Person == Array.FindIndex(problem.People, p => p.Id == Boris.Id));
 
         var (choice, status) = BalanceSolver.Solve(problem, Limit);
@@ -200,7 +200,7 @@ public sealed class BalanceTests
     [InlineData("SF")]
     public void Hard_links_hold_for_every_kind(string kind)
     {
-        // Вторая задача стоит раньше первой — исходный план нарушает любую из четырёх связей.
+        // The second task is scheduled before the first - the initial plan violates any of the four link types.
         var first = Task("Первая", 16, Start.AddDays(4), Start.AddDays(5), Anna.Id);
         var second = Task("Вторая", 16, Start.AddDays(1), Start.AddDays(2), Boris.Id);
         var problem = Problem(BalanceModes.Deadlines, [first, second],
@@ -226,7 +226,7 @@ public sealed class BalanceTests
         Assert.Null(problem.Infeasible);
         var (choice, _) = BalanceSolver.Solve(problem, Limit);
 
-        // Предшественник занимает 4–5-й дни, эксклюзивный конец — 6-й: последователь не раньше 6-го.
+        // The predecessor occupies days 4-5 and its exclusive end is day 6: the successor is no earlier than day 6.
         Assert.True(problem.Tasks[index].Options[choice[index]].Start >= 6);
     }
 

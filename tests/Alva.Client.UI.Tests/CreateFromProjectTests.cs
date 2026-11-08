@@ -8,7 +8,7 @@ using Xunit;
 
 namespace Alva.Client.UI.Tests;
 
-/// <summary>«Создать задачу» в проекте открывает форму с этим проектом и после сохранения возвращает к нему.</summary>
+/// <summary>Create task in a project opens the form with that project and returns to it after saving.</summary>
 public sealed class CreateFromProjectTests : UiTestBase
 {
     private readonly ProjectModel _project = new() { Id = Guid.NewGuid(), Name = "Платформа" };

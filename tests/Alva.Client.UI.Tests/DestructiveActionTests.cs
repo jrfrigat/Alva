@@ -8,7 +8,7 @@ using Xunit;
 
 namespace Alva.Client.UI.Tests;
 
-/// <summary>Архивирование спрашивает и называет объект; отмена ничего не отправляет.</summary>
+/// <summary>Archiving asks and names the object; cancel sends nothing.</summary>
 public sealed class DestructiveActionTests : UiTestBase
 {
     [Fact]

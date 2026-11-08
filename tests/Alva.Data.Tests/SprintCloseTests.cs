@@ -8,7 +8,7 @@ using Xunit;
 
 namespace Alva.Data.Tests;
 
-/// <summary>Спринт закрывается только с решением по каждой незавершённой задаче; остаток уходит туда, куда решили.</summary>
+/// <summary>A sprint closes only with a decision on every unfinished task; the remaining work goes where it was decided.</summary>
 public sealed class SprintCloseTests
 {
     private static readonly DateOnly Monday = new(2026, 10, 26);
@@ -131,7 +131,7 @@ public sealed class SprintCloseTests
         var parent = await Send<TaskDto>(server, HttpMethod.Post, "tasks", new TaskRequest("Родитель", Status: "InProgress", StartDate: Monday, EndDate: Monday.AddDays(4)));
         var child = await Send<TaskDto>(server, HttpMethod.Post, "tasks", new TaskRequest("Подзадача", Status: "InProgress", ParentId: parent.Id, EstimateHours: 8, StartDate: Monday, EndDate: Monday.AddDays(4)));
 
-        // Родитель идёт в запросе первым: порядок переноса задаёт сервер, а не клиент.
+        // The parent comes first in the request: the move order is set by the server, not the client.
         await Send<SprintDto>(server, HttpMethod.Post, $"sprints/{sprint.Id}/close",
             new SprintCloseRequest([new(parent.Id, SprintCarry.Next), new(child.Id, SprintCarry.Next)], next.Id));
 

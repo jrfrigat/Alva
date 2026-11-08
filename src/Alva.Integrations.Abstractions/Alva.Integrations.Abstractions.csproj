@@ -1,5 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <!-- Контракт модулей интеграции: без ссылок на домен Alva, чтобы модуль подключался, не зная устройства ядра. -->
+  <!-- The integration module contract: no references to the Alva domain, so a module can be plugged in without knowing the core's design. -->
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>

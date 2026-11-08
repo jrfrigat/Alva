@@ -84,7 +84,7 @@ public static class DataEndpoints
             await AccessControl.RequireTeam(db, user, teamId, "data", "manage");
             var team = await db.Teams.SingleAsync(x => x.Id == teamId, ct);
             var idMap = package.Rows.ToDictionary(x => x.Id, _ => Guid.NewGuid());
-            // Старые выгрузки: задача без дат из спринта получает окно этого спринта — спринт теперь следует из дат.
+            // Old exports: a task without dates from a sprint gets that sprint's window - the sprint now follows from the dates.
             var sprintWindows = package.Rows.Where(x => x.Kind == "sprint").Select(x => (Sprint)DataTransfer.Entity(x)).ToDictionary(x => x.Id);
             Guid Map(Guid id) => idMap[id]; Guid? Optional(Guid? id) => id.HasValue ? Map(id.Value) : null;
             foreach (var row in package.Rows)
@@ -258,7 +258,7 @@ public static class DataTransfer
     }
     private static T Read<T>(DataRow row) => row.Payload.Deserialize<T>(Json) ?? throw new JsonException("Пустая запись.");
 
-    /// <summary>Задача без устаревшего поля sprintId: спринт теперь следует из дат (см. LegacySprint).</summary>
+    /// <summary>A task without the obsolete sprintId field: the sprint now follows from the dates (see LegacySprint).</summary>
     private static TaskCard ReadTask(DataRow row)
     {
         if (!row.Payload.TryGetProperty("sprintId", out _)) return Read<TaskCard>(row);
@@ -267,7 +267,7 @@ public static class DataTransfer
         return payload.Deserialize<TaskCard>(Json) ?? throw new JsonException("Пустая запись.");
     }
 
-    /// <summary>Спринт задачи из старых выгрузок; задача без дат получает при импорте его окно.</summary>
+    /// <summary>The task's sprint from old exports; a task without dates gets its window on import.</summary>
     public static Guid? LegacySprint(DataRow row) =>
         row.Kind == "task" && row.Payload.TryGetProperty("sprintId", out var value) && value.ValueKind == JsonValueKind.String && value.TryGetGuid(out var id) ? id : null;
 

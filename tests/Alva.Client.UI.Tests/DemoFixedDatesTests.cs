@@ -6,7 +6,7 @@ using Xunit;
 
 namespace Alva.Client.UI.Tests;
 
-/// <summary>Demo-хранилище повторяет серверные правила фиксированных дат и связей.</summary>
+/// <summary>The demo store mirrors the server rules for fixed dates and links.</summary>
 public sealed class DemoFixedDatesTests
 {
     private static readonly DateOnly Start = new(2026, 10, 5);

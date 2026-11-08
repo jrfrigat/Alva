@@ -9,7 +9,7 @@ using Xunit;
 
 namespace Alva.Client.UI.Tests;
 
-/// <summary>Несохранённые правки карточки задачи не теряются молча при уходе со страницы.</summary>
+/// <summary>Unsaved edits on the task card are not silently lost when leaving the page.</summary>
 public sealed class TaskDetailsDraftTests : UiTestBase
 {
     private TaskModel _task = new() { Id = Guid.NewGuid(), Title = "Релиз", Status = "Planned", Version = 1 };
@@ -22,7 +22,7 @@ public sealed class TaskDetailsDraftTests : UiTestBase
 
     private BunitNavigationManager Navigation => Services.GetRequiredService<BunitNavigationManager>();
 
-    // Как в приложении: карточка внутри провайдера подтверждений из MainLayout.
+    // As in the application: the card inside the confirmation provider from MainLayout.
     private IRenderedComponent<FlareConfirmDialogProvider> Page() =>
         Render<FlareConfirmDialogProvider>(p => p.AddChildContent<TaskDetails>(d => d.Add(x => x.Item, _task)));
 
@@ -50,7 +50,7 @@ public sealed class TaskDetailsDraftTests : UiTestBase
 
         Navigation.NavigateTo("/tasks");
         cut.WaitForAssertion(() => Assert.NotNull(cut.Find("[role='alertdialog']")));
-        // Подтверждение завершает ожидание асинхронно; навигация не обязана вызывать новый рендер провайдера.
+        // Confirmation completes the wait asynchronously; navigation does not have to trigger a new render of the provider.
         var navigated = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         Navigation.LocationChanged += (_, _) => navigated.TrySetResult();
         Button(cut, "Уйти без сохранения").Click();
@@ -99,7 +99,7 @@ public sealed class TaskDetailsDraftTests : UiTestBase
         var cut = Page();
         EditTitle(cut);
 
-        // Задачу перечитали после добавления подзадачи: версия выросла, название на сервере прежнее.
+        // The task was re-read after adding a subtask: the version increased, the title on the server is unchanged.
         _task = new TaskModel { Id = _task.Id, Title = "Релиз", Status = "Planned", Version = 2 };
         cut.FindComponent<TaskDetails>().Render(p => p.Add(x => x.Item, _task));
 

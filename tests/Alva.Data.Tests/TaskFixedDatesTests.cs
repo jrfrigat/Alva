@@ -8,8 +8,8 @@ using Xunit;
 
 namespace Alva.Data.Tests;
 
-/// <summary>Фиксированные даты: сервер не двигает задачу, не растягивает фиксированного родителя и
-/// не даёт правке ухудшить связи FS/SS/FF/SF.</summary>
+/// <summary>Fixed dates: the server does not move the task, does not stretch a fixed parent and
+/// does not let an edit make FS/SS/FF/SF links worse.</summary>
 public sealed class TaskFixedDatesTests
 {
     private static readonly DateOnly Monday = new(2026, 10, 5);

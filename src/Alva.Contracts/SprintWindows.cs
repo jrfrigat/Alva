@@ -1,26 +1,26 @@
 namespace Alva.Contracts;
 
 /// <summary>
-/// В каких спринтах идёт задача. Спринт — следствие дат: задача входит в каждый спринт своей команды, с окном которого
-/// пересекается её плановое окно (обе границы включительно). Без плановых дат задача в бэклоге; срок в правило не входит.
-/// Одно правило для кэша сервера, демо и клиента.
+/// Which sprints a task runs in. A sprint follows from the dates: a task belongs to every sprint of its team whose window
+/// overlaps its planned window (both boundaries inclusive). Without planned dates the task is in the backlog; the deadline is not part of the rule.
+/// One rule for the server cache, the demo and the client.
 /// </summary>
 public static class SprintWindows
 {
-    /// <summary>Плановое окно задачи: недостающая граница берётся у второй; без обеих — null.</summary>
+    /// <summary>The task's planned window: a missing boundary is taken from the other one; null when both are missing.</summary>
     public static (DateOnly Start, DateOnly End)? Window(DateOnly? start, DateOnly? end) =>
         (start ?? end, end ?? start) is (DateOnly s, DateOnly e) ? (s <= e ? (s, e) : (e, s)) : null;
 
-    /// <summary>У задачи есть плановая дата: она в плане и занимает людей; без них — в бэклоге.</summary>
+    /// <summary>The task has a planned date: it is in the plan and occupies people; without either date it is in the backlog.</summary>
     public static bool Planned(DateOnly? start, DateOnly? end) => start is not null || end is not null;
 
     public static bool Overlaps(DateOnly? start, DateOnly? end, DateOnly sprintStart, DateOnly sprintEnd) =>
         Window(start, end) is { } w && w.Start <= sprintEnd && w.End >= sprintStart;
 
     /// <summary>
-    /// Часть оценки задачи, которая приходится на спринт: пропорционально рабочим дням (пн–пт) её окна внутри спринта.
-    /// Задача на стыке двух спринтов делит часы между ними, а не попадает в каждый целиком — иначе обязательство и темп
-    /// двоятся. Окно без рабочих дней делится по календарным. Задача без дат или вне спринта — 0.
+    /// The part of a task's estimate that falls into the sprint: proportional to the workdays (Mon-Fri) of its window inside the sprint.
+    /// A task spanning two sprints splits its hours between them instead of falling into each one entirely - otherwise the commitment and velocity
+    /// would be doubled. A window without workdays is split by calendar days. A task without dates or outside the sprint gives 0.
     /// </summary>
     public static decimal Share(decimal? estimate, DateOnly? start, DateOnly? end, DateOnly sprintStart, DateOnly sprintEnd)
     {
@@ -34,8 +34,8 @@ public static class SprintWindows
     }
 
     /// <summary>
-    /// Снимок спринта из задач команды: те, чьё плановое окно пересекает спринт (кроме отменённых), и их часы в нём.
-    /// Одно правило для API и demo, чтобы обязательство и итог считались одинаково.
+    /// A sprint snapshot from the team's tasks: those whose planned window overlaps the sprint (except cancelled ones), and their hours in it.
+    /// One rule for the API and the demo so that the commitment and the result are calculated the same way.
     /// </summary>
     public static SprintSnapshotDto Snapshot(IEnumerable<(decimal? Estimate, DateOnly? Start, DateOnly? End, bool Done, bool Cancelled)> tasks, DateOnly sprintStart, DateOnly sprintEnd, DateTimeOffset at)
     {
@@ -53,7 +53,7 @@ public static class SprintWindows
         return days;
     }
 
-    /// <summary>Спринты, в которые попадает окно задачи, по дате начала спринта.</summary>
+    /// <summary>Sprints that the task window falls into, ordered by sprint start date.</summary>
     public static IEnumerable<T> Of<T>(DateOnly? start, DateOnly? end, IEnumerable<T> sprints, Func<T, DateOnly> sprintStart, Func<T, DateOnly> sprintEnd) =>
         Window(start, end) is { } w
             ? sprints.Where(s => w.Start <= sprintEnd(s) && w.End >= sprintStart(s)).OrderBy(sprintStart)

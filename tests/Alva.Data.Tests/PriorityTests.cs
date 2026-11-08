@@ -7,7 +7,7 @@ using Xunit;
 
 namespace Alva.Data.Tests;
 
-/// <summary>Приоритет задачи: хранится, не сбрасывается чужими правками, упорядочивает пул и учитывается автобалансом.</summary>
+/// <summary>Task priority: stored, not reset by other edits, orders the pool and is taken into account by auto-balance.</summary>
 public sealed class PriorityTests
 {
     private static async Task<TaskDto> Send(ApiServer server, HttpMethod method, string resource, object body)
@@ -24,7 +24,7 @@ public sealed class PriorityTests
         await using var _ = server;
         var created = await Send(server, HttpMethod.Post, "tasks", new TaskRequest("Отчёт", Priority: "High"));
 
-        // Так сохраняют задачу Гантт и быстрые подзадачи: приоритета в запросе нет.
+        // This is how the Gantt and quick subtasks save a task: there is no priority in the request.
         var moved = await Send(server, HttpMethod.Put, $"tasks/{created.Id}", new TaskRequest("Отчёт", StartDate: new DateOnly(2026, 10, 26), Version: created.Version));
 
         Assert.Equal("High", created.Priority);
@@ -53,7 +53,7 @@ public sealed class PriorityTests
         var start = new DateOnly(2026, 10, 5);
         var role = Guid.NewGuid();
         var anna = new BalancePersonInput(Guid.NewGuid(), "Анна", [role], []);
-        // Неделя Анны — 40 ч, а работы 80 ч с одним сроком: одна из задач опоздает.
+        // Anna's week is 40 h, but the work is 80 h with a single deadline: one of the tasks will be late.
         BalanceTaskInput Work(string title, string priority) =>
             new(Guid.NewGuid(), title, "Planned", null, 40m, start, start.AddDays(4), start.AddDays(4), role, anna.Id, null, priority);
         var routine = Work("Текучка", "Low");

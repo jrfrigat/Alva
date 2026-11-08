@@ -3,7 +3,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Alva.Integrations;
 
-/// <summary>Подключённые модули по идентификатору. Два модуля с одним Id — ошибка конфигурации, она видна при старте.</summary>
+/// <summary>Registered modules by identifier. Two modules with the same Id are a configuration error, visible at startup.</summary>
 public sealed class TaskSourceModules
 {
     private readonly Dictionary<string, ITaskSourceModule> _modules = new(StringComparer.OrdinalIgnoreCase);
@@ -22,7 +22,7 @@ public sealed class TaskSourceModules
 
 public static class TaskSourceModuleRegistration
 {
-    /// <summary>Подключает модуль: он становится доступен в списке модулей и для подключений.</summary>
+    /// <summary>Registers a module: it becomes available in the module list and for connections.</summary>
     public static IServiceCollection AddTaskSourceModule<TModule>(this IServiceCollection services) where TModule : class, ITaskSourceModule
     {
         services.AddSingleton<ITaskSourceModule, TModule>();
@@ -30,7 +30,7 @@ public static class TaskSourceModuleRegistration
         return services;
     }
 
-    /// <summary>Подключает уже созданный модуль.</summary>
+    /// <summary>Registers an already created module.</summary>
     public static IServiceCollection AddTaskSourceModule(this IServiceCollection services, ITaskSourceModule module)
     {
         services.AddSingleton(module);

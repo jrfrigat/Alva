@@ -1,17 +1,17 @@
-/* Alva — токены темы и только они. Подключается темой как style-asset, поэтому ограничено её же
-   классом: тема может быть активна и для поддерева (FlareThemeScope). Правила оформления страниц
-   и точечные переопределения Flare живут в app.css приложения. */
+/* Alva - theme tokens and nothing else. Loaded by the theme as a style asset, so it is scoped by the theme's own
+   class: the theme can also be active for a subtree (FlareThemeScope). Page styling rules
+   and point Flare overrides live in the application's app.css. */
 
-/* Размеры и цвета компонентов (кнопки, поля, меню, оболочка, карточки) заданы токенами в
-   AlvaTheme.cs. Переменные Flare на .flare-theme-alva отсюда не задаются: стиль темы идёт позже
-   с тем же селектором и побеждает. */
+/* Component sizes and colors (buttons, fields, menu, shell, cards) are set by tokens in
+   AlvaTheme.cs. Flare variables on .flare-theme-alva are not set from here: the theme stylesheet comes later
+   with the same selector and wins. */
 
-/* Нейтрали дизайна, которых нет среди ролей палитры: рамки, подложки шапок таблиц, hover и
-   тепловая шкала загрузки. Светлые значения — из DESIGN.md; у тёмного режима и высокой контрастности
-   свои, из ролей их схем палитры. Высокую контрастность Flare 0.43 отмечает на <html> классом
-   flare-mode-dark, а на корне приложения — flare-mode-high-contrast, поэтому правило перечисляет оба.
-   Всё приложение (тема, app.css) берёт эти цвета отсюда, а не из литералов, — иначе тёмный режим даёт
-   светлый текст на белом. */
+/* Design neutrals that the palette roles do not cover: borders, table header backgrounds, hover and
+   the load heat scale. The light values are fixed theme neutrals; dark mode and high contrast have their own,
+   from the roles of their palette schemes. Flare marks high contrast on <html> with the
+   flare-mode-dark class and on the application root with flare-mode-high-contrast, so the rule lists both.
+   The whole application (theme, app.css) takes these colors from here rather than from literals - otherwise dark mode
+   yields light text on white. */
 .flare-theme-alva {
   --alva-border: #E2E8F0;
   --alva-border-strong: #CBD5E1;
@@ -22,14 +22,14 @@
   --alva-heat-tension: #B7C4FF;
   --alva-heat-track: #CBD5E1;
 
-  /* Серии графика ёмкости. Для графических объектов нужно ≥3:1 к подложке: на белом
-     #7C8DB5 даёт 3.32:1, #1D4ED8 — 6.70:1, #DC2626 — 4.83:1. */
+  /* Capacity chart series. Graphical objects need at least 3:1 against the background: on white
+     #7C8DB5 gives 3.32:1, #1D4ED8 6.70:1, #DC2626 4.83:1. */
   --alva-chart-fund: #7C8DB5;
   --alva-chart-planned: #1D4ED8;
   --alva-chart-deficit: #DC2626;
 
-  /* Семантика риска, ёмкости и ролей: текст, подложка, рамка. Подложки и рамки — из DESIGN.md, тексты
-     затемнены до 4,5:1 на своей подложке и на белом: дизайновые #DC2626 и #D97706 давали 3,95 и 2,86:1. */
+  /* Risk, capacity and calendar colors (the --alva-role-* token keeps its historical name): text, background, border.
+     The texts are darkened to 4.5:1 on their own background and on white: the original colors #DC2626 and #D97706 gave 3.95 and 2.86:1. */
   --alva-critical-text: #B91C1C;
   --alva-critical-bg: #FEE2E2;
   --alva-critical-subtle: #FEF2F2;
@@ -62,12 +62,12 @@
   --alva-heat-tension: var(--flare-color-secondary-container);
   --alva-heat-track: #8B93A5;
 
-  /* Светлые серии на тёмной подложке #06121F: 12.70:1, 7.41:1 и 9.93:1. */
+  /* Light series on the dark #06121F background: 12.70:1, 7.41:1 and 9.93:1. */
   --alva-chart-fund: #CBD5E1;
   --alva-chart-planned: #60A5FA;
   --alva-chart-deficit: #FCA5A5;
 
-  /* Тёмные подложки того же тона и светлые тексты; заливка под белым текстом остаётся тёмно-красной. */
+  /* Dark backgrounds of the same hue and light text; the fill under white text stays dark red. */
   --alva-critical-text: #FCA5A5;
   --alva-critical-bg: #3B1114;
   --alva-critical-subtle: #2A0F14;
@@ -88,8 +88,8 @@
   --alva-info-border: #2151DA;
 }
 
-/* Высокая контрастность — почти чёрная подложка #000A16; серии усиливаются до 19.91:1,
-   11.04:1 и 13.76:1 и остаются различимыми по светлоте и тону. */
+/* High contrast - an almost black #000A16 background; the series are strengthened to 19.91:1,
+   11.04:1 and 13.76:1 and remain distinguishable by lightness and hue. */
 .flare-theme-alva.flare-mode-high-contrast {
   --alva-heat-track: #C4C5D7;
   --alva-chart-fund: #FFFFFF;

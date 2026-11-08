@@ -52,7 +52,7 @@ public static class TaskEndpoints
             await db.SaveChangesAsync();
             return (await List(db, teamId)).Single(x => x.Id == task.Id);
         });
-        // Ручной порядок пула: ранги переписываются по списку одной записью, чтобы порядок не разъехался между клиентами.
+        // Manual backlog order: ranks are rewritten from the list in a single write so the order does not diverge between clients.
         group.MapPut("/backlog-order", async (Guid teamId, BacklogOrderRequest request, ClaimsPrincipal user, AlvaDbContext db) =>
         {
             await AccessControl.RequireTeam(db, user, teamId, "tasks", "edit");
@@ -91,7 +91,7 @@ public static class TaskEndpoints
         {
             await AccessControl.RequireTeam(db, user, teamId, "tasks", "view");
             await Find(db, teamId, taskId);
-            // Сортировка — после чтения: SQLite (локальный запуск) не умеет ORDER BY по DateTimeOffset, а записей у задачи немного.
+            // Sorting is done after reading: SQLite (local run) cannot ORDER BY DateTimeOffset, and a task has few entries.
             var history = await db.TaskHistory.AsNoTracking().Where(x => x.TaskId == taskId)
                 .Select(x => new HistoryDto(x.Id, x.At, x.UserId, x.Summary)).ToListAsync();
             return history.OrderByDescending(x => x.At).ThenBy(x => x.Id).ToArray();
@@ -131,7 +131,7 @@ public static class TaskEndpoints
             await db.SaveChangesAsync();
             return Results.NoContent();
         });
-        // Все связи между задачами команды — для диаграммы Ганта, которой нужен граф целиком.
+        // All links between the team's tasks, for the Gantt chart, which needs the whole graph.
         group.MapGet("/dependencies", async (Guid teamId, ClaimsPrincipal user, AlvaDbContext db) =>
         {
             await AccessControl.RequireTeam(db, user, teamId, "tasks", "view");
@@ -172,10 +172,10 @@ public static class TaskEndpoints
     }
 
     /// <summary>
-    /// Родитель охватывает детей: после правки задачи она сама не уже потомков, а предки с датами — не уже её.
-    /// Версию предков не меняем: это следствие чужой правки, и клиент, сохраняющий детей раньше родителя, не получит 409.
+    /// A parent spans its children: after a task is edited, the task itself is no narrower than its descendants, and dated ancestors are no narrower than it.
+    /// Ancestor versions are not changed: this is a consequence of someone else's edit, and a client that saves children before the parent will not get a 409.
     /// </summary>
-    /// <returns>Задачи, которым правило расширило окно, и их даты до расширения — для проверки связей.</returns>
+    /// <returns>The tasks whose window the rule widened, with their dates before widening, for link validation.</returns>
     internal static async Task<List<(TaskCard Task, DateOnly? Start, DateOnly? End)>> KeepParentsAroundChildren(AlvaDbContext db, Guid teamId, TaskCard task, Guid userId)
     {
         var stored = await db.Tasks.Where(x => x.TeamId == teamId && !x.Archived && x.Id != task.Id).ToListAsync();
@@ -211,8 +211,8 @@ public static class TaskEndpoints
         if (request.SetDailyHoursLimit && request.DailyHoursLimit is <= 0 or > 24) throw new ApiException(400, "Лимит в день должен быть больше 0 и не больше 24 часов.");
         if (request.SetDailyHoursLimit) task.DailyHoursLimit = request.DailyHoursLimit;
         if (request.Priority is { } text) priority = Enum.TryParse<TaskPriority>(text, true, out var parsed) && Enum.IsDefined(parsed) ? parsed : throw new ApiException(400, "Неизвестный приоритет задачи.");
-        // Фиксация требует обеих дат; пока задача зафиксирована, её окно не меняется. Снять фиксацию и
-        // перенести одной правкой можно — тогда итоговый признак уже false.
+        // Fixing requires both dates; while a task is fixed, its window does not change. Unfixing and
+        // moving the task in one edit is allowed - the resulting flag is already false.
         var datesFixed = request.DatesFixed ?? task.DatesFixed;
         if (datesFixed && (request.StartDate is null || request.EndDate is null))
             throw new ApiException(400, "У задачи с фиксированными датами должны быть заданы начало и окончание.");
@@ -238,15 +238,15 @@ public static class TaskEndpoints
     }
 
     /// <summary>
-    /// Правка дат не должна ухудшать связи задачи: новое нарушение или рост старого отклоняются, а улучшение
-    /// разрешено — так уже существующие нарушения можно исправлять по шагам, не блокируя все правки.
+    /// A date edit must not worsen the task's links: a new violation or growth of an existing one is rejected, while an improvement
+    /// is allowed - that way existing violations can be fixed step by step without blocking all edits.
     /// </summary>
     internal static async Task ValidateLinks(AlvaDbContext db, Guid teamId, TaskCard task, DateOnly? beforeStart, DateOnly? beforeEnd)
     {
         var links = await db.Dependencies.AsNoTracking().Where(x => x.PredecessorId == task.Id || x.SuccessorId == task.Id).ToListAsync();
         if (links.Count == 0) return;
         var ids = links.SelectMany(x => new[] { x.PredecessorId, x.SuccessorId }).Distinct().ToArray();
-        // Без AsNoTracking: в одной транзакции (автобаланс) вторая правка должна видеть первую.
+        // No AsNoTracking: within one transaction (auto-balance), the second edit must see the first.
         var tasks = await db.Tasks.Where(x => x.TeamId == teamId && ids.Contains(x.Id)).ToArrayAsync();
         var byId = tasks.ToDictionary(x => x.Id);
         (DateOnly Start, DateOnly End)? After(TaskCard x) =>
@@ -256,7 +256,7 @@ public static class TaskEndpoints
         foreach (var link in links)
         {
             if (!byId.TryGetValue(link.PredecessorId, out var predecessor) || !byId.TryGetValue(link.SuccessorId, out var successor)) continue;
-            // Без дат хотя бы у одной стороны связи сравнивать нечего: окна, которое можно нарушить, нет.
+            // Without dates on at least one side of a link there is nothing to compare: there is no window that could be violated.
             if (After(predecessor) is not { } afterPredecessor || After(successor) is not { } afterSuccessor) continue;
             var after = DependencyWindows.Violation(link.Kind.ToString(), link.LagDays, afterPredecessor, afterSuccessor);
             var before = Before(predecessor) is { } beforePredecessor && Before(successor) is { } beforeSuccessor
@@ -315,7 +315,7 @@ public static class TaskEndpoints
         var requiredSkills = taskSkills.ToLookup(x => x.TaskId, x => x.SkillId);
         var estimates = EffectiveEstimates(tasks);
         var deadlines = EffectiveDeadlines(tasks);
-        // Спринты задачи — из кэша одним запросом по команде, в порядке начала спринта.
+        // Task sprints come from the cache in a single query per team, ordered by sprint start.
         var sprints = (await db.TaskSprints.AsNoTracking().Where(x => x.TeamId == teamId)
             .Join(db.Sprints, x => x.SprintId, s => s.Id, (x, s) => new { x.TaskId, x.SprintId, s.StartDate }).ToListAsync())
             .OrderBy(x => x.StartDate).ToLookup(x => x.TaskId, x => x.SprintId);

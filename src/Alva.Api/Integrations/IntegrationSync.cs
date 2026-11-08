@@ -8,13 +8,13 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Alva.Api.Integrations;
 
-/// <summary>Итог прогона: что сделано и, если не вышло, почему.</summary>
+/// <summary>The result of a run: what was done and, if it failed, why.</summary>
 public sealed record IntegrationSyncResult(TaskSourceRun Run);
 
 /// <summary>
-/// Синхронизация задач из модуля интеграции. Идемпотентна: задача привязывается к внешнему ключу, и повтор её обновляет.
-/// Внешняя система — источник названия, статуса, оценок и сроков; планирование (даты, назначение, связи) Alva не отдаёт:
-/// даты переносятся только целиком и не трогают зафиксированные, назначение ставится, только если его нет.
+/// Synchronizes tasks from an integration module. It is idempotent: a task is linked to an external key, and repeating the sync updates it.
+/// The external system is the source of the title, status, estimates and deadlines; Alva keeps planning (dates, assignment, links) to itself:
+/// dates are transferred only as a complete pair and never touch fixed tasks, and an assignment is set only when none exists.
 /// </summary>
 public sealed class IntegrationSync(AlvaDbContext db, TaskSourceModules modules, IDataProtectionProvider protection, ILogger<IntegrationSync> log)
 {
@@ -23,7 +23,7 @@ public sealed class IntegrationSync(AlvaDbContext db, TaskSourceModules modules,
 
     public IDataProtector Protector => protection.CreateProtector(Purpose);
 
-    /// <summary>Подключение в словах модуля: настройки и расшифрованные секреты.</summary>
+    /// <summary>A connection in the module's terms: settings and decrypted secrets.</summary>
     public IntegrationConnection Describe(TaskSourceConnection connection) =>
         new(connection.Id, connection.Name, Settings(connection), Secrets(connection));
 
@@ -45,8 +45,8 @@ public sealed class IntegrationSync(AlvaDbContext db, TaskSourceModules modules,
     }
 
     /// <summary>
-    /// Прогон синхронизации. Одновременно по подключению идёт один прогон; второй получает 409. Ошибка модуля не бросается
-    /// наружу, а становится неуспешным прогоном в журнале — курсор при этом не сдвигается.
+    /// A synchronization run. Only one run per connection executes at a time; a second gets a 409. A module error is not thrown
+    /// outward but becomes a failed run in the log - the cursor does not advance in that case.
     /// </summary>
     public async Task<TaskSourceRun> RunAsync(TaskSourceConnection connection, bool full, CancellationToken ct)
     {
@@ -95,7 +95,7 @@ public sealed class IntegrationSync(AlvaDbContext db, TaskSourceModules modules,
         var source = await Module(connection).ConnectAsync(Describe(connection), ct);
         var external = new List<ExternalTask>();
         await foreach (var item in source.ReadTasksAsync(full ? null : connection.SyncedThrough, ct)) external.Add(item);
-        // Повтор ключа в одной выдаче (страницы сдвинулись во время чтения) — берётся последний.
+        // A repeated key in one result set (pages shifted during reading) - the last one is taken.
         external = external.GroupBy(x => x.Key, StringComparer.Ordinal).Select(g => g.Last()).ToList();
 
         var teamId = connection.TeamId;
@@ -136,8 +136,8 @@ public sealed class IntegrationSync(AlvaDbContext db, TaskSourceModules modules,
 
         TaskCard? Linked(string? key) => key is not null && links.TryGetValue(key, out var l) && tasks.TryGetValue(l.TaskId, out var t) && !t.Archived ? t : null;
 
-        // Родители — после сохранения: правило «родитель охватывает детей» читает задачи из базы. Цепочка предков
-        // проверяется по всей команде, не только по пришедшим задачам: иначе цикл мог бы пройти через задачу Alva.
+        // Parents are processed after saving: the "parent spans children" rule reads tasks from the database. The ancestor chain
+        // is checked across the whole team, not only the incoming tasks: otherwise a cycle could pass through an Alva task.
         var parentOf = await db.Tasks.Where(x => x.TeamId == teamId).ToDictionaryAsync(x => x.Id, x => x.ParentId, ct);
         foreach (var item in external)
         {
@@ -152,7 +152,7 @@ public sealed class IntegrationSync(AlvaDbContext db, TaskSourceModules modules,
             }
             catch (ApiException e) { task.ParentId = before; notes.Add($"{item.Key}: {e.Message}"); }
         }
-        // Источник мог снова дать родителю свои даты, уже узкие для детей: родитель опять охватывает их, как после ручной правки.
+        // The source may have given the parent its own dates again, already too narrow for the children: the parent spans them again, as after a manual edit.
         var withChildren = external.Select(x => Linked(x.Key)).OfType<TaskCard>().Where(t => t.ParentId is not null)
             .Select(t => t.ParentId!.Value).Distinct().Select(id => tasks.GetValueOrDefault(id)).OfType<TaskCard>().ToList();
         foreach (var parent in withChildren)
@@ -174,11 +174,11 @@ public sealed class IntegrationSync(AlvaDbContext db, TaskSourceModules modules,
             pairs.Add((from.Id, to.Id));
         }
 
-        // Исполнитель — по email участника; только для листовой задачи и только если назначения нет: назначение планирует Alva.
+        // The assignee comes from the member's email; only for a leaf task and only when there is no assignment: Alva plans assignments.
         var people = (await db.Actors.Where(x => x.TeamId == teamId && x.Kind == ActorKind.Person && !x.Archived && x.Email != null).ToListAsync(ct))
             .GroupBy(x => x.Email!.Trim(), StringComparer.OrdinalIgnoreCase).ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
         var assigned = (await db.Assignments.Where(x => taskIds.Contains(x.TaskId)).Select(x => x.TaskId).ToListAsync(ct)).ToHashSet();
-        // Родители — по карте команды вместе с только что поставленными: они ещё не сохранены, и запрос к базе их не увидел бы.
+        // Parents come from the team map together with those just set: they are not saved yet, so a database query would not see them.
         var parents = parentOf.Values.OfType<Guid>().ToHashSet();
         foreach (var item in external)
         {
@@ -193,7 +193,7 @@ public sealed class IntegrationSync(AlvaDbContext db, TaskSourceModules modules,
         run.Message = Trim(string.Join(" ", new[] { $"Получено задач: {external.Count}." }.Concat(notes)));
     }
 
-    /// <summary>Переносит в задачу то, что источник знает; возвращает названия изменённых полей для истории.</summary>
+    /// <summary>Copies into the task what the source knows; returns the names of the changed fields for the history.</summary>
     internal static List<string> Apply(TaskCard task, ExternalTask item)
     {
         var changes = new List<string>();
@@ -211,7 +211,7 @@ public sealed class IntegrationSync(AlvaDbContext db, TaskSourceModules modules,
         if (item.EstimateHours is { } estimate && estimate >= 0) Set(task.EstimateHours, (decimal?)Math.Round(estimate, 2), v => task.EstimateHours = v, "оценка");
         if (item.RemainingHours is { } remaining && remaining >= 0) Set(task.RemainingHours, (decimal?)Math.Round(remaining, 2), v => task.RemainingHours = v, "остаток");
         if (item.Deadline is { } deadline) Set(task.Deadline, (DateOnly?)deadline, v => task.Deadline = v, "срок");
-        // Даты — только парой и не поверх фиксации: половина окна или перенос зафиксированной задачи сломали бы план.
+        // Dates are accepted only as a pair and never over a fixed task: half a window or moving a fixed task would break the plan.
         if (item is { Start: { } start, End: { } end } && start <= end && !task.DatesFixed && (task.StartDate != start || task.EndDate != end))
         {
             task.StartDate = start;
@@ -221,7 +221,7 @@ public sealed class IntegrationSync(AlvaDbContext db, TaskSourceModules modules,
         return changes;
     }
 
-    /// <summary>Задача и все её предки по карте родителей команды.</summary>
+    /// <summary>The task and all its ancestors according to the team's parent map.</summary>
     private static HashSet<Guid> Ancestors(Guid taskId, Dictionary<Guid, Guid?> parentOf)
     {
         var seen = new HashSet<Guid> { taskId };

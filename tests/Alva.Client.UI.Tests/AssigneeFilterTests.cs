@@ -7,7 +7,7 @@ using Xunit;
 
 namespace Alva.Client.UI.Tests;
 
-/// <summary>«Моя работа» и «Без исполнителя» считают исполнителем того человека, который реально делает задачу.</summary>
+/// <summary>My work and Unassigned treat the person who actually does the task as the assignee.</summary>
 public sealed class AssigneeFilterTests : UiTestBase
 {
     private static readonly Guid UserId = Guid.NewGuid();

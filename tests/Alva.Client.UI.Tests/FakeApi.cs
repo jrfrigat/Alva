@@ -4,7 +4,7 @@ using Alva.Contracts;
 
 namespace Alva.Client.UI.Tests;
 
-/// <summary>Поддельный API: ответы на GET задаются обработчиками по пути, отправки записываются и могут падать.</summary>
+/// <summary>Fake API: GET responses are set by path handlers, sends are recorded and can fail.</summary>
 public sealed class FakeApi : IApiService
 {
     private readonly List<(string Prefix, Func<string, object> Answer)> _gets = [];
@@ -12,14 +12,14 @@ public sealed class FakeApi : IApiService
     public FakeApi() => SelectedTeamId = TeamGuid;
 
     public Guid TeamGuid { get; } = Guid.NewGuid();
-    /// <summary>Все отправки, включая упавшие.</summary>
+    /// <summary>All sends, including failed ones.</summary>
     public List<(HttpMethod Method, string Path, object Value)> Sent { get; } = [];
     public List<string> Reads { get; } = [];
 
-    /// <summary>Обработчик отправки: вернуть исключение, чтобы запрос упал.</summary>
+    /// <summary>Send handler: return an exception to make the request fail.</summary>
     public Func<HttpMethod, string, object, Exception?> OnSend { get; set; } = (_, _, _) => null;
 
-    /// <summary>Ответ на GET ресурса команды; позже заданный обработчик проверяется раньше.</summary>
+    /// <summary>Response to a GET of a team resource; a handler registered later is checked first.</summary>
     public FakeApi Answer(string prefix, Func<string, object> answer) { _gets.Insert(0, (prefix, answer)); return this; }
 
     public UserInfo? User { get; set; }
@@ -28,7 +28,7 @@ public sealed class FakeApi : IApiService
     public TeamInfo[] Teams { get; set; } = [];
     public Guid? SelectedWorkspaceId { get; set; } = Guid.Empty;
     public Guid? WorkspaceId => SelectedWorkspaceId;
-    /// <summary>Команда, восстановленная после входа; null — пользователь ещё не выбрал команду.</summary>
+    /// <summary>Team restored after sign-in; null means the user has not selected a team yet.</summary>
     public Guid? SelectedTeamId { get; set; }
     public Guid? TeamId => SelectedTeamId;
     public string TeamName => "Команда";
@@ -38,7 +38,7 @@ public sealed class FakeApi : IApiService
 
     public string TeamPath(string resource) => $"teams/{TeamGuid}/{resource}";
     public Task Initialize() => Task.CompletedTask;
-    /// <summary>Вход/регистрация: вернуть исключение, чтобы сервер отказал; запросы — в Authentications.</summary>
+    /// <summary>Sign-in/registration: return an exception to make the server refuse; requests go to Authentications.</summary>
     public Func<string, Exception?> OnAuthenticate { get; set; } = _ => null;
     public List<string> Authentications { get; } = [];
     public Task Authenticate(string endpoint, object input) { Authentications.Add(endpoint); return OnAuthenticate(endpoint) is { } error ? Task.FromException(error) : Task.CompletedTask; }
@@ -47,7 +47,7 @@ public sealed class FakeApi : IApiService
     public Task SelectWorkspace(Guid id) => Task.CompletedTask;
     public Task SelectTeam(Guid id) => Task.CompletedTask;
     public Task RefreshUser() => Task.CompletedTask;
-    /// <summary>Импорт: вернуть исключение, чтобы он упал; число успешных импортов — в Imports.</summary>
+    /// <summary>Import: return an exception to make it fail; the number of successful imports is in Imports.</summary>
     public Func<Exception?> OnImport { get; set; } = () => null;
     public int Imports { get; private set; }
     public DataImportResult ImportResult { get; set; } = new(0, [], []);
@@ -58,7 +58,7 @@ public sealed class FakeApi : IApiService
         return await Task.FromResult(ImportResult);
     }
 
-    /// <summary>Медленный сервер: чтение ждёт эту задачу, прежде чем ответить.</summary>
+    /// <summary>Slow server: a read waits for this task before responding.</summary>
     public Task? GetGate { get; set; }
 
     public async Task<T> Get<T>(string path)
@@ -66,17 +66,17 @@ public sealed class FakeApi : IApiService
         Reads.Add(path);
         if (GetGate is not null) await GetGate;
         var resource = path.StartsWith(TeamPath(""), StringComparison.Ordinal) ? path[TeamPath("").Length..] : path;
-        // Ответ другого типа пропускается: общий префикс вроде «tasks/» (история) не должен отвечать
-        // на запрос связей той же задачи.
+        // A response of another type is skipped: a common prefix such as "tasks/" (history) must not answer
+        // a request for the links of the same task.
         foreach (var (prefix, answer) in _gets)
             if (resource.StartsWith(prefix, StringComparison.Ordinal) && answer(resource) is T typed) return typed;
-        // Карточка задачи читает риск и связи всегда; тестам, которым они не важны, хватает пустых.
+        // The task card always reads risk and links; tests that do not care about them are fine with empty ones.
         if (resource == "risks" && Array.Empty<RiskDto>() is T noRisks) return noRisks;
         if (resource.EndsWith("/dependencies", StringComparison.Ordinal) && Array.Empty<DependencyDto>() is T noLinks) return noLinks;
         throw new InvalidOperationException($"Нет ответа для {path}");
     }
 
-    /// <summary>Медленный сервер: отправка ждёт эту задачу, прежде чем ответить.</summary>
+    /// <summary>Slow server: a send waits for this task before responding.</summary>
     public Task? Gate { get; set; }
 
     public async Task Send(HttpMethod method, string path, object value)

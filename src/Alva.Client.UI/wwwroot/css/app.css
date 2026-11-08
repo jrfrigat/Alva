@@ -1,19 +1,19 @@
-/* Alva — доменные стили приложения.
-   Карта разделов:
-   1. Основа и утилиты
-   2. Оболочка: шапка, бренд, команда, пользователь
-   3. Общие элементы страниц: панели, фильтры, секции
-   4. Задача и назначение исполнителя
-   5. Планирование спринта
-   6. Проекты и WBS
-   7. Ёмкость: матрица и тепловая шкала
-   8. Календари и график работы
-   9. Аналитика и колокольчик рисков
-   10. Гантт
-   11. Переопределения Flare, сенсорные и мобильные правила
-   Всё, что заменено компонентами Flare, здесь не дублируется. */
+/* Alva - application domain styles.
+   Section map:
+   1. Foundation and utilities
+   2. Shell: app bar, brand, team, user
+   3. Shared page elements: panels, filters, sections
+   4. Task and assignee assignment
+   5. Sprint planning
+   6. Projects and WBS
+   7. Capacity: matrix and heat scale
+   8. Calendars and work schedule
+   9. Analytics and risk bell
+   10. Gantt
+   11. Flare overrides, touch and mobile rules
+   Anything replaced by Flare components is not duplicated here. */
 
-/* 1. Основа и утилиты */
+/* 1. Foundation and utilities */
 :root{--alva-font:Inter,"Segoe UI",system-ui,sans-serif;--alva-primary:#0037b0;--alva-primary-container:#1d4ed8;--alva-primary-hover:#1e40af;--alva-secondary:#3755c3;--alva-tertiary:#5311bc;--alva-surface:#f8f9ff;--alva-surface-lowest:#ffffff;--alva-surface-container:#e5eeff;--alva-surface-high:#dce9ff;--alva-outline:#c4c5d7;--alva-outline-strong:#747686;--alva-on-surface:#0b1c30;--alva-on-surface-variant:#434655;--alva-critical:#ef4444;--alva-warning:#f59e0b;--alva-ok:#10b981;--alva-role:#8b5cf6;--alva-radius-sm:6px;--alva-radius-md:8px;--alva-row-height:34px;--flare-font-family:var(--alva-font)}
 html,body{margin:0;min-height:100%;font-family:var(--alva-font);background:var(--flare-color-surface,var(--alva-surface));color:var(--flare-color-on-surface,var(--alva-on-surface));-webkit-font-smoothing:antialiased}
 *{box-sizing:border-box}
@@ -25,7 +25,7 @@ html,body{margin:0;min-height:100%;font-family:var(--alva-font);background:var(-
 .alva-field-error{color:var(--alva-critical-text)}
 .alva-page-loading{min-height:4px}
 
-/* 2. Оболочка: шапка, бренд, команда, пользователь */
+/* 2. Shell: app bar, brand, team, user */
 .alva-appbar{display:flex;align-items:center;gap:1rem;flex:1;min-width:0;padding-inline:.25rem 1.25rem}
 .alva-brand{display:flex;align-items:center;gap:.375rem;text-decoration:none;color:inherit}
 .alva-brand__mark{display:grid;place-items:center;width:28px;height:28px;border-radius:12px;background:var(--flare-color-primary-container,#1d4ed8);color:#fff;font-size:18px;font-weight:700;box-shadow:0 1px 4px rgba(0,0,0,.1)}
@@ -42,7 +42,7 @@ html,body{margin:0;min-height:100%;font-family:var(--alva-font);background:var(-
 .alva-user__avatar{display:grid;place-items:center;width:32px;height:32px;border-radius:9999px;background:var(--flare-color-primary,var(--alva-primary));color:var(--flare-color-on-primary,#fff)}
 .alva-user--menu{border:0;background:none;padding:0;cursor:pointer}
 
-/* 3. Общие элементы страниц: панели, фильтры, секции */
+/* 3. Shared page elements: panels, filters, sections */
 .alva-panel{display:flex;flex-direction:column;gap:.75rem;padding:1rem;border:1px solid var(--alva-border);border-radius:6px;background:var(--flare-color-surface-container-lowest,#fff)}
 .alva-panel__header{display:flex;align-items:flex-start;gap:.5rem}
 .alva-panel__icon{color:var(--flare-color-primary,var(--alva-primary));margin-top:2px}
@@ -67,7 +67,7 @@ html,body{margin:0;min-height:100%;font-family:var(--alva-font);background:var(-
 .alva-slot__mark{display:grid;flex:none;place-items:center;width:28px;height:28px;border-radius:9999px;background:var(--flare-color-primary,var(--alva-primary));color:var(--flare-color-on-primary,#fff);font-size:11px;font-weight:700}
 .alva-slot__mark--vacancy{background:var(--alva-critical-bg);color:var(--alva-critical-text)}
 
-/* 4. Задача и назначение исполнителя */
+/* 4. Task and assignee assignment */
 .alva-task__external{font-size:.875rem;font-variant-numeric:tabular-nums;color:var(--flare-color-primary,var(--alva-primary));white-space:nowrap}
 .alva-integration__runs{display:flex;flex-direction:column;gap:.25rem;padding-top:.5rem;border-top:1px solid var(--alva-border)}
 .alva-assign{display:flex;flex-direction:column;gap:.75rem;padding:1rem}
@@ -77,7 +77,7 @@ html,body{margin:0;min-height:100%;font-family:var(--alva-font);background:var(-
 .alva-assign__footer{display:flex;justify-content:space-between;gap:.5rem;padding-top:.75rem;border-top:1px solid var(--alva-border)}
 .alva-task-filters{min-width:0}
 
-/* 5. Планирование спринта */
+/* 5. Sprint planning */
 .alva-plan-board{display:grid;grid-template-columns:minmax(15rem,18rem) minmax(0,1fr) minmax(15rem,18rem);gap:1rem;align-items:start}
 @media(max-width:1280px){.alva-plan-board{grid-template-columns:minmax(15rem,18rem) minmax(0,1fr)}.alva-plan-side{grid-column:1/-1;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,22rem),1fr))}}
 @media(max-width:900px){.alva-plan-board{grid-template-columns:minmax(0,1fr)}}
@@ -132,7 +132,7 @@ html,body{margin:0;min-height:100%;font-family:var(--alva-font);background:var(-
 .alva-skill__head{display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;gap:.375rem;font-size:13px}
 .alva-skill__foot{display:flex;flex-wrap:wrap;justify-content:space-between;gap:.25rem;font-size:11px;font-weight:600}
 
-/* 6. Проекты и WBS */
+/* 6. Projects and WBS */
 .alva-proj-layout{display:grid;grid-template-columns:minmax(17rem,22rem) minmax(0,1fr);gap:1rem;align-items:start}
 @media(max-width:1023px){.alva-proj-layout{grid-template-columns:minmax(0,1fr)}}
 .alva-proj-detail{display:flex;flex-direction:column;gap:1rem;min-width:0}
@@ -141,7 +141,7 @@ html,body{margin:0;min-height:100%;font-family:var(--alva-font);background:var(-
 .alva-proj-team{gap:.5rem}
 .alva-wbs{padding:0;gap:0;overflow:hidden}
 
-/* 7. Ёмкость: матрица и тепловая шкала */
+/* 7. Capacity: matrix and heat scale */
 .alva-capacity-bar{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem .75rem;padding:.5rem .75rem;border:1px solid var(--alva-border);border-radius:6px;background:var(--flare-color-surface-container-lowest,#fff)}
 .alva-capacity-bar__sep{width:1px;height:20px;background:var(--alva-border)}
 .alva-capacity-bar__check{margin-left:auto}
@@ -192,7 +192,7 @@ a.alva-matrix__name:hover{text-decoration:underline}
 .alva-heat--empty{background:var(--alva-subtle);color:var(--flare-color-on-surface-variant,var(--alva-on-surface-variant))}
 .alva-heat--flag{box-shadow:inset 0 0 0 2px var(--alva-critical-text)}
 
-/* 8. Календари и график работы */
+/* 8. Calendars and work schedule */
 .alva-calendar-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(16rem,20rem);gap:1rem;align-items:start}
 @media(max-width:1100px){.alva-calendar-layout{grid-template-columns:minmax(0,1fr)}}
 .alva-month-grid{padding:0;gap:0;overflow:hidden}
@@ -263,7 +263,7 @@ a.alva-matrix__name:hover{text-decoration:underline}
 .alva-ring__label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
 .alva-ring__pct{font-size:11px;font-weight:700;color:var(--flare-color-primary,var(--alva-primary))}
 
-/* 9. Аналитика и колокольчик рисков */
+/* 9. Analytics and risk bell */
 .alva-risk-panel{padding:0;gap:0;overflow:hidden}
 .alva-risk-panel__details{padding:0 1rem .75rem;font-size:12px;color:var(--flare-color-on-surface-variant,var(--alva-on-surface-variant))}
 .alva-risk-panel__details summary{cursor:pointer;font-weight:600}
@@ -279,7 +279,7 @@ a.alva-matrix__name:hover{text-decoration:underline}
 .alva-bell__new{color:var(--flare-color-primary);font-weight:700}
 .alva-bell__actions{display:flex;justify-content:space-between;gap:var(--flare-spacing-2)}
 
-/* 10. Гантт */
+/* 10. Gantt */
 .alva-gantt__host{display:block;min-width:0}
 .alva-gantt__host:focus:not(:focus-visible){outline:none}
 .alva-gantt-bar__fields{display:flex;flex-wrap:wrap;gap:var(--flare-spacing-4,.5rem)}
@@ -323,9 +323,9 @@ a.alva-matrix__name:hover{text-decoration:underline}
 .alva-gantt-zoom .flare-slider{width:100%}
 .alva-gantt .flare-gantt__segment.flare-gantt--kind-waiting{--flare-gantt-segment-bg:repeating-linear-gradient(135deg,color-mix(in srgb,#fff 55%,transparent) 0 4px,transparent 4px 8px)}
 
-/* 11. Переопределения Flare, сенсорные и мобильные правила */
-/* Точечные переопределения Flare, для которых у темы нет токена. Перенесены из alva.css, где
-   остаются только переменные темы; html усиливает селектор при любом порядке подключения таблиц. */
+/* 11. Flare overrides, touch and mobile rules */
+/* Point overrides for Flare that the theme has no token for. alva.css holds only theme variables;
+   html strengthens the selector regardless of stylesheet load order. */
 html .flare-theme-alva .flare-datagrid{--flare-state-hover-layer:var(--alva-hover);--flare-stripe-bg:var(--alva-subtle)}
 html .flare-theme-alva .flare-datagrid__row{height:34px}
 html .flare-theme-alva .flare-datagrid__th{height:34px;padding:0 8px;background:var(--alva-subtle);color:var(--flare-color-on-surface-variant);font-size:11px;font-weight:600;line-height:14px;letter-spacing:.03em;text-transform:uppercase;border-bottom:1px solid var(--alva-border)}
@@ -336,18 +336,18 @@ html .flare-theme-alva .flare-progress{--flare-color-secondary-container:var(--f
 html .flare-theme-alva .alva-nav-sep{margin:4px 12px 8px;border-top:1px solid var(--alva-border)}
 html .flare-theme-alva .flare-alert--warning{background:var(--alva-warning-bg);color:var(--alva-warning-text)}
 html .flare-theme-alva .flare-alert--error{background:var(--alva-critical-bg);color:var(--alva-critical-text)}
-/* TASK-192: стоковый янтарный #F59E0B на белом не проходит 4.5:1. Семантический токен Alva
-   затемнён в светлой теме и светлеет в тёмной, поэтому предупреждения читаются везде. */
+/* Stock amber #F59E0B on white does not reach 4.5:1. The semantic Alva token is
+   darkened in the light theme and lightened in the dark theme, so warnings read well everywhere. */
 html .flare-theme-alva .flare-color-warning{--fc-main:var(--alva-warning-text)}
-/* Выбранная строка списка задаёт контрастный цвет содержимого. Вложенный текст и ссылки
-   наследуют его: серый и primary на сильном фоне выбранного состояния теряли контраст. */
+/* The selected list row sets a contrasting content color. Nested text and links
+   inherit it: gray and primary lost contrast on the strong selected-state background. */
 html .flare-theme-alva .flare-list-item--selected .flare-color-on-surface,
 html .flare-theme-alva .flare-list-item--selected .flare-color-on-surface-variant{color:inherit}
 html .flare-theme-alva .flare-list-item--selected .flare-link{color:inherit}
 html .flare-theme-alva .alva-num,html .flare-theme-alva td,html .flare-theme-alva th{font-variant-numeric:tabular-nums}
 
-/* TASK-144: на сенсорном экране цели не меньше 44px, текст не мельче 12px, поля — 16px,
-   чтобы iOS не увеличивал страницу. Desktop-плотность не меняется: правила только в media. */
+/* On a touch screen targets are at least 44px, text is no smaller than 12px and fields are 16px
+   so iOS does not zoom the page. Desktop density is unchanged: the rules are inside media queries only. */
 @media (pointer:coarse){
   .flare-btn,.flare-icon-button,.flare-tab,.flare-menu-item,.flare-bottom-nav-item,.flare-nav-link,.alva-quickfilter__item{min-height:44px}
   .flare-btn--icon-only,.flare-icon-button{min-width:44px}

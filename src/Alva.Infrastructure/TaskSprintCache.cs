@@ -6,15 +6,15 @@ using Microsoft.EntityFrameworkCore.ChangeTracking;
 namespace Alva.Infrastructure;
 
 /// <summary>
-/// Пересчёт кэша TaskSprint. Трогает только то, что изменилось: строки изменённой задачи пересчитываются по спринтам её
-/// команды, строки изменённого спринта — по задачам, чьё окно пересекает его новое окно (запрос по индексу дат).
+/// TaskSprint cache recalculation. It touches only what changed: rows of a changed task are recalculated against the sprints of its
+/// team, and rows of a changed sprint against the tasks whose window overlaps its new window (a query by the date index).
 /// </summary>
 internal static class TaskSprintCache
 {
     private static readonly string[] TaskFields = [nameof(TaskCard.StartDate), nameof(TaskCard.EndDate), nameof(TaskCard.Archived), nameof(TaskCard.TeamId)];
     private static readonly string[] SprintFields = [nameof(Sprint.StartDate), nameof(Sprint.EndDate), nameof(Sprint.TeamId)];
 
-    /// <summary>Задачи и спринты, от которых зависит кэш, среди изменений контекста.</summary>
+    /// <summary>Tasks and sprints the cache depends on, among the context changes.</summary>
     public static (HashSet<Guid> Tasks, HashSet<Guid> Sprints) Touched(ChangeTracker tracker)
     {
         var tasks = new HashSet<Guid>();
@@ -34,11 +34,11 @@ internal static class TaskSprintCache
         _ => false
     };
 
-    /// <summary>Убирает строки затронутых задач и спринтов — до сохранения, чтобы удаление задачи или спринта не упёрлось в кэш.</summary>
+    /// <summary>Removes the rows of affected tasks and sprints - before saving, so deleting a task or sprint does not run into the cache.</summary>
     public static Task Forget(AlvaDbContext db, HashSet<Guid> tasks, HashSet<Guid> sprints, CancellationToken ct) =>
         db.TaskSprints.Where(x => tasks.Contains(x.TaskId) || sprints.Contains(x.SprintId)).ExecuteDeleteAsync(ct);
 
-    /// <summary>Вставляет строки затронутых задач и спринтов по уже сохранённым датам.</summary>
+    /// <summary>Inserts the rows of affected tasks and sprints using the already saved dates.</summary>
     public static async Task Fill(AlvaDbContext db, HashSet<Guid> tasks, HashSet<Guid> sprints, CancellationToken ct)
     {
         var pairs = new HashSet<(Guid Task, Guid Sprint)>();

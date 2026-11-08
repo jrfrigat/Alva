@@ -5,12 +5,12 @@ using Microsoft.JSInterop;
 namespace Alva.Client.Services;
 
 /// <summary>
-/// Фасад над <see cref="IApiService"/>. Страницы продолжают зависеть от <c>AlvaSession</c>,
-/// а реализация доступа к данным (HTTP или demo) выбирается при сборке.
+/// A facade over <see cref="IApiService"/>. Pages keep depending on <c>AlvaSession</c>,
+/// while the data access implementation (HTTP or demo) is chosen at build time.
 /// </summary>
 public sealed class AlvaSession(IApiService api, IJSRuntime js)
 {
-    /// <summary>Контекст списка задач: поиск, фильтры и позиция прокрутки, переживающие переход в карточку.</summary>
+    /// <summary>Task list context: search, filters and scroll position that survive navigating into a task card.</summary>
     public TaskListState TaskList { get; } = new(js);
 
     public UserInfo? User => api.User;
@@ -23,7 +23,7 @@ public sealed class AlvaSession(IApiService api, IJSRuntime js)
     public bool SupportsDataTransfer => api.SupportsDataTransfer;
     public event Action? Changed { add => api.Changed += value; remove => api.Changed -= value; }
     public string TeamPath(string resource) => api.TeamPath(resource);
-    /// <summary>Путь ресурса другой команды: проект нескольких команд сводит их задачи, права проверяет сервер.</summary>
+    /// <summary>The resource path for another team: a multi-team project combines their tasks, and the server checks permissions.</summary>
     public string TeamPath(Guid teamId, string resource)
     {
         var path = api.TeamPath(resource);

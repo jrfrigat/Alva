@@ -36,7 +36,7 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
 builder.Services.AddAuthorization();
 var protection = builder.Services.AddDataProtection().SetApplicationName("Alva");
 if (builder.Configuration["DataProtection:KeysPath"] is { Length: > 0 } keysPath) protection.PersistKeysToFileSystem(new DirectoryInfo(keysPath));
-// Модули интеграции задач: каждый подключается одной строкой, ядро знает их только через контракт.
+// Task integration modules: each is plugged in with a single line, and the core knows them only through the contract.
 builder.Services.AddYandexTrackerModule();
 builder.Services.AddScoped<IntegrationSync>();
 if (builder.Configuration.GetValue("Integrations:AutoSync", true)) builder.Services.AddHostedService<IntegrationSyncWorker>();
@@ -80,7 +80,7 @@ if (builder.Configuration.GetValue("Database:MigrateOnStartup", true))
 {
     using var scope = app.Services.CreateScope();
     var database = scope.ServiceProvider.GetRequiredService<AlvaDbContext>().Database;
-    // Провайдер выбирается конфигом: для SQLite (локальный запуск) миграции Npgsql неприменимы.
+    // The provider is chosen by configuration: with SQLite (local run), the Npgsql migrations do not apply.
     if (database.IsSqlite()) await database.EnsureCreatedAsync();
     else await database.MigrateAsync();
 }

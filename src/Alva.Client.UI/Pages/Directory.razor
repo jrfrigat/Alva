@@ -110,7 +110,7 @@ else
     private string Title=>Kind=="Skill"?AlvaStrings.People_TeamSkills:Kind=="Department"?AlvaStrings.Common_SubTeams:AlvaStrings.People_TeamPeople;
     private string Category=>Kind=="Skill"?AlvaStrings.People_RegistrySkills:Kind=="Department"?AlvaStrings.People_RegistrySubTeams:AlvaStrings.People_RegistryPeople;
 
-    // Адрес — источник истины: вкладка только переводит индекс в маршрут.
+    // The URL is the source of truth: the tab only translates an index into a route.
     private int TabIndex
     {
         get => Kind == "Skill" ? 2 : Kind == "Department" ? 1 : 0;

@@ -8,7 +8,7 @@ using Xunit;
 
 namespace Alva.Client.UI.Tests;
 
-/// <summary>Пока данных доски нет, единственный скелетон региона объявляет загрузку скринридеру.</summary>
+/// <summary>While there is no board data, the region's single skeleton announces loading to the screen reader.</summary>
 public sealed class GanttSprintBoardTests : UiTestBase
 {
     public GanttSprintBoardTests() => Services.AddScoped<GanttPreferences>();

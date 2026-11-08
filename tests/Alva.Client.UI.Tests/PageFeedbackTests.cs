@@ -7,7 +7,7 @@ using Xunit;
 
 namespace Alva.Client.UI.Tests;
 
-/// <summary>Классы ошибок переводятся в понятный текст, а временный сбой можно повторить.</summary>
+/// <summary>Error classes are translated into clear text, and a temporary failure can be retried.</summary>
 public sealed class PageFeedbackTests : UiTestBase
 {
     [Theory]

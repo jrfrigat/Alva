@@ -4,8 +4,8 @@
 @inject GanttPreferences Preferences
 @inject NavigationManager Navigation
 @using Flare.Components.Gantt
-@* Гантт по людям (макет p6_2d, проекция 2): дорожки людей и ролей с часами ёмкости и задачами исполнителя.
-   В 2D-режиме над ними — проекция 1 на той же оси. Проекции собирает Alva из примитивов Flare.Components.Gantt. *@
+@* People Gantt (projection 2): lanes of people and skills with capacity hours and the assignee's tasks.
+   In 2D mode projection 1 sits above them on the same axis. Alva builds the projections from Flare.Components.Gantt primitives. *@
 <PageTitle>@(_twoD ? AlvaStrings.Gantt_SynchronisedGantt2d : AlvaStrings.Gantt_PeopleGantt) · Alva</PageTitle>
 <AlvaPageHeader Category="@(AlvaStrings.Gantt_ChartsGantt)" Title="@(_twoD ? AlvaStrings.Gantt_SynchronisedGantt2d : AlvaStrings.Gantt_PeopleGantt)" Description="@(AlvaStrings.Gantt_WhoIsBusyAndWhenHoursOfAssignedWorkVersusAvailableOverloadsAndAbsencesDr_42e8e3)" />
 <PageFeedback Loading="_busy" Error="@_error" OnRetry="() => Reload()" />
@@ -25,7 +25,7 @@ else if (_data is not null && _people is not null)
 
     <GanttLegend Notice="@_notice" Items="PeopleKey" />
 
-    @* Обёртка ловит Enter с полосы и держит фокус после закрытия панели: события полосы всплывают сюда. *@
+    @* The wrapper catches Enter from a bar and holds focus after the panel closes: the bar's events bubble up here. *@
     <div class="alva-gantt__host" @ref="_host" tabindex="-1" @onkeydown="OnChartKey">
     <FlareGantt @ref="_chart" Range="@_range" RangeChanged="Grow" Endless="true" Scale="_scale" UnitWidth="_unit" FillWidth="true" Virtualize="true" RowHeight="36" SideWidth="@_side" DefaultSideWidth="22rem" ResizableSide="true" SideWidthChanged="SaveSide"
                 NonWorking="GanttData.IsWeekend" Markers="@GanttData.TodayMarkers" Regions="@_data.SprintRegions(Sprint)" @bind-SelectedKey="_selected"
@@ -43,7 +43,7 @@ else if (_data is not null && _people is not null)
         </ChildContent>
     </FlareGantt>
     </div>
-    @* Панель задачи — та же, что на «Гантте по задачам»: карточка задачи целиком, без ухода со страницы. *@
+    @* Task panel - the same one as on the Task Gantt: the full task card, without leaving the page. *@
     <FlareDrawer Anchor="DrawerAnchor.Right" Open="_panelOpen" OpenChanged="OnPanelOpen" Width="34rem" ContentPadding="FlareSpacing.Large" AriaLabel="@(AlvaStrings.Common_Task)">
         @if (_open is not null)
         {
@@ -65,7 +65,6 @@ else if (_data is not null && _people is not null)
     private string? _selected;
     private bool _twoD;
 
-    // Панель задачи: та же, что на «Гантте по задачам».
     private TaskModel? _open;
     private TaskDetails? _details;
     [CascadingParameter] public FlareConfirmDialogProvider? Confirm { get; set; }
@@ -89,10 +88,10 @@ else if (_data is not null && _people is not null)
     private FlareGantt? _chart;
     private GanttSpan _range;
 
-    // Окно спринта (или всех задач) — начало оси; дальше она растёт прокруткой.
+    // The sprint window (or all tasks) is the start of the axis; beyond it the axis grows as you scroll.
     private GanttSpan SprintRange => _data!.Range(Sprint, Today);
 
-    // Ось просит больше времени: ёмкость догружается только для новых отрезков.
+    // The axis asks for more time: capacity is loaded only for the new segments.
     private async Task Grow(GanttSpan range)
     {
         _range = range;
@@ -123,18 +122,18 @@ else if (_data is not null && _people is not null)
         Navigation.NavigateTo(value ? "gantt/2d" : "gantt/people", replace: true);
     }
 
-    /// <summary>Клик по полосе открывает панель задачи, не уводя со страницы.</summary>
+    /// <summary>A click on a bar opens the task panel without leaving the page.</summary>
     private void OpenTask(TaskModel task) { _open = task; _panelOpen = true; }
 
-    /// <summary>Enter на выбранной полосе делает то же, что клик: полоса фокусируема, но Enter у неё ничего не
-    /// делает, поэтому его ловит обёртка доски.</summary>
+    /// <summary>Enter on the selected bar does the same as a click: the bar is focusable, but Enter does nothing
+    /// on it, so the board wrapper catches it.</summary>
     private void OnChartKey(KeyboardEventArgs e)
     {
         if (e.Key != "Enter" || _selected is null || _panelOpen) return;
         if (_data?.Tasks.FirstOrDefault(t => GanttData.Key(t.Id) == _selected) is { } task) OpenTask(task);
     }
 
-    /// <summary>Панель закрылась (Esc, фон или кнопка): задача отпускается, фокус возвращается к доске.</summary>
+    /// <summary>The panel closed (Esc, backdrop or button): the task is released and focus returns to the board.</summary>
     private async Task OnPanelOpen(bool open)
     {
         if (!open && _details?.Dirty == true && !await DraftPrompt.CanDiscardAsync(Confirm, true))
@@ -157,14 +156,14 @@ else if (_data is not null && _people is not null)
         {
             if (Session.TeamId is null) return;
             _data = await GanttData.Load(Session);
-            // Проект есть в карточке задачи, поэтому панель получает и справочник проектов.
+            // The task card includes the project, so the panel also receives the project dictionary.
             _projects = await Session.Get<ProjectModel[]>(Session.TeamPath("projects"));
             if (initial)
             {
                 _sprintId = _data.Sprints.FirstOrDefault(s => s.Status == "Active")?.Id;
                 _range = SprintRange;
             }
-            // После правки ось остаётся, где её докрутили, и включает окно спринта.
+            // After an edit the axis stays where it was scrolled and includes the sprint window.
             else _range = new GanttSpan(_range.Start < SprintRange.Start ? _range.Start : SprintRange.Start, _range.End > SprintRange.End ? _range.End : SprintRange.End);
             _people = await GanttPeopleData.Load(Session, _data, _range);
         }
@@ -172,7 +171,7 @@ else if (_data is not null && _people is not null)
         finally { _busy = false; }
     }
 
-    // Новый спринт начинает ось заново с его окна и перечитывает ёмкость на неё.
+    // A new sprint starts the axis over from its window and reloads capacity for it.
     private async Task LoadCapacity()
     {
         _range = SprintRange;

@@ -3,7 +3,7 @@ using Xunit;
 
 namespace Alva.Data.Tests;
 
-/// <summary>Лимит часов в день: распределение, прогноз и автобаланс держат задачу в договорённых часах.</summary>
+/// <summary>Daily hour limit: allocation, forecast and auto-balance keep the task within the agreed hours.</summary>
 public sealed class DailyLimitTests
 {
     private static readonly Guid Person = Guid.NewGuid();

@@ -1,6 +1,6 @@
 namespace Alva.Client.Shared;
 
-/// <summary>Семантическая тональность чипа Alva (дизайн-система Stitch).</summary>
+/// <summary>The semantic tone of an Alva chip (Stitch design system).</summary>
 public enum AlvaTone
 {
     Neutral,
@@ -11,7 +11,7 @@ public enum AlvaTone
     Role
 }
 
-/// <summary>Сопоставление доменных значений с тональностью чипа Alva.</summary>
+/// <summary>Mapping of domain values to Alva chip tones.</summary>
 public static class AlvaTones
 {
     public static AlvaTone Priority(string? value) => value switch { "Critical" => AlvaTone.Critical, "High" => AlvaTone.Warning, _ => AlvaTone.Neutral };

@@ -1,5 +1,5 @@
-@* Сводка ошибок вне EditForm: FlareAlert с сообщениями. Фокус на обёртку задаёт вызывающая
-   страница, поэтому здесь нет собственного tabindex и перехвата фокуса. *@
+@* Validation summary outside EditForm: a FlareAlert with the messages. The calling page puts focus
+   on the wrapper, so this component has no tabindex or focus handling of its own. *@
 <FlareAlert Severity="AlertSeverity.Error" Title="@(AlvaStrings.Common_CheckTheHighlightedFields)">
     <FlareStack Gap="FlareSpacing.XSmall">
         @foreach (var message in Messages)
@@ -9,6 +9,6 @@
     </FlareStack>
 </FlareAlert>
 @code {
-    /// <summary>Сообщения, собранные проверкой формы до отправки.</summary>
+    /// <summary>Messages collected by form validation before submission.</summary>
     [Parameter, EditorRequired] public IReadOnlyList<string> Messages { get; set; } = [];
 }

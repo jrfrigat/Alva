@@ -8,7 +8,7 @@ using Xunit;
 
 namespace Alva.Client.UI.Tests;
 
-/// <summary>Каждую задачу дерева можно открыть с клавиатуры — её название настоящая ссылка.</summary>
+/// <summary>Every task in the tree can be opened from the keyboard - its title is a real link.</summary>
 public sealed class TasksTreeTests : UiTestBase
 {
     private readonly TaskModel _parent = new() { Id = Guid.NewGuid(), Title = "Релиз", Status = "Planned" };
@@ -39,7 +39,7 @@ public sealed class TasksTreeTests : UiTestBase
     {
         var cut = Render<Tasks>();
         cut.WaitForAssertion(() => Assert.NotEmpty(cut.FindAll(".flare-vtree a[href^='tasks/']")));
-        // Переход по ссылке делает браузер; обёртка останавливает всплытие клика, и строка не добавляет вторую навигацию.
+        // The browser follows the link; the wrapper stops the click from bubbling, and the row does not add a second navigation.
         var link = cut.Find($".flare-vtree a[href='tasks/{_leaf.Id}']");
         Assert.True(link.ParentElement!.HasAttribute("blazor:onclick:stopPropagation"));
     }

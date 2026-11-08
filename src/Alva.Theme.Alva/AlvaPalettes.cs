@@ -3,37 +3,37 @@ using Flare.Abstractions.Tokens;
 namespace Alva.Theme.Alva;
 
 /// <summary>
-/// Палитра Alva — «Alva Sapphire». Светлая схема перенесена из дизайн-источника Stitch значение
-/// в значение.
+/// The Alva palette - "Alva Sapphire". The light scheme is carried over from the Stitch design source value
+/// for value.
 /// </summary>
 /// <remarks>
-/// Три группы ролей дизайн-файл не называет, и они собраны из его собственных значений:
+/// The design file does not name three groups of roles, and they are assembled from its own values:
 /// <list type="bullet">
-/// <item><description><b>Success / Warning / Info</b> — из семантической палитры дизайна: зелёный
-/// «Balanced Pill» (<c>#10B981</c> / контейнер <c>#D1FAE5</c> / текст <c>#065F46</c>), янтарный
-/// «Warning» (<c>#F59E0B</c> / <c>#FEF3C7</c> / <c>#D97706</c>), информационный — вторичная
-/// семья (<c>#3755C3</c> / <c>#DCE1FF</c> / <c>#0039B5</c>).</description></item>
-/// <item><description><b>Тёмная схема</b> — дизайн-источник описывает только светлую. Тёмная собрана
-/// из его же ролей (<c>inverse-surface #213145</c>, <c>inverse-on-surface #EAF1FF</c>,
-/// <c>inverse-primary #B7C4FF</c>) и нейтральной лестницы в том же синем тоне. Это
-/// интерпретация, а не значение из файла дизайна: при появлении тёмного макета её нужно сверить
-/// с ним, а не считать истиной.</description></item>
-/// <item><description><b>Fixed-лестницы</b> — одинаковы в обеих схемах: контент, окрашенный
-/// fixed-ролью, не должен менять цвет между режимами (это проверяет <c>ThemeSpecs</c>), поэтому
-/// берутся светлые значения дизайна в обоих режимах.</description></item>
+/// <item><description><b>Success / Warning / Info</b> - from the design's semantic palette: the green
+/// "Balanced Pill" (<c>#10B981</c> / container <c>#D1FAE5</c> / text <c>#065F46</c>), the amber
+/// "Warning" (<c>#F59E0B</c> / <c>#FEF3C7</c> / <c>#D97706</c>), and the info color from the secondary
+/// family (<c>#3755C3</c> / <c>#DCE1FF</c> / <c>#0039B5</c>).</description></item>
+/// <item><description><b>Dark scheme</b> - the design source describes only the light one. The dark scheme is assembled
+/// from its own roles (<c>inverse-surface #213145</c>, <c>inverse-on-surface #EAF1FF</c>,
+/// <c>inverse-primary #B7C4FF</c>) and a neutral ladder in the same blue tone. This is an
+/// interpretation rather than a value from the design file: when a dark mock-up appears, it should be checked
+/// against it rather than treated as truth.</description></item>
+/// <item><description><b>Fixed ladders</b> - the same in both schemes: content colored by a
+/// fixed role must not change color between modes (this is checked by <c>ThemeSpecs</c>), so
+/// the light design values are used in both modes.</description></item>
 /// </list>
 /// </remarks>
 public static class AlvaPalettes
 {
-    /// <summary>Стабильный id палитры — им тема называет палитру по умолчанию.</summary>
+    /// <summary>The stable palette id - the theme uses it to name the default palette.</summary>
     public const string SapphireId = "alva-sapphire";
 
-    /// <summary>Источник палитры для переключателей.</summary>
+    /// <summary>The palette source for the switchers.</summary>
     public const string SourceName = "Alva";
 
     private static readonly ColorScheme Light = new()
     {
-        // Акцент: сапфировый индиго, вторичный — синий, третичный — фиолетовый.
+        // Accent: sapphire indigo; secondary: blue; tertiary: violet.
         Primary = "#0037B0",
         OnPrimary = "#FFFFFF",
         PrimaryContainer = "#1D4ED8",
@@ -47,7 +47,7 @@ public static class AlvaPalettes
         TertiaryContainer = "#6B38D4",
         OnTertiaryContainer = "#DDCDFF",
 
-        // Семантика.
+        // Semantics.
         Error = "#BA1A1A",
         OnError = "#FFFFFF",
         ErrorContainer = "#FFDAD6",
@@ -65,7 +65,7 @@ public static class AlvaPalettes
         InfoContainer = "#DCE1FF",
         OnInfoContainer = "#0039B5",
 
-        // Плоскости: лестница дизайна от белого до самого плотного синего.
+        // Planes: the design ladder from white to the densest blue.
         Surface = "#F8F9FF",
         OnSurface = "#0B1C30",
         SurfaceVariant = "#D3E4FE",
@@ -81,7 +81,7 @@ public static class AlvaPalettes
         SurfaceBright = "#F8F9FF",
         SurfaceDim = "#CBD8F5",
 
-        // Границы и инверсия.
+        // Borders and inversion.
         Outline = "#747686",
         OutlineVariant = "#C4C5D7",
         InverseSurface = "#213145",
@@ -89,11 +89,11 @@ public static class AlvaPalettes
         InversePrimary = "#B7C4FF",
         Scrim = "#000000",
         Shadow = "#000000",
-        // Дизайн тени не рисует, а где рисует — тонирует их тем же слейтом, что и текст.
+        // The design draws no shadows, and where it does, it tints them with the same slate as the text.
         ShadowUmbra = "rgba(15, 23, 42, 0.08)",
         ShadowPenumbra = "rgba(15, 23, 42, 0.04)",
 
-        // Fixed-лестницы: значения дизайна, одинаковые в обеих схемах.
+        // Fixed ladders: design values, the same in both schemes.
         PrimaryFixed = "#DCE1FF",
         PrimaryFixedDim = "#B7C4FF",
         OnPrimaryFixed = "#001551",
@@ -109,8 +109,8 @@ public static class AlvaPalettes
     };
 
     /// <summary>
-    /// Тёмная схема: дизайн-источник её не описывает, значения собраны из его же inverse- и
-    /// fixed-ролей и нейтральной лестницы в том же синем тоне (см. примечание к классу).
+    /// The dark scheme: the design source does not describe it; the values are assembled from its own inverse and
+    /// fixed roles and a neutral ladder in the same blue tone (see the class remarks).
     /// </summary>
     private static readonly ColorScheme Dark = new()
     {
@@ -184,9 +184,9 @@ public static class AlvaPalettes
     };
 
     /// <summary>
-    /// Высокая контрастность — тёмная схема с усиленными текстом, рамками и плоскостями. Без неё Flare
-    /// ставит корню приложения класс <c>flare-mode-high-contrast</c>, для которого у палитры нет правила,
-    /// и внутри приложения действует светлая схема поверх тёмной страницы.
+    /// High contrast - a dark scheme with strengthened text, borders and planes. Without it, Flare
+    /// puts the <c>flare-mode-high-contrast</c> class on the application root, the palette has no rule for it,
+    /// and the light scheme applies inside the application over a dark page.
     /// </summary>
     private static readonly ColorScheme HighContrast = Dark with
     {
@@ -208,7 +208,7 @@ public static class AlvaPalettes
         OutlineVariant = "#8B93A5",
     };
 
-    /// <summary>Единственная палитра Alva: дизайн-источник не описывает альтернативных.</summary>
+    /// <summary>The only Alva palette: the design source describes no alternatives.</summary>
     public static readonly Palette Sapphire = new()
     {
         Id = SapphireId,
@@ -219,6 +219,6 @@ public static class AlvaPalettes
         HighContrast = HighContrast,
     };
 
-    /// <summary>Все палитры темы.</summary>
+    /// <summary>All theme palettes.</summary>
     public static IReadOnlyList<Palette> All => [Sapphire];
 }

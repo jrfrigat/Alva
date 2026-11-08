@@ -4,8 +4,6 @@
 @page "/capacity/{ActorId:guid}/schedule"
 @inject AlvaSession Session
 @inject NavigationManager Navigation
-@* Раздел «Ёмкость»: обзор (p14), командный календарь (p15), календарь сотрудника (p15.1) и
-   редактор рабочего графика (p16). *@
 <PageTitle>@Title · Alva</PageTitle>
 @if (!_ready || _error is not null) { <PageFeedback Loading="!_ready" Error="@_error" OnRetry="Retry" /> }
 else if (Session.TeamId is null) { <TeamRequired /> }

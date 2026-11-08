@@ -1,5 +1,5 @@
-@* Командный календарь по макету p15: месяц сеткой с доступными часами команды или выбранного
-   сотрудника, отпусками, встречами и днями перегрузки. *@
+@* Team calendar: a month grid with the available hours of the team or the selected
+   employee, vacations, meetings and overload days. *@
 @inject AlvaSession Session
 @inject NavigationManager Navigation
 <AlvaPageHeader Category="@(AlvaStrings.Capacity_CapacityPeopleSchedules)" Title="@(AlvaStrings.Capacity_PeopleSchedulesAndTeamAvailability)" Description="@(AlvaStrings.Capacity_EveryPersonSWorkingHoursVacationsAndRecurringMeetingsAndHowMuchCleanTime_c5193e)">
@@ -195,7 +195,7 @@ else
     {
         _actors = await Session.Get<ActorModel[]>(Session.TeamPath("actors"));
         _sprints = await Session.Get<SprintModel[]>(Session.TeamPath("sprints"));
-        // Праздники и встречи подкоманд действуют на их участников так же, как в расчёте ёмкости.
+        // Holidays and sub-team meetings affect their members just as in the capacity calculation.
         var departments = _actors.Where(a => a.Kind == "Department").ToDictionary(a => a.Id, a => a.ParentId);
         var shared = new Dictionary<Guid, CalendarDto>();
         foreach (var id in departments.Keys) shared[id] = await Session.Get<CalendarDto>(Session.TeamPath($"actors/{id}/calendar"));

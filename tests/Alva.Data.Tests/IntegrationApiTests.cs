@@ -14,12 +14,12 @@ using Xunit;
 
 namespace Alva.Data.Tests;
 
-/// <summary>Подключения и синхронизация через HTTP с поддельным модулем: секреты, идемпотентность, поля, родители, связи, ошибки.</summary>
+/// <summary>Connections and synchronization over HTTP with a fake module: secrets, idempotency, fields, parents, links, errors.</summary>
 public sealed class IntegrationApiTests
 {
     private static readonly DateOnly Monday = new(2026, 10, 5);
 
-    /// <summary>Модуль, который отдаёт заранее заданные задачи и запоминает, с какого момента его спросили.</summary>
+    /// <summary>A module that returns predetermined tasks and remembers the point from which it was queried.</summary>
     private sealed class FakeModule : ITaskSourceModule
     {
         public List<ExternalTask> Tasks { get; } = [];
@@ -101,7 +101,7 @@ public sealed class IntegrationApiTests
         Assert.Equal("Поддельный трекер", Assert.Single(modules!).Name);
         await server.WithDb(async db => Assert.DoesNotContain("secret-token", (await db.TaskSources.SingleAsync()).ProtectedSecrets));
 
-        // Правка без токена сохраняет прежний, а проверка видит его расшифрованным.
+        // An edit without a token keeps the previous one, and the check sees it decrypted.
         var renamed = await server.Client.PutAsJsonAsync(server.Team($"integrations/{connection.Id}"),
             new IntegrationConnectionRequest("fake", "Трекер команды", new() { ["queue"] = "DEV" }));
         renamed.EnsureSuccessStatusCode();
@@ -150,7 +150,7 @@ public sealed class IntegrationApiTests
         Assert.Equal(Monday, task.StartDate);
         Assert.Equal("TEST-1", task.ExternalKey);
         Assert.Equal("https://tracker.example/TEST-1", task.ExternalUrl);
-        // Первый прогон — полный, следующие — от начала предыдущего успешного.
+        // The first run is full; subsequent runs start from the beginning of the previous successful one.
         Assert.Null(module.Asked[0]);
         Assert.NotNull(module.Asked[1]);
         await server.WithDb(async db => Assert.Contains(await db.TaskHistory.Select(h => h.Summary).ToListAsync(), s => s.StartsWith("Обновлено из «Трекер»: название, статус (Закрыт)")));
@@ -198,7 +198,7 @@ public sealed class IntegrationApiTests
         var connection = await Connect(server);
         module.Tasks.AddRange(
         [
-            // У эпика тоже есть исполнитель, но назначение ставится только листовой задаче.
+            // The epic also has an assignee, but the assignment is created only for the leaf task.
             new ExternalTask("TEST-1", "Эпик", Start: Monday, End: Monday.AddDays(1), AssigneeEmail: "anna@example.test"),
             new ExternalTask("TEST-2", "API", ParentKey: "TEST-1", Start: Monday, End: Monday.AddDays(6), AssigneeEmail: "anna@example.test"),
             new ExternalTask("TEST-3", "Экраны", ParentKey: "TEST-1", Links: [new ExternalLink("TEST-2", "TEST-3"), new ExternalLink("TEST-3", "TEST-2")])
@@ -212,7 +212,7 @@ public sealed class IntegrationApiTests
             var tasks = await db.Tasks.ToDictionaryAsync(x => x.Title);
             Assert.Equal(tasks["Эпик"].Id, tasks["API"].ParentId);
             Assert.Equal(tasks["Эпик"].Id, tasks["Экраны"].ParentId);
-            // Родитель охватывает детей — то же правило, что при ручной правке.
+            // The parent spans its children - the same rule as for a manual edit.
             Assert.Equal(Monday.AddDays(6), tasks["Эпик"].EndDate);
             var dependency = Assert.Single(await db.Dependencies.ToListAsync());
             Assert.Equal((tasks["API"].Id, tasks["Экраны"].Id), (dependency.PredecessorId, dependency.SuccessorId));

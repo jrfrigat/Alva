@@ -1,6 +1,6 @@
 @using Flare.Components.Gantt
-@* Проекция 1 (макет p6_2d): дерево работ с окнами задач, сроками и связями. Кладётся внутрь FlareGantt —
-   отдельно на «Гантте по задачам» и над людьми в 2D-режиме. *@
+@* Projection 1: work tree with task windows, deadlines and links. Placed inside FlareGantt -
+   separately on the task Gantt and above people in 2D mode. *@
 <FlareGanttPanel TRow="TaskModel" TItem="TaskModel" Rows="@Roots" RowKey="t => GanttData.Key(t.Id)" RowChildren="Children"
                  RowClass="RowClass" Items="@Data.Tasks" ItemKey="t => GanttData.Key(t.Id)" ItemRow="t => GanttData.Key(t.Id)"
                  ItemSpan="Data.Span" ItemCover="Data.Cover" ItemKind="Data.Kind" ItemSegments="Data.Segments" ItemLabel="t => t.Title" ItemTitle="Data.Title"
@@ -23,10 +23,10 @@
 @code {
     [Parameter, EditorRequired] public GanttData Data { get; set; } = null!;
 
-    /// <summary>Спринт, задачи которого (и их предки) показываются; null — все задачи.</summary>
+    /// <summary>Sprint whose tasks (and their ancestors) are shown; null - all tasks.</summary>
     [Parameter] public Guid? SprintId { get; set; }
 
-    /// <summary>Несколько спринтов вместо одного — доска планирования показывает все спринты своей оси.</summary>
+    /// <summary>Several sprints instead of one - the planning board shows all sprints of its axis.</summary>
     [Parameter] public IReadOnlyCollection<Guid>? SprintIds { get; set; }
 
     [Parameter] public IReadOnlyCollection<GanttLinkType>? Types { get; set; }
@@ -36,21 +36,21 @@
     [Parameter] public EventCallback<GanttLinkEventArgs> OnLinkCreate { get; set; }
     [Parameter] public EventCallback<GanttLinkRejectedEventArgs> OnLinkRejected { get; set; }
 
-    /// <summary>Клик по полосе задачи — страница открывает панель задачи. Клик после перетаскивания пакет
-    /// не считает кликом, поэтому сюда он не попадает.</summary>
+    /// <summary>A click on a task bar - the page opens the task panel. The package does not count a click
+    /// after dragging as a click, so it never reaches this handler.</summary>
     [Parameter] public EventCallback<TaskModel> OnItemClick { get; set; }
     [Parameter] public string? DropGroup { get; set; }
     [Parameter] public Func<object?, bool>? DropAccepts { get; set; }
     [Parameter] public string? ItemDropGroup { get; set; }
     [Parameter] public Func<object?, bool>? ItemDropAccepts { get; set; }
 
-    /// <summary>Предложенные даты задач — призрачные полосы поверх плана.</summary>
+    /// <summary>Suggested task dates - ghost bars over the plan.</summary>
     [Parameter] public IEnumerable<GanttChange>? Suggested { get; set; }
 
-    /// <summary>Шапки строк можно перетащить (TaskDrag) — нужен внешний FlareDragContext.</summary>
+    /// <summary>Row headers can be dragged (TaskDrag) - an external FlareDragContext is required.</summary>
     [Parameter] public bool DragRows { get; set; }
 
-    /// <summary>Действия в шапке строки задачи, например «вернуть в бэклог».</summary>
+    /// <summary>Actions in a task row header, for example return to backlog.</summary>
     [Parameter] public RenderFragment<TaskModel>? RowActions { get; set; }
 
     private RenderFragment RowContent(TaskModel task) => __builder =>
@@ -73,7 +73,7 @@
 
     private IEnumerable<TaskModel>? Children(TaskModel task) => Visible(Data.ChildrenOf(task));
 
-    // В режиме спринтов показываются задачи этих спринтов и их предки, чтобы дерево не рвалось.
+    // In sprint mode the tasks of those sprints and their ancestors are shown so the tree is not broken.
     private IEnumerable<TaskModel> Visible(IEnumerable<TaskModel> tasks)
     {
         var ordered = tasks.OrderBy(t => t.Order).ThenBy(t => t.Title);

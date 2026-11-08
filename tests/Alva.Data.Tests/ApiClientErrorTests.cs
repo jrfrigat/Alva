@@ -5,7 +5,7 @@ using Xunit;
 
 namespace Alva.Data.Tests;
 
-/// <summary>HTTP-клиент отличает отказ, объяснённый сервером, от ответа без объяснения.</summary>
+/// <summary>The HTTP client distinguishes a refusal explained by the server from a response without an explanation.</summary>
 public sealed class ApiClientErrorTests
 {
     [Fact]

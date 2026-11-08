@@ -8,7 +8,7 @@ using Xunit;
 
 namespace Alva.Client.UI.Tests;
 
-/// <summary>Ссылка на несуществующую задачу или спринт не превращается в список, пустоту или чужую запись.</summary>
+/// <summary>A link to a nonexistent task or sprint does not turn into the list, emptiness or someone else's record.</summary>
 public sealed class UnavailableRecordTests : UiTestBase
 {
     private readonly SprintModel _active = new() { Id = Guid.NewGuid(), Name = "Спринт 7", Status = "Active" };

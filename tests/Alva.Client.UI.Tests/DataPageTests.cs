@@ -6,7 +6,7 @@ using Xunit;
 
 namespace Alva.Client.UI.Tests;
 
-/// <summary>Страница «Данные» не сообщает об импорте, которого не было.</summary>
+/// <summary>The Data page does not report an import that did not happen.</summary>
 public sealed class DataPageTests : UiTestBase
 {
     private IRenderedComponent<Data> Page() => Render<Data>();
@@ -22,7 +22,7 @@ public sealed class DataPageTests : UiTestBase
 
         Assert.Contains("Импорт и экспорт недоступны в демо", cut.Markup);
         Assert.True(Button(cut, "Импортировать").HasAttribute("disabled"));
-        // Экспорт — не ссылки на несуществующий сервер, а отключённые кнопки.
+        // Export is not links to a nonexistent server, but disabled buttons.
         Assert.All(new[] { "JSON", "CSV", "XLSX" }, f => Assert.DoesNotContain(cut.FindAll("a"), a => a.TextContent.Contains(f)));
         Assert.Equal(0, Api.Imports);
     }

@@ -4,10 +4,10 @@ using Xunit;
 
 namespace Alva.Client.UI.Tests;
 
-/// <summary>Видимые строки живут в ресурсах, а не в разметке: статическая проверка ловит кириллицу в UI-коде.</summary>
+/// <summary>Visible strings live in resources, not in markup: a static check catches Cyrillic in UI code.</summary>
 public sealed class NoHardcodedRussianTests
 {
-    /// <summary>Название языка в переключателе показывается на нём самом — это осознанное исключение.</summary>
+    /// <summary>The language name in the switcher is shown in that language itself - a deliberate exception.</summary>
     private static readonly string[] Allowed = ["Русский"];
 
     private static readonly Regex StaticKey = new(

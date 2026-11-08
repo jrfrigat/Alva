@@ -3,8 +3,6 @@
 @inject AlvaSession Session
 @inject NavigationManager Navigation
 @inject DraftGuard Drafts
-@* Реестр проектов по макету p13: карточки проектов слева, выбранный проект справа — KPI,
-   команды и их спринты, дерево задач (WBS). Статус проекта выводится из его задач. *@
 <PageTitle>@(AlvaStrings.Projects_ProjectsAlva)</PageTitle>
 <NavigationLock OnBeforeInternalNavigation="ConfirmLeave" ConfirmExternalNavigation="IsDirty" />
 <AlvaPageHeader Category="@(AlvaStrings.Projects_ProjectsOfSeveralTeams)" Title="@(AlvaStrings.Common_Projects)" Description="@(AlvaStrings.Projects_ProjectRegistryAndTeamInvolvementProjectsUniteTasksDeliveredBySprintsOfD_6fd9fb)">
@@ -243,23 +241,23 @@ else
     private IEnumerable<ProjectModel> Visible => _projects.Where(p => _filter == "all" || Status(p) == _filter)
         .OrderByDescending(p => ProjectTasks(p).Where(t => t.Status is not ("Done" or "Cancelled")).Sum(t => t.EstimateHours ?? 0));
     private ProjectModel? Selected => Visible.FirstOrDefault(p => p.Id == _selected) ?? Visible.FirstOrDefault();
-    /// <summary>Задачи проекта в текущей команде: её спринты, бэклог и WBS.</summary>
+    /// <summary>Project tasks in the current team: its sprints, backlog and WBS.</summary>
     private TaskModel[] TasksOf(ProjectModel p) => _tasks.Where(t => t.ProjectId == p.Id && t.Status != "Cancelled").ToArray();
-    /// <summary>Задачи проекта во всех его командах, доступных пользователю: из них считаются статус и общий прогресс,
-    /// чтобы проект нескольких команд не выглядел по-разному из каждой.</summary>
+    /// <summary>Project tasks in all of its teams available to the user: status and overall progress are calculated
+    /// from them, so a project spanning several teams does not look different from each team.</summary>
     private TaskModel[] ProjectTasks(ProjectModel p) => p.TeamIds.Where(id => id != Session.TeamId)
         .SelectMany(id => _teamTasks.GetValueOrDefault(id) ?? []).Concat(_tasks)
         .Where(t => t.ProjectId == p.Id && t.Status != "Cancelled").ToArray();
     private (decimal Done, decimal Total) HoursOf(ProjectModel p) => Hours(ProjectTasks(p));
     private static (decimal Done, decimal Total) Hours(TaskModel[] tasks) =>
         (tasks.Where(t => t.Status == "Done").Sum(t => t.EstimateHours ?? 0), tasks.Sum(t => t.EstimateHours ?? 0));
-    /// <summary>Самый поздний срок задач проекта. Это не релиз: отдельной сущности поставки в Alva пока нет.</summary>
+    /// <summary>The latest deadline of the project's tasks. This is not a release: Alva does not yet have a separate delivery entity.</summary>
     private DateOnly? LatestDeadline(ProjectModel p) => ProjectTasks(p).Where(t => t.Deadline.HasValue).Select(t => t.Deadline).Max();
     private SprintModel[] SprintsOf(ProjectModel p) => _sprints.Where(s => TasksOf(p).Any(t => t.SprintIds.Contains(s.Id))).OrderBy(s => s.StartDate).ToArray();
     private static int Pct(decimal part, decimal whole) => whole <= 0 ? 0 : (int)Math.Round(part / whole * 100);
     private string TeamName(Guid id) => Session.Teams.FirstOrDefault(t => t.Id == id)?.Name ?? (id == Session.TeamId ? Session.TeamName : AlvaStrings.Projects_AnotherTeam);
 
-    /// <summary>Статус проекта из задач: в работе / не начат / завершён.</summary>
+    /// <summary>Project status derived from its tasks: in progress / not started / completed.</summary>
     private string Status(ProjectModel p)
     {
         var tasks = ProjectTasks(p);
@@ -269,7 +267,7 @@ else
     private static string StatusLabel(string status) => status switch { "done" => AlvaStrings.Common_Completed, "active" => AlvaStrings.Common_InProgress, _ => AlvaStrings.Projects_NotStarted };
     private static AlvaTone StatusTone(string status) => status switch { "done" => AlvaTone.Ok, "active" => AlvaTone.Info, _ => AlvaTone.Neutral };
 
-    /// <summary>Задачи проекта в порядке дерева: корень (родитель вне проекта) и его потомки с глубиной.</summary>
+    /// <summary>Project tasks in tree order: a root (whose parent is outside the project) and its descendants with depth.</summary>
     private IEnumerable<(TaskModel Task, int Depth)> Tree(TaskModel[] tasks)
     {
         var ids = tasks.Select(t => t.Id).ToHashSet();
@@ -279,12 +277,12 @@ else
         return string.IsNullOrWhiteSpace(_wbsSearch) ? all : all.Where(x => x.Item1.Title.Contains(_wbsSearch, StringComparison.OrdinalIgnoreCase));
     }
 
-    /// <summary>Проект, выбранный по ссылке (например, после создания задачи из него).</summary>
+    /// <summary>Project selected by link (for example, after creating a task from it).</summary>
     [SupplyParameterFromQuery(Name = "project")] public Guid? ProjectParam { get; set; }
 
     protected override async Task OnInitializedAsync() { _draft = Drafts.Track(() => IsDirty); _selected = ProjectParam; await Load(); }
 
-    // Адрес — источник выбранного проекта: Back, Forward и обновление страницы возвращают тот же проект.
+    // The URL is the source of the selected project: Back, Forward and page refresh return the same project.
     protected override void OnParametersSet()
     {
         if (ProjectParam is { } id) _selected = id;
@@ -321,7 +319,7 @@ else
         foreach (var teamId in _projects.SelectMany(p => p.TeamIds).Distinct().Where(id => id != Session.TeamId))
         {
             if (Session.Teams.All(t => t.Id != teamId)) { _closedTeams.Add(teamId); continue; }
-            // Команда без доступа или с ошибкой не роняет страницу: проект показывается без неё и с пометкой.
+            // A team without access or with an error does not break the page: the project is shown without it and with a marker.
             try { _teamTasks[teamId] = await Session.Get<TaskModel[]>(Session.TeamPath(teamId, "tasks")); }
             catch (Exception e) when (e is HttpRequestException or InvalidOperationException) { _closedTeams.Add(teamId); }
         }

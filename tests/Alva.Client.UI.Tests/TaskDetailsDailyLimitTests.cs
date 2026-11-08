@@ -7,7 +7,7 @@ using Xunit;
 
 namespace Alva.Client.UI.Tests;
 
-/// <summary>Карточка задачи: лимит часов в день подсказывает нужные дни и уходит в запрос явно.</summary>
+/// <summary>Task card: the daily hour limit suggests the needed days and goes into the request explicitly.</summary>
 public sealed class TaskDetailsDailyLimitTests : UiTestBase
 {
     private static readonly DateOnly Monday = new(2026, 10, 5);

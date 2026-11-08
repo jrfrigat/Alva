@@ -4,16 +4,16 @@ using Google.OrTools.Sat;
 namespace Alva.Api;
 
 /// <summary>
-/// Автобаланс спринта на CP-SAT (Google OR-Tools). Каждой задаче выбирается ровно один вариант «человек + день начала»
-/// из подготовленных <see cref="BalanceMath.Build"/>; цель — та же взвешенная сумма, что считает <see cref="BalanceMath.Evaluate"/>,
-/// в целых десятых долях часа. Текущий план подсказан решателю, поэтому ответ не хуже исходного.
+/// Sprint auto-balance on CP-SAT (Google OR-Tools). Each task gets exactly one "person + start day" option
+/// from those prepared by <see cref="BalanceMath.Build"/>; the objective is the same weighted sum computed by <see cref="BalanceMath.Evaluate"/>,
+/// in whole tenths of an hour. The current plan is given to the solver as a hint, so the answer is no worse than the original.
 /// </summary>
 public static class BalanceSolver
 {
     public static (int[] Choice, string Status) Solve(BalanceProblem problem, TimeSpan limit)
     {
         if (problem.Tasks.Length == 0) return ([], BalanceMath.Optimal);
-        // Несовместимость, найденная при сборке (фиксированные даты против связей), не решается моделью.
+        // An infeasibility found while building (fixed dates versus links) cannot be resolved by the model.
         if (problem.Infeasible is not null) return ([], BalanceMath.Infeasible);
         var model = new CpModel();
         var w = problem.Weights;
@@ -23,7 +23,7 @@ public static class BalanceSolver
         var objective = LinearExpr.NewBuilder();
         var maxLoad = problem.Tasks.Sum(t => (long)t.Tenths) + problem.Background.Max(row => row.DefaultIfEmpty(0).Max()) + 1;
 
-        // Перегруз по людям и дням: over ≥ фон + нагрузка − ёмкость.
+        // Overload by person and day: over >= background + load - capacity.
         var overByPerson = new LinearExpr[problem.People.Length];
         var freeByPerson = new LinearExpr[problem.People.Length];
         for (var p = 0; p < problem.People.Length; p++)
@@ -66,7 +66,7 @@ public static class BalanceSolver
             objective.AddTerm(peak, w.Peak);
         }
 
-        // Сроки, выход за спринт, люди не выбраны, изменения — константы варианта.
+        // Deadlines, overflow past the sprint, unassigned people, and changes are constants of the option.
         for (var t = 0; t < problem.Tasks.Length; t++)
         for (var o = 0; o < problem.Tasks[t].Options.Length; o++)
         {
@@ -76,10 +76,10 @@ public static class BalanceSolver
             if (cost != 0) objective.AddTerm(z[t][o], cost);
         }
 
-        // Связи — жёсткие: план, нарушающий FS/SS/FF/SF с учётом лага, недопустим.
+        // Links are hard: a plan that violates FS/SS/FF/SF with the lag taken into account is inadmissible.
         {
             LinearExpr Start(int t) => LinearExpr.WeightedSum(z[t], problem.Tasks[t].Options.Select(o => (long)o.Start));
-            // Конец — фактический: с хвостом работы, которую лимит в день вынес за окно.
+            // End is the actual end, with the tail of work that the daily limit pushed outside the window.
             LinearExpr End(int t) => LinearExpr.WeightedSum(z[t], problem.Tasks[t].Options.Select(o => (long)(o.Start + o.Span)));
             foreach (var link in problem.Links)
             {
@@ -94,7 +94,7 @@ public static class BalanceSolver
             }
         }
 
-        // Разброс свободных часов внутри ролей и подкоманд.
+        // Spread of free hours within departments.
         if (w.Spread > 0)
             for (var g = 0; g < problem.Groups.Length; g++)
             {
@@ -119,7 +119,7 @@ public static class BalanceSolver
             StringParameters = $"max_time_in_seconds:{limit.TotalSeconds.ToString(System.Globalization.CultureInfo.InvariantCulture)} num_workers:8"
         };
         var status = solver.Solve(model);
-        // Противоречие ограничений — явный ответ: откат к плану, нарушающему связи, запрещён.
+        // Contradictory constraints get an explicit answer: falling back to a plan that violates links is not allowed.
         if (status == CpSolverStatus.Infeasible) return ([], BalanceMath.Infeasible);
         if (status is not (CpSolverStatus.Optimal or CpSolverStatus.Feasible))
             return (BalanceMath.Greedy(problem), BalanceMath.Heuristic);

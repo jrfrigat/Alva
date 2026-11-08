@@ -10,7 +10,7 @@ using Xunit;
 
 namespace Alva.Client.UI.Tests;
 
-/// <summary>Фокус следует за страницей, которая догрузилась, и за открытым и закрытым редактором.</summary>
+/// <summary>Focus follows the page once it has loaded, and the editor as it opens and closes.</summary>
 public sealed class FocusTests : UiTestBase
 {
     private readonly SprintModel _sprint = new() { Id = Guid.NewGuid(), Name = "Спринт 7", Status = "Active", StartDate = new DateOnly(2026, 10, 5), EndDate = new DateOnly(2026, 10, 16) };
@@ -27,7 +27,7 @@ public sealed class FocusTests : UiTestBase
 
     private BunitNavigationManager Navigation => Services.GetRequiredService<BunitNavigationManager>();
 
-    // Элементы, на которые по очереди переводили фокус: ElementReference сверяется с разметкой.
+    // The elements that received focus in turn: ElementReference is matched against the markup.
     private static string[] Focused<T>(IRenderedComponent<T> cut, BunitJSInterop js) where T : IComponent =>
         js.Invocations.Where(i => i.Identifier.EndsWith("focus", StringComparison.OrdinalIgnoreCase))
             .Select(i => i.Arguments.OfType<ElementReference>().First().Id)
@@ -47,7 +47,7 @@ public sealed class FocusTests : UiTestBase
         Assert.Equal("Релиз", cut.Find("h1").TextContent.Trim());
         Assert.Equal("-1", cut.Find(".alva-task-card").GetAttribute("tabindex"));
 
-        // Обычное обновление страницы фокус не трогает.
+        // A normal page re-render does not touch focus.
         cut.Render();
         Assert.Single(Focused(cut, JSInterop));
     }
@@ -63,7 +63,7 @@ public sealed class FocusTests : UiTestBase
     }
 
 
-    // bunit пишет id ссылки кнопки только в разметку её первого рендера, поэтому он запоминается до нажатия.
+    // bunit writes the button element reference id only into the markup of its first render, so it is captured before clicking.
     private static string RefOf(AngleSharp.Dom.IElement element) => element.GetAttribute("blazor:elementReference") is { Length: > 0 } id ? id : throw new InvalidOperationException("У элемента нет ElementReference");
 
     private string LastFocusedRef() => JSInterop.Invocations.Last(i => i.Identifier.EndsWith("focus", StringComparison.OrdinalIgnoreCase)).Arguments.OfType<ElementReference>().First().Id;

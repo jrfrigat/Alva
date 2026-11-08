@@ -1,5 +1,5 @@
-@* Одно состояние редактора на всех экранах: правки, сохранение и подтверждённый результат.
-   Ошибку показывает PageFeedback, чтобы серверный текст не дублировался. *@
+@* One editor state shared by all screens: edits, saving, and a confirmed result.
+   Errors are shown by PageFeedback so the server text is not duplicated. *@
 @if (Saving)
 {
     <span role="status" aria-live="polite"><FlareChip Variant="ChipVariant.Filled" Color="FlareColor.Info" Size="ChipSize.Sm">@(AlvaStrings.Common_Saving)</FlareChip></span>

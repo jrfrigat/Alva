@@ -33,8 +33,8 @@ public class AlvaDbContext(DbContextOptions<AlvaDbContext> options) : DbContext(
     public DbSet<ExternalTaskLink> ExternalTaskLinks => Set<ExternalTaskLink>();
 
     /// <summary>
-    /// Сохраняет изменения и в той же транзакции пересчитывает кэш TaskSprint для задач и спринтов, у которых изменились
-    /// даты, архив или команда. Так кэш не обойдёт ни один путь записи: правка, перенос, рамка родителя, автобаланс, импорт.
+    /// Saves changes and, in the same transaction, recalculates the TaskSprint cache for tasks and sprints whose
+    /// dates, archive flag or team changed. This way no write path bypasses the cache: edit, carry, parent frame, auto-balance, import.
     /// </summary>
     public override async Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
     {
@@ -122,14 +122,14 @@ public class AlvaDbContext(DbContextOptions<AlvaDbContext> options) : DbContext(
         b.Entity<TaskSourceRun>().HasIndex(x => new { x.ConnectionId, x.StartedAt });
         b.Entity<ExternalTaskLink>().HasOne<TaskSourceConnection>().WithMany().HasForeignKey(x => x.ConnectionId);
         b.Entity<ExternalTaskLink>().HasOne<TaskCard>().WithMany().HasForeignKey(x => x.TaskId);
-        // Один внешний ключ — одна задача, одна задача — один источник: повтор или гонка прогонов не создадут дубль.
+        // One external key maps to one task, and one task to one source: a repeat or a race between runs will not create a duplicate.
         b.Entity<ExternalTaskLink>().HasIndex(x => new { x.ConnectionId, x.ExternalKey }).IsUnique();
         b.Entity<ExternalTaskLink>().HasIndex(x => x.TaskId).IsUnique();
         foreach (var entity in b.Model.GetEntityTypes())
         {
             foreach (var property in entity.GetProperties())
             {
-                // Настройки и секреты подключений длиннее 500: IAM-токен под DataProtection занимает больше килобайта.
+                // Connection settings and secrets are longer than 500: an IAM token under DataProtection takes more than a kilobyte.
                 if (property.ClrType == typeof(string)) property.SetMaxLength(property.Name is "Description" or "Summary" or "SettingsJson" or "ProtectedSecrets" or "Message" or "LastMessage" ? 10000 : 500);
                 if (property.ClrType == typeof(decimal) || property.ClrType == typeof(decimal?)) { property.SetPrecision(12); property.SetScale(2); }
             }

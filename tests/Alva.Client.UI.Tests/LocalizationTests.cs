@@ -11,8 +11,8 @@ using Xunit;
 namespace Alva.Client.UI.Tests;
 
 /// <summary>
-/// Локализация — это связка ресурсов, типизированного доступа и текущей культуры. Тесты проверяют
-/// саму связку, а не конкретный перевод: иначе каждое редактирование текста ломало бы тесты.
+/// Localization is the combination of resources, typed access and the current culture. The tests check
+/// the wiring itself, not a specific translation: otherwise every text edit would break the tests.
 /// </summary>
 public sealed class LocalizationTests : UiTestBase
 {

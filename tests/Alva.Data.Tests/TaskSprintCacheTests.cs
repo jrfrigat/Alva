@@ -7,7 +7,7 @@ using Xunit;
 
 namespace Alva.Data.Tests;
 
-/// <summary>Спринты задачи следуют из дат: правило SprintWindows и кэш TaskSprint, который ведёт AlvaDbContext.</summary>
+/// <summary>A task's sprints follow from its dates: the SprintWindows rule and the TaskSprint cache maintained by AlvaDbContext.</summary>
 public sealed class TaskSprintCacheTests : IAsyncLifetime
 {
     private static readonly DateOnly Day = new(2026, 10, 5);
@@ -17,11 +17,11 @@ public sealed class TaskSprintCacheTests : IAsyncLifetime
     private Sprint _second = null!;
 
     [Theory]
-    [InlineData(0, 4, true)]     // внутри
-    [InlineData(-3, 0, true)]    // касается начала
-    [InlineData(13, 20, true)]   // касается конца
-    [InlineData(14, 20, false)]  // после
-    [InlineData(-5, -1, false)]  // до
+    [InlineData(0, 4, true)]     // inside
+    [InlineData(-3, 0, true)]    // touches the start
+    [InlineData(13, 20, true)]   // touches the end
+    [InlineData(14, 20, false)]  // after
+    [InlineData(-5, -1, false)]  // before
     public void A_task_is_in_a_sprint_when_its_window_overlaps(int from, int to, bool inside) =>
         Assert.Equal(inside, SprintWindows.Overlaps(Day.AddDays(from), Day.AddDays(to), Day, Day.AddDays(13)));
 
@@ -32,7 +32,7 @@ public sealed class TaskSprintCacheTests : IAsyncLifetime
         Assert.True(SprintWindows.Overlaps(null, Day.AddDays(3), Day, Day.AddDays(13)));
         Assert.False(SprintWindows.Overlaps(null, null, Day, Day.AddDays(13)));
         Assert.Null(SprintWindows.Window(null, null));
-        // Бэклог не занимает людей: ёмкость берёт только запланированные задачи.
+        // The backlog occupies no people: capacity counts only planned tasks.
         Assert.False(SprintWindows.Planned(null, null));
         Assert.True(SprintWindows.Planned(Day, null));
     }
@@ -82,7 +82,7 @@ public sealed class TaskSprintCacheTests : IAsyncLifetime
         });
 
         Assert.Empty(await SprintsOf(early));
-        Assert.Equal([_second.Id, _first.Id], await SprintsOf(late)); // первый теперь начинается позже второго
+        Assert.Equal([_second.Id, _first.Id], await SprintsOf(late)); // the first one now starts after the second
     }
 
     [Fact]

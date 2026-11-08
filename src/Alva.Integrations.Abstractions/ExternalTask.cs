@@ -1,18 +1,18 @@
 namespace Alva.Integrations;
 
-/// <summary>Статус задачи в словах Alva; модуль сам решает, какой внешний статус чему соответствует.</summary>
+/// <summary>A task status in Alva's terms; the module decides for itself which external status maps to which.</summary>
 public enum ExternalTaskStatus { Backlog, Planned, InProgress, Done, Cancelled }
 
 public enum ExternalTaskPriority { Low, Normal, High, Critical }
 
 /// <summary>
-/// Внешняя задача, переведённая в поля Alva. Null в поле значит «внешняя система этого не знает» — ядро тогда оставляет
-/// своё значение, а не стирает его.
+/// An external task converted to Alva fields. A null field means "the external system does not know this" - the core then keeps
+/// its own value instead of erasing it.
 /// </summary>
-/// <param name="Key">Ключ во внешней системе (TEST-1): по нему задача привязывается и не дублируется.</param>
-/// <param name="StatusName">Исходное название статуса — для истории задачи.</param>
-/// <param name="ParentKey">Ключ родительской задачи в той же системе.</param>
-/// <param name="AssigneeEmail">По email ядро находит участника команды.</param>
+/// <param name="Key">The key in the external system (TEST-1): the task is linked by it and is not duplicated.</param>
+/// <param name="StatusName">The original status name - for the task history.</param>
+/// <param name="ParentKey">The parent task key in the same system.</param>
+/// <param name="AssigneeEmail">The core finds the team member by email.</param>
 public sealed record ExternalTask(
     string Key,
     string Title,
@@ -32,5 +32,5 @@ public sealed record ExternalTask(
     IReadOnlyList<ExternalLink>? Links = null,
     DateTimeOffset? UpdatedAt = null);
 
-/// <summary>Связь «последователь ждёт предшественника» между задачами одной внешней системы.</summary>
+/// <summary>A "successor waits for predecessor" link between tasks of the same external system.</summary>
 public sealed record ExternalLink(string PredecessorKey, string SuccessorKey, string Kind = "FS", int LagDays = 0);

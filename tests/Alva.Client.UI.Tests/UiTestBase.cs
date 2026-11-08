@@ -8,7 +8,7 @@ using Xunit;
 
 namespace Alva.Client.UI.Tests;
 
-/// <summary>Компоненты Alva на поддельном API: Flare, сессия и русская культура, как в приложении.</summary>
+/// <summary>Alva components on the fake API: Flare, the session and the Russian culture, as in the application.</summary>
 public abstract class UiTestBase : BunitContext, IAsyncLifetime
 {
     protected FakeApi Api { get; } = new();
@@ -26,21 +26,21 @@ public abstract class UiTestBase : BunitContext, IAsyncLifetime
         Services.AddScoped<DraftGuard>();
         Services.AddSingleton<IApiService>(Api);
         Services.AddScoped<AlvaSession>();
-        // Колокольчик рисков в шапке зависит от этого сервиса; для тестов шапки он должен быть в контейнере.
+        // The risk bell in the header depends on this service; for header tests it must be in the container.
         Services.AddScoped<RiskNotifications>();
         JSInterop.Mode = JSRuntimeMode.Loose;
     }
 
-    /// <summary>Поле ввода по тексту его подписи (Flare связывает label и input через for/id).</summary>
+    /// <summary>Input field by its label text (Flare links label and input via for/id).</summary>
     protected static AngleSharp.Dom.IElement Field<T>(IRenderedComponent<T> cut, string label) where T : Microsoft.AspNetCore.Components.IComponent =>
         cut.FindAll("label").FirstOrDefault(l => l.GetAttribute("for") is not null && l.TextContent.Trim() == label) is { } found
             ? cut.Find($"#{found.GetAttribute("for")}") : throw new InvalidOperationException($"Нет поля «{label}»");
 
-    /// <summary>Кнопка по тексту или aria-label.</summary>
+    /// <summary>Button by text or aria-label.</summary>
     protected static AngleSharp.Dom.IElement Button<T>(IRenderedComponent<T> cut, string text) where T : Microsoft.AspNetCore.Components.IComponent =>
         cut.FindAll("button").First(b => b.TextContent.Contains(text, StringComparison.Ordinal) || b.GetAttribute("aria-label") == text);
 
-    // Сервисы Flare освобождаются только асинхронно.
+    // Flare services are disposed only asynchronously.
     Task IAsyncLifetime.InitializeAsync() => Task.CompletedTask;
     async Task IAsyncLifetime.DisposeAsync() => await base.DisposeAsync();
 }

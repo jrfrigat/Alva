@@ -6,9 +6,9 @@ using Flare.Components.Gantt;
 namespace Alva.Client.Shared;
 
 /// <summary>
-/// Данные команды для диаграмм Ганта и то, как Alva раскладывает их на примитивы библиотеки:
-/// окно задачи, вид полосы, ожидание подзадач, связи. Библиотека Flare.Components.Gantt о задачах не знает —
-/// проекции собираются здесь.
+/// Team data for the Gantt charts and how Alva maps it onto the library primitives:
+/// the task window, the bar kind, waiting for subtasks, links. The Flare.Components.Gantt library knows nothing about tasks -
+/// the projections are assembled here.
 /// </summary>
 public sealed class GanttData
 {
@@ -52,13 +52,13 @@ public sealed class GanttData
 
     public ActorModel? Actor(Guid? id) => id is { } value ? _actors.GetValueOrDefault(value) : null;
 
-    /// <summary>Плановое окно задачи; без плановых дат задача в бэклоге и полосы не имеет — её срок виден меткой.</summary>
+    /// <summary>The task's planned window; without planned dates the task is in the backlog and has no bar - its deadline is shown as a marker.</summary>
     public (DateOnly Start, DateOnly End)? Window(TaskModel task) => SprintWindows.Window(task.StartDate, task.EndDate);
 
-    /// <summary>Задачи спринта (по их датам) — индекс строится один раз на загрузку.</summary>
+    /// <summary>The sprint's tasks (by their dates) - the index is built once per load.</summary>
     public IEnumerable<TaskModel> InSprint(Guid sprintId) => (_bySprint ??= Tasks.SelectMany(t => t.SprintIds, (t, s) => (t, s)).ToLookup(x => x.s, x => x.t))[sprintId];
 
-    /// <summary>Полоса задачи: её окно, а у родителя — не уже окон потомков (родитель охватывает детей).</summary>
+    /// <summary>The task's bar: its window, and for a parent no narrower than its descendants' windows (a parent covers its children).</summary>
     public GanttSpan? Span(TaskModel task)
     {
         var own = Window(task);
@@ -68,7 +68,7 @@ public sealed class GanttData
         return under is { } u ? new GanttSpan(Min(span.Start, u.Start), Max(span.End, u.End)) : span;
     }
 
-    /// <summary>Что полоса задачи должна покрывать — окна всех её потомков; null у листа.</summary>
+    /// <summary>What the task's bar must cover - the windows of all its descendants; null for a leaf.</summary>
     public GanttSpan? Cover(TaskModel task)
     {
         GanttSpan? result = null;
@@ -97,15 +97,15 @@ public sealed class GanttData
 
     private ILookup<Guid, TaskModel> Children => _children ??= Tasks.Where(t => t.ParentId is not null).ToLookup(t => t.ParentId!.Value);
 
-    /// <summary>Прямые подзадачи.</summary>
+    /// <summary>Direct subtasks.</summary>
     public IEnumerable<TaskModel> ChildrenOf(TaskModel task) => Children[task.Id];
 
-    /// <summary>Задачи без родителя в команде — корни дерева.</summary>
+    /// <summary>Tasks without a parent in the team - the tree roots.</summary>
     public IEnumerable<TaskModel> Roots => Tasks.Where(t => t.ParentId is not { } parent || Task(Key(parent)) is null);
 
     /// <summary>
-    /// Задачи этих спринтов вместе с их предками — чтобы дерево на Гантте спринта не рвалось. Считается один раз на набор
-    /// спринтов: панель спрашивает о каждой строке.
+    /// The tasks of these sprints together with their ancestors, so the tree on the sprint Gantt does not break. Computed once per set of
+    /// sprints: the panel asks about every row.
     /// </summary>
     public HashSet<Guid> InSprintsWithAncestors(IReadOnlyCollection<Guid> sprints)
     {
@@ -130,7 +130,7 @@ public sealed class GanttData
 
     public static bool IsClosed(TaskModel task) => task.Status is "Done" or "Cancelled";
 
-    /// <summary>Вид полосы: закрыта, высокий или средний риск, обычная работа.</summary>
+    /// <summary>The bar kind: closed, high or medium risk, ordinary work.</summary>
     public string Kind(TaskModel task) => IsClosed(task) ? "done" : RiskOf(task)?.Severity switch
     {
         "High" => "risk-high",
@@ -139,8 +139,8 @@ public sealed class GanttData
     };
 
     /// <summary>
-    /// Части полосы: «ожидание подзадач» у родителя. Ожидание — дни, когда идёт хотя бы одна
-    /// подзадача: родитель здесь только ждёт их окончания; дни без подзадач остаются сплошными — это его собственная работа.
+    /// Bar segments: the waiting-for-subtasks part of a parent. Waiting means days when at least one
+    /// subtask is running: here the parent is only waiting for them to finish; days without subtasks stay solid - that is its own work.
     /// </summary>
     public IEnumerable<GanttSegment> Segments(TaskModel task)
     {
@@ -162,7 +162,7 @@ public sealed class GanttData
         return end > start ? new GanttSpan(start, end) : null;
     }
 
-    /// <summary>Подсказка полосы: название, даты, кто делает и, если задача под угрозой, почему.</summary>
+    /// <summary>The bar tooltip: name, dates, who does it and, if the task is at risk, why.</summary>
     public string Title(TaskModel task)
     {
         var dates = Window(task) is { } w ? $"{w.Start:dd.MM}–{w.End:dd.MM}" : AlvaStrings.Gantt_Undated;
@@ -200,7 +200,7 @@ public sealed class GanttData
         _ => "FS"
     };
 
-    /// <summary>Кто делает: человек, иначе роль или подкоманда, на которую назначено, иначе никто.</summary>
+    /// <summary>Who does it: the person, otherwise the skill or sub-team it is assigned to, otherwise nobody.</summary>
     public string Assignee(TaskModel task) => Actor(task.ResolvedPersonId)?.Name ?? Actor(task.AssignmentTargetId) switch
     {
         { Kind: "Person" } person => person.Name,
@@ -209,9 +209,9 @@ public sealed class GanttData
     };
 
     /// <summary>
-    /// Сохраняет новые даты задач: первичное изменение и сдвинутые каскадом последователи. Задачи, чьи даты не изменились,
-    /// не трогаются. Сдвинутый без изменения длины родитель везёт с собой потомков с собственными датами; сохраняются
-    /// они раньше родителя — иначе сервер расширил бы родителя под их старые места.
+    /// Saves new task dates: the primary change and successors shifted by the cascade. Tasks whose dates did not change
+    /// are left alone. A parent shifted without a length change carries its descendants with their own dates; they are saved
+    /// before the parent - otherwise the server would extend the parent to cover their old places.
     /// </summary>
     public async Task Save(AlvaSession session, IEnumerable<GanttChange> changes)
     {
@@ -227,8 +227,8 @@ public sealed class GanttData
                 if (!spans.ContainsKey(child.Id) && child.StartDate is not null && child.EndDate is not null && Span(child) is { } own)
                     spans[child.Id] = new GanttSpan(own.Start + shift, own.End + shift);
         }
-        // Фиксированная задача не двигается — ни сама, ни каскадом, ни вместе с родителем. Отказываем до
-        // первой отправки, чтобы серия PUT не сохранилась наполовину.
+        // A fixed task does not move - neither by itself, nor in a cascade, nor together with its parent. The move is
+        // refused before the first send so that the PUT series is not half-saved.
         foreach (var (id, span) in spans)
         {
             var task = Tasks.First(t => t.Id == id);
@@ -246,20 +246,20 @@ public sealed class GanttData
         }
     }
 
-    /// <summary>Сохраняет правку на Гантте задач и говорит, что сделано.</summary>
+    /// <summary>Saves an edit on the task Gantt and says what was done.</summary>
     public async Task<string> Apply(AlvaSession session, GanttChangeEventArgs args)
     {
         await Save(session, args.Changes);
         return args.Changes.Count > 1 ? string.Format(AlvaStrings.Gantt_DatesSavedSuccessorsMoved, args.Changes.Count - 1) : AlvaStrings.Gantt_DatesSaved;
     }
 
-    /// <summary>Сообщение об отказе переноса фиксированной задачи.</summary>
+    /// <summary>The refusal message for moving a fixed task.</summary>
     public static InvalidOperationException FixedError(TaskModel task) =>
         new(string.Format(AlvaStrings.Gantt_TaskHasFixedDatesAndCannotBeMovedClearTheFixInTheTaskCard, task.Title));
 
     /// <summary>
-    /// Ручной жест не должен ухудшать связи, затрагивающие изменённые задачи: нарушение после не больше, чем до.
-    /// Улучшение разрешено — так существующие нарушения можно исправлять по шагам.
+    /// A manual gesture must not worsen the links involving the changed tasks: the violation after is no greater than before.
+    /// Improvement is allowed - that way existing violations can be fixed step by step.
     /// </summary>
     private void ValidateLinks(IReadOnlyDictionary<Guid, GanttSpan> proposed)
     {
@@ -286,8 +286,8 @@ public sealed class GanttData
     }
 
     /// <summary>
-    /// Планирует задачу с началом в указанный день — она попадает в спринты, которые пересекают её новые даты. Длина — прежнее окно задачи, если у неё были свои даты,
-    /// иначе по оценке: 8 часов на рабочий день (или лимит в день, если он меньше), не меньше дня.
+    /// Plans the task with the given start day - it falls into the sprints that overlap its new dates. The length is the task's previous window if it had its own dates,
+    /// otherwise based on the estimate: 8 hours per workday (or the daily limit if it is lower), at least one day.
     /// </summary>
     public Task Place(AlvaSession session, TaskModel task, DateOnly start)
     {
@@ -308,8 +308,8 @@ public sealed class GanttData
     }
 
     /// <summary>
-    /// Возвращает задачу в бэклог: без плановых дат она не входит ни в один спринт и не занимает людей. Подзадачи уходят
-    /// вместе с ней, начиная с самых глубоких, — иначе правило «родитель охватывает детей» вернуло бы родителю их окно.
+    /// Returns the task to the backlog: without planned dates it belongs to no sprint and occupies no people. Subtasks go
+    /// with it, starting from the deepest ones - otherwise the "a parent covers its children" rule would restore their window to the parent.
     /// </summary>
     public async Task Unplan(AlvaSession session, TaskModel task)
     {
@@ -323,7 +323,7 @@ public sealed class GanttData
         session.Send(HttpMethod.Put, session.TeamPath($"tasks/{task.Id}"), new TaskRequest(task.Title, task.Description, task.Status,
             task.ProjectId, task.ParentId, task.EstimateHours, task.Deadline, start, end, task.Order, task.Version));
 
-    /// <summary>Ось спринта: его дни, а если работа спринта выходит за конец — до конца этой работы.</summary>
+    /// <summary>The sprint axis: its days, and if the sprint's work runs past the end, to the end of that work.</summary>
     public GanttSpan SprintRange(SprintModel sprint)
     {
         var end = InSprint(sprint.Id).Where(t => t.Status != "Cancelled").Select(Span).OfType<GanttSpan>().Select(s => s.End)
@@ -331,11 +331,11 @@ public sealed class GanttData
         return new GanttSpan(sprint.StartDate.ToDateTime(TimeOnly.MinValue), end);
     }
 
-    /// <summary>Спринты оси доски планирования: незавершённые и выбранный, по дате начала.</summary>
+    /// <summary>The sprints on the planning board axis: unfinished ones and the selected one, by start date.</summary>
     public IReadOnlyList<SprintModel> PlanSprints(SprintModel selected) =>
         [.. Sprints.Where(s => s.Status != "Completed" && s.Id != selected.Id).Append(selected).OrderBy(s => s.StartDate)];
 
-    /// <summary>Ось доски: от начала первого спринта до конца последнего или конца их работы, если она выходит дальше.</summary>
+    /// <summary>The board axis: from the first sprint's start to the last sprint's end or the end of their work, if that runs further.</summary>
     public GanttSpan PlanRange(SprintModel selected)
     {
         var sprints = PlanSprints(selected);
@@ -344,11 +344,11 @@ public sealed class GanttData
         return new GanttSpan(sprints.Min(s => s.StartDate).ToDateTime(TimeOnly.MinValue), end);
     }
 
-    /// <summary>Подписанные окна всех спринтов команды — ось бесконечная, и прошлые спринты тоже видны при прокрутке: выбранный — «sprint», остальные — «sprint-other».</summary>
+    /// <summary>Labeled windows of all team sprints - the axis is infinite, and past sprints are visible when scrolling too: the selected one is "sprint", the rest are "sprint-other".</summary>
     public IEnumerable<GanttRegion> PlanRegions(SprintModel selected) => Sprints.OrderBy(s => s.StartDate).Select(s =>
         new GanttRegion(s.Id == selected.Id ? "sprint" : "sprint-other", GanttSpan.FromDays(s.StartDate, s.EndDate), Label: $"{s.Name}: {s.StartDate:dd.MM}–{s.EndDate:dd.MM}"));
 
-    /// <summary>Спринт из <paramref name="sprints"/>, в окно которого попадает день; при пересечении — <paramref name="preferred"/>.</summary>
+    /// <summary>The sprint from <paramref name="sprints"/> whose window contains the day; when several overlap, <paramref name="preferred"/>.</summary>
     public static SprintModel? SprintAt(DateOnly day, IEnumerable<SprintModel> sprints, Guid? preferred = null) =>
         sprints.Where(s => day >= s.StartDate && day <= s.EndDate).OrderBy(s => s.Id == preferred ? 0 : 1).FirstOrDefault();
 
@@ -360,7 +360,7 @@ public sealed class GanttData
             new DependencyRequest(predecessor.Id, successor.Id, Code(link.Type)));
     }
 
-    /// <summary>Окно оси: спринт с запасом в три дня или все окна и сроки задач.</summary>
+    /// <summary>The axis window: the sprint with a three-day margin, or all task windows and deadlines.</summary>
     public GanttSpan Range(SprintModel? sprint, DateOnly today)
     {
         if (sprint is not null) return GanttSpan.FromDays(sprint.StartDate.AddDays(-3), sprint.EndDate.AddDays(3));
@@ -374,7 +374,7 @@ public sealed class GanttData
 
     public static string ScaleName(GanttScale scale) => scale switch { GanttScale.Week => AlvaStrings.Gantt_Weeks, GanttScale.Month => AlvaStrings.Gantt_Months, _ => AlvaStrings.Gantt_Days };
 
-    /// <summary>Ширина единицы оси: дню хватает места на часы, неделе и месяцу — на подпись.</summary>
+    /// <summary>The axis unit width: a day has room for hours, a week and a month for a label.</summary>
     public static double UnitWidth(GanttScale scale) => scale switch { GanttScale.Week => 96, GanttScale.Month => 140, _ => 40 };
 
     public static bool IsWeekend(DateOnly day) => day.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday;
@@ -385,7 +385,7 @@ public sealed class GanttData
 
     public string SprintName(Guid? id) => Sprint(id) is { } s ? $"{s.Name} ({s.StartDate:dd.MM}–{s.EndDate:dd.MM})" : AlvaStrings.Gantt_AllTasks;
 
-    /// <summary>Окно выбранного спринта, а без выбора — окна активных спринтов.</summary>
+    /// <summary>The selected sprint's window, or without a selection, the windows of active sprints.</summary>
     public IEnumerable<GanttRegion> SprintRegions(SprintModel? sprint) => sprint is { } s
         ? [new GanttRegion("sprint", GanttSpan.FromDays(s.StartDate, s.EndDate), Label: $"{s.Name}: {s.StartDate:dd.MM}–{s.EndDate:dd.MM}")]
         : Sprints.Where(s => s.Status == "Active").Select(s => new GanttRegion("sprint", GanttSpan.FromDays(s.StartDate, s.EndDate), Label: s.Name));

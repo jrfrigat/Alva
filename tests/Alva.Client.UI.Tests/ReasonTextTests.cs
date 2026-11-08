@@ -9,7 +9,7 @@ using Xunit;
 
 namespace Alva.Client.UI.Tests;
 
-/// <summary>Причины приходят кодами и переводятся одним слоем; английский текст не содержит кириллицы.</summary>
+/// <summary>Reasons arrive as codes and are translated in a single layer; English text contains no Cyrillic.</summary>
 public sealed class ReasonTextTests : UiTestBase
 {
     private static readonly Dictionary<string, string[]> SampleArgs = new()

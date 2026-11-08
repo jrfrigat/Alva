@@ -2,12 +2,12 @@ using System.Globalization;
 
 namespace Alva.Integrations;
 
-/// <summary>Вид поля настройки: от него зависят поле формы и проверка.</summary>
+/// <summary>The kind of a setting field: the form field and validation depend on it.</summary>
 public enum IntegrationSettingKind { Text, Secret, Url, Number, Flag, Choice }
 
-/// <summary>Одна настройка модуля, как её показать и проверить.</summary>
-/// <param name="Key">Ключ в словаре настроек подключения.</param>
-/// <param name="Choices">Варианты для <see cref="IntegrationSettingKind.Choice"/>: значение и подпись.</param>
+/// <summary>A single module setting, as it is shown and validated.</summary>
+/// <param name="Key">The key in the connection settings dictionary.</param>
+/// <param name="Choices">Options for <see cref="IntegrationSettingKind.Choice"/>: value and label.</param>
 public sealed record IntegrationSetting(
     string Key,
     string Label,
@@ -19,10 +19,10 @@ public sealed record IntegrationSetting(
 
 public sealed record IntegrationChoice(string Value, string Label);
 
-/// <summary>Общая проверка настроек по схеме модуля: ядро и модуль называют ошибку одинаково.</summary>
+/// <summary>Shared validation of settings against the module schema: the core and the module describe an error the same way.</summary>
 public static class IntegrationSettings
 {
-    /// <summary>Ошибки по ключам; пустой список — настройки годятся.</summary>
+    /// <summary>Errors by key; an empty list means the settings are valid.</summary>
     public static IReadOnlyList<(string Key, string Message)> Validate(ITaskSourceModule module, IntegrationConnection connection)
     {
         var errors = new List<(string, string)>();
@@ -51,7 +51,7 @@ public static class IntegrationSettings
         return errors;
     }
 
-    /// <summary>Значение настройки с подстановкой значения по умолчанию из схемы.</summary>
+    /// <summary>The setting value, with the schema default substituted when absent.</summary>
     public static string? Get(this IntegrationConnection connection, ITaskSourceModule module, string key) =>
         connection.Value(key) ?? module.Settings.FirstOrDefault(s => s.Key == key)?.Default;
 }

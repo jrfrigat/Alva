@@ -1,20 +1,20 @@
 namespace Alva.Contracts;
 
-/// <summary>Собственные даты задачи и её место в дереве — всё, что нужно правилу рамки родителя.</summary>
-/// <param name="Fixed">Даты зафиксированы: правило рамки не имеет права их расширять.</param>
+/// <summary>A task's own dates and its place in the tree - everything the parent-frame rule needs.</summary>
+/// <param name="Fixed">The dates are fixed: the frame rule must not extend them.</param>
 public sealed record TaskDates(Guid Id, Guid? ParentId, DateOnly? Start, DateOnly? End, bool Fixed = false)
 {
-    /// <summary>Окно по собственным датам; задача без дат окна не имеет — её полоса берётся от спринта или срока.</summary>
+    /// <summary>A window from the task's own dates; a task without dates has no window - its bar is taken from the sprint or the deadline.</summary>
     public (DateOnly Start, DateOnly End)? Window => (Start ?? End, End ?? Start) is (DateOnly s, DateOnly e) ? (s <= e ? (s, e) : (e, s)) : null;
 }
 
 /// <summary>
-/// Правило «родитель охватывает детей»: начало родителя не позже самого раннего начала потомков, конец — не раньше
-/// самого позднего конца. Одно и то же правило применяют API и demo после сохранения задачи.
+/// The "parent covers its children" rule: the parent's start is not later than the earliest descendant start, and its end is not earlier
+/// than the latest end. The API and the demo apply the same rule after saving a task.
 /// </summary>
 public static class TaskWindows
 {
-    /// <summary>Общее окно потомков задачи с собственными датами, или null, если таких нет.</summary>
+    /// <summary>The combined window of a task's descendants with their own dates, or null if there are none.</summary>
     public static (DateOnly Start, DateOnly End)? Descendants(IReadOnlyCollection<TaskDates> tasks, Guid id)
     {
         var children = tasks.ToLookup(t => t.ParentId);
@@ -32,8 +32,8 @@ public static class TaskWindows
     }
 
     /// <summary>
-    /// Новые даты, которые нужно записать после изменения задачи <paramref name="changedId"/>: сама она с датами — не уже
-    /// своих потомков, её предки с датами — не уже её окна. Задачи без собственных дат правило не трогает.
+    /// The new dates to write after changing the task <paramref name="changedId"/>: the task itself with dates is no narrower
+    /// than its descendants, and its dated ancestors are no narrower than its window. The rule does not touch tasks without their own dates.
     /// </summary>
     public static IReadOnlyList<TaskDates> Enforce(IReadOnlyCollection<TaskDates> tasks, Guid changedId)
     {
@@ -47,7 +47,7 @@ public static class TaskWindows
             changed = changed with { Start = covered.Start, End = covered.End };
             updates.Add(changed);
         }
-        // Задача без своих дат не мешает подняться выше: предки всё равно должны охватить её потомков.
+        // A task without its own dates does not block the walk upward: its ancestors must still cover its descendants.
         var window = Union(changed.Window, under);
 
         var seen = new HashSet<Guid> { changedId };
@@ -62,8 +62,8 @@ public static class TaskWindows
     }
 
     /// <summary>
-    /// Первое обновление <see cref="Enforce"/>, которое затронуло бы задачу с зафиксированными датами, или null.
-    /// Правило рамки может только расширять окно, поэтому любое обновление фиксированной задачи — конфликт.
+    /// The first <see cref="Enforce"/> update that would affect a task with fixed dates, or null.
+    /// The frame rule can only extend the window, so any update to a fixed task is a conflict.
     /// </summary>
     public static TaskDates? Conflict(IReadOnlyCollection<TaskDates> tasks, IReadOnlyList<TaskDates> updates)
     {

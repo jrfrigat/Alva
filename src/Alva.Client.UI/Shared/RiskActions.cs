@@ -2,10 +2,10 @@ using Alva.Contracts;
 
 namespace Alva.Client.Shared;
 
-/// <summary>Куда ведёт причина риска: к блокирующей задаче, календарю исполнителя или карточке задачи.</summary>
+/// <summary>Where a risk reason leads: to the blocking task, the assignee's calendar or the task card.</summary>
 public static class RiskActions
 {
-    /// <summary>Адрес действия для причины; без конкретного человека или блокера — карточка задачи.</summary>
+    /// <summary>The action address for the reason; without a specific person or blocker, the task card.</summary>
     public static string Href(ReasonDto reason, Guid taskId, Guid? personId = null) => reason.Code switch
     {
         ReasonCodes.RiskDependencyOpen when Blocker(reason) is { } blocker => $"tasks/{blocker}",
@@ -13,7 +13,7 @@ public static class RiskActions
         _ => $"tasks/{taskId}"
     };
 
-    /// <summary>Подпись действия для title и aria-label.</summary>
+    /// <summary>The action label for the title and aria-label.</summary>
     public static string Label(ReasonDto reason, Guid? personId = null) => reason.Code switch
     {
         ReasonCodes.RiskDependencyOpen => AlvaStrings.Risks_OpenTheBlockingTask,

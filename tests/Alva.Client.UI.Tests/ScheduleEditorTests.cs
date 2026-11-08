@@ -8,7 +8,7 @@ using Xunit;
 
 namespace Alva.Client.UI.Tests;
 
-/// <summary>Операции с вычетами и периодами не сбрасывают несохранённые часы недели и часовой пояс.</summary>
+/// <summary>Operations with deductions and periods do not reset the unsaved weekly hours and time zone.</summary>
 public sealed class ScheduleEditorTests : UiTestBase
 {
     private readonly Guid _person = Guid.NewGuid();
@@ -22,7 +22,7 @@ public sealed class ScheduleEditorTests : UiTestBase
         Api.Answer("actors", _ => new[] { new ActorModel { Id = _person, Name = "Анна Петрова" } })
            .Answer($"actors/{_person}/calendar", _ => _calendar)
            .Answer("capacity", _ => Array.Empty<CapacityDto>());
-        // Сервер меняет только списки; часы недели меняет лишь PUT календаря.
+        // The server changes only the lists; weekly hours are changed only by the calendar PUT.
         Api.OnSend = (method, path, value) =>
         {
             _calendar = value switch
@@ -43,7 +43,7 @@ public sealed class ScheduleEditorTests : UiTestBase
     private static IElement Monday(IRenderedComponent<ScheduleEditor> cut) => cut.Find("input[aria-label='Часы: Понедельник']");
     private static IElement SaveButton(IRenderedComponent<ScheduleEditor> cut) => Button(cut, "Сохранить график");
 
-    // Пользователь меняет часы понедельника и пояс, но не сохраняет.
+    // The user changes Monday hours and the time zone but does not save.
     private static void EditDraft(IRenderedComponent<ScheduleEditor> cut)
     {
         Monday(cut).Change("6");
@@ -58,8 +58,8 @@ public sealed class ScheduleEditorTests : UiTestBase
         Assert.False(SaveButton(cut).HasAttribute("disabled"));
     }
 
-    // Узкая раскладка показывает день карточкой: подписи в ячейках должны совпадать с заголовками колонок,
-    // иначе на телефоне величины читаются без имени — строка заголовков там скрыта.
+    // The narrow layout shows a day as a card: the labels in the cells must match the column headers,
+    // otherwise values are read without a name on the phone - the header row is hidden there.
     [Fact]
     public void Every_day_row_labels_its_values_so_the_narrow_layout_stays_readable()
     {

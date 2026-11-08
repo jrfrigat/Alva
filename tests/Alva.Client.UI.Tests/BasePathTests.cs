@@ -9,18 +9,18 @@ using Xunit;
 
 namespace Alva.Client.UI.Tests;
 
-/// <summary>Демо публикуется в подпапке хоста (https://jrfrigat.github.io/Alva/), поэтому адреса внутри
-/// приложения относительные: их резолвит базовый адрес страницы, а текущий путь читается от того же
-/// базового адреса. Путь с ведущим «/» теряет подпапку и уводит в корень хостинга — это и видел
-/// пользователь, когда пункт меню открывал /sprints вместо /Alva/sprints.</summary>
+/// <summary>The demo is published from a host subfolder (https://jrfrigat.github.io/Alva/), so URLs inside
+/// the application are relative: the page base address resolves them, and the current path is read from
+/// the same base address. A path with a leading "/" loses the subfolder and leads to the hosting root
+/// instead of the application page.</summary>
 public sealed class BasePathTests : UiTestBase
 {
-    // Так выглядит хост демо: и адрес страницы, и базовый адрес лежат в подпапке /Alva/.
+    // This is what the demo host looks like: both the page URL and the base address live in the /Alva/ subfolder.
     private static readonly Uri Host = new("https://jrfrigat.github.io/Alva/");
 
     private BunitNavigationManager Navigation => Services.GetRequiredService<BunitNavigationManager>();
 
-    // Менеджер навигации с произвольным адресом: подменяет то, что в приложении задаёт <base href>.
+    // A navigation manager with an arbitrary address: stands in for what <base href> provides in the application.
     private sealed class TestNavigation : NavigationManager
     {
         public TestNavigation(string baseUri, string uri) => Initialize(baseUri, uri);
@@ -57,15 +57,14 @@ public sealed class BasePathTests : UiTestBase
         AssertInsideHostBase(cut.FindAll("a[href]").Select(link => link.GetAttribute("href")), "страница задач");
     }
 
-    // Класс дефекта, которого рендер-тесты не видят по построению: в тестах базовый адрес равен корню,
-    // поэтому «/tasks» и «tasks» дают один и тот же Uri, а на хосте в подпапке — разные страницы. Сторож
-    // читает исходники приложения и ищет адрес раздела с ведущим «/» в ссылке или в переходе: именно так
-    // в этой карточке четыре раза подряд ускользал адрес, собранный тернарным выражением.
+    // The class of defect that render tests cannot see by design: in tests the base address is the root,
+    // so "/tasks" and "tasks" produce the same Uri, while on a host in a subfolder they are different pages. The guard
+    // reads the application sources and looks for a section URL with a leading "/" in a link or a navigation.
     [Fact]
     public void No_source_links_to_a_section_from_the_origin_root()
     {
-        // Сторож обязан кусаться: правило ловит ссылку и переход, но не объявление маршрута и не
-        // сравнение текущего пути — иначе он молча пропускал бы ровно то, ради чего написан.
+        // The guard must bite: the rule catches a link and a navigation, but not a route declaration or a
+        // current path comparison - otherwise it would silently miss exactly what it was written for.
         Assert.True(LinksToRoot("<FlareButton Href=\"/tasks\">"));
         Assert.True(LinksToRoot("Navigation.NavigateTo(flag ? \"/gantt/2d\" : \"/gantt/people\");"));
         Assert.False(LinksToRoot("@page \"/tasks\""));
@@ -82,9 +81,9 @@ public sealed class BasePathTests : UiTestBase
         Assert.Empty(offenders);
     }
 
-    // Ссылка нарушает правило, если адрес раздела начинается с «/». Объявления маршрутов (@page),
-    // маршруты сервера (MapGet/MapPost) и сравнения текущего пути (StartsWith/EndsWith/Contains) — не
-    // ссылки, их не считаем.
+    // A link violates the rule if the section URL starts with "/". Route declarations (@page),
+    // server routes (MapGet/MapPost) and current path comparisons (StartsWith/EndsWith/Contains) are not
+    // links, so they are not counted.
     private static bool LinksToRoot(string line) =>
         !line.Contains("@page ") && !line.Contains("MapGet(") && !line.Contains("MapPost(") && !line.Contains("MapPut(") && !line.Contains("MapDelete(")
         && !line.Contains("StartsWith(\"/") && !line.Contains("EndsWith(\"/") && !line.Contains("Contains(\"/")
@@ -92,7 +91,7 @@ public sealed class BasePathTests : UiTestBase
 
     private static readonly string[] Sections = ["tasks", "sprints", "capacity", "team", "gantt", "projects", "analytics", "settings", "my-work", "data", "unassigned", "login", "register", "workspaces"];
 
-    // Только клиентские проекты: они и строят ссылки. В серверных адреса маршрутов абсолютны по природе.
+    // Client projects only: they build the links. Server route URLs are absolute by nature.
     private static readonly string[] ClientProjects = ["Alva.Client.UI", "Alva.Client", "Alva.Client.Demo"];
 
     private static IEnumerable<string> SourceFiles()
@@ -106,8 +105,8 @@ public sealed class BasePathTests : UiTestBase
             .Where(file => !file.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}") && !file.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}"));
     }
 
-    // Ровно то, что делает браузер: относительный адрес резолвится от базового, а «/раздел» — от корня
-    // хостинга. Пустой адрес — корень приложения, каким его и делает <base href>.
+    // Exactly what the browser does: a relative URL resolves against the base, and "/section" against the
+    // hosting root. An empty URL is the application root, as <base href> makes it.
     private static void AssertInsideHostBase(IEnumerable<string?> hrefs, string what)
     {
         var links = hrefs.Where(href => href is not null && (href.Length == 0 || (!href.StartsWith('#') && !href.Contains("://")))).ToArray();

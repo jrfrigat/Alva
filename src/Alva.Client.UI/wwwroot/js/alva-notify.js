@@ -1,5 +1,4 @@
-// Локальные уведомления браузера для колокольчика рисков Alva (без push-сервера).
-// Мост до сервиса Flare (Flare TASK-235): когда он выйдет, модуль удаляется.
+// Local browser notifications for the Alva risk bell (without a push server).
 const supported = () => typeof window !== "undefined" && "Notification" in window;
 
 export function permission() {

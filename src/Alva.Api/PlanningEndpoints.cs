@@ -184,7 +184,7 @@ public static class PlanningEndpoints
     {
         var ids = (teamIds ?? []).Distinct().ToArray();
         if (ids.Length == 0) throw new ApiException(400, "Проект должен быть связан хотя бы с одной командой.");
-        // Иначе проект пропадает из списка команды, которая его сохраняет.
+        // Otherwise the project disappears from the list of the team that saves it.
         if (!ids.Contains(teamId)) throw new ApiException(400, "Проект должен оставаться связан с командой, в которой его редактируют.");
         if (await db.Teams.CountAsync(x => ids.Contains(x.Id) && x.WorkspaceId == project.WorkspaceId) != ids.Length) throw new ApiException(400, "Команды проекта должны принадлежать тому же рабочему пространству.");
         var existing = await db.ProjectTeams.Where(x => x.ProjectId == project.Id).ToListAsync();
@@ -211,8 +211,8 @@ public static class PlanningEndpoints
     }
 
     /// <summary>
-    /// Снимки при смене статуса: старт фиксирует обязательство (один раз), закрытие — итог; переоткрытый спринт итога не
-    /// имеет. Цифры берутся из задач команды на момент перехода и дальше не пересчитываются.
+    /// Snapshots on status change: the start records the commitment (once), the close records the result; a reopened sprint has no
+    /// result. The numbers come from the team's tasks at the moment of the transition and are not recalculated afterwards.
     /// </summary>
     public static async Task Snapshot(AlvaDbContext db, Sprint sprint, SprintStatus before)
     {
@@ -235,8 +235,8 @@ public static class PlanningEndpoints
 
 
     /// <summary>
-    /// Закрытие спринта с решением по каждой незавершённой задаче, одной транзакцией: отметки «готова», затем снимок итога
-    /// (в нём остаток виден как незакрытые часы), затем перенос остатка в следующий спринт или в пул.
+    /// Closing a sprint with a decision for every unfinished task, in one transaction: it marks tasks as done, then the result snapshot
+    /// (in it remaining work appears as unclosed hours), then carrying the remaining work to the next sprint or to the backlog.
     /// </summary>
     private static async Task Close(AlvaDbContext db, Guid teamId, Guid sprintId, SprintCloseRequest request, Guid userId)
     {
@@ -248,7 +248,7 @@ public static class PlanningEndpoints
         var open = (await db.Tasks.Where(t => t.TeamId == teamId && !t.Archived && t.Status != WorkStatus.Done && t.Status != WorkStatus.Cancelled && (t.StartDate != null || t.EndDate != null)).ToListAsync())
             .Where(t => SprintWindows.Overlaps(t.StartDate, t.EndDate, sprint.StartDate, sprint.EndDate)).ToList();
         if (open.Any(t => !decisions.ContainsKey(t.Id))) throw new ApiException(400, "Решите, что делать с каждой незавершённой задачей спринта.");
-        // Перенос в следующий спринт и возврат в пул меняют или очищают даты — фиксированную задачу так нельзя.
+        // Carrying to the next sprint and returning to the backlog change or clear the dates - a fixed task cannot be handled this way.
         foreach (var task in open.Where(t => t.DatesFixed && (decisions[t.Id] is SprintCarry.Next or SprintCarry.Backlog)))
             throw new ApiException(400, $"Даты задачи «{task.Title}» зафиксированы — при закрытии спринта её нельзя перенести в следующий спринт или вернуть в пул. Снимите фиксацию заранее.");
         Sprint? next = null;
@@ -295,7 +295,7 @@ public static class PlanningEndpoints
         return (start, end);
     }
 
-    /// <summary>Открытые задачи команды с первым назначением (если есть) и плановым окном — датами задачи.</summary>
+    /// <summary>The team's open tasks with their first assignment (if any) and planning window - the task dates.</summary>
     private static async Task<List<(TaskCard Task, Assignment? Assignment, DateOnly? Start, DateOnly? End)>> OpenWork(AlvaDbContext db, Guid teamId, bool includeClosed = false)
     {
         var tasks = await db.Tasks.AsNoTracking().Where(x => x.TeamId == teamId && !x.Archived && (includeClosed || (x.Status != WorkStatus.Done && x.Status != WorkStatus.Cancelled))).ToListAsync();
@@ -304,7 +304,7 @@ public static class PlanningEndpoints
         return [.. tasks.Select(task => (task, assignments.GetValueOrDefault(task.Id), task.StartDate, task.EndDate))];
     }
 
-    /// <summary>Календари людей команды вместе с общими графиками их подкоманд — так их видят ёмкость и риски.</summary>
+    /// <summary>The calendars of the team's people together with the shared schedules of their departments - this is how capacity and risks see them.</summary>
     internal static async Task<(List<Actor> People, Func<Guid, DateOnly, CalendarDto> CalendarOf)> PeopleCalendars(AlvaDbContext db, Guid teamId)
     {
         var people = await db.Actors.AsNoTracking().Where(x => x.TeamId == teamId && !x.Archived && x.Kind == ActorKind.Person).OrderBy(x => x.Name).ToListAsync();
@@ -341,7 +341,7 @@ public static class PlanningEndpoints
         return CapacityMath.Build(people.Select(x => (x.Id, x.Name)), calendarOf, work, start, end);
     }
 
-    /// <summary>Потребность ролей и подкоманд: задачи, назначенные на них без выбранного человека.</summary>
+    /// <summary>Demand for departments and skills: tasks assigned to them without a chosen person.</summary>
     internal static async Task<CapacityDemandDto[]> Demand(AlvaDbContext db, Guid teamId, DateOnly? from, DateOnly? to)
     {
         var (start, end) = Period(from, to);

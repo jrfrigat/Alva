@@ -183,7 +183,7 @@ public sealed class CapacityMathTests
     [Fact]
     public void Overload_sums_each_day_over_capacity_even_when_the_period_has_reserve()
     {
-        // 16 ч в понедельник и 0 во вторник при 8 ч в день: итог периода 16/16, но понедельник перегружен на 8 ч.
+        // 16 h on Monday and 0 on Tuesday at 8 h per day: the period total is 16/16, but Monday is overloaded by 8 h.
         CapacityDto[] days =
         [
             new(Person, "Анна", Monday, 8m, 16m),

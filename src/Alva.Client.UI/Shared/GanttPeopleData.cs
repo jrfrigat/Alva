@@ -5,12 +5,12 @@ using Flare.Components.Gantt;
 
 namespace Alva.Client.Shared;
 
-/// <summary>Строка «Гантта по людям»: подкоманда, человек, роль с потребностью или «Не назначено».</summary>
+/// <summary>A People Gantt row: a sub-team, a person, a skill with demand, or Unassigned.</summary>
 public sealed record PeopleRow(string Key, string Kind, string Name, string? Meta, ActorModel? Actor, IReadOnlyList<PeopleRow> Children);
 
 /// <summary>
-/// Проекция 2 (макет p6_2d): дорожки людей и ролей с часами ёмкости по единицам оси и задачами в строке исполнителя.
-/// Строки, ячейки и переназначение собираются здесь из данных Alva; библиотека Гантта о людях не знает.
+/// Projection 2: lanes of people and skills with capacity hours per axis unit and tasks on the assignee's row.
+/// Rows, cells and reassignment are assembled here from Alva data; the Gantt library knows nothing about people.
 /// </summary>
 public sealed class GanttPeopleData
 {
@@ -26,7 +26,7 @@ public sealed class GanttPeopleData
     private readonly CapacityDto[] _capacity;
     private readonly CapacityDemandDto[] _demand;
 
-    /// <summary>Окно оси, для которого загружены ёмкость и потребность.</summary>
+    /// <summary>The axis window for which capacity and demand are loaded.</summary>
     public GanttSpan Covered { get; }
 
     private GanttPeopleData(GanttData data, GanttSpan covered, CapacityDto[] capacity, CapacityDemandDto[] demand)
@@ -42,7 +42,7 @@ public sealed class GanttPeopleData
         Rows = BuildRows();
     }
 
-    /// <summary>Ёмкость и потребность на окно оси поверх уже загруженных данных Гантта.</summary>
+    /// <summary>Capacity and demand for an axis window on top of already loaded Gantt data.</summary>
     public static async Task<GanttPeopleData> Load(AlvaSession session, GanttData data, GanttSpan range)
     {
         var (capacity, demand) = await Fetch(session, range);
@@ -50,7 +50,7 @@ public sealed class GanttPeopleData
     }
 
     /// <summary>
-    /// То же на более длинное окно бесконечной оси: догружаются только отрезки, которых ещё нет, и сливаются с загруженными.
+    /// The same for a longer window of the infinite axis: only the segments that are not loaded yet are fetched and merged with the loaded ones.
     /// </summary>
     public async Task<GanttPeopleData> Extend(AlvaSession session, GanttSpan range)
     {
@@ -80,10 +80,10 @@ public sealed class GanttPeopleData
     public static string RoleKey(Guid id) => "r:" + GanttData.Key(id);
     private static string GroupKey(Guid? id) => "g:" + (id is { } value ? GanttData.Key(value) : "none");
 
-    /// <summary>Задачи с окном: у задачи без дат и срока нет полосы.</summary>
+    /// <summary>Tasks with a window: a task without dates or a deadline has no bar.</summary>
     public IReadOnlyList<TaskModel> Items { get; }
 
-    /// <summary>Строка задачи: конкретный человек, иначе цель назначения (человек, роль или подкоманда), иначе «Не назначено».</summary>
+    /// <summary>The task's row: the resolved person, otherwise the assignment target (person, skill or sub-team), otherwise Unassigned.</summary>
     public string RowOf(TaskModel task)
     {
         if (Data.Actor(task.ResolvedPersonId) is { Kind: "Person" } person) return PersonKey(person.Id);
@@ -129,7 +129,7 @@ public sealed class GanttPeopleData
         new(RoleKey(role.Id), "role", string.Format(AlvaStrings.Gantt_Required, role.Name),
             string.Format(AlvaStrings.Gantt_HWithoutAPerson, Labels.Kind(role.Kind), AlvaFormat.Hours(Demand(role.Id))), role, []);
 
-    // Группа человека и роли — тем же правилом, что в обзоре ёмкости: первая подкоманда человека, подкоманда-родитель роли.
+    // The group of a person and of a skill follows the same rule as in the capacity overview: the person's first sub-team, the skill's parent sub-team.
     private Guid? GroupOf(ActorModel person) => person.DepartmentIds.FirstOrDefault(id => _departments.Any(d => d.Id == id)) is var id && id != Guid.Empty ? id : null;
 
     private Guid? GroupOfRole(ActorModel actor) =>
@@ -138,12 +138,12 @@ public sealed class GanttPeopleData
     private decimal Demand(Guid actorId) => _demandOf[actorId].Sum(d => d.Hours);
 
     /// <summary>
-    /// Часы по единицам оси: у человека — назначено из доступного с видом загрузки, перегрузки, отсутствия или свободного
-    /// времени; у роли — потребность без человека.
+    /// Hours per axis unit: for a person, allocated out of available, with a kind of load, overload, absence or free
+    /// time; for a skill, demand without a person.
     /// </summary>
     public IReadOnlyList<GanttCell> Cells(GanttScale scale, GanttSpan range)
     {
-        // Ячейки зависят только от масштаба и окна, а страница перерисовывается на каждом шаге перетаскивания.
+        // The cells depend only on the scale and window, while the page redraws on every drag step.
         if (_cells is { } cached && cached.Scale == scale && cached.Range == range) return cached.Cells;
         var cells = BuildCells(scale, range).ToArray();
         _cells = (scale, range, cells);
@@ -166,7 +166,7 @@ public sealed class GanttPeopleData
                 var title = string.Format(AlvaStrings.Common_HAssignedOutOfH, row.Name, AlvaFormat.Hours(allocated), AlvaFormat.Hours(available));
                 if (available == 0 && allocated == 0)
                 {
-                    // Выходные — фон оси; пустой рабочий период у человека с графиком — отсутствие.
+                    // Weekends are the axis background; an empty work period for a person with a schedule is an absence.
                     if (Enumerable.Range(0, to.DayNumber - from.DayNumber + 1).All(i => GanttData.IsWeekend(from.AddDays(i)))) continue;
                     if (!_capacityOf[row.Actor!.Id].Any(c => c.AvailableHours > 0)) continue;
                     yield return new GanttCell(row.Key, span, "absence", "—", string.Format(AlvaStrings.Gantt_Absent, row.Name));
@@ -184,10 +184,10 @@ public sealed class GanttPeopleData
         }
     }
 
-    // В дне места только на число; неделе и месяцу хватает на единицу измерения.
+    // A day has room only for the number; a week and a month have room for the unit of measure.
     private static string Hours(decimal hours, GanttScale scale) => scale == GanttScale.Day ? AlvaFormat.Hours(hours) : $"{AlvaFormat.Hours(hours)} {AlvaStrings.Sprint_HoursShort}";
 
-    /// <summary>Единицы оси, обрезанные окном: дни, недели с понедельника или календарные месяцы.</summary>
+    /// <summary>Axis units clipped to the window: days, weeks starting on Monday, or calendar months.</summary>
     private static IEnumerable<(DateOnly From, DateOnly To)> Units(GanttScale scale, DateOnly first, DateOnly last)
     {
         for (var day = first; day <= last;)
@@ -205,8 +205,8 @@ public sealed class GanttPeopleData
     }
 
     /// <summary>
-    /// Сохраняет правку на Гантте людей: даты с каскадом, затем назначение, если полоса сменила строку.
-    /// Строку группы отклоняет до любого запроса.
+    /// Saves an edit on the People Gantt: dates with the cascade, then the assignment if the bar changed rows.
+    /// A group row is rejected before any request.
     /// </summary>
     public async Task<string> Apply(AlvaSession session, GanttChangeEventArgs args)
     {
@@ -221,12 +221,12 @@ public sealed class GanttPeopleData
 
     public static readonly string GroupRefusal = AlvaStrings.Gantt_ATaskCannotBeAssignedToAGroupChooseAPersonOrARole;
 
-    /// <summary>Строка проекции людей, а не ключ задачи: человек, роль, группа или «Не назначено».</summary>
+    /// <summary>A People projection row key rather than a task key: a person, skill, group or Unassigned.</summary>
     public static bool IsRowKey(string key) => key == Pool || key.Length > 2 && key[1] == ':';
 
     /// <summary>
-    /// Переназначает задачу на строку: человеку (сохраняя подкоманду назначения, если человек в ней)
-    /// или подкоманде без человека, либо снимает назначение для «Не назначено».
+    /// Reassigns the task to a row: to a person (keeping the assignment sub-team if the person belongs to it)
+    /// or to a sub-team without a person, or clears the assignment for Unassigned.
     /// </summary>
     public Task Reassign(AlvaSession session, TaskModel task, string rowKey)
     {

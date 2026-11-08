@@ -53,9 +53,9 @@ else if(_loaded){<UnavailableState Title="@(AlvaStrings.Sprint_SprintNotFoundOrU
     protected override void OnInitialized() => _draft = Drafts.Track(() => IsDirty);
     private bool Planning => AppRoutes.Current(Navigation).EndsWith("/plan", StringComparison.Ordinal);
     private SprintModel? Current => SprintId.HasValue ? _sprints.FirstOrDefault(s=>s.Id==SprintId) : null;
-    /// <summary>Спринт доски: указанный в адресе (без подмены, если его нет), иначе активный, иначе ближайший запланированный.</summary>
+    /// <summary>The board's sprint: the one named in the URL (not substituted if it is missing), otherwise the active one, otherwise the nearest planned one.</summary>
     private SprintModel? PlanSprint => SprintId.HasValue ? Current : _sprints.FirstOrDefault(s=>s.Status=="Active") ?? _sprints.Where(s=>s.Status=="Planned").OrderBy(s=>s.StartDate).FirstOrDefault();
-    /// <summary>Заголовок страницы планирования: имя спринта, если он выбран.</summary>
+    /// <summary>Planning page heading: the sprint name when a sprint is selected.</summary>
     private string PlanningTitle => PlanSprint is { } sprint ? $"{AlvaStrings.Sprint_PlanningASprint}: {sprint.Name}" : AlvaStrings.Sprint_PlanningASprint;
     protected override async Task OnParametersSetAsync(){_editing=null;await Load();}
     private async Task Run(Func<Task> action){_busy=true;_error=null;try{await action();}catch(Exception e) when(e is HttpRequestException or InvalidOperationException){_error=PageFeedback.Describe(e);}finally{_busy=false;}}
@@ -63,16 +63,16 @@ else if(_loaded){<UnavailableState Title="@(AlvaStrings.Sprint_SprintNotFoundOrU
     private void New(){_editing=new SprintModel();_start=_editing.StartDate;_end=_editing.EndDate;_editingSnapshot=DraftSnapshot.Of(_editing,_start,_end);}
     private void Edit(SprintModel sprint){_editing=new SprintModel{Id=sprint.Id,Name=sprint.Name,Goal=sprint.Goal,StartDate=sprint.StartDate,EndDate=sprint.EndDate,Status=sprint.Status};_start=sprint.StartDate;_end=sprint.EndDate;_editingSnapshot=DraftSnapshot.Of(_editing,_start,_end);}
     private FlareButton? _newButton,_emptyNewButton;private SprintPlanning? _planning;
-    // Закрытие редактора возвращает фокус на кнопку, которой его открыли: «Параметры спринта» на доске или «Новый спринт».
+    // Closing the editor returns focus to the button that opened it: sprint settings on the board or new sprint.
     private async Task Close()
     {
         if (!await DraftPrompt.CanDiscardAsync(Confirm, IsDirty)) return;
         var existing=_editing?.Id is { } id && id!=Guid.Empty;_editing=null;_editingSnapshot=null;StateHasChanged();
         if(existing && _planning is not null) await _planning.FocusParams();
-        // Ссылки @ref не обнуляются при смене маршрута, поэтому кнопку выбирает то, что сейчас на экране.
+        // @ref links are not reset on a route change, so the button is chosen by what is currently on screen.
         else if((Planning ? PlanSprint is null ? _emptyNewButton : null : SprintId is null ? _newButton : null) is { } button) await button.FocusAsync();
     }
-    /// <summary>Доска изменила спринт или задачи: открытая форма параметров устарела, но черновик не теряем.</summary>
+    /// <summary>The board changed the sprint or the tasks: an open settings form is stale, but the draft is not lost.</summary>
     private Task Reload(){if(!IsDirty){_editing=null;_editingSnapshot=null;}return Load();}
 
     private async Task ConfirmLeave(LocationChangingContext context)

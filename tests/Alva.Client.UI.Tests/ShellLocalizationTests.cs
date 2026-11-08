@@ -3,7 +3,7 @@ using Xunit;
 
 namespace Alva.Client.UI.Tests;
 
-/// <summary>Оболочка и manifest следуют языку: html lang, splash, ошибка и нужный manifest.</summary>
+/// <summary>The shell and manifest follow the language: html lang, splash, error and the right manifest.</summary>
 public sealed class ShellLocalizationTests
 {
     [Theory]

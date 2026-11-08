@@ -7,7 +7,7 @@ using DirectoryPage = Alva.Client.Pages.Directory;
 
 namespace Alva.Client.UI.Tests;
 
-/// <summary>Подкоманда человека задаётся периодами, а не одним выпадающим списком.</summary>
+/// <summary>A person's sub-team is set by periods, not by a single drop-down list.</summary>
 public sealed class DirectoryMembershipTests : UiTestBase
 {
     [Fact]

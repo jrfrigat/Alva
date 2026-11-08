@@ -1,15 +1,15 @@
 namespace Alva.Client;
 
-/// <summary>Пункт навигации: адрес, подпись и иконка. Короткая подпись — для нижней навигации телефона,
-/// где полное название не помещается; пустая означает «та же, что и полная».</summary>
+/// <summary>A navigation entry: address, label and icon. The short label is for the mobile bottom navigation,
+/// where the full name does not fit; empty means "the same as the full one".</summary>
 public sealed record NavigationEntry(string Path, string Label, Flare.Icons.FlareIcon Icon, bool Primary, string? ShortLabel = null);
 
-/// <summary>Раздел меню: заголовок и пункты под ним.</summary>
+/// <summary>A menu section: a heading and the entries under it.</summary>
 public sealed record NavigationGroup(string Title, NavigationEntry[] Entries);
 
-/// <summary>Состав меню по макету Stitch (боковая панель p13/p14): пункт верхнего уровня,
-/// разделы с заголовками и блок внизу списка. Адреса относительные: их резолвит базовый путь хоста,
-/// поэтому демо в подпапке (/Alva/) открывает свои разделы, а не корень хостинга.</summary>
+/// <summary>The menu layout from the Stitch design (side panel p13/p14): a top-level entry,
+/// sections with headings and a block at the bottom of the list. Addresses are relative: the host base path
+/// resolves them, so the demo in a subfolder (/Alva/) opens its own sections rather than the hosting root.</summary>
 public static class NavigationItems
 {
     public static readonly NavigationEntry Overview =
@@ -51,7 +51,7 @@ public static class NavigationItems
         ])
     ];
 
-    /// <summary>Блок под разделами, как в макете: после групп, отделён линией.</summary>
+    /// <summary>The block under the sections, as in the design: after the groups, separated by a line.</summary>
     public static readonly NavigationEntry[] Tail =
     [
         new("data", AlvaStrings.Nav_Data, Flare.Icons.MaterialDesign3Icons.Regular.SwapVert, false),
@@ -59,11 +59,11 @@ public static class NavigationItems
         new("settings", AlvaStrings.Common_Settings, Flare.Icons.MaterialDesign3Icons.Regular.Settings, false)
     ];
 
-    /// <summary>Плоский список: пункт верхнего уровня, все разделы по порядку и хвост.</summary>
+    /// <summary>A flat list: the top-level entry, all sections in order and the tail.</summary>
     public static readonly NavigationEntry[] All =
         [Overview, .. Groups.SelectMany(x => x.Entries), .. Tail];
 
-    /// <summary>Разделы, попадающие в нижнюю навигацию PWA на mobile. Второй уровень раздела
-    /// «Команда» сюда не входит: в нижней панели он не помещается.</summary>
+    /// <summary>The sections included in the mobile PWA bottom navigation. The second level of the
+    /// The Team section is not included: it does not fit in the bottom bar.</summary>
     public static NavigationEntry[] Primary => All.Where(x => x.Primary).ToArray();
 }

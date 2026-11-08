@@ -3,7 +3,7 @@ using Xunit;
 
 namespace Alva.Client.UI.Tests;
 
-/// <summary>Тексты интерфейса — обычные символы: Blazor выводит строку как текст, и «&amp;lt;» в ресурсе видно на экране.</summary>
+/// <summary>UI texts are ordinary characters: Blazor outputs a string as text, so "&amp;lt;" in a resource is visible on screen.</summary>
 public sealed class ResourceTextTests
 {
     [Theory]

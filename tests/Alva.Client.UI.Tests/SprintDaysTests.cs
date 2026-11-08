@@ -3,7 +3,7 @@ using Xunit;
 
 namespace Alva.Client.UI.Tests;
 
-/// <summary>Реестр и карточка спринта считают остаток дней одинаково — включая сегодняшний.</summary>
+/// <summary>The sprint list and card count the remaining days the same way - including today.</summary>
 public sealed class SprintDaysTests
 {
     private static readonly DateOnly Monday = new(2026, 10, 12);

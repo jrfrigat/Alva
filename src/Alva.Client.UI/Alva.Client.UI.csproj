@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
-    <!-- Пространства имён остаются Alva.Client.*, поэтому код UI не переписывается. -->
+    <!-- The namespaces stay Alva.Client.*, so the UI code does not need to be rewritten. -->
     <RootNamespace>Alva.Client</RootNamespace>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>

@@ -5,12 +5,12 @@ using Xunit;
 namespace Alva.Client.UI.Tests;
 
 /// <summary>
-/// Плоскости и рамки темы зависят от режима. Светлые литералы в токенах оболочки или в стилях
-/// дают в тёмном режиме и в высокой контрастности светлый текст на белом.
+/// Theme planes and borders depend on the mode. Light literals in shell tokens or in styles
+/// give light text on white in dark mode and in high contrast.
 /// </summary>
 public sealed partial class ThemeModeTests
 {
-    // Нейтрали и семантика дизайна, которые должны приходить из таблицы токенов alva.css, а не литералом.
+    // Neutrals and design semantics that must come from the alva.css token table, not from a literal.
     private static readonly string[] Neutrals =
     [
         "#e2e8f0", "#cbd5e1", "#f8fafc", "#f1f5f9", "#f0f4ff",
@@ -20,7 +20,7 @@ public sealed partial class ThemeModeTests
 
     private static readonly string[] Tones = ["critical", "warning", "ok", "role", "info"];
 
-    // Текст каждого тона читается (≥ 4,5:1) на своих подложках и на плоскостях своего режима.
+    // The text of each tone is readable (>= 4.5:1) on its own backgrounds and on the planes of its mode.
     [Theory]
     [InlineData(false, new[] { "#FFFFFF", "#F8F9FF", "#F8FAFC" })]
     [InlineData(true, new[] { "#06121F", "#0B1C30", "#12233A" })]
@@ -108,7 +108,7 @@ public sealed partial class ThemeModeTests
     public void Stylesheets_take_neutrals_from_the_tokens(string path)
     {
         var css = Comments().Replace(Read(path), "");
-        // Таблица токенов темы и заставка до загрузки темы — единственные места, где литералы законны.
+        // The theme token table and the splash before the theme loads are the only places where literals are legitimate.
         css = TokenTable().Replace(css, "");
         css = Regex.Replace(css, @"#flare-splash\{[^}]*\}", "");
         var found = Neutrals.Where(hex => css.Contains(hex, StringComparison.OrdinalIgnoreCase)).ToArray();

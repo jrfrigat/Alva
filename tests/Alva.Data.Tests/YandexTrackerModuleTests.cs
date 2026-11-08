@@ -7,10 +7,10 @@ using Xunit;
 
 namespace Alva.Data.Tests;
 
-/// <summary>Модуль Яндекс Трекера на заглушке HTTP: проверка подключения, запрос, сопоставление полей и связи.</summary>
+/// <summary>The Yandex Tracker module on a stub HTTP handler: connection check, request, field mapping and links.</summary>
 public sealed class YandexTrackerModuleTests
 {
-    /// <summary>Отвечает по пути запроса; запоминает тела поиска.</summary>
+    /// <summary>Answers by request path; remembers search bodies.</summary>
     private sealed class Tracker : HttpMessageHandler
     {
         public Dictionary<string, Func<HttpResponseMessage>> Routes { get; } = [];

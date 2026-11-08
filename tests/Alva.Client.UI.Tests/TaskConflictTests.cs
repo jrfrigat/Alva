@@ -6,8 +6,8 @@ using Xunit;
 
 namespace Alva.Client.UI.Tests;
 
-/// <summary>Конфликт версий объясняется словами и не оставляет человека сохранять поверх устаревшей версии:
-/// сервер отвечает 409, карточка говорит об этом и принимает свежие данные вместо несвежего черновика.</summary>
+/// <summary>A version conflict is explained in words and does not leave the user saving over a stale version:
+/// the server responds 409, the card says so and takes the fresh data instead of the stale draft.</summary>
 public sealed class TaskConflictTests : UiTestBase
 {
     private readonly TaskModel _task = new() { Id = Guid.NewGuid(), Title = "Релиз", Status = "Planned", Version = 1 };
@@ -31,8 +31,8 @@ public sealed class TaskConflictTests : UiTestBase
 
         cut.WaitForAssertion(() => Assert.Contains("изменил кто-то другой", cut.Markup));
 
-        // Черновик уступает данным сервера: иначе следующее сохранение снова ушло бы со старой версией,
-        // и человек бился бы в тот же конфликт.
+        // The draft yields to the server data: otherwise the next save would again go out with the old version,
+        // and the user would hit the same conflict.
         cut.WaitForAssertion(() => Assert.Equal("", Field(cut, "Остаток, часы").GetAttribute("value") ?? ""));
     }
 }

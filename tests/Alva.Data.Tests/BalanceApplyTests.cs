@@ -8,7 +8,7 @@ using Xunit;
 
 namespace Alva.Data.Tests;
 
-/// <summary>Предложение автобаланса применяется целиком или не применяется вовсе.</summary>
+/// <summary>A balance proposal is applied either in full or not at all.</summary>
 public sealed class BalanceApplyTests
 {
     private static readonly DateOnly Monday = new(2026, 10, 26);

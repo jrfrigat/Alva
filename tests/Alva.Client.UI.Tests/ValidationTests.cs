@@ -8,7 +8,7 @@ using Xunit;
 
 namespace Alva.Client.UI.Tests;
 
-/// <summary>Заведомо неверная форма не уходит в API, а ошибка стоит у поля.</summary>
+/// <summary>A deliberately invalid form does not go to the API, and the error sits at the field.</summary>
 public sealed class ValidationTests : UiTestBase
 {
     [Fact]

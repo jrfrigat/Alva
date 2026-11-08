@@ -10,7 +10,7 @@ using Xunit;
 
 namespace Alva.Client.UI.Tests;
 
-/// <summary>Меню и разделы показывают, где находится человек; выбранный проект живёт в адресе.</summary>
+/// <summary>The menu and sections show where the person is; the selected project lives in the URL.</summary>
 public sealed class NavigationStateTests : UiTestBase
 {
     private readonly ProjectModel _project = new() { Id = Guid.NewGuid(), Name = "Платформа" };

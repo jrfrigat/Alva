@@ -6,16 +6,16 @@ using Microsoft.JSInterop;
 
 namespace Alva.Client.Services;
 
-/// <summary>Что показывать в колокольчике: все риски, только высокий уровень или задачи текущего пользователя.</summary>
+/// <summary>What to show in the bell: all risks, only high severity, or the current user's tasks.</summary>
 public enum RiskScope { All, High, Mine }
 
-/// <summary>Риск в колокольчике; <paramref name="New"/> — ещё не просмотрен в этом виде (с этими уровнем и причинами).</summary>
+/// <summary>A risk in the bell; <paramref name="New"/> means not yet viewed in this form (with this severity and these reasons).</summary>
 public sealed record RiskNotice(RiskDto Risk, bool New);
 
 /// <summary>
-/// Уведомления о рисках внутри приложения: пока Alva открыта, риски команды обновляются каждые
-/// пять минут и при смене команды. Просмотренное, подписка и флаг уведомлений браузера живут в
-/// localStorage отдельно для пользователя и команды — это настройки устройства, не данные команды.
+/// In-app risk notifications: while Alva is open, team risks refresh every
+/// five minutes and on team change. What has been seen, the subscription and the browser
+/// notification flag live in localStorage separately for each user and team - these are device settings, not team data.
 /// </summary>
 public sealed class RiskNotifications(AlvaSession session, IJSRuntime js) : IAsyncDisposable
 {
@@ -35,7 +35,7 @@ public sealed class RiskNotifications(AlvaSession session, IJSRuntime js) : IAsy
     public RiskNotice[] Items { get; private set; } = [];
     public int Unseen => Items.Count(x => x.New);
 
-    /// <summary>Запускает опрос один раз за жизнь приложения; повторные вызовы ничего не делают.</summary>
+    /// <summary>Starts polling once per application lifetime; repeated calls do nothing.</summary>
     public async Task Start()
     {
         if (_started) return;
@@ -60,10 +60,10 @@ public sealed class RiskNotifications(AlvaSession session, IJSRuntime js) : IAsy
         }
         catch (Exception e) when (e is HttpRequestException or InvalidOperationException or JSException)
         {
-            // Нет сети или сессии — оставляем прежний список до следующего опроса.
+            // No network or session - keep the previous list until the next poll.
             return;
         }
-        // Ключи исчезнувших рисков больше не нужны: запись в localStorage не растёт без конца.
+        // Keys of risks that disappeared are no longer needed: the localStorage entry does not grow without bound.
         var current = _risks.Select(Key).ToHashSet();
         _state.Seen.IntersectWith(current);
         _state.Shown.IntersectWith(current);
@@ -86,7 +86,7 @@ public sealed class RiskNotifications(AlvaSession session, IJSRuntime js) : IAsy
         await Save();
     }
 
-    /// <summary>Включает уведомления браузера, если он разрешает; возвращает состояние разрешения.</summary>
+    /// <summary>Enables browser notifications if the browser allows it; returns the permission state.</summary>
     public async Task<string> SetBrowserNotifications(bool enabled)
     {
         var permission = "default";
@@ -96,7 +96,7 @@ public sealed class RiskNotifications(AlvaSession session, IJSRuntime js) : IAsy
             enabled = permission == "granted";
         }
         _state.Browser = enabled;
-        // Уже видимые риски не всплывают разом при включении — только новые после него.
+        // Risks already visible do not pop up all at once when enabling - only new ones after that.
         if (enabled) _state.Shown.UnionWith(Items.Select(x => Key(x.Risk)));
         Changed?.Invoke();
         await Save();
@@ -162,7 +162,7 @@ public sealed class RiskNotifications(AlvaSession session, IJSRuntime js) : IAsy
     {
         if (_storageKey is null) return;
         try { await js.InvokeVoidAsync("localStorage.setItem", _storageKey, JsonSerializer.Serialize(_state)); }
-        catch (JSException) { /* Хранилище недоступно (приватный режим) — работаем без памяти о прочитанном. */ }
+        catch (JSException) { /* Storage is unavailable (private mode) - the bell works without remembering what was seen. */ }
     }
 
     public async ValueTask DisposeAsync()

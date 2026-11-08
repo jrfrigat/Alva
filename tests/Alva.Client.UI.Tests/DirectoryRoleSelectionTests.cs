@@ -7,7 +7,7 @@ using DirectoryPage = Alva.Client.Pages.Directory;
 
 namespace Alva.Client.UI.Tests;
 
-/// <summary>Навыки в карточке человека выбираются одним множественным списком из справочника.</summary>
+/// <summary>Skills in the person card are selected with a single multi-select list from the directory.</summary>
 public sealed class DirectoryRoleSelectionTests : UiTestBase
 {
     [Fact]

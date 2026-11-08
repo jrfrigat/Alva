@@ -5,7 +5,7 @@ using Xunit;
 
 namespace Alva.Data.Tests;
 
-/// <summary>Справочник участников работает и на локальной SQLite, где нет SELECT … FOR UPDATE.</summary>
+/// <summary>The member directory works on local SQLite too, where SELECT ... FOR UPDATE is not available.</summary>
 public sealed class SqliteActorTests
 {
     [Fact]

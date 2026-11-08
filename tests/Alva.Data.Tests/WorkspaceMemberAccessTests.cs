@@ -12,7 +12,7 @@ using Xunit;
 
 namespace Alva.Data.Tests;
 
-/// <summary>Права живут, пока человек состоит в команде: удалённый и вернувшийся участник начинает без прав.</summary>
+/// <summary>Permissions last only while the person is a team member: a removed and returning member starts without permissions.</summary>
 public sealed class WorkspaceMemberAccessTests
 {
     private const string Email = "b@example.test";
@@ -78,7 +78,7 @@ public sealed class WorkspaceMemberAccessTests
         services.AddRateLimiter(o => o.AddPolicy("auth", _ => System.Threading.RateLimiting.RateLimitPartition.GetNoLimiter("test")));
     });
 
-    /// <summary>Текущий пользователь — владелец; второй человек состоит в команде и может править задачи.</summary>
+    /// <summary>The current user is the owner; the second person is a team member and can edit tasks.</summary>
     private static async Task<(Guid WorkspaceId, Guid Member)> AddMemberWithGrant(ApiServer server)
     {
         var workspaceId = Guid.Empty; var member = Guid.NewGuid();
