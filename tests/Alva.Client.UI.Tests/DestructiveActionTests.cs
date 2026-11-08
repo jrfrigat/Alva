@@ -56,7 +56,7 @@ public sealed class DestructiveActionTests : UiTestBase
         var cut = Provider<Alva.Client.Pages.Directory>();
 
         cut.WaitForAssertion(() => Assert.Contains("Анна", cut.Markup));
-        cut.FindAll(".flare-list-item__action").First(b => b.ParentElement.TextContent.Contains("Анна")).Click();
+        cut.FindAll(".flare-list-item__action").First(b => b.ParentElement is { } parent && parent.TextContent.Contains("Анна")).Click();
         Button(cut, "Архивировать").Click();
 
         cut.WaitForAssertion(() => Assert.NotNull(cut.Find("[role='alertdialog']")));

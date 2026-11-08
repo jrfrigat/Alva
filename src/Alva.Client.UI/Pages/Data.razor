@@ -74,15 +74,20 @@ else
     {
         _fileError=null;_formErrors.Clear();
         if(!Session.SupportsDataTransfer)return;
-        if(_file is null) { _fileError=AlvaStrings.Data_ChooseAFile; _formErrors.Add(_fileError); }
-        else if(!string.Equals(Path.GetExtension(_file.Name).TrimStart('.'),_format,StringComparison.OrdinalIgnoreCase))
+        var file=_file;
+        if(file is null)
+        {
+            _fileError=AlvaStrings.Data_ChooseAFile; _formErrors.Add(_fileError);
+            StateHasChanged(); await SafeFocus.Async(_errorSummary); return;
+        }
+        if(!string.Equals(Path.GetExtension(file.Name).TrimStart('.'),_format,StringComparison.OrdinalIgnoreCase))
         { _fileError=AlvaStrings.Data_TheFileExtensionDoesNotMatchTheFormat; _formErrors.Add(_fileError); }
         if(_formErrors.Count > 0) { StateHasChanged(); await SafeFocus.Async(_errorSummary); return; }
         if(!await DestructivePrompt.ConfirmAsync(Confirm, AlvaStrings.Data_ImportDataConfirm,
-            string.Format(AlvaStrings.Data_FileWillBeImportedIntoTheTeamExistingDataMayChange, _file.Name),
+            string.Format(AlvaStrings.Data_FileWillBeImportedIntoTheTeamExistingDataMayChange, file.Name),
             AlvaStrings.Data_Import)) return;
         _busy=true;_result=null;_error=null;
-        try{await using var stream=_file.OpenReadStream(10*1024*1024);_result=await Session.Import(_format,stream);}
+        try{await using var stream=file.OpenReadStream(10*1024*1024);_result=await Session.Import(_format,stream);}
         catch(Exception e) when(e is HttpRequestException or InvalidOperationException or IOException or NotSupportedException){_error=PageFeedback.Describe(e);}
         finally{_busy=false;}
     }
