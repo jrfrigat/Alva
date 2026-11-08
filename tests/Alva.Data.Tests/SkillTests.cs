@@ -40,6 +40,14 @@ public sealed class SkillTests
     }
 
     [Fact]
+    public void Cyrillic_skill_tags_are_preserved_and_compared_case_insensitively()
+    {
+        Assert.Equal(["Платформа"], SkillMath.Normalize([" Платформа "]));
+        Assert.Empty(SkillMath.Missing(["Платформа"], [" платформа "]));
+        Assert.False(SkillMath.Compatible(["Платформа"], ["Аналитика"]));
+    }
+
+    [Fact]
     public void Tags_are_bounded_and_legacy_requests_do_not_clear_skills()
     {
         Assert.Throws<ArgumentException>(() => SkillMath.Normalize([new string('a', 81)]));
