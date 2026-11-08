@@ -67,9 +67,7 @@ else
             @if(_actor.Kind!="Role") { <FlareSelect TValue="Guid?" Label="@(_actor.Kind=="Department" ? AlvaStrings.People_ParentSubTeam : AlvaStrings.Common_SubTeam)" Items="@(_actors.Where(a=>a.Kind=="Department" && a.Id!=_actor.Id).Select(a=>(Guid?)a.Id))" ItemLabel="ActorName" NullOption="@(AlvaStrings.People_NoSubTeam)" @bind-Value="_actor.ParentId" /> }
             @if(_actor.Kind=="Person") { @foreach(var department in _actors.Where(a=>a.Kind=="Department")){<FlareCheckbox Value="_actor.DepartmentIds.Contains(department.Id)" ValueChanged="(bool value)=>ToggleDepartment(department.Id,value)">@department.Name</FlareCheckbox>} }
             @if(_actor.Kind!="Role") {
-            <FlareSelect TValue="Guid?" Label="@(AlvaStrings.People_AddARole)" Items="@(_actors.Where(a=>a.Kind=="Role").Select(a=>(Guid?)a.Id))" ItemLabel="ActorName" NullOption="@(AlvaStrings.People_ChooseARole)" @bind-Value="_role" />
-            <FlareButton Variant="ButtonVariant.Text" Size="ButtonSize.Sm" OnClick="AddRole" Disabled="@(!_role.HasValue)">@(AlvaStrings.People_AddARole)</FlareButton>
-            <FlareStack Row Wrap>@foreach(var role in _actor.RoleIds) { <FlareButton Variant="ButtonVariant.Tonal" Size="ButtonSize.Sm" OnClick="()=>RemoveRole(role)">@ActorName(role) ×</FlareButton> }</FlareStack>
+            <FlareMultiSelect TValue="Guid" Label="@(AlvaStrings.Common_Roles)" Items="@(_actors.Where(a=>a.Kind=="Role").Select(a=>a.Id))" ItemLabel="id => ActorName(id)" Chips="true" Searchable="true" Values="@_actor.RoleIds" ValuesChanged="(IReadOnlyList<Guid> roles) => _actor.RoleIds = roles.ToArray()" />
             }
         </FlareStack>
     </FlareCardContent>
@@ -87,7 +85,7 @@ else
 </FlareGrid>
 }
 @code {
-    private ActorModel[] _actors=[];private ActorModel? _actor;private Guid? _role;private bool _busy;private string? _error;
+    private ActorModel[] _actors=[];private ActorModel? _actor;private bool _busy;private string? _error;
     private string? _actorSnapshot; private bool _saved; private IDisposable? _draft;
     private string? _nameError,_emailError; private readonly List<string> _formErrors=[]; private ElementReference _errorSummary;
     [CascadingParameter] public FlareConfirmDialogProvider? Confirm { get; set; }
@@ -121,7 +119,7 @@ else
         _skillSuggestions=tags.Distinct(StringComparer.OrdinalIgnoreCase).Order(StringComparer.CurrentCultureIgnoreCase).ToArray();
     }
     private void New(){_saved=false;_actor=new ActorModel {Kind=Kind};_actorSnapshot=DraftSnapshot.Of(_actor);}
-    private void Close(){_actor=null;_role=null;_actorSnapshot=null;}
+    private void Close(){_actor=null;_actorSnapshot=null;}
     private async Task CloseActor()
     {
         if (!await DraftPrompt.CanDiscardAsync(Confirm, IsDirty)) return;
@@ -139,8 +137,6 @@ else
     private void EditActor(ActorModel model){_saved=false;Close();_actor=new ActorModel{Id=model.Id,Name=model.Name,Kind=model.Kind,Email=model.Email,ParentId=model.ParentId,RoleIds=[..model.RoleIds],DepartmentIds=[..model.DepartmentIds],UserId=model.UserId,Skills=[..model.Skills]};_actorSnapshot=DraftSnapshot.Of(_actor);}
     private void ToggleDepartment(Guid id,bool value)=>_actor!.DepartmentIds=value?_actor.DepartmentIds.Append(id).Distinct().ToArray():_actor.DepartmentIds.Where(x=>x!=id).ToArray();
     private string ActorName(Guid? id)=>_actors.FirstOrDefault(a=>a.Id==id)?.Name??AlvaStrings.People_NoSubTeam;
-    private void AddRole(){if(_role.HasValue)_actor!.RoleIds=_actor.RoleIds.Append(_role.Value).Distinct().ToArray();_role=null;}
-    private void RemoveRole(Guid id)=>_actor!.RoleIds=_actor.RoleIds.Where(x=>x!=id).ToArray();
     private async Task SaveActor()
     {
         _nameError=_emailError=null;_formErrors.Clear();
