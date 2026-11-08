@@ -43,8 +43,9 @@ public sealed class FocusTests : UiTestBase
         Navigation.NavigateTo($"/tasks/{_task.Id}");
         var cut = Render<FlareConfirmDialogProvider>(p => p.AddChildContent<Tasks>(t => t.Add(x => x.TaskId, _task.Id)));
 
-        cut.WaitForAssertion(() => Assert.Equal(["h1:" + cut.Find("h1").TextContent.Trim()], Focused(cut, JSInterop)));
-        Assert.Equal("-1", cut.Find("h1").GetAttribute("tabindex"));
+        cut.WaitForAssertion(() => Assert.Contains(Focused(cut, JSInterop), f => f.StartsWith("div:")));
+        Assert.Equal("Релиз", cut.Find("h1").TextContent.Trim());
+        Assert.Equal("-1", cut.Find(".alva-task-card").GetAttribute("tabindex"));
 
         // Обычное обновление страницы фокус не трогает.
         cut.Render();
@@ -57,7 +58,8 @@ public sealed class FocusTests : UiTestBase
         Navigation.NavigateTo($"/sprints/{_sprint.Id}");
         var cut = Render<Sprints>(p => p.Add(x => x.SprintId, _sprint.Id));
 
-        cut.WaitForAssertion(() => Assert.Equal(["h1:Спринт 7"], Focused(cut, JSInterop)));
+        cut.WaitForAssertion(() => Assert.Contains(Focused(cut, JSInterop), f => f.StartsWith("div:")));
+        Assert.Equal("Спринт 7", cut.Find("h1").TextContent.Trim());
     }
 
 

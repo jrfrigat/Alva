@@ -1,13 +1,8 @@
 @* Обзор ёмкости по макету p14: KPI фонда, матрица «человек × период» с тепловой шкалой,
    вакантные роли с дефицитом и прогноз баланса по периодам. *@
 @inject AlvaSession Session
-<section class="alva-page-header">
-    <div class="alva-page-header__text">
-        <div class="alva-micro-label"><span>@(Strings.T("Ресурсы · Ёмкость"))</span></div>
-        <h1 class="alva-page-header__title">@(Strings.T("Обзор ёмкости команды"))</h1>
-        <p class="alva-page-header__desc">@(Strings.T("Сводный баланс рабочего фонда, утилизация по подкомандам и ресурсные дефициты на горизонте")) @Horizon.</p>
-    </div>
-    <div class="alva-page-header__actions">
+<AlvaPageHeader Category="@(Strings.T("Ресурсы · Ёмкость"))" Title="@(Strings.T("Обзор ёмкости команды"))" Description="@($"{Strings.T("Сводный баланс рабочего фонда, утилизация по подкомандам и ресурсные дефициты на горизонте")} {Horizon}.")">
+    <Actions>
         <FlareButton Href="capacity/people" Variant="ButtonVariant.Tonal" Size="ButtonSize.Sm">
             <LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.EditCalendar" Size="18px" /></LeadingIcon>
             <ChildContent>@(Strings.T("Редактор графиков"))</ChildContent>
@@ -19,56 +14,52 @@
                 <ChildContent>@(Strings.T("Балансировать спринт"))</ChildContent>
             </FlareButton>
         }
-    </div>
-</section>
+    </Actions>
+</AlvaPageHeader>
 
 <div class="alva-capacity-bar">
-    <div class="alva-segmented" role="group" aria-label="@(Strings.T("Разбивка периода"))">
+    <FlareToggleGroup TValue="string" Value="@_mode" ValueChanged="SetMode" Size="ButtonSize.Sm" Mandatory AriaLabel="@(Strings.T("Разбивка периода"))">
         @foreach (var (mode, label) in Modes)
         {
-            <button type="button" class="alva-segmented__item @(_mode == mode ? "alva-segmented__item--active" : "")" aria-pressed="@(_mode == mode)" @onclick="() => SetMode(mode)">@label</button>
+            <FlareToggleButton Value="@mode">@label</FlareToggleButton>
         }
-    </div>
+    </FlareToggleGroup>
     <span class="alva-capacity-bar__sep" aria-hidden="true"></span>
-    <span class="alva-capacity-bar__label">@(Strings.T("Подразделения:"))</span>
-    <div class="alva-quickfilter" role="group" aria-label="@(Strings.T("Подкоманды"))">
-        <button type="button" class="alva-quickfilter__item @(_department is null ? "alva-quickfilter__item--active" : "")" aria-pressed="@(_department is null)" @onclick="() => _department = null">@(Strings.T("Все подкоманды")) (@_departments.Length)</button>
+    <FlareText Typo="TypographyScale.LabelMedium" Color="FlareColor.OnSurfaceVariant">@(Strings.T("Подразделения:"))</FlareText>
+    <FlareChipGroup SelectedValues="SelectedDepartments" SelectedValuesChanged="SetDepartment" AriaLabel="@(Strings.T("Подкоманды"))">
+        <FlareChip Value="" Label="@($"{Strings.T("Все подкоманды")} ({_departments.Length})")" />
         @foreach (var dept in _departments)
         {
-            <button type="button" class="alva-quickfilter__item @(_department == dept.Id ? "alva-quickfilter__item--active" : "")" aria-pressed="@(_department == dept.Id)" @onclick="() => _department = dept.Id">@dept.Name: @People.Count(p => GroupOf(p) == dept.Id)</button>
+            <FlareChip Value="@dept.Id.ToString()" Label="@($"{dept.Name}: {People.Count(p => GroupOf(p) == dept.Id)}")" />
         }
-    </div>
+    </FlareChipGroup>
     <FlareCheckbox TValue="bool" @bind-Value="_highlight" Label="@(Strings.T("Показывать перегрузы (>100%)"))" Class="alva-capacity-bar__check" />
 </div>
 <PageFeedback Error="@_error" Loading="_busy" OnRetry="Load" />
 @if (!_loaded) { <LoadingSkeleton Height="20rem" /> }
 else
 {
-<div class="alva-kpis">
-    <section class="alva-kpi">
-        <div class="alva-kpi__head"><div><span class="alva-kpi__label">@(Strings.T("Доступный фонд (номинал)"))</span><span class="alva-num"><span class="alva-kpi__value">@AlvaFormat.Hours(Fund)</span> <span class="alva-kpi__unit">@(Strings.T("чел/час"))</span></span></div><span class="alva-kpi__icon"><FlareIconView Value="@MaterialDesign3Icons.Regular.CalendarMonth" Size="18px" /></span></div>
-        <div class="alva-kpi__foot"><span>@_periods.Length @PeriodWord(_periods.Length)</span><span class="alva-kpi__aside--primary">@VisiblePeople.Length @AlvaFormat.Plural(VisiblePeople.Length, "person")</span></div>
-    </section>
-    <section class="alva-kpi">
-        <div class="alva-kpi__head"><div><span class="alva-kpi__label">@(Strings.T("Запланированная нагрузка"))</span><span class="alva-num"><span class="alva-kpi__value">@AlvaFormat.Hours(Planned)</span> <span class="alva-kpi__unit">@(Strings.T("ч")) (@Pct(Planned, Fund)%)</span></span></div><AlvaStatusChip Tone="LoadTone">@LoadLabel</AlvaStatusChip></div>
-        <FlareProgressLinear Value="@Math.Min(100, Pct(Planned, Fund))" aria-label="@(Strings.T("Запланировано от фонда"))" />
-        <div class="alva-kpi__foot"><span>@(Strings.T("Целевой коридор: 85–95%"))</span><span>@Horizon</span></div>
-    </section>
-    <section class="alva-kpi">
-        <div class="alva-kpi__head"><div><span class="alva-kpi__label alva-kpi__label--critical">@(Strings.T("Дефицитные слоты"))</span><span class="alva-num"><span class="alva-kpi__value alva-kpi__value--critical">@(Deficit > 0 ? "−" : "")@AlvaFormat.Hours(Deficit)</span> <span class="alva-kpi__unit">@(Strings.T("ч дефицита"))</span></span></div><span class="alva-kpi__icon alva-kpi__icon--critical"><FlareIconView Value="@MaterialDesign3Icons.Regular.Warning" Size="18px" /></span></div>
-        <div class="alva-kpi__foot"><span>@(WorstName ?? Strings.T("Дефицита нет"))</span><span class="alva-kpi__alert">@OverloadedCount @(Strings.T("в перегрузе"))</span></div>
-    </section>
-    <section class="alva-kpi">
-        <div class="alva-kpi__head"><div><span class="alva-kpi__label alva-kpi__label--primary">@(Strings.T("Свободный резерв"))</span><span class="alva-num"><span class="alva-kpi__value">+@AlvaFormat.Hours(Reserve)</span> <span class="alva-kpi__unit">@(Strings.T("ч доступно"))</span></span></div><span class="alva-kpi__icon"><FlareIconView Value="@MaterialDesign3Icons.Regular.Inventory2" Size="18px" /></span></div>
-        <div class="alva-kpi__foot"><span>@(FreestName ?? Strings.T("Резерва нет"))</span><span class="alva-kpi__aside--primary">@(Strings.T("Конец горизонта"))</span></div>
-    </section>
-</div>
+<FlareGrid MinColumnWidth="min(100%,15rem)">
+    <FlareStat Label="@(Strings.T("Доступный фонд (номинал)"))" Value="@AlvaFormat.Hours(Fund)" Unit="@(Strings.T("чел/час"))" Icon="@MaterialDesign3Icons.Regular.CalendarMonth"
+               Caption="@($"{_periods.Length} {PeriodWord(_periods.Length)} · {VisiblePeople.Length} {AlvaFormat.Plural(VisiblePeople.Length, "person")}")" />
+    <FlareStat Label="@(Strings.T("Запланированная нагрузка"))" Value="@AlvaFormat.Hours(Planned)" Unit="@($"{Strings.T("ч")} ({Pct(Planned, Fund)}%)")" Icon="@MaterialDesign3Icons.Regular.FactCheck">
+        <CaptionContent>
+            <FlareStack Gap="FlareSpacing.XSmall">
+                <AlvaStatusChip Tone="LoadTone">@LoadLabel</AlvaStatusChip>
+                <FlareProgressLinear Value="@Math.Min(100, Pct(Planned, Fund))" Size="TrackSize.Xs" Color="FlareColor.Primary" aria-label="@(Strings.T("Запланировано от фонда"))" />
+                <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@(Strings.T("Целевой коридор: 85–95%")) · @Horizon</FlareText>
+            </FlareStack>
+        </CaptionContent>
+    </FlareStat>
+    <FlareStat Label="@(Strings.T("Дефицитные слоты"))" Value="@($"{(Deficit > 0 ? "−" : "")}{AlvaFormat.Hours(Deficit)}")" Unit="@(Strings.T("ч дефицита"))" Icon="@MaterialDesign3Icons.Regular.Warning"
+               Caption="@($"{WorstName ?? Strings.T("Дефицита нет")} · {OverloadedCount} {Strings.T("в перегрузе")}")" />
+    <FlareStat Label="@(Strings.T("Свободный резерв"))" Value="@($"+{AlvaFormat.Hours(Reserve)}")" Unit="@(Strings.T("ч доступно"))" Icon="@MaterialDesign3Icons.Regular.Inventory2"
+               Caption="@($"{FreestName ?? Strings.T("Резерва нет")} · {Strings.T("Конец горизонта")}")" />
+</FlareGrid>
 
-<section class="alva-panel alva-matrix-panel">
-    <header class="alva-matrix-panel__head">
-        <h2 class="alva-panel__title">@(Strings.T("Матрица распределения ёмкости"))</h2>
-        <span class="alva-matrix-panel__meta">@(Strings.T("Развёртка:")) @string.Join(", ", _periods.Select(p => p.Title))</span>
-    </header>
+<FlareCard Variant="CardVariant.Outlined">
+    <FlareCardHeader Title="@(Strings.T("Матрица распределения ёмкости"))" Subtitle="@($"{Strings.T("Развёртка:")} {string.Join(", ", _periods.Select(p => p.Title))}")" />
+    <FlareCardContent>
     <div class="alva-heat-legend">
         <span class="alva-heat-legend__title">@(Strings.T("Тепловая шкала:"))</span>
         <span><i class="alva-heat--under"></i>@(Strings.T("<70% Недогруз"))</span>
@@ -131,19 +122,25 @@ else
                 </div>
             }
         }
-        @if (!VisiblePeople.Any() && !Vacancies.Any()) { <div class="alva-sprint-table__empty">@(Strings.T("Нет людей с рабочими графиками за горизонт."))</div> }
+        @if (!VisiblePeople.Any() && !Vacancies.Any()) { <FlareEmptyState Compact Title="@(Strings.T("Нет людей с рабочими графиками за горизонт."))" /> }
     </div>
-    <footer class="alva-sprint-tasks__foot"><span>@(Strings.T("Показано:")) @VisiblePeople.Length @AlvaFormat.Plural(VisiblePeople.Length, "person") @(Strings.T("в")) @Groups.Count(g => VisiblePeople.Any(p => GroupOf(p) == g.Id)) @AlvaFormat.Plural(Groups.Count(g => VisiblePeople.Any(p => GroupOf(p) == g.Id)), "subteam")</span><span>@(Strings.T("Фонд — по рабочим графикам людей с учётом отпусков и блоков"))</span></footer>
-</section>
+    </FlareCardContent>
+    <FlareCardActions Align="CardActionsAlign.Between">
+        <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@(Strings.T("Показано:")) @VisiblePeople.Length @AlvaFormat.Plural(VisiblePeople.Length, "person") @(Strings.T("в")) @Groups.Count(g => VisiblePeople.Any(p => GroupOf(p) == g.Id)) @AlvaFormat.Plural(Groups.Count(g => VisiblePeople.Any(p => GroupOf(p) == g.Id)), "subteam")</FlareText>
+        <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@(Strings.T("Фонд — по рабочим графикам людей с учётом отпусков и блоков"))</FlareText>
+    </FlareCardActions>
+</FlareCard>
 
 @if (_periods.Length > 0)
 {
-    <section class="alva-panel">
-        <header class="alva-panel__header"><div><h2 class="alva-panel__title">@(Strings.T("Прогноз баланса ёмкости по периодам"))</h2><p class="alva-panel__subtitle">@(Strings.T("Сравнение номинала фонда, запланированной работы и ресурсного дефицита"))</p></div></header>
-        <FlareChart Type="ChartType.Bar" Data="Forecast" Height="260" ComponentCssClass="alva-forecast-chart"
-                    Description="@ForecastSummary" DataTable="true" aria-label="@(Strings.T("Фонд, план и дефицит по периодам"))" />
-        <p class="alva-chart-summary"><strong>@(Strings.T("Ключевой вывод:"))</strong> @ForecastSummary</p>
-    </section>
+    <FlareCard Variant="CardVariant.Outlined">
+        <FlareCardHeader Title="@(Strings.T("Прогноз баланса ёмкости по периодам"))" Subtitle="@(Strings.T("Сравнение номинала фонда, запланированной работы и ресурсного дефицита"))" />
+        <FlareCardContent>
+            <FlareChart Type="ChartType.Bar" Data="Forecast" Height="260" ComponentCssClass="alva-forecast-chart"
+                        Description="@ForecastSummary" DataTable="true" aria-label="@(Strings.T("Фонд, план и дефицит по периодам"))" />
+            <FlareText Element="p" Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant"><b>@(Strings.T("Ключевой вывод:"))</b> @ForecastSummary</FlareText>
+        </FlareCardContent>
+    </FlareCard>
 }
 }
 
@@ -206,6 +203,9 @@ else
     private string LoadLabel => Pct(Planned, Fund) switch { > 100 => Strings.T("Перегруз"), >= 85 and <= 95 => Strings.T("Оптимально"), > 95 => Strings.T("На пределе"), _ => Strings.T("Недогруз") };
 
     private static int Pct(decimal part, decimal whole) => whole <= 0 ? (part > 0 ? 999 : 0) : (int)Math.Round(part / whole * 100);
+    private IReadOnlyCollection<string> SelectedDepartments => _department is null ? [""] : [_department.Value.ToString()];
+    private void SetDepartment(IReadOnlyCollection<string> values) =>
+        _department = values.FirstOrDefault() is { Length: > 0 } key && Guid.TryParse(key, out var id) ? id : null;
     private static string Heat(int pct, decimal avail, decimal alloc) => avail <= 0 && alloc <= 0 ? "empty" : pct > 115 ? "critical" : pct > 100 ? "tension" : pct >= 70 ? "balance" : "under";
     private static string CellNote(decimal avail, decimal alloc, decimal over) =>
         over > 0 && alloc <= avail ? $"{Strings.T("Перегруз по дням:")} {AlvaFormat.Hours(over)} {Strings.T("ч")}" :
@@ -258,8 +258,9 @@ else
         finally { _busy = false; _loaded = true; }
     }
 
-    private async Task SetMode(string mode)
+    private async Task SetMode(string? mode)
     {
+        if (mode is null) return;
         _mode = mode;
         _busy = true;
         try { await LoadPeriods(); }

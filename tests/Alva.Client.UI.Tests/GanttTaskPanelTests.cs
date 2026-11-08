@@ -63,13 +63,13 @@ public sealed class GanttTaskPanelTests : UiTestBase
 
         cut.Find("[role='button']").Click();
         cut.WaitForAssertion(() => Assert.Contains("Релиз", Panel(cut).TextContent));
-        Field(cut, "Название").Change("Релиз 2.0");
+        Field(cut, "Остаток, часы").Change("5");
         var drawer = cut.FindComponent<FlareDrawer>();
         cut.InvokeAsync(() => drawer.Instance.OpenChanged.InvokeAsync(false));
 
         cut.WaitForAssertion(() => Assert.NotNull(cut.Find("[role='alertdialog']")));
         Button(cut, "Остаться").Click();
-        Assert.Equal("Релиз 2.0", Field(cut, "Название").GetAttribute("value"));
+        Assert.Equal("5", Field(cut, "Остаток, часы").GetAttribute("value"));
     }
 
     // Доска виртуализирует строки и колонки, поэтому сначала сообщаем ей размеры и видимую часть оси —

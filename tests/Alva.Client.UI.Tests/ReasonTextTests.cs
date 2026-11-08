@@ -97,14 +97,14 @@ public sealed class ReasonTextTests : UiTestBase
             var cut = Render<Analytics>();
 
             cut.WaitForAssertion(() => Assert.Equal(2, Rows(cut)));
-            cut.FindAll(".alva-quickfilter__item").First(b => b.TextContent.Contains("Past due")).Click();
+            cut.FindAll(".flare-chip").First(c => c.TextContent.Contains("Past due")).QuerySelector("button")!.Click();
             cut.WaitForAssertion(() => Assert.Equal(1, Rows(cut)));
         }
         finally { CultureInfo.CurrentUICulture = before; }
     }
 
     private static int Rows<T>(IRenderedComponent<T> cut) where T : Microsoft.AspNetCore.Components.IComponent =>
-        cut.FindAll(".alva-risk-table__row:not(.alva-risk-table__row--head)").Count;
+        cut.FindAll("tbody tr[role=row]").Count;
 
     [Fact]
     public void The_risk_table_renders_reasons_in_english_without_cyrillic()
@@ -121,8 +121,10 @@ public sealed class ReasonTextTests : UiTestBase
 
             var cut = Render<Analytics>();
 
-            cut.WaitForAssertion(() => Assert.NotEmpty(cut.FindAll(".alva-risk-table__reasons .alva-chip")));
-            Assert.DoesNotMatch("[А-Яа-яЁё]", cut.Find(".alva-risk-table__reasons").TextContent);
+            cut.WaitForAssertion(() => Assert.NotEmpty(cut.FindAll("tbody tr[role=row]")));
+            var reasonCell = cut.Find("tbody tr[role=row]").QuerySelectorAll("td")[2];
+            Assert.NotEmpty(reasonCell.QuerySelectorAll("a"));
+            Assert.DoesNotMatch("[А-Яа-яЁё]", reasonCell.TextContent);
         }
         finally { CultureInfo.CurrentUICulture = before; }
     }

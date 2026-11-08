@@ -62,7 +62,7 @@ else
 {
 <FlareCard Variant="CardVariant.Outlined"><FlareCardContent><FlareStack Gap="FlareSpacing.Medium">
     <FlareStack Row StretchFirst><FlareText Element="h2" Typo="TypographyScale.TitleLarge">@(_editing.Id == Guid.Empty ? Strings.T("Новая задача") : Strings.T("Карточка задачи"))</FlareText><FlareButton OnClick="Close" Variant="ButtonVariant.Text" Size="ButtonSize.Sm">@(Strings.T("Закрыть"))</FlareButton></FlareStack>
-    @if (_formErrors.Count > 0) { <div class="alva-form-errors" role="alert" tabindex="-1" @ref="_errorSummary"><b>@(Strings.T("Проверьте выделенные поля."))</b>@foreach (var error in _formErrors) { <div>@error</div> }</div> }
+    @if (_formErrors.Count > 0) { <div tabindex="-1" @ref="_errorSummary"><AlvaValidationSummary Messages="_formErrors" /></div> }
     <FlareTextField Label="@(Strings.T("Название"))" @bind-Value="_editing.Title" ErrorText="@_titleError" Required MaxLength="500" Autofocus />
     <FlareTextArea Label="@(Strings.T("Описание"))" @bind-Value="_editing.Description" AutoGrow />
     <SkillTagEditor Label="@(Strings.T("Необходимые навыки"))" @bind-Values="_editing.RequiredSkills"

@@ -9,34 +9,29 @@
     <FlareText>@(Strings.T("Планируйте спринты, распределяйте работу и замечайте перегрузки заранее."))</FlareText>
     @* Общая сводка — для ответов сервера, которые не относятся к одному полю (неверный пароль, сбой). *@
     <PageFeedback Error="@_error" />
-    @* Сводка нужна, когда ошибок несколько: поля далеко друг от друга, и одна верхняя копия помогает их обойти. *@
-    @if (_errors.Count > 1)
-    {
-        <div class="alva-form-errors" role="alert" tabindex="-1">
-            <b>@(Strings.T("Проверьте выделенные поля."))</b>
-            @foreach (var error in _errors.OrderBy(e => e.Key)) { <FlareButton Variant="ButtonVariant.Text" Size="ButtonSize.Sm" OnClick="() => FocusField(error.Key)">@error.Value</FlareButton> }
-        </div>
-    }
     @* novalidate: всплывающие подсказки браузера не связаны с полями и не читаются вместе с ними — проверяет сама форма. *@
-    <EditForm Model="this" OnSubmit="Submit" novalidate>
+    <EditForm EditContext="_editContext" OnSubmit="Submit" novalidate>
+    @* Словарь «поле → id контрола» нужен FlareValidationSummary, чтобы связать пункт сводки с полем. *@
+    <CascadingValue Value="_fieldRegistry" IsFixed="true">
     <FlareStack Gap="FlareSpacing.Medium">
-        @* Ошибка поля выводится под ним (ErrorText Flare связывает её с полем через aria-describedby). *@
+        @* Сводка Flare сама получает фокус после неудачной отправки и ведёт к своим полям. *@
+        <FlareValidationSummary />
         @if (_register)
         {
-            <FlareTextField @ref="_nameField" Label="@(Strings.T("Ваше имя"))" Value="@_displayName" ValueChanged="v => Edit(ref _displayName, v, Field.Name)" ErrorText="@ErrorOf(Field.Name)" Required Autocomplete="name" />
-            <FlareTextField @ref="_workspaceField" Label="@(Strings.T("Название рабочего пространства"))" Value="@_workspaceName" ValueChanged="v => Edit(ref _workspaceName, v, Field.Workspace)" ErrorText="@ErrorOf(Field.Workspace)" Required />
+            <FlareTextField @ref="_nameField" Label="@(Strings.T("Ваше имя"))" Value="@_displayName" ValueChanged="v => Edit(ref _displayName, v, Field.Name)" ErrorText="@ErrorOf(Field.Name)" For="() => _displayName" Required Autocomplete="name" />
+            <FlareTextField @ref="_workspaceField" Label="@(Strings.T("Название рабочего пространства"))" Value="@_workspaceName" ValueChanged="v => Edit(ref _workspaceName, v, Field.Workspace)" ErrorText="@ErrorOf(Field.Workspace)" For="() => _workspaceName" Required />
         }
-        <FlareTextField @ref="_emailField" Label="@(Strings.T("Электронная почта"))" Value="@_email" ValueChanged="v => Edit(ref _email, v, Field.Email)" ErrorText="@ErrorOf(Field.Email)" Type="email" Required Autocomplete="email" />
-        <FlareTextField @ref="_passwordField" Label="@(Strings.T("Пароль"))" Value="@_password" ValueChanged="v => Edit(ref _password, v, Field.Password)" ErrorText="@ErrorOf(Field.Password)" Type="@(_showPassword ? "text" : "password")" Required Autocomplete="@(_register ? "new-password" : "current-password")" HelperText="@(_register ? $"{Strings.T("Не менее")} {MinPassword} {Strings.T("символов")}" : null)" />
-        <FlareButton Variant="ButtonVariant.Text" Size="ButtonSize.Sm" OnClick="TogglePassword">@(_showPassword ? Strings.T("Скрыть пароль") : Strings.T("Показать пароль"))</FlareButton>
+        <FlareTextField @ref="_emailField" Label="@(Strings.T("Электронная почта"))" Value="@_email" ValueChanged="v => Edit(ref _email, v, Field.Email)" ErrorText="@ErrorOf(Field.Email)" For="() => _email" Type="email" Required Autocomplete="email" />
+        <FlarePasswordField @ref="_passwordField" Label="@(Strings.T("Пароль"))" Value="@_password" ValueChanged="v => Edit(ref _password, v, Field.Password)" ErrorText="@ErrorOf(Field.Password)" For="() => _password" Required Autocomplete="@(_register ? "new-password" : "current-password")" HelperText="@(_register ? $"{Strings.T("Не менее")} {MinPassword} {Strings.T("символов")}" : null)" ShowStrength="@_register" />
         @if (_register)
         {
-            <FlareTextField @ref="_confirmField" Label="@(Strings.T("Повторите пароль"))" Value="@_passwordConfirm" ValueChanged="v => Edit(ref _passwordConfirm, v, Field.PasswordConfirm)" ErrorText="@ErrorOf(Field.PasswordConfirm)" Type="@(_showPassword ? "text" : "password")" Required Autocomplete="new-password" />
+            <FlarePasswordField @ref="_confirmField" Label="@(Strings.T("Повторите пароль"))" Value="@_passwordConfirm" ValueChanged="v => Edit(ref _passwordConfirm, v, Field.PasswordConfirm)" ErrorText="@ErrorOf(Field.PasswordConfirm)" For="() => _passwordConfirm" Required Autocomplete="new-password" />
         }
         <FlareButton Type="ButtonType.Submit" Loading="_busy" FullWidth>@(_register ? Strings.T("Создать пространство") : Strings.T("Войти"))</FlareButton>
         <FlareButton Variant="ButtonVariant.Text" OnClick="Toggle">@(_register ? Strings.T("У меня уже есть аккаунт") : Strings.T("Создать аккаунт"))</FlareButton>
         @if (!_register) { <FlareText Typo="TypographyScale.BodySmall">@(Strings.T("Забыли пароль? Обратитесь к администратору рабочего пространства — восстановление по ссылке пока недоступно."))</FlareText> }
     </FlareStack>
+    </CascadingValue>
     </EditForm>
 </FlareStack></FlareCardContent></FlareCard>
 </FlareContainer>
@@ -47,21 +42,31 @@
     private enum Field { Name, Workspace, Email, Password, PasswordConfirm }
 
     private string? _email, _password, _passwordConfirm, _displayName, _workspaceName, _error, _returnUrl;
-    private bool _register, _busy, _showPassword;
+    private bool _register, _busy;
     private readonly Dictionary<Field, string> _errors = [];
-    private FlareTextField? _nameField, _workspaceField, _emailField, _passwordField, _confirmField;
+    private readonly Dictionary<FieldIdentifier, string> _fieldRegistry = [];
+    private EditContext? _editContext;
+    private ValidationMessageStore? _messages;
+    private FlareTextField? _nameField, _workspaceField, _emailField;
+    private FlarePasswordField? _passwordField, _confirmField;
 
     private string? ErrorOf(Field field) => _errors.GetValueOrDefault(field);
 
     // У входа и регистрации свои адреса: /register открывает форму регистрации.
     protected override void OnInitialized()
     {
+        _editContext = new EditContext(this);
+        _messages = new ValidationMessageStore(_editContext);
         _register = AppRoutes.Current(Navigation).Equals("register", StringComparison.OrdinalIgnoreCase);
         _returnUrl = RequestedReturnUrl();
     }
 
     // Правка поля снимает его ошибку: сообщение больше не описывает то, что введено.
-    private void Edit(ref string? target, string? value, Field field) { target = value; _errors.Remove(field); }
+    private void Edit(ref string? target, string? value, Field field)
+    {
+        target = value;
+        if (_errors.Remove(field)) SyncMessages();
+    }
 
     // Переключение меняет и адрес: у каждой формы свой URL, который можно сохранить в закладки.
     private void Toggle()
@@ -69,15 +74,8 @@
         _register = !_register;
         _error = null;
         _errors.Clear();
+        SyncMessages();
         Navigation.NavigateTo(WithReturn(_register ? "register" : "login"));
-    }
-
-    // Показ пароля не должен уводить фокус с поля: после перерисовки возвращаем его обратно.
-    private async Task TogglePassword()
-    {
-        _showPassword = !_showPassword;
-        await Task.Yield();
-        if (_passwordField is not null) await _passwordField.FocusAsync();
     }
 
     /// <summary>Проверки до запроса: неверная форма не уходит на сервер и не тратит лимит попыток входа.</summary>
@@ -93,36 +91,37 @@
         else if (_register && _password.Length is < MinPassword or > MaxPassword) _errors[Field.Password] = string.Format(Strings.T("Пароль должен содержать от {0} до {1} символов."), MinPassword, MaxPassword);
         if (_register && string.IsNullOrEmpty(_passwordConfirm)) _errors[Field.PasswordConfirm] = Strings.T("Повторите пароль.");
         else if (_register && _password != _passwordConfirm) _errors[Field.PasswordConfirm] = Strings.T("Пароли не совпадают.");
+        SyncMessages();
     }
 
-    private FlareTextField? FieldOf(Field field) => field switch
+    // Ошибки полей живут в одном месте: их читают и ErrorText поля, и сводка Flare.
+    private void SyncMessages()
     {
-        Field.Name => _nameField,
-        Field.Workspace => _workspaceField,
-        Field.Email => _emailField,
-        Field.Password => _passwordField,
-        _ => _confirmField
+        if (_messages is null || _editContext is null) return;
+        _messages.Clear();
+        foreach (var (field, message) in _errors) _messages.Add(Identifier(field), message);
+        _editContext.NotifyValidationStateChanged();
+    }
+
+    private FieldIdentifier Identifier(Field field) => field switch
+    {
+        Field.Name => FieldIdentifier.Create(() => _displayName),
+        Field.Workspace => FieldIdentifier.Create(() => _workspaceName),
+        Field.Email => FieldIdentifier.Create(() => _email),
+        Field.Password => FieldIdentifier.Create(() => _password),
+        _ => FieldIdentifier.Create(() => _passwordConfirm)
     };
-
-    // Пункт сводки ведёт к своему полю; общий порядок — как поля на форме.
-    private async Task FocusField(Field field)
-    {
-        if (FieldOf(field) is { } target) await target.FocusAsync();
-    }
-
-    // Фокус — на первое поле с ошибкой в порядке формы.
-    private async Task FocusFirstError()
-    {
-        await Task.Yield();
-        var field = _errors.Keys.OrderBy(f => f).FirstOrDefault();
-        if (FieldOf(field) is { } target) await target.FocusAsync();
-    }
 
     private async Task Submit()
     {
         _error = null;
         Validate();
-        if (_errors.Count > 0) { await FocusFirstError(); return; }
+        if (_errors.Count > 0)
+        {
+            // Запрос валидации поднимает у сводки Flare фокус на себя; поля уже показывают ErrorText.
+            _editContext?.Validate();
+            return;
+        }
         _busy = true;
         try
         {
@@ -131,7 +130,7 @@
             Navigation.NavigateTo(_returnUrl ?? (Session.TeamId is not null ? "/" : "workspaces"));
         }
         // Занятая почта — ошибка конкретного поля; неверный вход — своя подсказка, а не «сессия истекла».
-        catch (HttpRequestException error) when (_register && error.StatusCode == System.Net.HttpStatusCode.Conflict) { _errors[Field.Email] = Strings.T("Аккаунт с этой почтой уже существует."); await FocusFirstError(); }
+        catch (HttpRequestException error) when (_register && error.StatusCode == System.Net.HttpStatusCode.Conflict) { _errors[Field.Email] = Strings.T("Аккаунт с этой почтой уже существует."); SyncMessages(); _editContext?.Validate(); }
         catch (HttpRequestException error) when (!_register && error.StatusCode == System.Net.HttpStatusCode.Unauthorized) { _error = Strings.T("Неверный email или пароль, либо вход временно заблокирован."); }
         catch (HttpRequestException error) when (error.StatusCode == System.Net.HttpStatusCode.Forbidden) { _error = Strings.T("Сервер отклонил запрос входа или регистрации. Обратитесь к администратору Alva."); }
         catch (Exception error) when (error is HttpRequestException or InvalidOperationException) { _error = PageFeedback.Describe(error); }

@@ -35,7 +35,7 @@ public sealed class EditorStatusTests : UiTestBase
     public void Saving_a_project_shows_saved_and_the_button_is_disabled_until_it_changes()
     {
         var cut = Render<Projects>();
-        cut.WaitForAssertion(() => Assert.Single(cut.FindAll(".alva-proj-card")));
+        cut.WaitForAssertion(() => Assert.Single(cut.FindAll(".flare-list-item__action")));
         Button(cut, "Настройки проекта").Click();
 
         var save = Button(cut, "Сохранить");
@@ -55,7 +55,7 @@ public sealed class EditorStatusTests : UiTestBase
     {
         Api.OnSend = (_, _, _) => new HttpRequestException("Сервер недоступен.");
         var cut = Render<Projects>();
-        cut.WaitForAssertion(() => Assert.Single(cut.FindAll(".alva-proj-card")));
+        cut.WaitForAssertion(() => Assert.Single(cut.FindAll(".flare-list-item__action")));
         Button(cut, "Настройки проекта").Click();
         Field(cut, "Название").Change("Платформа 2");
 

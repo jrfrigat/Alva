@@ -43,12 +43,16 @@
             </FlareButton>
         }
     </div>
-    <div class="alva-plan-kpis">
-        <div class="alva-plan-kpi"><span class="alva-kpi__label">@(Strings.T("Ёмкость команды"))</span><span class="alva-num"><b>@AlvaFormat.Hours(Capacity)</b> @(Strings.T("ч"))</span><FlareIconView Value="@MaterialDesign3Icons.Regular.Groups" Size="20px" /></div>
-        <div class="alva-plan-kpi"><span class="alva-kpi__label">@(Strings.T("Запланировано в спринт"))</span><span class="alva-num"><b class="alva-plan-kpi__primary">@AlvaFormat.Hours(Planned)</b> @(Strings.T("ч")) <AlvaStatusChip Tone="@(Planned > Capacity ? AlvaTone.Critical : AlvaTone.Info)">@Pct(Planned, Capacity)%</AlvaStatusChip></span><FlareIconView Value="@MaterialDesign3Icons.Regular.FactCheck" Size="20px" /></div>
-        <div class="alva-plan-kpi"><span class="alva-kpi__label">@(Capacity >= Planned ? Strings.T("Резерв ёмкости") : Strings.T("Нехватка ёмкости"))</span><span class="alva-num"><b>@AlvaFormat.Hours(Math.Abs(Capacity - Planned))</b> @(Strings.T("ч")) @(Capacity >= Planned ? Strings.T("резерв") : Strings.T("сверх ёмкости"))</span><FlareIconView Value="@MaterialDesign3Icons.Regular.HourglassEmpty" Size="20px" /></div>
-        <div class="alva-plan-kpi @(Overtime > 0 ? "alva-plan-kpi--critical" : "")"><span class="alva-kpi__label">@(Strings.T("Превышение / овертайм"))</span><span class="alva-num"><b>@AlvaFormat.Hours(Overtime)</b> @(Strings.T("ч")) @if (OvertimePeople > 0) { <AlvaStatusChip Tone="AlvaTone.Critical">@OvertimePeople @(Strings.T("чел."))</AlvaStatusChip> }</span><FlareIconView Value="@MaterialDesign3Icons.Regular.Warning" Size="20px" /></div>
-    </div>
+    <FlareGrid MinColumnWidth="min(100%,12rem)">
+        <FlareStat Label="@(Strings.T("Ёмкость команды"))" Value="@($"{AlvaFormat.Hours(Capacity)} {Strings.T("ч")}")" Icon="@MaterialDesign3Icons.Regular.Groups" />
+        <FlareStat Label="@(Strings.T("Запланировано в спринт"))" Value="@($"{AlvaFormat.Hours(Planned)} {Strings.T("ч")}")" Icon="@MaterialDesign3Icons.Regular.FactCheck">
+            <CaptionContent><AlvaStatusChip Tone="@(Planned > Capacity ? AlvaTone.Critical : AlvaTone.Info)">@Pct(Planned, Capacity)%</AlvaStatusChip></CaptionContent>
+        </FlareStat>
+        <FlareStat Label="@(Capacity >= Planned ? Strings.T("Резерв ёмкости") : Strings.T("Нехватка ёмкости"))" Value="@($"{AlvaFormat.Hours(Math.Abs(Capacity - Planned))} {Strings.T("ч")}")" Caption="@(Capacity >= Planned ? Strings.T("резерв") : Strings.T("сверх ёмкости"))" Icon="@MaterialDesign3Icons.Regular.HourglassEmpty" />
+        <FlareStat Label="@(Strings.T("Превышение / овертайм"))" Value="@($"{AlvaFormat.Hours(Overtime)} {Strings.T("ч")}")" Icon="@MaterialDesign3Icons.Regular.Warning">
+            <CaptionContent>@if (OvertimePeople > 0) { <AlvaStatusChip Tone="AlvaTone.Critical">@OvertimePeople @(Strings.T("чел."))</AlvaStatusChip> }</CaptionContent>
+        </FlareStat>
+    </FlareGrid>
 </section>
 <PageFeedback Error="@_error" />
 
@@ -189,7 +193,7 @@
                     var tone = avail <= 0 && plan > 0 ? AlvaTone.Critical : pct > 100 ? AlvaTone.Critical : pct > 85 ? AlvaTone.Info : AlvaTone.Ok;
                     <div class="alva-skill alva-skill--@tone.ToString().ToLowerInvariant()">
                         <div class="alva-skill__head"><b>@role.Name</b><AlvaStatusChip Tone="tone">@(avail > 0 ? $"{pct}%" : Strings.T("нет людей")) @(tone == AlvaTone.Critical ? Strings.T("Перегруз") : tone == AlvaTone.Info ? Strings.T("Оптимально") : Strings.T("Запас"))</AlvaStatusChip></div>
-                        <div class="alva-loadbar__track"><span class="alva-loadbar__fill alva-loadbar__fill--@tone.ToString().ToLowerInvariant()" style="width:@Math.Min(100, pct)%"></span></div>
+                        <FlareProgressLinear Value="@Math.Min(100, pct)" Size="TrackSize.Xs" Color="@ToneColor(tone)" aria-label="@string.Format(Strings.T("Баланс роли: {0}"), role.Name)" />
                         <div class="alva-skill__foot alva-num"><span>@(Strings.T("План:")) @AlvaFormat.Hours(plan) @(Strings.T("ч"))</span><span class="@(plan > avail ? "alva-kpi__alert" : "alva-kpi__aside--primary")">@(plan > avail ? string.Format(Strings.T("Дефицит −{0} ч"), AlvaFormat.Hours(plan - avail)) : string.Format(Strings.T("Запас +{0} ч"), AlvaFormat.Hours(avail - plan))) (@(Strings.T("дост.")) @AlvaFormat.Hours(avail) @(Strings.T("ч")))</span></div>
                     </div>
                 }
@@ -197,7 +201,7 @@
             </div>
         </section>
 
-        <SprintPeople Sprint="Sprint" Actors="_actors" Capacity="_capacity" Shift="Shift" @bind-Focus="_focus" />
+        <SprintPeople Sprint="Sprint" Actors="_actors" Capacity="_capacity" Tasks="Tasks" Shift="Shift" @bind-Focus="_focus" OnAssign="AssignPerson" />
     </div>
 </FlareDragContext>
 
@@ -293,6 +297,14 @@
     private decimal Overtime => CapacityMath.Overload(_capacity);
     private int OvertimePeople => _capacity.Where(r => r.AllocatedHours > r.AvailableHours).Select(r => r.ActorId).Distinct().Count();
     private static int Pct(decimal part, decimal whole) => whole <= 0 ? 0 : (int)Math.Round(part / whole * 100);
+    private static FlareColor ToneColor(AlvaTone tone) => tone switch
+    {
+        AlvaTone.Critical => FlareColor.Error,
+        AlvaTone.Warning => FlareColor.Warning,
+        AlvaTone.Info => FlareColor.Primary,
+        AlvaTone.Ok => FlareColor.Success,
+        _ => FlareColor.OnSurfaceVariant
+    };
     private string ProjectName(Guid? id) => _projects.FirstOrDefault(p => p.Id == id)?.Name ?? Strings.T("Текучка");
 
     private IEnumerable<(string Key, string Label)> PoolFilters =>
@@ -438,6 +450,15 @@
     /// В спринт — задача получает даты с начала спринта (или с сегодняшнего дня, если спринт уже идёт); в пул — теряет
     /// плановые даты. Спринт задачи следует из дат.
     /// </summary>
+    /// <summary>Назначение из блока «Люди спринта» без перетаскивания: человек и задача выбраны в диалоге.</summary>
+    private Task AssignPerson((Guid PersonId, Guid TaskId) assignment) => Run(async () =>
+    {
+        if (_people is null) return;
+        if (Tasks.FirstOrDefault(t => t.Id == assignment.TaskId) is not { } task) return;
+        await _people.Reassign(Session, task, GanttPeopleData.PersonKey(assignment.PersonId));
+        await Refresh();
+    });
+
     private Task Move(TaskModel t, bool plan) => Run(async () =>
     {
         if (_gantt is null) return;

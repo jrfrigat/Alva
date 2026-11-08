@@ -1,27 +1,45 @@
-@* Исполнитель или слот задачи: человек — инициалы; роль/подкоманда — фиолетовый слот и
-   «Требуется человек», пока конкретный исполнитель не выбран. Загрузка, если передана, заменяет
-   подпись под именем: >100% — перегрузка (crimson). *@
+@* Исполнитель или слот задачи: человек — аватар с инициалами; роль/подкоманда — аватар с иконкой
+   и «Требуется человек», пока конкретный исполнитель не выбран. Загрузка, если передана, заменяет
+   подпись под именем: >100% — перегрузка. *@
 @if (Target is null)
 {
-    <span class="alva-slot alva-slot--empty"><span class="alva-slot__mark" aria-hidden="true">?</span><span class="alva-slot__text"><span class="alva-slot__name">@(Strings.T("Не назначена"))</span><span class="alva-slot__meta alva-slot__meta--warning">@(Strings.T("Нет исполнителя"))</span></span></span>
+    <FlareStack Row Align="FlareAlignItems.Center" Gap="FlareSpacing.XSmall">
+        <FlareAvatar Text="?" Size="AvatarSize.Sm" Color="FlareColor.OnSurfaceVariant" />
+        <FlareStack Gap="FlareSpacing.None">
+            <FlareText Typo="TypographyScale.LabelMedium">@(Strings.T("Не назначена"))</FlareText>
+            <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.Warning">@(Strings.T("Нет исполнителя"))</FlareText>
+        </FlareStack>
+    </FlareStack>
 }
 else if (Person is not null)
 {
-    <span class="alva-slot"><span class="alva-slot__mark" aria-hidden="true">@AlvaFormat.Initials(Person.Name)</span><span class="alva-slot__text"><span class="alva-slot__name">@Person.Name</span>
-        @if (Load is { } load)
-        {
-            <span class="alva-slot__meta @(load > 100 ? "alva-slot__meta--critical" : "")">@load% @(Strings.T("ёмкости"))@(load > 100 ? $" ({Strings.T("перегруз")})" : "")</span>
-        }
-        else
-        {
-            <span class="alva-slot__meta">@(Target.Kind == "Person" ? Strings.T("Человек") : $"{Labels.Kind(Target.Kind)}: {Target.Name}")</span>
-        }
-        <SkillMatch Required="Task.RequiredSkills" Person="Person" />
-    </span></span>
+    <FlareStack Row Align="FlareAlignItems.Center" Gap="FlareSpacing.XSmall">
+        <FlareAvatar Text="@AlvaFormat.Initials(Person.Name)" Size="AvatarSize.Sm" Color="FlareColor.Primary" />
+        <FlareStack Gap="FlareSpacing.None">
+            <FlareText Typo="TypographyScale.LabelMedium">@Person.Name</FlareText>
+            @if (Load is { } load)
+            {
+                <FlareText Typo="TypographyScale.BodySmall" Color="@(load > 100 ? FlareColor.Error : FlareColor.OnSurfaceVariant)">@load% @(Strings.T("ёмкости"))@(load > 100 ? $" ({Strings.T("перегруз")})" : "")</FlareText>
+            }
+            else
+            {
+                <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@(Target.Kind == "Person" ? Strings.T("Человек") : $"{Labels.Kind(Target.Kind)}: {Target.Name}")</FlareText>
+            }
+            <SkillMatch Required="Task.RequiredSkills" Person="Person" />
+        </FlareStack>
+    </FlareStack>
 }
 else
 {
-    <span class="alva-slot alva-slot--role"><span class="alva-slot__mark" aria-hidden="true"><FlareIconView Value="@MaterialDesign3Icons.Regular.Groups" Size="14px" /></span><span class="alva-slot__text"><span class="alva-slot__name">@Labels.Kind(Target.Kind): @Target.Name</span><span class="alva-slot__meta alva-slot__meta--critical">@(Strings.T("Требуется человек"))</span></span></span>
+    <FlareStack Row Align="FlareAlignItems.Center" Gap="FlareSpacing.XSmall">
+        <FlareAvatar Size="AvatarSize.Sm" Color="FlareColor.Tertiary">
+            <FallbackContent><FlareIconView Value="@MaterialDesign3Icons.Regular.Groups" Size="14px" /></FallbackContent>
+        </FlareAvatar>
+        <FlareStack Gap="FlareSpacing.None">
+            <FlareText Typo="TypographyScale.LabelMedium">@Labels.Kind(Target.Kind): @Target.Name</FlareText>
+            <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.Error">@(Strings.T("Требуется человек"))</FlareText>
+        </FlareStack>
+    </FlareStack>
 }
 @code {
     [Parameter, EditorRequired] public TaskModel Task { get; set; } = default!;

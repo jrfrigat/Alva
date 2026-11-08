@@ -57,8 +57,8 @@ public sealed class RiskActionUiTests : UiTestBase
 
             var cut = Render<Analytics>();
 
-            cut.WaitForAssertion(() => Assert.Equal(2, cut.FindAll(".alva-risk-table__reasons a.alva-chip").Count));
-            var links = cut.FindAll(".alva-risk-table__reasons a.alva-chip");
+            cut.WaitForAssertion(() => Assert.Equal(2, cut.FindAll("tbody tr[role=row]").First().QuerySelectorAll("td")[2].QuerySelectorAll("a").Count));
+            var links = cut.FindAll("tbody tr[role=row]").First().QuerySelectorAll("td")[2].QuerySelectorAll("a");
             Assert.Equal($"capacity/{person}", links[0].GetAttribute("href"));
             Assert.Equal("Open the assignee's calendar", links[0].GetAttribute("title"));
             Assert.Equal($"tasks/{blocker}", links[1].GetAttribute("href"));
@@ -100,11 +100,11 @@ public sealed class RiskActionUiTests : UiTestBase
 
             var cut = Render<Analytics>();
 
-            cut.WaitForAssertion(() => Assert.Single(cut.FindAll(".alva-risk-table__row:not(.alva-risk-table__row--head)")));
+            cut.WaitForAssertion(() => Assert.Single(cut.FindAll("tbody tr[role=row]")));
             cut.Find(".alva-filterbar__search input").Input("zzz");
             cut.WaitForAssertion(() => Assert.Contains("Reset the filter", cut.Markup));
             cut.FindAll("button").First(b => b.TextContent.Contains("Reset the filter")).Click();
-            cut.WaitForAssertion(() => Assert.Single(cut.FindAll(".alva-risk-table__row:not(.alva-risk-table__row--head)")));
+            cut.WaitForAssertion(() => Assert.Single(cut.FindAll("tbody tr[role=row]")));
         }
         finally { CultureInfo.CurrentUICulture = before; }
     }

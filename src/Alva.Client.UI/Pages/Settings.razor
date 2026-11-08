@@ -7,10 +7,10 @@
 @implements IDisposable
 <NavigationLock OnBeforeInternalNavigation="ConfirmLeave" ConfirmExternalNavigation="IsDirty" />
 <PageTitle>@(Strings.T("Настройки · Alva"))</PageTitle>
-<FlareText Element="h1" Typo="TypographyScale.HeadlineLarge">@(Strings.T("Настройки"))</FlareText>
+<AlvaPageHeader Title="@(Strings.T("Настройки"))" />
 <PageFeedback Error="@_error" Loading="_busy" OnRetry="Reload" />
 <EditorStatus Dirty="IsDirty" Saving="_busy" Saved="_saved" />
-@if (_formErrors.Count > 0) { <div class="alva-form-errors" role="alert" tabindex="-1" @ref="_errorSummary"><b>@(Strings.T("Проверьте выделенные поля."))</b>@foreach (var error in _formErrors) { <div>@error</div> }</div> }
+@if (_formErrors.Count > 0) { <div tabindex="-1" @ref="_errorSummary"><AlvaValidationSummary Messages="_formErrors" /></div> }
 <FlareGrid MinColumnWidth="min(100%,24rem)">
 <FlareCard Variant="CardVariant.Outlined"><FlareCardContent><FlareStack Gap="FlareSpacing.Large"><FlareText Element="h2" Typo="TypographyScale.TitleLarge">@(Strings.T("Внешний вид"))</FlareText><FlareSelect TValue="ThemeMode" Label="@(Strings.T("Режим"))" Items="Modes" ItemLabel="ModeLabel" Value="Theme.Mode" ValueChanged="Theme.SetModeAsync" /></FlareStack></FlareCardContent></FlareCard>
 @if(Session.User is not null)

@@ -1,9 +1,9 @@
 @page "/data"
 @inject AlvaSession Session
 <PageTitle>@(Strings.T("Данные · Alva"))</PageTitle>
-<FlareText Element="h1" Typo="TypographyScale.HeadlineLarge">@(Strings.T("Импорт и экспорт"))</FlareText>
+<AlvaPageHeader Title="@(Strings.T("Импорт и экспорт"))" />
 <PageFeedback Loading="_busy" Error="@_error" OnRetry="Reload" />
-@if (_formErrors.Count > 0) { <div class="alva-form-errors" role="alert" tabindex="-1" @ref="_errorSummary"><b>@(Strings.T("Проверьте выделенные поля."))</b>@foreach (var error in _formErrors) { <div>@error</div> }</div> }
+@if (_formErrors.Count > 0) { <div tabindex="-1" @ref="_errorSummary"><AlvaValidationSummary Messages="_formErrors" /></div> }
 @if(Session.TeamId is null){<TeamRequired />}
 else
 {

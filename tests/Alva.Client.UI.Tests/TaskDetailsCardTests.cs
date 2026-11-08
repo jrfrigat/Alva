@@ -32,14 +32,13 @@ public sealed class TaskDetailsCardTests : UiTestBase
     }
 
     [Fact]
-    public void Actions_stay_in_a_labelled_sticky_toolbar()
+    public void Actions_stay_in_the_page_header()
     {
-        var toolbar = Page().Find("[role='toolbar']");
+        var header = Page().Find(".flare-page-header");
 
-        Assert.Contains("alva-task__actions", toolbar.ClassName);
-        Assert.Equal("Действия с задачей", toolbar.GetAttribute("aria-label"));
-        Assert.Contains("Сохранить", toolbar.TextContent);
-        Assert.Contains("Назначить исполнителя", toolbar.TextContent);
+        Assert.Contains("Сохранить", header.TextContent);
+        Assert.Contains("Назначить исполнителя", header.TextContent);
+        Assert.NotNull(header.QuerySelector("[aria-label='Архивировать задачу']"));
     }
 
     [Fact]

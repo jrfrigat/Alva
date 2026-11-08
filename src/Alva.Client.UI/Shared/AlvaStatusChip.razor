@@ -1,5 +1,5 @@
-@* Чип статуса, ёмкости или роли в дизайн-системе Alva. *@
-<span class="alva-chip alva-chip--@ToneClass" title="@Title">@ChildContent</span>
+@* Семантический чип Alva: тон выбирает роль FlareColor, вид и размер — FlareChip. *@
+<FlareChip Color="@Color" Variant="ChipVariant.Filled" Size="@Size" title="@Title">@ChildContent</FlareChip>
 @code {
     /// <summary>Тональность чипа: нейтральный, инфо, норма, предупреждение, критично, роль/подкоманда.</summary>
     [Parameter] public AlvaTone Tone { get; set; } = AlvaTone.Neutral;
@@ -7,8 +7,19 @@
     /// <summary>Подсказка при наведении.</summary>
     [Parameter] public string? Title { get; set; }
 
+    /// <summary>Размер чипа; по умолчанию компактный, как в плотных таблицах Alva.</summary>
+    [Parameter] public ChipSize Size { get; set; } = ChipSize.Sm;
+
     /// <summary>Текст чипа.</summary>
     [Parameter] public RenderFragment? ChildContent { get; set; }
 
-    private string ToneClass => Tone.ToString().ToLowerInvariant();
+    private FlareColor Color => Tone switch
+    {
+        AlvaTone.Info => FlareColor.Info,
+        AlvaTone.Ok => FlareColor.Success,
+        AlvaTone.Warning => FlareColor.Warning,
+        AlvaTone.Critical => FlareColor.Error,
+        AlvaTone.Role => FlareColor.Tertiary,
+        _ => FlareColor.OnSurfaceVariant
+    };
 }

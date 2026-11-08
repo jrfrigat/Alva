@@ -29,9 +29,9 @@ else
     else
     {
     <FlareGrid MinColumnWidth="min(100%,14rem)">
-        <div class="alva-metric"><span class="alva-metric__label">@(Strings.T("Задач в работе"))</span><span class="alva-metric__value">@_tasks.Count(t=>t.Status=="InProgress")</span></div>
-        <div class="alva-metric"><span class="alva-metric__label">@(Strings.T("Активных спринтов"))</span><span class="alva-metric__value">@_sprints.Count(s=>s.Status=="Active")</span></div>
-        <div class="alva-metric"><span class="alva-metric__label">@(Strings.T("Задач под риском"))</span><span class="alva-metric__value">@_risks.Length</span></div>
+        <FlareStat Label="@(Strings.T("Задач в работе"))" Value="@_tasks.Count(t=>t.Status=="InProgress").ToString()" Icon="@MaterialDesign3Icons.Regular.Assignment" />
+        <FlareStat Label="@(Strings.T("Активных спринтов"))" Value="@_sprints.Count(s=>s.Status=="Active").ToString()" Icon="@MaterialDesign3Icons.Regular.Flag" />
+        <FlareStat Label="@(Strings.T("Задач под риском"))" Value="@_risks.Length.ToString()" Icon="@MaterialDesign3Icons.Regular.Warning" />
     </FlareGrid>
     <FlareGrid MinColumnWidth="min(100%,24rem)">
     <FlareCard Variant="CardVariant.Outlined"><FlareCardContent><FlareStack Gap="FlareSpacing.Large">

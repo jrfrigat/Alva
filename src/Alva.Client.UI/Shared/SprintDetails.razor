@@ -3,26 +3,40 @@
 @if (!_loaded) { <LoadingSkeleton Height="18rem" /> }
 else
 {
-<section class="alva-sprint-head">
-    <FlareBreadcrumb Items="Crumbs" Separator="/" AriaLabel="@(Strings.T("Путь к спринту"))" />
-    <div class="alva-sprint-head__chips">
-        <AlvaStatusChip Tone="AlvaTones.Status(Sprint.Status)">@Labels.Status(Sprint.Status)@(Sprint.Status == "Active" ? string.Format(Strings.T(" (день {0} из {1})"), DayOf, AlvaFormat.WorkDays(Sprint.StartDate, Sprint.EndDate)) : "")</AlvaStatusChip>
-        @if (Risks.Length > 0) { <AlvaStatusChip Tone="AlvaTone.Critical">@Risks.Length @AlvaFormat.Plural(Risks.Length, "task") @(Strings.T("с риском"))</AlvaStatusChip> }
-    </div>
-    <div class="alva-sprint-head__row">
-        <div class="alva-sprint-head__text">
-            <ReadyHeading Class="alva-sprint-head__title">@Sprint.Name</ReadyHeading>
-            @if (!string.IsNullOrWhiteSpace(Sprint.Goal)) { <p class="alva-sprint-head__goal">@Sprint.Goal</p> }
-            <span class="alva-sprint-head__meta alva-num">@AlvaFormat.Period(Sprint.StartDate, Sprint.EndDate)</span>
-            <span class="alva-sprint-head__meta alva-num"><FlareIconView Value="@MaterialDesign3Icons.Regular.Timelapse" Size="16px" /> @(Strings.T("Закрыто:")) <b>@AlvaFormat.Hours(HeadDone) @(Strings.T("ч"))</b> @(Strings.T("из")) @AlvaFormat.Hours(HeadTotal) @(Strings.T("ч")) (@Percent(HeadDone, HeadTotal)%)</span>
-            @if (Sprint.Commitment is { } committed) { <span class="alva-sprint-head__meta alva-num">@(Strings.T("Обязательство при старте:")) <b>@committed.Tasks @AlvaFormat.Plural(committed.Tasks, "task"), @AlvaFormat.Hours(committed.Hours) @(Strings.T("ч"))</b> · @committed.At.ToLocalTime().ToString("d MMM")</span> }
+<div @ref="_heading" tabindex="-1">
+<FlarePageHeader Title="@Sprint.Name">
+    <EyebrowContent>
+        <FlareStack Gap="FlareSpacing.Small">
+            <FlareBreadcrumb Items="Crumbs" Separator="/" AriaLabel="@(Strings.T("Путь к спринту"))" />
+            <FlareStack Row Wrap Gap="FlareSpacing.XSmall">
+                <AlvaStatusChip Tone="AlvaTones.Status(Sprint.Status)">@Labels.Status(Sprint.Status)@(Sprint.Status == "Active" ? string.Format(Strings.T(" (день {0} из {1})"), DayOf, AlvaFormat.WorkDays(Sprint.StartDate, Sprint.EndDate)) : "")</AlvaStatusChip>
+                @if (Risks.Length > 0) { <AlvaStatusChip Tone="AlvaTone.Critical">@Risks.Length @AlvaFormat.Plural(Risks.Length, "task") @(Strings.T("с риском"))</AlvaStatusChip> }
+            </FlareStack>
+        </FlareStack>
+    </EyebrowContent>
+    <DescriptionContent>
+        <FlareStack Gap="FlareSpacing.XSmall">
+            @if (!string.IsNullOrWhiteSpace(Sprint.Goal))
+            {
+                <FlareText Element="p" Typo="TypographyScale.BodyLarge" Color="FlareColor.OnSurfaceVariant">@Sprint.Goal</FlareText>
+            }
+            <FlareStack Row Wrap Align="FlareAlignItems.Center" Gap="FlareSpacing.XSmall">
+                <FlareIconView Value="@MaterialDesign3Icons.Regular.Timelapse" Size="16px" />
+                <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">
+                    @(Strings.T("Закрыто:")) <b>@AlvaFormat.Hours(HeadDone) @(Strings.T("ч"))</b> @(Strings.T("из")) @AlvaFormat.Hours(HeadTotal) @(Strings.T("ч")) (@Percent(HeadDone, HeadTotal)%)
+                </FlareText>
+            </FlareStack>
+            <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@AlvaFormat.Period(Sprint.StartDate, Sprint.EndDate)</FlareText>
+            @if (Sprint.Commitment is { } committed) { <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@(Strings.T("Обязательство при старте:")) <b>@committed.Tasks @AlvaFormat.Plural(committed.Tasks, "task"), @AlvaFormat.Hours(committed.Hours) @(Strings.T("ч"))</b> · @committed.At.ToLocalTime().ToString("d MMM")</FlareText> }
             @if (Sprint.Result is { } result)
             {
-                <span class="alva-sprint-head__meta alva-num">@(Strings.T("Итог при закрытии:")) <b>@AlvaFormat.Hours(result.DoneHours) @(Strings.T("из")) @AlvaFormat.Hours(result.Hours) @(Strings.T("ч"))</b> · @result.At.ToLocalTime().ToString("d MMM")</span>
-                @if (Done != result.DoneHours) { <span class="alva-sprint-head__meta alva-num">@(Strings.T("После закрытия задачи изменились: сейчас")) @AlvaFormat.Hours(Done) @(Strings.T("из")) @AlvaFormat.Hours(Total) @(Strings.T("ч"))</span> }
+                <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@(Strings.T("Итог при закрытии:")) <b>@AlvaFormat.Hours(result.DoneHours) @(Strings.T("из")) @AlvaFormat.Hours(result.Hours) @(Strings.T("ч"))</b> · @result.At.ToLocalTime().ToString("d MMM")</FlareText>
+                @if (Done != result.DoneHours) { <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@(Strings.T("После закрытия задачи изменились: сейчас")) @AlvaFormat.Hours(Done) @(Strings.T("из")) @AlvaFormat.Hours(Total) @(Strings.T("ч"))</FlareText> }
             }
-        </div>
-        <div class="alva-sprint-head__actions">
+        </FlareStack>
+    </DescriptionContent>
+    <ActionsContent>
+        <FlareStack Row Wrap Gap="FlareSpacing.Small">
             <FlareButton Variant="ButtonVariant.Tonal" Size="ButtonSize.Sm" OnClick="Edit">
                 <LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.Tune" Size="18px" /></LeadingIcon>
                 <ChildContent>@(Strings.T("Редактировать состав"))</ChildContent>
@@ -34,146 +48,194 @@ else
                     <ChildContent>@(Strings.T("Завершить спринт"))</ChildContent>
                 </FlareButton>
             }
-        </div>
-    </div>
-    <div class="alva-sprint-head__progress">
-        <div class="alva-sprint-head__progress-top"><span>@(Strings.T("Общий темп выполнения спринта"))</span><span class="alva-num">@Percent(Done, Total)% (@AlvaFormat.Hours(Done)/@AlvaFormat.Hours(Total) @(Strings.T("ч")))</span></div>
-        <div class="alva-stacked" role="img" aria-label="@string.Format(Strings.T("Закрыто {0} ч, в работе {1} ч, остаток {2} ч"), AlvaFormat.Hours(Done), AlvaFormat.Hours(InWork), AlvaFormat.Hours(Total - Done))">
-            <span class="alva-stacked__done" style="width:@Percent(Done, Total)%"></span><span class="alva-stacked__work" style="width:@Percent(InWork, Total)%"></span>
-        </div>
-        <div class="alva-legend alva-num">
-            <span><i class="alva-legend__swatch alva-legend__swatch--done"></i>@(Strings.T("Завершено:")) @AlvaFormat.Hours(Done) @(Strings.T("ч"))</span>
-            <span><i class="alva-legend__swatch alva-legend__swatch--work"></i>@(Strings.T("В работе:")) @AlvaFormat.Hours(InWork) @(Strings.T("ч"))</span>
-            <span><i class="alva-legend__swatch"></i>@(Strings.T("Остаток:")) @AlvaFormat.Hours(Total - Done) @(Strings.T("ч"))</span>
-        </div>
-    </div>
-</section>
-<PageFeedback Error="@_error" />
-
-<div class="alva-kpis">
-    <section class="alva-kpi">
-        <div class="alva-kpi__head"><div><span class="alva-kpi__label">@(Strings.T("Остаток"))</span><span class="alva-kpi__value alva-num">@AlvaFormat.Hours(Total - Done) @(Strings.T("ч"))</span></div><span class="alva-kpi__icon"><FlareIconView Value="@MaterialDesign3Icons.Regular.TrendingDown" Size="18px" /></span></div>
-        @if (Sprint.Status == "Completed")
-        {
-            @* Закрытому спринту темп уже не нужен: остаток при закрытии перенесён или возвращён в пул. *@
-            <p class="alva-kpi__note">@(Strings.T("Спринт закрыт.")) @(Sprint.Result is { } closed ? $"{Strings.T("Не закрыто при закрытии:")} {AlvaFormat.Hours(closed.Hours - closed.DoneHours)} {Strings.T("ч")}." : "")</p>
-        }
-        else
-        {
-            <p class="alva-kpi__note">@(Strings.T("Осталось")) @DaysLeft @(Strings.T("раб.")) @AlvaFormat.Plural(DaysLeft, "day"); @(Strings.T("нужный темп")) — <b class="alva-num">@(DaysLeft > 0 ? AlvaFormat.Hours(Math.Round((Total - Done) / DaysLeft, 1)) : "—") @(Strings.T("ч/день"))</b>.</p>
-        }
-        <div class="alva-kpi__foot"><span class="alva-num">@(Strings.T("План:")) @AlvaFormat.Hours(Total) @(Strings.T("ч"))</span><span class="alva-num">@(Strings.T("Задач:")) @SprintTasks.Length</span></div>
-    </section>
-
-    <section class="alva-kpi">
-        <div class="alva-kpi__head"><div><span class="alva-kpi__label alva-kpi__label--critical">@(Strings.T("Факторы риска"))</span><span class="alva-kpi__value alva-kpi__value--critical alva-num">@Risks.Length @AlvaFormat.Plural(Risks.Length, "task")</span></div><span class="alva-kpi__icon alva-kpi__icon--critical"><FlareIconView Value="@MaterialDesign3Icons.Regular.Warning" Size="18px" /></span></div>
-        @if (Risks.Length == 0) { <p class="alva-kpi__note">@(Strings.T("Alva не видит рисков срыва по задачам спринта."))</p> }
-        <ul class="alva-factors">
-            @foreach (var reason in Risks.SelectMany(r => r.Reasons).GroupBy(r => r).OrderByDescending(g => g.Count()).Take(3))
-            {
-                <li><span class="alva-factors__dot" aria-hidden="true"></span>@ReasonText.Describe(reason.Key)<b class="alva-num">@reason.Count()</b></li>
-            }
-        </ul>
-        @if (Risks.Length > 0) { <p class="alva-kpi__note"><a href="analytics">@(Strings.T("Все риски")) (@Risks.Length)</a></p> }
-        @if (Risks.Length > 0)
-        {
-            var high = Risks.Any(r => string.Equals(r.Severity, "High", StringComparison.OrdinalIgnoreCase));
-            <div class="alva-kpi__foot"><span>@(Strings.T("Критичность:"))</span><AlvaStatusChip Tone="@(high ? AlvaTone.Critical : AlvaTone.Warning)">@(high ? Strings.T("Высокая") : Strings.T("Средняя"))</AlvaStatusChip></div>
-        }
-    </section>
-
-    <section class="alva-kpi">
-        <div class="alva-kpi__head"><div><span class="alva-kpi__label">@(Strings.T("Ёмкость и загрузка"))</span><span class="alva-num"><span class="alva-kpi__value">@Percent(_load.Values.Sum(l => l.Allocated), _load.Values.Sum(l => l.Available))%</span> <span class="alva-kpi__unit">@(Strings.T("общая"))</span></span></div><span class="alva-kpi__icon"><FlareIconView Value="@MaterialDesign3Icons.Regular.Groups" Size="18px" /></span></div>
-        @foreach (var (actor, pct) in People.Take(3))
-        {
-            <div class="alva-loadbar">
-                <div class="alva-loadbar__row"><span><a href="@($"capacity/{actor.Id}")">@actor.Name</a></span><span class="alva-loadbar__pct alva-loadbar__pct--@Tone(pct).ToString().ToLowerInvariant() alva-num">@LoadText(actor.Id, pct)</span></div>
-                <div class="alva-loadbar__track"><span class="alva-loadbar__fill alva-loadbar__fill--@Tone(pct).ToString().ToLowerInvariant()" style="width:@Math.Min(100, pct)%"></span></div>
-            </div>
-        }
-        @if (People.Length > 3) { <p class="alva-kpi__note"><a href="capacity">@(Strings.T("Все люди")) (@People.Length)</a></p> }
-        @if (People.Length == 0) { <p class="alva-kpi__note">@(Strings.T("Нет рабочих графиков людей за период спринта."))</p> }
-        @if (People.LastOrDefault() is { Actor: { } free } && _load.TryGetValue(free.Id, out var freeLoad) && freeLoad.Available > freeLoad.Allocated)
-        {
-            <div class="alva-kpi__foot"><span>@(Strings.T("Резерв ёмкости:"))</span><span class="alva-kpi__aside--primary alva-num">@free.Name (+@AlvaFormat.Hours(freeLoad.Available - freeLoad.Allocated) @(Strings.T("ч")))</span></div>
-        }
-    </section>
-
-    <section class="alva-kpi">
-        <div class="alva-kpi__head"><div><span class="alva-kpi__label">@(Strings.T("Проекты в спринте"))</span><span class="alva-kpi__value alva-num">@Shares.Length @AlvaFormat.Plural(Shares.Length, "project")</span></div><span class="alva-kpi__icon"><FlareIconView Value="@MaterialDesign3Icons.Regular.FolderSpecial" Size="18px" /></span></div>
-        <ul class="alva-shares">
-            @foreach (var (name, share) in Shares)
-            {
-                <li><span class="alva-shares__name">@name</span><span class="alva-shares__bar"><span style="width:@share%"></span></span><b class="alva-num">@share%</b></li>
-            }
-        </ul>
-    </section>
+        </FlareStack>
+    </ActionsContent>
+</FlarePageHeader>
 </div>
 
-<section class="alva-panel alva-sprint-tasks">
-    <header class="alva-sprint-tasks__head">
-        <h2 class="alva-panel__title">@(Strings.T("Задачи в итерации"))</h2>
-        <div class="alva-quickfilter" role="group" aria-label="@(Strings.T("Быстрый фильтр"))">
-            <span class="alva-quickfilter__label">@(Strings.T("Быстрый фильтр:"))</span>
-            @foreach (var (key, label) in Filters)
-            {
-                <button type="button" class="alva-quickfilter__item @(_filter == key ? "alva-quickfilter__item--active" : "")" aria-pressed="@(_filter == key)" @onclick="() => _filter = key">@label (@Filtered(key).Count())</button>
-            }
-        </div>
-    </header>
-    <div class="alva-sprint-table" role="table" aria-label="@(Strings.T("Задачи спринта"))">
-        <div class="alva-sprint-table__head" role="row"><span role="columnheader">#</span><span role="columnheader">@(Strings.T("Задача"))</span><span role="columnheader">@(Strings.T("Проект"))</span><span role="columnheader">@(Strings.T("Исполнитель"))</span><span role="columnheader">@(Strings.T("Оценка"))</span><span role="columnheader">@(Strings.T("Статус"))</span></div>
-        @{ var index = 0; }
-        @foreach (var task in Filtered(_filter))
-        {
-            index++;
-            var person = Assignees.Person(task, _actors);
-            <div class="alva-sprint-table__row @(task.Status == "Done" ? "alva-sprint-table__row--done" : "")" role="row" @key="task.Id">
-                <span role="cell" class="alva-num alva-sprint-table__index">@index</span>
-                <span role="cell" class="alva-sprint-table__task">
-                    <a href="@($"tasks/{task.Id}")" class="alva-sprint-table__title">@task.Title</a>
-                    <span class="alva-sprint-table__meta alva-num">@AlvaFormat.Code(task.Id)@(task.Deadline.HasValue ? string.Format(Strings.T(" · Дедлайн: {0:d MMM}"), task.Deadline) : "")@(Risks.Any(r => r.TaskId == task.Id) ? Strings.T(" · под риском") : "")</span>
-                </span>
-                <span role="cell"><span class="alva-project-chip">@ProjectName(task.ProjectId)</span></span>
-                <span role="cell"><AlvaAssignee Task="task" Actors="_actors" Load="@(person is { } p && _load.ContainsKey(p) ? LoadOf(p) : null)" /></span>
-                <span role="cell" class="alva-num alva-sprint-table__est">@EstimateText(task)</span>
-                <span role="cell"><AlvaStatusChip Tone="AlvaTones.Status(task.Status)">@Labels.Status(task.Status)</AlvaStatusChip></span>
-            </div>
-        }
-        @if (!Filtered(_filter).Any()) { <div class="alva-sprint-table__empty">@(Strings.T("Задач по этому фильтру нет."))</div> }
-    </div>
-    <footer class="alva-sprint-tasks__foot">
-        <span class="alva-num">@(Strings.T("Итоги по выборке: План:")) <b>@AlvaFormat.Hours(Filtered(_filter).Sum(Hours)) @(Strings.T("ч"))</b> @(Strings.T("· Закрыто:")) <b>@AlvaFormat.Hours(Filtered(_filter).Where(t => t.Status == "Done").Sum(Hours)) @(Strings.T("ч"))</b> @(Strings.T("· Задач с рисками:")) <b class="alva-kpi__alert">@Filtered(_filter).Count(t => Risks.Any(r => r.TaskId == t.Id))</b></span>
-        <FlareButton Size="ButtonSize.Sm" OnClick="Edit">
-            <LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.Add" Size="18px" /></LeadingIcon>
-            <ChildContent>@(Strings.T("Добавить задачу в спринт"))</ChildContent>
-        </FlareButton>
-    </footer>
-</section>
+<FlareCard Variant="CardVariant.Filled">
+    <FlareCardContent>
+        <FlareStack Gap="FlareSpacing.Small">
+            <FlareStack Row StretchFirst Align="FlareAlignItems.Baseline">
+                <FlareText Typo="TypographyScale.LabelMedium" Color="FlareColor.OnSurfaceVariant">@(Strings.T("Общий темп выполнения спринта"))</FlareText>
+                <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.Primary">@Percent(Done, Total)% (@AlvaFormat.Hours(Done)/@AlvaFormat.Hours(Total) @(Strings.T("ч")))</FlareText>
+            </FlareStack>
+            <FlareMeter Size="TrackSize.Sm" aria-label="@string.Format(Strings.T("Закрыто {0} ч, в работе {1} ч, остаток {2} ч"), AlvaFormat.Hours(Done), AlvaFormat.Hours(InWork), AlvaFormat.Hours(Total - Done))">
+                <FlareMeterSegment Value="@((double)Math.Max(0, Done))" Color="FlareColor.Primary" />
+                <FlareMeterSegment Value="@((double)Math.Max(0, InWork))" Color="FlareColor.Secondary" />
+                <FlareMeterSegment Value="@((double)Math.Max(0, Total - Done - InWork))" Color="FlareColor.OnSurfaceVariant" />
+            </FlareMeter>
+            <FlareStack Row Wrap Gap="FlareSpacing.XSmall">
+                <FlareChip Size="ChipSize.Sm" Variant="ChipVariant.Filled" Color="FlareColor.Primary" Label="@($"{Strings.T("Завершено:")} {AlvaFormat.Hours(Done)} {Strings.T("ч")}")" />
+                <FlareChip Size="ChipSize.Sm" Variant="ChipVariant.Filled" Color="FlareColor.Secondary" Label="@($"{Strings.T("В работе:")} {AlvaFormat.Hours(InWork)} {Strings.T("ч")}")" />
+                <FlareChip Size="ChipSize.Sm" Variant="ChipVariant.Filled" Label="@($"{Strings.T("Остаток:")} {AlvaFormat.Hours(Total - Done)} {Strings.T("ч")}")" />
+            </FlareStack>
+        </FlareStack>
+    </FlareCardContent>
+</FlareCard>
+<PageFeedback Error="@_error" />
+
+<FlareGrid MinColumnWidth="min(100%,15rem)">
+    <FlareStat Label="@(Strings.T("Остаток"))" Value="@($"{AlvaFormat.Hours(Total - Done)} {Strings.T("ч")}")" Icon="@MaterialDesign3Icons.Regular.TrendingDown">
+        <CaptionContent>
+            <FlareStack Gap="FlareSpacing.XSmall">
+                @if (Sprint.Status == "Completed")
+                {
+                    <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@(Strings.T("Спринт закрыт.")) @(Sprint.Result is { } closed ? $"{Strings.T("Не закрыто при закрытии:")} {AlvaFormat.Hours(closed.Hours - closed.DoneHours)} {Strings.T("ч")}." : "")</FlareText>
+                }
+                else
+                {
+                    <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@(Strings.T("Осталось")) @DaysLeft @(Strings.T("раб.")) @AlvaFormat.Plural(DaysLeft, "day"); @(Strings.T("нужный темп")) — @(DaysLeft > 0 ? AlvaFormat.Hours(Math.Round((Total - Done) / DaysLeft, 1)) : "—") @(Strings.T("ч/день")).</FlareText>
+                }
+                <FlareStack Row StretchFirst>
+                    <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@(Strings.T("План:")) @AlvaFormat.Hours(Total) @(Strings.T("ч"))</FlareText>
+                    <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@(Strings.T("Задач:")) @SprintTasks.Length</FlareText>
+                </FlareStack>
+            </FlareStack>
+        </CaptionContent>
+    </FlareStat>
+
+    <FlareStat Label="@(Strings.T("Факторы риска"))" Value="@Risks.Length.ToString()" Unit="@AlvaFormat.Plural(Risks.Length, "task")" Icon="@MaterialDesign3Icons.Regular.Warning">
+        <CaptionContent>
+            <FlareStack Gap="FlareSpacing.XSmall">
+                @if (Risks.Length == 0) { <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@(Strings.T("Alva не видит рисков срыва по задачам спринта."))</FlareText> }
+                @foreach (var reason in Risks.SelectMany(r => r.Reasons).GroupBy(r => r).OrderByDescending(g => g.Count()).Take(3))
+                {
+                    <FlareStack Row StretchFirst>
+                        <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@ReasonText.Describe(reason.Key)</FlareText>
+                        <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.Error">@reason.Count()</FlareText>
+                    </FlareStack>
+                }
+                @if (Risks.Length > 0) { <FlareLink Href="analytics">@(Strings.T("Все риски")) (@Risks.Length)</FlareLink> }
+                @if (Risks.Length > 0)
+                {
+                    var high = Risks.Any(r => string.Equals(r.Severity, "High", StringComparison.OrdinalIgnoreCase));
+                    <AlvaStatusChip Tone="@(high ? AlvaTone.Critical : AlvaTone.Warning)">@(high ? Strings.T("Высокая") : Strings.T("Средняя"))</AlvaStatusChip>
+                }
+            </FlareStack>
+        </CaptionContent>
+    </FlareStat>
+
+    <FlareStat Label="@(Strings.T("Ёмкость и загрузка"))" Value="@($"{Percent(_load.Values.Sum(l => l.Allocated), _load.Values.Sum(l => l.Available))}%")" Unit="@(Strings.T("общая"))" Icon="@MaterialDesign3Icons.Regular.Groups">
+        <CaptionContent>
+            <FlareStack Gap="FlareSpacing.XSmall">
+                @foreach (var (actor, pct) in People.Take(3))
+                {
+                    <FlareStack Gap="FlareSpacing.XXSmall">
+                        <FlareStack Row StretchFirst>
+                            <FlareLink Href="@($"capacity/{actor.Id}")">@actor.Name</FlareLink>
+                            <FlareText Typo="TypographyScale.BodySmall" Color="@ToneColor(pct)">@LoadText(actor.Id, pct)</FlareText>
+                        </FlareStack>
+                        <FlareProgressLinear Value="@Math.Min(100, pct)" Size="TrackSize.Xs" Color="@ToneColor(pct)" aria-label="@string.Format(Strings.T("Загрузка: {0}"), actor.Name)" />
+                    </FlareStack>
+                }
+                @if (People.Length > 3) { <FlareLink Href="capacity">@(Strings.T("Все люди")) (@People.Length)</FlareLink> }
+                @if (People.Length == 0) { <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@(Strings.T("Нет рабочих графиков людей за период спринта."))</FlareText> }
+                @if (People.LastOrDefault() is { Actor: { } free } && _load.TryGetValue(free.Id, out var freeLoad) && freeLoad.Available > freeLoad.Allocated)
+                {
+                    <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.Primary">@(Strings.T("Резерв ёмкости:")) @free.Name (+@AlvaFormat.Hours(freeLoad.Available - freeLoad.Allocated) @(Strings.T("ч")))</FlareText>
+                }
+            </FlareStack>
+        </CaptionContent>
+    </FlareStat>
+
+    <FlareStat Label="@(Strings.T("Проекты в спринте"))" Value="@Shares.Length.ToString()" Unit="@AlvaFormat.Plural(Shares.Length, "project")" Icon="@MaterialDesign3Icons.Regular.FolderSpecial">
+        <CaptionContent>
+            <FlareStack Gap="FlareSpacing.XSmall">
+                @foreach (var (name, share) in Shares)
+                {
+                    <FlareStack Row Align="FlareAlignItems.Center" Gap="FlareSpacing.Small">
+                        <FlareText Typo="TypographyScale.BodySmall">@name</FlareText>
+                        <FlareProgressLinear Value="@share" Size="TrackSize.Xs" Color="FlareColor.Primary" aria-label="@string.Format(Strings.T("Доля проекта: {0}"), name)" />
+                        <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@share%</FlareText>
+                    </FlareStack>
+                }
+            </FlareStack>
+        </CaptionContent>
+    </FlareStat>
+</FlareGrid>
+
+<FlareCard Variant="CardVariant.Outlined">
+    <FlareCardHeader Title="@(Strings.T("Задачи в итерации"))">
+        <ActionContent>
+            <FlareToggleGroup TValue="string" Value="@_filter" ValueChanged="SetFilter" Size="ButtonSize.Sm" Mandatory AriaLabel="@(Strings.T("Быстрый фильтр"))">
+                @foreach (var (key, label) in Filters)
+                {
+                    <FlareToggleButton Value="@key">@label (@Filtered(key).Count())</FlareToggleButton>
+                }
+            </FlareToggleGroup>
+        </ActionContent>
+    </FlareCardHeader>
+    <FlareCardContent>
+        <FlareDataGrid TItem="TaskModel" Items="Filtered(_filter)" Height="auto" Dense="true" RowKey="t => t!.Id">
+            <Columns>
+                <FlareColumn TItem="TaskModel" Title="@(Strings.T("Задача"))" Sortable Field="t => t!.Title" SortKey="title">
+                    <Template Context="task">
+                        <FlareStack Gap="FlareSpacing.None">
+                            <FlareLink Href="@($"tasks/{task!.Id}")">@task.Title</FlareLink>
+                            <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@AlvaFormat.Code(task.Id)@(task.Deadline.HasValue ? string.Format(Strings.T(" · Дедлайн: {0:d MMM}"), task.Deadline) : "")@(Risks.Any(r => r.TaskId == task.Id) ? Strings.T(" · под риском") : "")</FlareText>
+                        </FlareStack>
+                    </Template>
+                </FlareColumn>
+                <FlareColumn TItem="TaskModel" Title="@(Strings.T("Проект"))" Sortable Field="t => ProjectName(t!.ProjectId)" SortKey="project">
+                    <Template Context="task"><FlareChip Size="ChipSize.Sm" Label="@ProjectName(task!.ProjectId)" /></Template>
+                </FlareColumn>
+                <FlareColumn TItem="TaskModel" Title="@(Strings.T("Исполнитель"))">
+                    <Template Context="task">
+                        <AlvaAssignee Task="task!" Actors="_actors" Load="@(Assignees.Person(task!, _actors) is { } p && _load.ContainsKey(p) ? LoadOf(p) : null)" />
+                    </Template>
+                </FlareColumn>
+                <FlareColumn TItem="TaskModel" Title="@(Strings.T("Оценка"))" Sortable Field="t => Hours(t!)" SortKey="estimate">
+                    <Template Context="task"><FlareText Typo="TypographyScale.BodySmall">@EstimateText(task!)</FlareText></Template>
+                </FlareColumn>
+                <FlareColumn TItem="TaskModel" Title="@(Strings.T("Статус"))" Sortable Field="t => t!.Status" SortKey="status">
+                    <Template Context="task"><AlvaStatusChip Tone="AlvaTones.Status(task!.Status)">@Labels.Status(task.Status)</AlvaStatusChip></Template>
+                </FlareColumn>
+            </Columns>
+            <EmptyStateContent>
+                <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@(Strings.T("Задач по этому фильтру нет."))</FlareText>
+            </EmptyStateContent>
+        </FlareDataGrid>
+        <FlareStack Row Wrap StretchFirst Align="FlareAlignItems.Center" Gap="FlareSpacing.Small">
+            <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@(Strings.T("Итоги по выборке: План:")) <b>@AlvaFormat.Hours(Filtered(_filter).Sum(Hours)) @(Strings.T("ч"))</b> @(Strings.T("· Закрыто:")) <b>@AlvaFormat.Hours(Filtered(_filter).Where(t => t.Status == "Done").Sum(Hours)) @(Strings.T("ч"))</b> @(Strings.T("· Задач с рисками:")) <b>@Filtered(_filter).Count(t => Risks.Any(r => r.TaskId == t.Id))</b></FlareText>
+            <FlareButton Size="ButtonSize.Sm" OnClick="Edit">
+                <LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.Add" Size="18px" /></LeadingIcon>
+                <ChildContent>@(Strings.T("Добавить задачу в спринт"))</ChildContent>
+            </FlareButton>
+        </FlareStack>
+    </FlareCardContent>
+</FlareCard>
 
 <FlareDialog @bind-Visible="_closing" Title="@($"{Strings.T("Завершить спринт")} «{Sprint.Name}»")" Size="DialogSize.Lg" Divider>
     <ChildContent>
         @if (Open.Length == 0)
         {
-            <p class="alva-close__lead">@(Strings.T("Все задачи спринта завершены. Итог будет сохранён при закрытии."))</p>
+            <FlareText Element="p" Typo="TypographyScale.BodyMedium">@(Strings.T("Все задачи спринта завершены. Итог будет сохранён при закрытии."))</FlareText>
         }
         else
         {
-            <p class="alva-close__lead">@(Strings.T("Незавершённых задач:")) <b class="alva-num">@Open.Length (@AlvaFormat.Hours(Open.Sum(Hours)) @(Strings.T("ч")))</b>. @(Strings.T("Решите, что сделать с каждой: итог спринта сохранится до переноса."))</p>
+            <FlareText Element="p" Typo="TypographyScale.BodyMedium">@(Strings.T("Незавершённых задач:")) <b>@Open.Length (@AlvaFormat.Hours(Open.Sum(Hours)) @(Strings.T("ч")))</b>. @(Strings.T("Решите, что сделать с каждой: итог спринта сохранится до переноса."))</FlareText>
             @if (NextChoices.Length > 0)
             {
                 <FlareSelect TValue="Guid?" Label="@(Strings.T("Следующий спринт для переноса"))" Items="NextChoices.Select(s => (Guid?)s.Id)" ItemLabel="NextLabel" @bind-Value="_next" />
             }
-            <ul class="alva-close__list">
+            <FlareList TItem="TaskModel" Dense>
                 @foreach (var task in Open)
                 {
-                    <li class="alva-close__item" @key="task.Id">
-                        <span class="alva-close__task"><a href="@($"tasks/{task.Id}")">@task.Title</a><small class="alva-num">@Labels.Status(task.Status) · @EstimateText(task)</small></span>
-                        <FlareSelect TValue="string" Label="@(Strings.T("Что сделать"))" Items="Actions" ItemLabel="ActionLabel" Value="@Decision(task)" ValueChanged="(string value) => _decisions[task.Id] = value" Size="FieldSize.Sm" />
-                    </li>
+                    <FlareListItem @key="task.Id">
+                        <ChildContent>
+                            <FlareStack Gap="FlareSpacing.None">
+                                <FlareLink Href="@($"tasks/{task.Id}")">@task.Title</FlareLink>
+                                <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@Labels.Status(task.Status) · @EstimateText(task)</FlareText>
+                            </FlareStack>
+                        </ChildContent>
+                        <Trailing>
+                            <FlareSelect TValue="string" Label="@(Strings.T("Что сделать"))" Items="Actions" ItemLabel="ActionLabel" Value="@Decision(task)" ValueChanged="(string value) => _decisions[task.Id] = value" Size="FieldSize.Sm" />
+                        </Trailing>
+                    </FlareListItem>
                 }
-            </ul>
-            <p class="alva-close__sum alva-num">@CloseSummary</p>
+            </FlareList>
+            <FlareText Element="p" Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@CloseSummary</FlareText>
         }
     </ChildContent>
     <ActionsContent>
@@ -191,6 +253,8 @@ else
 
     private bool _closing;
     private Guid? _next;
+    private ElementReference _heading;
+    private bool _focused;
     private readonly Dictionary<Guid, string> _decisions = [];
     /// <summary>Незавершённые задачи спринта — по каждой нужно решение при закрытии.</summary>
     private TaskModel[] Open => SprintTasks.Where(t => t.Status != "Done").ToArray();
@@ -247,7 +311,7 @@ else
     private int DayOf => AlvaFormat.SprintDay(Sprint.StartDate, Sprint.EndDate, Today);
     private int DaysLeft => AlvaFormat.SprintDaysLeft(Sprint.StartDate, Sprint.EndDate, Today);
     private static int Percent(decimal part, decimal whole) => whole <= 0 ? 0 : (int)Math.Round(part / whole * 100);
-    private static AlvaTone Tone(int pct) => pct > 100 ? AlvaTone.Critical : pct > 80 ? AlvaTone.Info : AlvaTone.Ok;
+    private static FlareColor ToneColor(int pct) => pct > 100 ? FlareColor.Error : pct > 80 ? FlareColor.Primary : FlareColor.Success;
     private int LoadOf(Guid id) => Percent(_load[id].Allocated, _load[id].Available);
     // Процент — доля занятого времени; рядом свободные часы или перегруз, чтобы число не читалось как «свободно N%».
     private string LoadText(Guid id, int pct)
@@ -279,6 +343,17 @@ else
         "work" => SprintTasks.Where(t => t.Status == "InProgress"),
         _ => SprintTasks
     };
+
+    private void SetFilter(string? value) => _filter = value ?? "all";
+
+    // Страница принимает фокус, когда данные загрузились: после перехода человек не остаётся на body.
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_focused || !_loaded) return;
+        _focused = true;
+        try { await _heading.FocusAsync(preventScroll: true); }
+        catch (JSDisconnectedException) { }
+    }
 
     protected override async Task OnParametersSetAsync()
     {

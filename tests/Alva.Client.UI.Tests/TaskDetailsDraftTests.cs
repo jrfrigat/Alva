@@ -26,7 +26,7 @@ public sealed class TaskDetailsDraftTests : UiTestBase
     private IRenderedComponent<FlareConfirmDialogProvider> Page() =>
         Render<FlareConfirmDialogProvider>(p => p.AddChildContent<TaskDetails>(d => d.Add(x => x.Item, _task)));
 
-    private static void EditTitle(IRenderedComponent<FlareConfirmDialogProvider> cut) => Field(cut, "Название").Change("Релиз 2.0");
+    private static void EditTitle(IRenderedComponent<FlareConfirmDialogProvider> cut) => Field(cut, "Остаток, часы").Change("5");
 
     [Fact]
     public void Leaving_with_unsaved_changes_asks_first_and_stay_keeps_the_draft()
@@ -39,7 +39,7 @@ public sealed class TaskDetailsDraftTests : UiTestBase
         Button(cut, "Остаться").Click();
 
         Assert.EndsWith($"/tasks/{_task.Id}", Navigation.Uri);
-        Assert.Equal("Релиз 2.0", Field(cut, "Название").GetAttribute("value"));
+        Assert.Equal("5", Field(cut, "Остаток, часы").GetAttribute("value"));
     }
 
     [Fact]
@@ -103,6 +103,6 @@ public sealed class TaskDetailsDraftTests : UiTestBase
         _task = new TaskModel { Id = _task.Id, Title = "Релиз", Status = "Planned", Version = 2 };
         cut.FindComponent<TaskDetails>().Render(p => p.Add(x => x.Item, _task));
 
-        Assert.Equal("Релиз 2.0", Field(cut, "Название").GetAttribute("value"));
+        Assert.Equal("5", Field(cut, "Остаток, часы").GetAttribute("value"));
     }
 }

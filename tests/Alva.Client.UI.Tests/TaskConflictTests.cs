@@ -21,7 +21,7 @@ public sealed class TaskConflictTests : UiTestBase
     public void A_stale_version_is_explained_and_the_card_takes_the_fresh_task()
     {
         var cut = Render<TaskDetails>(p => p.Add(x => x.Item, _task));
-        Field(cut, "Название").Change("Релиз — моя правка");
+        Field(cut, "Остаток, часы").Change("5");
         Api.OnSend = (method, path, value) =>
             method == HttpMethod.Put && path.Contains($"tasks/{_task.Id}")
                 ? throw new HttpRequestException("Conflict", null, System.Net.HttpStatusCode.Conflict)
@@ -33,6 +33,6 @@ public sealed class TaskConflictTests : UiTestBase
 
         // Черновик уступает данным сервера: иначе следующее сохранение снова ушло бы со старой версией,
         // и человек бился бы в тот же конфликт.
-        cut.WaitForAssertion(() => Assert.Equal("Релиз", Field(cut, "Название").GetAttribute("value")));
+        cut.WaitForAssertion(() => Assert.Equal("", Field(cut, "Остаток, часы").GetAttribute("value") ?? ""));
     }
 }

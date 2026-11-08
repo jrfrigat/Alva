@@ -147,18 +147,17 @@ public sealed class LoginFormTests : UiTestBase
     }
 
     [Fact]
-    public void The_password_can_be_shown_and_hidden_without_losing_focus()
+    public void The_password_can_be_shown_and_hidden_from_the_field()
     {
         var cut = Page();
         Assert.Equal("password", Field(cut, "Пароль").GetAttribute("type"));
 
-        Button(cut, "Показать пароль").Click();
+        cut.Find("button[aria-label='Показать пароль']").Click();
 
         cut.WaitForAssertion(() => Assert.Equal("text", Field(cut, "Пароль").GetAttribute("type")));
-        Assert.NotNull(Button(cut, "Скрыть пароль"));
-        JSInterop.VerifyFocusAsyncInvoke();
+        Assert.Equal("true", cut.Find("button[aria-label='Показать пароль']").GetAttribute("aria-pressed"));
 
-        Button(cut, "Скрыть пароль").Click();
+        cut.Find("button[aria-label='Показать пароль']").Click();
         cut.WaitForAssertion(() => Assert.Equal("password", Field(cut, "Пароль").GetAttribute("type")));
     }
 
@@ -168,15 +167,15 @@ public sealed class LoginFormTests : UiTestBase
         var cut = Page(register: true);
         Submit(cut);
 
-        cut.WaitForAssertion(() => Assert.Contains("Укажите имя.", cut.Find(".alva-form-errors").TextContent));
-        var summary = cut.Find(".alva-form-errors");
+        cut.WaitForAssertion(() => Assert.Contains("Укажите имя.", cut.Find(".flare-validation-summary").TextContent));
+        var summary = cut.Find(".flare-validation-summary");
         Assert.Equal("-1", summary.GetAttribute("tabindex"));
         Assert.Contains("Укажите название пространства.", summary.TextContent);
         Assert.Contains("Повторите пароль.", summary.TextContent);
         cut.WaitForAssertion(() => Assert.True(FocusCalls() > 0));
         var before = FocusCalls();
 
-        summary.QuerySelectorAll("button").First(b => b.TextContent.Contains("Укажите название пространства.")).Click();
+        summary.QuerySelectorAll("a").First(a => a.TextContent.Contains("Укажите название пространства.")).Click();
 
         cut.WaitForAssertion(() => Assert.True(FocusCalls() > before));
     }
@@ -260,5 +259,5 @@ public sealed class LoginFormTests : UiTestBase
         Assert.DoesNotContain("администратору рабочего пространства", Page(register: true).Markup);
     }
 
-    private int FocusCalls() => JSInterop.Invocations.Count(i => i.Identifier.EndsWith("focus", StringComparison.OrdinalIgnoreCase));
+    private int FocusCalls() => JSInterop.Invocations.Count(i => i.Identifier.Contains("focus", StringComparison.OrdinalIgnoreCase));
 }

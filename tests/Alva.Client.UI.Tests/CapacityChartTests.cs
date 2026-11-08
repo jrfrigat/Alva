@@ -38,7 +38,7 @@ public sealed class CapacityChartTests : UiTestBase
         Assert.Contains("Номинал фонда", table.TextContent);
         Assert.Contains("Запланировано", table.TextContent);
         Assert.Contains("Дефицит", table.TextContent);
-        Assert.Contains("Дефицита по периодам нет", cut.Find(".alva-chart-summary").TextContent);
+        Assert.Contains("Дефицита по периодам нет", cut.FindAll("p").First(p => p.TextContent.Contains("Ключевой вывод")).TextContent);
     }
 
     [Fact]

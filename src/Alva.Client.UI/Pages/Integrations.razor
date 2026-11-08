@@ -1,10 +1,9 @@
 @page "/integrations"
 @inject AlvaSession Session
 <PageTitle>@(Strings.T("Интеграции · Alva"))</PageTitle>
-<FlareText Element="h1" Typo="TypographyScale.HeadlineLarge">@(Strings.T("Интеграции"))</FlareText>
-<FlareText>@(Strings.T("Задачи из внешних трекеров приходят в Alva и обновляются при синхронизации. Даты, назначения и связи вы по-прежнему планируете здесь."))</FlareText>
+<AlvaPageHeader Title="@(Strings.T("Интеграции"))" Description="@(Strings.T("Задачи из внешних трекеров приходят в Alva и обновляются при синхронизации. Даты, назначения и связи вы по-прежнему планируете здесь."))" />
 <PageFeedback Loading="_busy" Error="@_error" OnRetry="Load" />
-@if (_formErrors.Count > 0) { <div class="alva-form-errors" role="alert" tabindex="-1" @ref="_errorSummary"><b>@(Strings.T("Проверьте выделенные поля."))</b>@foreach (var error in _formErrors) { <div>@error</div> }</div> }
+@if (_formErrors.Count > 0) { <div tabindex="-1" @ref="_errorSummary"><AlvaValidationSummary Messages="_formErrors" /></div> }
 @if (Session.TeamId is null) { <TeamRequired /> }
 else
 {
@@ -36,8 +35,8 @@ else
                                 @switch (setting.Kind)
                                 {
                                     case "Secret":
-                                        <FlareTextField Label="@label" Type="password" Autocomplete="off" Value="@draft.Value(key)" ValueChanged="v => draft.Values[key] = v ?? string.Empty" ErrorText="@ErrorOf(key)"
-                                                        HelperText="@(draft.SecretsSet.Contains(key) ? Strings.T("Сохранён. Оставьте поле пустым, чтобы не менять.") : setting.Description)" />
+                                        <FlarePasswordField Label="@label" Autocomplete="off" Value="@draft.Value(key)" ValueChanged="v => draft.Values[key] = v ?? string.Empty" ErrorText="@ErrorOf(key)"
+                                                            HelperText="@(draft.SecretsSet.Contains(key) ? Strings.T("Сохранён. Оставьте поле пустым, чтобы не менять.") : setting.Description)" />
                                         break;
                                     case "Flag":
                                         <FlareSwitch Label="@label" Value="@(draft.Flag(key, setting.Default))" ValueChanged="v => draft.SetFlag(key, v)" />

@@ -56,7 +56,7 @@ public sealed class TaskListKeysTests : UiTestBase
     {
         var cut = Card();
         var before = Navigation.Uri;
-        Field(cut, "Название").Change("Релиз — правка");
+        Field(cut, "Остаток, часы").Change("5");
 
         cut.Find(".alva-task-card").KeyDown(new KeyboardEventArgs { Key = "Escape" });
 

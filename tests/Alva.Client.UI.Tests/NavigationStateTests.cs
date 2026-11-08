@@ -47,13 +47,13 @@ public sealed class NavigationStateTests : UiTestBase
         var cut = Render<DirectoryPage>();
         cut.WaitForAssertion(() => Assert.Contains("Подкоманды", cut.Markup));
 
-        var active = cut.FindAll("a").First(a => a.TextContent.Trim() == Strings.T("Подкоманды"));
-        Assert.Contains("flare-btn--tonal", active.ClassList);
-        Assert.Contains("flare-btn--selected", active.ClassList);
+        var active = cut.FindAll("[role=tab]").First(a => a.TextContent.Trim() == Strings.T("Подкоманды"));
+        Assert.Equal("true", active.GetAttribute("aria-selected"));
+        Assert.Contains("flare-tabs__tab--active", active.ClassList);
 
-        var people = cut.FindAll("a").First(a => a.TextContent.Trim() == Strings.T("Люди"));
-        Assert.Contains("flare-btn--text", people.ClassList);
-        Assert.DoesNotContain("flare-btn--tonal", people.ClassList);
+        var people = cut.FindAll("[role=tab]").First(a => a.TextContent.Trim() == Strings.T("Люди"));
+        Assert.Equal("false", people.GetAttribute("aria-selected"));
+        Assert.DoesNotContain("flare-tabs__tab--active", people.ClassList);
     }
 
     [Fact]
@@ -65,7 +65,7 @@ public sealed class NavigationStateTests : UiTestBase
         Api.SelectedWorkspaceId = space.Id;
 
         var cut = Render<Workspaces>();
-        cut.WaitForAssertion(() => Assert.Equal(2, cut.FindAll(".alva-chip").Count(c => c.TextContent.Contains(Strings.T("Текущее")))));
+        cut.WaitForAssertion(() => Assert.Equal(2, cut.FindAll(".flare-chip").Count(c => c.TextContent.Contains(Strings.T("Текущее")))));
     }
 
     [Fact]
@@ -73,9 +73,9 @@ public sealed class NavigationStateTests : UiTestBase
     {
         Navigation.NavigateTo("/projects");
         var cut = Render<Projects>();
-        cut.WaitForAssertion(() => Assert.Single(cut.FindAll(".alva-proj-card")));
+        cut.WaitForAssertion(() => Assert.Single(cut.FindAll(".flare-list-item__action")));
 
-        cut.Find(".alva-proj-card").Click();
+        cut.Find(".flare-list-item__action").Click();
 
         Assert.Contains($"project={_project.Id}", Navigation.Uri);
     }

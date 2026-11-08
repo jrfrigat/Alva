@@ -1117,4 +1117,14 @@
   <data name="Подключение «{0}» будет удалено. Задачи, пришедшие из него, останутся в Alva, но больше не будут обновляться." xml:space="preserve"><value>The connection “{0}” will be deleted. Tasks that came from it stay in Alva but will no longer be updated.</value></data>
   <data name="создано {0}, обновлено {1}, без изменений {2}, пропущено {3}." xml:space="preserve"><value>created {0}, updated {1}, unchanged {2}, skipped {3}.</value></data>
   <data name="Открыть во внешнем трекере" xml:space="preserve"><value>Open in the external tracker</value></data>
+  <data name="Прогресс проекта" xml:space="preserve"><value>Project progress</value></data>
+  <data name="Загрузка дня" xml:space="preserve"><value>Day load</value></data>
+  <data name="Загрузка: {0}" xml:space="preserve"><value>Load: {0}</value></data>
+  <data name="Баланс роли: {0}" xml:space="preserve"><value>Role balance: {0}</value></data>
+  <data name="Доля проекта: {0}" xml:space="preserve"><value>Project share: {0}</value></data>
+  <data name="Изменить название" xml:space="preserve"><value>Edit title</value></data>
+  <data name="Название задачи" xml:space="preserve"><value>Task title</value></data>
+  <data name="Подзадач пока нет" xml:space="preserve"><value>No subtasks yet</value></data>
+  <data name="Добавьте первую подзадачу ниже." xml:space="preserve"><value>Add the first subtask below.</value></data>
+  <data name="Перетащите человека на задачу или назначьте кнопкой. Клик — показать на Гантте." xml:space="preserve"><value>Drag a person onto a task or assign with the button. Click to show on the Gantt.</value></data>
 </root>

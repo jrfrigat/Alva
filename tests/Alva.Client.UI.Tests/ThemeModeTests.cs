@@ -58,6 +58,21 @@ public sealed partial class ThemeModeTests
     }
 
     [Fact]
+    public void Warning_role_uses_the_readable_alva_text_token()
+    {
+        var css = Comments().Replace(Read("src/Alva.Client.UI/wwwroot/css/app.css"), "");
+        Assert.Contains(".flare-color-warning{--fc-main:var(--alva-warning-text)}", css);
+    }
+
+    [Fact]
+    public void Selected_list_content_keeps_the_selected_color()
+    {
+        var css = Comments().Replace(Read("src/Alva.Client.UI/wwwroot/css/app.css"), "");
+        Assert.Contains(".flare-list-item--selected .flare-color-on-surface-variant{color:inherit}", css);
+        Assert.Contains(".flare-list-item--selected .flare-link{color:inherit}", css);
+    }
+
+    [Fact]
     public void Shell_card_and_field_tokens_follow_the_mode()
     {
         var design = AlvaTheme.Create().Design;

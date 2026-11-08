@@ -7,13 +7,7 @@
 @* Гантт по людям (макет p6_2d, проекция 2): дорожки людей и ролей с часами ёмкости и задачами исполнителя.
    В 2D-режиме над ними — проекция 1 на той же оси. Проекции собирает Alva из примитивов Flare.Components.Gantt. *@
 <PageTitle>@(_twoD ? Strings.T("Синхронный Гантт 2D") : Strings.T("Гантт по людям")) · Alva</PageTitle>
-<section class="alva-page-header">
-    <div class="alva-page-header__text">
-        <div class="alva-micro-label"><span>@(Strings.T("Диаграммы · Гантт"))</span></div>
-        <h1 class="alva-page-header__title">@(_twoD ? Strings.T("Синхронный Гантт 2D") : Strings.T("Гантт по людям"))</h1>
-        <p class="alva-page-header__desc">@(Strings.T("Кто чем занят во времени: часы назначенной работы против доступных, перегрузки и отсутствия. Перетащите задачу на другую строку или нажмите Ctrl+↑/↓, чтобы переназначить; Ctrl+стрелка влево/вправо переносит даты."))</p>
-    </div>
-</section>
+<AlvaPageHeader Category="@(Strings.T("Диаграммы · Гантт"))" Title="@(_twoD ? Strings.T("Синхронный Гантт 2D") : Strings.T("Гантт по людям"))" Description="@(Strings.T("Кто чем занят во времени: часы назначенной работы против доступных, перегрузки и отсутствия. Перетащите задачу на другую строку или нажмите Ctrl+↑/↓, чтобы переназначить; Ctrl+стрелка влево/вправо переносит даты."))" />
 <PageFeedback Loading="_busy" Error="@_error" OnRetry="() => Reload()" />
 @if (Session.TeamId is null) { <TeamRequired /> }
 else if (_data is not null && _people is not null)
@@ -53,7 +47,7 @@ else if (_data is not null && _people is not null)
     <FlareDrawer Anchor="DrawerAnchor.Right" Open="_panelOpen" OpenChanged="OnPanelOpen" Width="34rem" ContentPadding="FlareSpacing.Large" AriaLabel="@(Strings.T("Задача"))">
         @if (_open is not null)
         {
-            <TaskDetails @ref="_details" Item="_open" Tasks="_data!.Tasks" Projects="_projects" Sprints="_data.Sprints" Actors="_data.Actors" Changed="@(() => Reload())" />
+            <TaskDetails @ref="_details" Item="_open" Tasks="_data!.Tasks" Projects="_projects" Sprints="_data.Sprints" Actors="_data.Actors" Changed="@(() => Reload())" HeadingLevel="2" />
         }
     </FlareDrawer>
 }

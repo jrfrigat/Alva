@@ -1117,4 +1117,14 @@
   <data name="Подключение «{0}» будет удалено. Задачи, пришедшие из него, останутся в Alva, но больше не будут обновляться." xml:space="preserve"><value>Подключение «{0}» будет удалено. Задачи, пришедшие из него, останутся в Alva, но больше не будут обновляться.</value></data>
   <data name="создано {0}, обновлено {1}, без изменений {2}, пропущено {3}." xml:space="preserve"><value>создано {0}, обновлено {1}, без изменений {2}, пропущено {3}.</value></data>
   <data name="Открыть во внешнем трекере" xml:space="preserve"><value>Открыть во внешнем трекере</value></data>
+  <data name="Прогресс проекта" xml:space="preserve"><value>Прогресс проекта</value></data>
+  <data name="Загрузка дня" xml:space="preserve"><value>Загрузка дня</value></data>
+  <data name="Загрузка: {0}" xml:space="preserve"><value>Загрузка: {0}</value></data>
+  <data name="Баланс роли: {0}" xml:space="preserve"><value>Баланс роли: {0}</value></data>
+  <data name="Доля проекта: {0}" xml:space="preserve"><value>Доля проекта: {0}</value></data>
+  <data name="Изменить название" xml:space="preserve"><value>Изменить название</value></data>
+  <data name="Название задачи" xml:space="preserve"><value>Название задачи</value></data>
+  <data name="Подзадач пока нет" xml:space="preserve"><value>Подзадач пока нет</value></data>
+  <data name="Добавьте первую подзадачу ниже." xml:space="preserve"><value>Добавьте первую подзадачу ниже.</value></data>
+  <data name="Перетащите человека на задачу или назначьте кнопкой. Клик — показать на Гантте." xml:space="preserve"><value>Перетащите человека на задачу или назначьте кнопкой. Клик — показать на Гантте.</value></data>
 </root>

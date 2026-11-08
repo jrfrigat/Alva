@@ -1,47 +1,50 @@
 @* Командный календарь по макету p15: месяц сеткой с доступными часами команды или выбранного
    сотрудника, отпусками, встречами и днями перегрузки. *@
 @inject AlvaSession Session
-<section class="alva-page-header">
-    <div class="alva-page-header__text">
-        <div class="alva-micro-label"><span>@(Strings.T("Ёмкость · Графики людей"))</span></div>
-        <h1 class="alva-page-header__title">@(Strings.T("Графики людей и доступность команды"))</h1>
-        <p class="alva-page-header__desc">@(Strings.T("Рабочие часы, отпуска и регулярные встречи каждого человека — и сколько чистого времени остаётся у команды по дням."))</p>
-    </div>
-    <div class="alva-page-header__actions">
+@inject NavigationManager Navigation
+<AlvaPageHeader Category="@(Strings.T("Ёмкость · Графики людей"))" Title="@(Strings.T("Графики людей и доступность команды"))" Description="@(Strings.T("Рабочие часы, отпуска и регулярные встречи каждого человека — и сколько чистого времени остаётся у команды по дням."))">
+    <Actions>
         <FlareIconButton Icon="@MaterialDesign3Icons.Regular.ChevronLeft" Size="ButtonSize.Sm" AriaLabel="@(Strings.T("Предыдущий месяц"))" OnClick="() => Shift(-1)" />
-        <span class="alva-month alva-num"><FlareIconView Value="@MaterialDesign3Icons.Regular.CalendarMonth" Size="18px" /> @_month.ToString("MMMM yyyy")</span>
+        <FlareChip Variant="ChipVariant.Filled" Color="FlareColor.Primary" Size="ChipSize.Sm">@_month.ToString("MMMM yyyy")</FlareChip>
         <FlareIconButton Icon="@MaterialDesign3Icons.Regular.ChevronRight" Size="ButtonSize.Sm" AriaLabel="@(Strings.T("Следующий месяц"))" OnClick="() => Shift(1)" />
         <FlareButton Variant="ButtonVariant.Text" Size="ButtonSize.Sm" OnClick="ThisMonth">@(Strings.T("Сегодня"))</FlareButton>
         @if (Focus is { } f) { <FlareButton Href="@($"capacity/{f.Id}/schedule")" Size="ButtonSize.Sm"><LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.EventBusy" Size="18px" /></LeadingIcon><ChildContent>@(Strings.T("+ Отсутствие / отпуск"))</ChildContent></FlareButton> }
-    </div>
-</section>
+    </Actions>
+</AlvaPageHeader>
 <PageFeedback Error="@_error" Loading="_busy" OnRetry="Load" />
 @if (!_loaded) { <LoadingSkeleton Height="20rem" /> }
 else
 {
-<div class="alva-kpis">
-    <section class="alva-kpi"><div class="alva-kpi__head"><div><span class="alva-kpi__label">@(Strings.T("Активный состав команды"))</span><span class="alva-num"><span class="alva-kpi__value">@People.Length</span> <span class="alva-kpi__unit">@AlvaFormat.Plural(People.Length, "person")</span></span></div><span class="alva-kpi__icon"><FlareIconView Value="@MaterialDesign3Icons.Regular.Badge" Size="18px" /></span></div><p class="alva-kpi__note">@(Strings.T("С рабочим графиком в этом месяце"))</p></section>
-    <section class="alva-kpi"><div class="alva-kpi__head"><div><span class="alva-kpi__label">@(Strings.T("Запланированные отсутствия"))</span><span class="alva-num"><span class="alva-kpi__value">@MonthAbsences.Count()</span> <span class="alva-kpi__unit">(−@AlvaFormat.Hours(AbsenceHours) @(Strings.T("ч")))</span></span></div><span class="alva-kpi__icon"><FlareIconView Value="@MaterialDesign3Icons.Regular.BeachAccess" Size="18px" /></span></div><p class="alva-kpi__note">@(MonthAbsences.Any() && MonthAbsences.First() is var a ? $"{a.Name}: {a.Ex.From:d}–{a.Ex.To:d MMM}" : Strings.T("Отпусков в месяце нет"))</p></section>
-    <section class="alva-kpi"><div class="alva-kpi__head"><div><span class="alva-kpi__label">@(Strings.T("Повторяющиеся встречи"))</span><span class="alva-num"><span class="alva-kpi__value">@AlvaFormat.Hours(MeetingsPerPerson)</span> <span class="alva-kpi__unit">@(Strings.T("ч / нед / чел."))</span></span></div><span class="alva-kpi__icon"><FlareIconView Value="@MaterialDesign3Icons.Regular.Groups" Size="18px" /></span></div><p class="alva-kpi__note">@(Strings.T("Вычеты из фокусного времени"))</p></section>
-    <section class="alva-kpi"><div class="alva-kpi__head"><div><span class="alva-kpi__label alva-kpi__label--primary">@(Strings.T("Эффективный фонд команды"))</span><span class="alva-num"><span class="alva-kpi__value">@AlvaFormat.Hours(Effective)</span> <span class="alva-kpi__unit">@(Strings.T("чистых часов"))</span></span></div><span class="alva-kpi__icon"><FlareIconView Value="@MaterialDesign3Icons.Regular.Speed" Size="18px" /></span></div><p class="alva-kpi__note alva-num">@(Strings.T("из")) @AlvaFormat.Hours(NominalMonth) @(Strings.T("ч номинала")) (@Pct(Effective, NominalMonth)%)</p></section>
-</div>
+<FlareGrid MinColumnWidth="min(100%,15rem)">
+    <FlareStat Label="@(Strings.T("Активный состав команды"))" Value="@People.Length.ToString()" Unit="@AlvaFormat.Plural(People.Length, "person")" Icon="@MaterialDesign3Icons.Regular.Badge" Caption="@(Strings.T("С рабочим графиком в этом месяце"))" />
+    <FlareStat Label="@(Strings.T("Запланированные отсутствия"))" Value="@MonthAbsences.Count().ToString()" Unit="@($"−{AlvaFormat.Hours(AbsenceHours)} {Strings.T("ч")}")" Icon="@MaterialDesign3Icons.Regular.BeachAccess"
+               Caption="@(MonthAbsences.Any() && MonthAbsences.First() is var a ? $"{a.Name}: {a.Ex.From:d}–{a.Ex.To:d MMM}" : Strings.T("Отпусков в месяце нет"))" />
+    <FlareStat Label="@(Strings.T("Повторяющиеся встречи"))" Value="@AlvaFormat.Hours(MeetingsPerPerson)" Unit="@(Strings.T("ч / нед / чел."))" Icon="@MaterialDesign3Icons.Regular.Groups" Caption="@(Strings.T("Вычеты из фокусного времени"))" />
+    <FlareStat Label="@(Strings.T("Эффективный фонд команды"))" Value="@AlvaFormat.Hours(Effective)" Unit="@(Strings.T("чистых часов"))" Icon="@MaterialDesign3Icons.Regular.Speed"
+               Caption="@($"{Strings.T("из")} {AlvaFormat.Hours(NominalMonth)} {Strings.T("ч номинала")} ({Pct(Effective, NominalMonth)}%)")" />
+</FlareGrid>
 
 <div class="alva-capacity-bar">
-    <span class="alva-capacity-bar__label"><FlareIconView Value="@MaterialDesign3Icons.Regular.FilterList" Size="16px" /> @(Strings.T("Фильтр инженера:"))</span>
-    <div class="alva-quickfilter" role="group" aria-label="@(Strings.T("Фильтр инженера"))">
-        <button type="button" class="alva-quickfilter__item @(_focus is null ? "alva-quickfilter__item--active" : "")" aria-pressed="@(_focus is null)" @onclick="() => _focus = null">@(Strings.T("Все")) (@People.Length)</button>
+    <FlareText Typo="TypographyScale.LabelMedium" Color="FlareColor.OnSurfaceVariant"><FlareIconView Value="@MaterialDesign3Icons.Regular.FilterList" Size="16px" /> @(Strings.T("Фильтр инженера:"))</FlareText>
+    <FlareChipGroup SelectedValues="SelectedPeople" SelectedValuesChanged="SetPersonFilter" AriaLabel="@(Strings.T("Фильтр инженера"))">
+        <FlareChip Value="" Label="@($"{Strings.T("Все")} ({People.Length})")" />
         @foreach (var person in People)
         {
-            <button type="button" class="alva-quickfilter__item alva-quickfilter__item--person @(_focus == person.Id ? "alva-quickfilter__item--active" : "")" aria-pressed="@(_focus == person.Id)" @onclick="() => _focus = person.Id"><span class="alva-slot__mark" aria-hidden="true">@AlvaFormat.Initials(person.Name)</span>@person.Name</button>
+            <FlareChip Value="@person.Id.ToString()">
+                <AvatarContent><FlareAvatar Text="@AlvaFormat.Initials(person.Name)" Alt="@person.Name" Size="AvatarSize.Xs" /></AvatarContent>
+                <ChildContent>@person.Name</ChildContent>
+            </FlareChip>
         }
-    </div>
+    </FlareChipGroup>
     <div class="alva-heat-legend alva-heat-legend--inline">
         <span><i class="alva-heat--balance"></i>@(Strings.T("Рабочий день"))</span><span><i class="alva-heat--absence"></i>@(Strings.T("Отпуск / отсутствие"))</span><span><i class="alva-heat--critical"></i>@(Strings.T("Перегрузка"))</span><span><i class="alva-heat--empty"></i>@(Strings.T("Выходной"))</span>
     </div>
 </div>
 
 <div class="alva-calendar-layout">
-    <section class="alva-panel alva-month-grid" aria-label="@(Strings.T("Календарь месяца"))">
+    <FlareCard Variant="CardVariant.Outlined" Class="alva-month-grid">
+        <FlareCardHeader Title="@(Strings.T("Календарь месяца"))" />
+        <FlareCardContent>
         <div class="alva-month-grid__head">@foreach (var d in WeekDays) { <span>@d</span> }</div>
         <div class="alva-month-grid__body">
             @foreach (var date in Cells)
@@ -69,40 +72,54 @@ else
                 </div>
             }
         </div>
-    </section>
-
+        </FlareCardContent>
+    </FlareCard>
     <aside class="alva-calendar-side">
         @if (Focus is { } focused)
         {
             var mine = _rows.Where(r => r.ActorId == focused.Id && r.Date.Month == _month.Month).ToArray();
-            <section class="alva-panel">
-                <div class="alva-person-card"><span class="alva-slot__mark alva-person-head__avatar" aria-hidden="true">@AlvaFormat.Initials(focused.Name)</span><div><b>@focused.Name</b><small>@string.Join(" / ", _actors.Where(a => focused.RoleIds.Contains(a.Id)).Select(a => a.Name).DefaultIfEmpty(Strings.T("Участник команды")))</small></div></div>
-                <div class="alva-calc">
-                    <div><span>@(Strings.T("Фонд месяца по графику"))</span><b class="alva-num">@AlvaFormat.Hours(NominalOf(focused.Id)) @(Strings.T("ч"))</b></div>
-                    <div class="alva-calc--info"><span>@(Strings.T("Встречи и вычеты"))</span><b class="alva-num">−@AlvaFormat.Hours(Math.Max(0, NominalOf(focused.Id) - mine.Sum(r => r.AvailableHours) - AbsenceOf(focused.Id))) @(Strings.T("ч"))</b></div>
-                    <div class="alva-calc--minus"><span>@(Strings.T("Отпуска"))</span><b class="alva-num">−@AlvaFormat.Hours(AbsenceOf(focused.Id)) @(Strings.T("ч"))</b></div>
-                    <div class="alva-calc--total"><span>@(Strings.T("Чистая ёмкость"))</span><b class="alva-num">@AlvaFormat.Hours(mine.Sum(r => r.AvailableHours)) @(Strings.T("ч"))</b></div>
-                    <div><span>@(Strings.T("Запланировано задач"))</span><b class="alva-num @(mine.Sum(r => r.AllocatedHours) > mine.Sum(r => r.AvailableHours) ? "alva-kpi__alert" : "")">@AlvaFormat.Hours(mine.Sum(r => r.AllocatedHours)) @(Strings.T("ч"))</b></div>
-                </div>
-                <FlareStack Row Wrap>
-                    <FlareButton Href="@($"capacity/{focused.Id}")" Size="ButtonSize.Sm">@(Strings.T("Персональный календарь"))</FlareButton>
-                    <FlareButton Href="@($"capacity/{focused.Id}/schedule")" Variant="ButtonVariant.Tonal" Size="ButtonSize.Sm">@(Strings.T("Редактор графика"))</FlareButton>
-                </FlareStack>
-            </section>
+            <FlareCard Variant="CardVariant.Outlined">
+                <FlareCardHeader Title="@focused.Name" Subtitle="@string.Join(" / ", _actors.Where(a => focused.RoleIds.Contains(a.Id)).Select(a => a.Name).DefaultIfEmpty(Strings.T("Участник команды")))">
+                    <AvatarContent><FlareAvatar Text="@AlvaFormat.Initials(focused.Name)" Alt="@focused.Name" Size="AvatarSize.Sm" /></AvatarContent>
+                </FlareCardHeader>
+                <FlareCardContent>
+                    <FlareStack Gap="FlareSpacing.Medium">
+                        <FlareList TItem="PersonStat" Dense>
+                            @foreach (var stat in StatsOf(focused, mine))
+                            {
+                                <FlareListItem Primary="@stat.Label">
+                                    <Trailing><FlareText Typo="TypographyScale.BodySmall" Color="@stat.Color"><b>@stat.Value</b></FlareText></Trailing>
+                                </FlareListItem>
+                            }
+                        </FlareList>
+                        <FlareStack Row Wrap>
+                            <FlareButton Href="@($"capacity/{focused.Id}")" Size="ButtonSize.Sm">@(Strings.T("Персональный календарь"))</FlareButton>
+                            <FlareButton Href="@($"capacity/{focused.Id}/schedule")" Variant="ButtonVariant.Tonal" Size="ButtonSize.Sm">@(Strings.T("Редактор графика"))</FlareButton>
+                        </FlareStack>
+                    </FlareStack>
+                </FlareCardContent>
+            </FlareCard>
         }
-        <section class="alva-panel">
-            <header class="alva-panel__header"><FlareIconView Value="@MaterialDesign3Icons.Regular.Person" Size="20px" Class="alva-panel__icon" /><h2 class="alva-panel__title">@(Strings.T("Люди и загрузка месяца"))</h2></header>
-            @foreach (var p in People)
-            {
-                var rows = _rows.Where(r => r.ActorId == p.Id && r.Date.Month == _month.Month).ToArray();
-                var pct = Pct(rows.Sum(r => r.AllocatedHours), rows.Sum(r => r.AvailableHours));
-                <a class="alva-person-link" href="@($"capacity/{p.Id}")" @key="p.Id">
-                    <span class="alva-slot__mark" aria-hidden="true">@AlvaFormat.Initials(p.Name)</span>
-                    <span class="alva-person-link__text"><span>@p.Name</span><span class="alva-loadbar__track"><span class="alva-loadbar__fill alva-loadbar__fill--@(pct > 100 ? "critical" : pct > 80 ? "info" : "ok")" style="width:@Math.Min(100, pct)%"></span></span></span>
-                    <span class="alva-num alva-person-link__pct">@pct%</span>
-                </a>
-            }
-        </section>
+        <FlareCard Variant="CardVariant.Outlined">
+            <FlareCardHeader Title="@(Strings.T("Люди и загрузка месяца"))" />
+            <FlareCardContent>
+                <FlareList TItem="ActorModel" Dense>
+                    @foreach (var p in People)
+                    {
+                        <FlareListItem @key="p.Id" OnClick="() => OpenPerson(p.Id)">
+                            <Leading><FlareAvatar Text="@AlvaFormat.Initials(p.Name)" Alt="@p.Name" Size="AvatarSize.Xs" /></Leading>
+                            <ChildContent>
+                                <FlareStack Gap="FlareSpacing.XSmall">
+                                    <FlareText Typo="TypographyScale.BodyMedium">@p.Name</FlareText>
+                                    <FlareProgressLinear Value="@Math.Min(100, LoadPct(p))" Size="TrackSize.Xs" Color="@LoadColor(p)" aria-label="@string.Format(Strings.T("Загрузка: {0}"), p.Name)" />
+                                </FlareStack>
+                            </ChildContent>
+                            <Trailing><FlareText Typo="TypographyScale.BodySmall"><b>@LoadPct(p)%</b></FlareText></Trailing>
+                        </FlareListItem>
+                    }
+                </FlareList>
+            </FlareCardContent>
+        </FlareCard>
     </aside>
 </div>
 }
@@ -143,6 +160,34 @@ else
     private decimal MeetingsPerPerson => People.Length == 0 ? 0 : People.Average(p => _calendars[p.Id].RecurringBlocks.Sum(b => b.Hours));
     private static int Pct(decimal part, decimal whole) => whole <= 0 ? 0 : (int)Math.Round(part / whole * 100);
     private static string Short(string name) => name.Split(' ') is [var first, var last, ..] ? $"{first[0]}. {last}" : name;
+
+    private sealed record PersonStat(string Label, string Value, FlareColor Color);
+
+    private IReadOnlyCollection<string> SelectedPeople => _focus is null ? [""] : [_focus.Value.ToString()];
+    private void SetPersonFilter(IReadOnlyCollection<string> values) =>
+        _focus = values.FirstOrDefault() is { Length: > 0 } key && Guid.TryParse(key, out var id) ? id : null;
+    private void OpenPerson(Guid id) => Navigation.NavigateTo($"capacity/{id}");
+
+    private int LoadPct(ActorModel person)
+    {
+        var rows = _rows.Where(r => r.ActorId == person.Id && r.Date.Month == _month.Month).ToArray();
+        return Pct(rows.Sum(r => r.AllocatedHours), rows.Sum(r => r.AvailableHours));
+    }
+
+    private FlareColor LoadColor(ActorModel person) => LoadPct(person) switch
+    {
+        > 100 => FlareColor.Error,
+        > 80 => FlareColor.Primary,
+        _ => FlareColor.Success
+    };
+
+    private PersonStat[] StatsOf(ActorModel focused, CapacityDto[] mine) => [
+        new(Strings.T("Фонд месяца по графику"), $"{AlvaFormat.Hours(NominalOf(focused.Id))} {Strings.T("ч")}", FlareColor.OnSurface),
+        new(Strings.T("Встречи и вычеты"), $"−{AlvaFormat.Hours(Math.Max(0, NominalOf(focused.Id) - mine.Sum(r => r.AvailableHours) - AbsenceOf(focused.Id)))} {Strings.T("ч")}", FlareColor.Primary),
+        new(Strings.T("Отпуска"), $"−{AlvaFormat.Hours(AbsenceOf(focused.Id))} {Strings.T("ч")}", FlareColor.Error),
+        new(Strings.T("Чистая ёмкость"), $"{AlvaFormat.Hours(mine.Sum(r => r.AvailableHours))} {Strings.T("ч")}", FlareColor.Primary),
+        new(Strings.T("Запланировано задач"), $"{AlvaFormat.Hours(mine.Sum(r => r.AllocatedHours))} {Strings.T("ч")}", mine.Sum(r => r.AllocatedHours) > mine.Sum(r => r.AvailableHours) ? FlareColor.Error : FlareColor.OnSurface)
+    ];
 
     protected override Task OnInitializedAsync() => Load();
 

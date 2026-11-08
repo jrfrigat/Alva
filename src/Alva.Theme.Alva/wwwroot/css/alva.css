@@ -1,9 +1,10 @@
-/* Alva — правила, которые токенами не выражаются. Подключается темой как style-asset, поэтому
-   ограничено её же классом: тема может быть активна и для поддерева (FlareThemeScope). */
+/* Alva — токены темы и только они. Подключается темой как style-asset, поэтому ограничено её же
+   классом: тема может быть активна и для поддерева (FlareThemeScope). Правила оформления страниц
+   и точечные переопределения Flare живут в app.css приложения. */
 
 /* Размеры и цвета компонентов (кнопки, поля, меню, оболочка, карточки) заданы токенами в
-   AlvaTheme.cs. Здесь — только то, для чего у Flare 0.43.0 токена нет. Переменные Flare на
-   .flare-theme-alva отсюда не задаются: стиль темы идёт позже с тем же селектором и побеждает. */
+   AlvaTheme.cs. Переменные Flare на .flare-theme-alva отсюда не задаются: стиль темы идёт позже
+   с тем же селектором и побеждает. */
 
 /* Нейтрали дизайна, которых нет среди ролей палитры: рамки, подложки шапок таблиц, hover и
    тепловая шкала загрузки. Светлые значения — из DESIGN.md; у тёмного режима и высокой контрастности
@@ -95,103 +96,3 @@
   --alva-chart-planned: #93C5FD;
   --alva-chart-deficit: #FECACA;
 }
-
-/* DESIGN.md, Components: «Alternating row background on subtle hover (#F1F5F9)». Flare красит
-   зебру и hover сетки этими переменными, а в DataGridTokens их нет; на элементе сетки они
-   перекрывают значение корня темы и не трогают hover остальных компонентов. */
-.flare-theme-alva .flare-datagrid {
-  --flare-state-hover-layer: var(--alva-hover);
-  --flare-stripe-bg: var(--alva-subtle);
-}
-
-/* DESIGN.md, Typography: «Tabular figures (tnum) ... strictly mandated for all workload
-   quantities, timelines, budget metrics, and percentages». Класс .alva-num ставят числа Alva. */
-.flare-theme-alva .alva-num,
-.flare-theme-alva td,
-.flare-theme-alva th {
-  font-variant-numeric: tabular-nums;
-}
-
-/* ---------------------------------------------------------------- Плотность данных ----------
-   DESIGN.md, Components: «Row Density: Compact row height capped at 34px. Alternating row
-   background on subtle hover (#F1F5F9)» и «Headers: Grounded in #F8FAFC with 11px uppercase
-   label styling (label-md)».
-   Классы проверены по CSS самого Flare (flare.components 0.43.0): строка — .flare-datagrid__row,
-   ячейка заголовка — .flare-datagrid__th, обычная — .flare-datagrid__td. Прежний вариант с
-   `thead th` был написан по догадке и в заголовки не попадал; переменной высоты строки у сетки
-   нет, поэтому высота задана классом строки. */
-.flare-theme-alva .flare-datagrid__row {
-  height: 34px;
-}
-
-.flare-theme-alva .flare-datagrid__th {
-  height: 34px;
-  padding: 0 8px;
-  background: var(--alva-subtle);
-  color: var(--flare-color-on-surface-variant);
-  font-size: 11px;
-  font-weight: 600;
-  line-height: 14px;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-  /* Дизайн разделяет плоскости рамкой, а не тенью и не тональной высотой. */
-  border-bottom: 1px solid var(--alva-border);
-}
-
-/* Ячейки дизайна: внутренние отступы 4px по вертикали и 8px по горизонтали. */
-.flare-theme-alva .flare-datagrid__td {
-  padding: 4px 8px;
-}
-
-
-/* Заголовок раздела меню — в макете это статичная подпись, а не раскрывающийся узел:
-   font-label-sm, прописные, tracking-wider, цвет on-surface-variant. */
-.flare-theme-alva .alva-nav-group-label {
-  margin-top: 8px;
-  padding: 4px 12px;
-  color: var(--flare-color-on-surface-variant);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-}
-
-/* DESIGN.md, FlareDataTree: «16px per hierarchy level with a subtle 1px dashed guideline (#CBD5E1)».
-   Отступ задан токеном Tree.Indent; токена направляющей у Flare нет — это рамка вложенного списка. */
-.flare-theme-alva .flare-tree-item__children {
-  margin-left: 11px;
-  border-left: 1px dashed var(--alva-border-strong);
-}
-
-/* Дорожка линейного прогресса в макете — surface-container (#E5EEFF). Flare 0.43.0 красит её
-   прямо secondary-container без своего токена, и пустая полоса выглядит заполненной; цвет
-   переопределён на самом элементе прогресса, чтобы не трогать тональные кнопки. */
-.flare-theme-alva .flare-progress {
-  --flare-color-secondary-container: var(--flare-color-surface-container);
-}
-
-/* Линия перед нижним блоком меню (Моя работа / Данные / Настройки). */
-.flare-theme-alva .alva-nav-sep {
-  margin: 4px 12px 8px;
-  border-top: 1px solid var(--alva-border);
-}
-
-/* ------------------------------------------------------ Семантика риска и ёмкости -------------
-   DESIGN.md, Colors: «Critical / Overcapacity / Deadline Breach: coral-crimson (#EF4444, dark tier
-   #DC2626) ... Warning / Unassigned / Dependency Hazard: amber-tangerine (#F59E0B, dark tier
-   #D97706)», и «Overcapacity Pill: Background #FEE2E2, border #FCA5A5, text #DC2626».
-   Стоковый Flare рисует warning через tertiary-container (фиолетовый) и error через
-   error-container — то есть мимо семантики дизайна; здесь обе пары приведены к ней.
-   Права те же свойства, что ставит Flare (.flare-alert--warning/--error), плюс класс темы,
-   поэтому специфичность выше и правило побеждает. */
-.flare-theme-alva .flare-alert--warning {
-  background: var(--alva-warning-bg);
-  color: var(--alva-warning-text);
-}
-
-.flare-theme-alva .flare-alert--error {
-  background: var(--alva-critical-bg);
-  color: var(--alva-critical-text);
-}
-
-

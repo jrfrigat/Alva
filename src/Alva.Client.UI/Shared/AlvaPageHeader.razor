@@ -1,27 +1,14 @@
-@* Единый заголовок экрана Alva: micro-label, headline, описание, действия. *@
-<header class="alva-page-header">
-    <div class="alva-page-header__text">
-        @if (!string.IsNullOrWhiteSpace(Category))
-        {
-            <div class="alva-micro-label"><span>@Category</span></div>
-        }
-        <h1 class="alva-page-header__title">@Title</h1>
-        @if (!string.IsNullOrWhiteSpace(Description))
-        {
-            <p class="alva-page-header__desc">@Description</p>
-        }
-    </div>
-    @if (Actions is not null)
-    {
-        <div class="alva-page-header__actions">@Actions</div>
-    }
-</header>
+@* Единый заголовок экрана Alva на FlarePageHeader: eyebrow или хлебные крошки, h1, описание, действия. *@
+<FlarePageHeader Title="@Title" Description="@Description" Eyebrow="@Category" EyebrowContent="@EyebrowContent" ActionsContent="@Actions" />
 @code {
     /// <summary>Основной заголовок экрана (h1).</summary>
     [Parameter, EditorRequired] public string Title { get; set; } = "";
 
     /// <summary>Категория над заголовком в стиле micro-label.</summary>
     [Parameter] public string? Category { get; set; }
+
+    /// <summary>Содержимое над заголовком вместо категории — например, хлебные крошки.</summary>
+    [Parameter] public RenderFragment? EyebrowContent { get; set; }
 
     /// <summary>Пояснение под заголовком.</summary>
     [Parameter] public string? Description { get; set; }

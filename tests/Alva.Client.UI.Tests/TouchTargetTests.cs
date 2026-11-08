@@ -16,7 +16,7 @@ public sealed class TouchTargetTests
         Assert.Contains(".alva-quickfilter__item", coarse);
 
         Assert.Contains("input,select,textarea{font-size:16px}", css);
-        Assert.Contains(".alva-chip{font-size:12px", css);
+        Assert.Contains(".flare-chip{font-size:12px", css);
     }
 
     private static string Block(string css, string selector)

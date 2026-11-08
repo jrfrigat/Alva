@@ -28,7 +28,7 @@ public sealed class ProjectSummaryTests : UiTestBase
         Api.Answer($"teams/{OtherTeam}/tasks", _ => new[] { new TaskModel { Id = Guid.NewGuid(), ProjectId = _project.Id, Title = "Закрытая", Status = "Done", EstimateHours = 10 } });
         var cut = Render<Projects>();
         cut.WaitForAssertion(() => Assert.Contains("Вклад команды", cut.Markup));
-        var progress = cut.FindAll(".alva-proj-kpi").First(k => k.TextContent.Contains("Общий прогресс"));
+        var progress = cut.FindAll(".flare-stat").First(k => k.TextContent.Contains("Общий прогресс"));
         Assert.Contains("25%", progress.TextContent);
         Assert.Contains("1 из 2", progress.TextContent);
         Assert.Contains("«Команда A»: 0%", progress.TextContent);
