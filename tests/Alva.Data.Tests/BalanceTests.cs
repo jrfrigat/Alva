@@ -29,6 +29,27 @@ public sealed class BalanceTests
     ];
 
     [Fact]
+    public void A_balance_run_inside_the_sprint_keeps_history_and_plans_only_from_today()
+    {
+        var start = new DateOnly(2027, 1, 1);
+        var end = new DateOnly(2027, 1, 10);
+        var today = new DateOnly(2027, 1, 5);
+        var person = new BalancePersonInput(Guid.NewGuid(), "Анна", [], []);
+        var done = new BalanceTaskInput(Guid.NewGuid(), "Сделано", "Done", null, 16, start, start.AddDays(2), null, person.Id, person.Id, RemainingHours: 0);
+        var inProgress = new BalanceTaskInput(Guid.NewGuid(), "В работе", "InProgress", null, 10, start, start.AddDays(5), null, person.Id, person.Id, RemainingHours: 4);
+        var planned = new BalanceTaskInput(Guid.NewGuid(), "План", "Planned", null, 8, start.AddDays(1), start.AddDays(2), null, person.Id, person.Id);
+
+        var problem = BalanceMath.Build(BalanceModes.Deadlines, Guid.NewGuid(), start, end, [person], CapacityMath.DefaultCalendar,
+            [done, inProgress, planned], [], today);
+
+        Assert.DoesNotContain(problem.Tasks, task => task.Id == done.Id);
+        Assert.DoesNotContain(problem.Tasks, task => task.Id == inProgress.Id);
+        Assert.Equal(0, problem.Background[0].Take(4).Sum());
+        Assert.Equal(40, problem.Background[0].Sum());
+        Assert.All(problem.Tasks.Single().Options.Skip(1), option => Assert.True(option.Start >= 4));
+    }
+
+    [Fact]
     public void Evaluate_counts_overload_against_daily_capacity()
     {
         var problem = Problem(BalanceModes.Gentle, AnnaOverloaded());

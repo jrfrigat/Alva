@@ -42,7 +42,7 @@ public record BalancePersonInput(Guid Id, string Name, Guid[] Departments, Guid[
 /// <summary>Задача команды для автобаланса: двигаемая, фон или якорь связи. Start и End — окно задачи; Deadline — срок.</summary>
 public record BalanceTaskInput(Guid Id, string Title, string Status, Guid? ParentId, decimal? EstimateHours,
     DateOnly? Start, DateOnly? End, DateOnly? Deadline, Guid? TargetId, Guid? ResolvedPersonId, Guid[]? RequiredSkillIds = null, string Priority = "Normal",
-    bool DatesFixed = false, decimal? DailyHoursLimit = null);
+    bool DatesFixed = false, decimal? DailyHoursLimit = null, decimal? RemainingHours = null);
 
 /// <summary>Связь задач: тип FS, SS, FF или SF и лаг в днях.</summary>
 public record BalanceLinkInput(Guid PredecessorId, Guid SuccessorId, string Kind, int LagDays);
@@ -139,10 +139,13 @@ public static class BalanceMath
     /// Остальная открытая работа — фоновая загрузка людей; готовые и задачи «в работе» с датами служат якорями связей.
     /// </summary>
     public static BalanceProblem Build(string mode, Guid sprintId, DateOnly sprintStart, DateOnly sprintEnd, IReadOnlyList<BalancePersonInput> people,
-        Func<Guid, CalendarDto> calendarOf, IReadOnlyList<BalanceTaskInput> openTasks, IReadOnlyList<BalanceLinkInput> links)
+        Func<Guid, CalendarDto> calendarOf, IReadOnlyList<BalanceTaskInput> openTasks, IReadOnlyList<BalanceLinkInput> links, DateOnly? today = null)
     {
         mode = BalanceModes.Normalize(mode);
         var sprintDays = sprintEnd.DayNumber - sprintStart.DayNumber + 1;
+        // Past days are history: a balance run inside the sprint may only propose days from today on.
+        var firstPlannableDay = today is { } date && date > sprintStart ? date : sprintStart;
+        var firstPlannableOffset = firstPlannableDay.DayNumber - sprintStart.DayNumber;
         var personIndex = people.Select((p, i) => (p.Id, i)).ToDictionary(x => x.Id, x => x.i);
         var parents = openTasks.Where(t => t.ParentId is not null).Select(t => t.ParentId!.Value).ToHashSet();
 
@@ -165,9 +168,20 @@ public static class BalanceMath
         var calendars = people.Select(p => calendarOf(p.Id)).ToArray();
         var capacity = people.Select((_, i) => Enumerable.Range(0, horizon).Select(d => ToTenths(CapacityMath.Available(calendars[i], sprintStart.AddDays(d)))).ToArray()).ToArray();
         var movableIds = movable.Select(t => t.Id).ToHashSet();
+        // An in-progress task consumes only what is left; a done one consumes nothing in the future.
+        decimal WorkHours(BalanceTaskInput t) => t.Status == "InProgress" ? t.RemainingHours ?? t.EstimateHours ?? 0m : t.EstimateHours ?? 0m;
+        // The part before today is history: the remaining work starts no earlier than today.
+        (DateOnly? Start, DateOnly? End) FromToday(BalanceTaskInput t) =>
+            (t.Start is { } start && start < firstPlannableDay ? firstPlannableDay : t.Start,
+             t.End is { } end && end < firstPlannableDay ? firstPlannableDay : t.End);
         // Готовые и отменённые задачи не занимают будущую ёмкость, даже если пришли как якоря связей.
-        var backgroundWork = openTasks.Where(t => t.Status is not ("Done" or "Cancelled") && !movableIds.Contains(t.Id) && PersonOf(t) is not null)
-            .Select(t => new CapacityWork(people[PersonOf(t)!.Value].Id, t.EstimateHours ?? 0m, t.Start, t.End, t.Deadline, t.DailyHoursLimit));
+        var backgroundWork = openTasks.Where(t => t.Status is not ("Done" or "Cancelled") && !movableIds.Contains(t.Id)
+                && PersonOf(t) is not null && WorkHours(t) > 0)
+            .Select(t =>
+            {
+                var (start, end) = FromToday(t);
+                return new CapacityWork(people[PersonOf(t)!.Value].Id, WorkHours(t), start, end, t.Deadline, t.DailyHoursLimit);
+            });
         var allocated = CapacityMath.Build(people.Select(p => (p.Id, p.Name)), calendarOf, backgroundWork, sprintStart, last)
             .ToLookup(c => c.ActorId);
         var background = people.Select(p =>
@@ -193,7 +207,8 @@ public static class BalanceMath
                 .Where(i => SkillMath.Compatible(t.RequiredSkillIds, people[i].SkillIds)).ToArray();
             // Фиксированная задача остаётся на своём дне начала при любом режиме; меняться может только человек.
             var keepDates = t.DatesFixed || mode == BalanceModes.Gentle;
-            var starts = keepDates ? [start] : Enumerable.Range(0, sprintDays).Prepend(start).Distinct().ToArray();
+            var starts = keepDates ? [start]
+                : Enumerable.Range(firstPlannableOffset, Math.Max(0, sprintDays - firstPlannableOffset)).Prepend(start).Distinct().ToArray();
             var limit = t.DailyHoursLimit is > 0 ? ToTenths(t.DailyHoursLimit.Value) : (int?)null;
             // С лимитом в день работа может не уложиться в окно. Если даты менять можно, окно растягивается до её конца;
             // если нельзя — окно прежнее, а остаток идёт хвостом, по которому держатся связи и считается просрочка.

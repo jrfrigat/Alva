@@ -82,11 +82,12 @@ public static class BalanceEndpoints
             var assignment = assignments.GetValueOrDefault(x.Id);
             var required = taskSkills[x.Id].ToArray();
             return new BalanceTaskInput(x.Id, x.Title, x.Status.ToString(), x.ParentId, x.EstimateHours,
-                x.StartDate, x.EndDate, x.Deadline, assignment?.TargetId, assignment?.ResolvedPersonId, required, x.Priority.ToString(), x.DatesFixed, x.DailyHoursLimit);
+                x.StartDate, x.EndDate, x.Deadline, assignment?.TargetId, assignment?.ResolvedPersonId, required, x.Priority.ToString(), x.DatesFixed, x.DailyHoursLimit, x.RemainingHours);
         }).ToArray();
         var links = await db.Dependencies.AsNoTracking().Where(x => taskIds.Contains(x.SuccessorId))
             .Select(x => new BalanceLinkInput(x.PredecessorId, x.SuccessorId, x.Kind.ToString(), x.LagDays)).ToListAsync();
         // Auto-balance uses the membership on the sprint start; periods inside the sprint are a later refinement.
-        return BalanceMath.Build(mode ?? BalanceModes.Gentle, sprint.Id, sprint.StartDate, sprint.EndDate, persons, id => calendarOf(id, sprint.StartDate), inputs, links);
+        return BalanceMath.Build(mode ?? BalanceModes.Gentle, sprint.Id, sprint.StartDate, sprint.EndDate, persons, id => calendarOf(id, sprint.StartDate), inputs, links,
+            DateOnly.FromDateTime(DateTime.Today));
     }
 }
