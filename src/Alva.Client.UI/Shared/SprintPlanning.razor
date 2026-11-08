@@ -335,7 +335,12 @@
         return false;
     }
 
-    private bool PersonInDepartmentTree(ActorModel person, Guid rootId) => person.DepartmentIds.Any(id => DepartmentInTree(id, rootId));
+    private bool PersonInDepartmentTree(ActorModel person, Guid rootId)
+    {
+        var day = Sprint.StartDate;
+        var active = person.DepartmentMemberships.Where(m => m.From <= day && (m.To is null || day <= m.To)).Select(m => m.DepartmentId).ToArray();
+        return (active.Length > 0 ? active : person.DepartmentIds).Any(id => DepartmentInTree(id, rootId));
+    }
 
     /// <summary>Подкоманды: план — задачи спринта на подкоманду или на её людей; доступно — ёмкость этих людей.</summary>
     private IEnumerable<(ActorModel Team, decimal Plan, decimal Available)> SubTeams => _actors.Where(a => a.Kind == "Department")

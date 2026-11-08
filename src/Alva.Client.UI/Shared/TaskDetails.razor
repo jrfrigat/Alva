@@ -477,7 +477,9 @@
                 if (id == departmentId) return true;
             return false;
         }
-        return person.DepartmentIds.Any(Walk);
+        var day = Item.StartDate ?? DateOnly.FromDateTime(DateTime.Today);
+        var active = person.DepartmentMemberships.Where(m => m.From <= day && (m.To is null || day <= m.To)).Select(m => m.DepartmentId).ToArray();
+        return (active.Length > 0 ? active : person.DepartmentIds).Any(Walk);
     }
 
     private static string KindLabel(string kind) => kind switch
