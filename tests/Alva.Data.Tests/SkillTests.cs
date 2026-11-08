@@ -17,16 +17,35 @@ public sealed class SkillTests
     [InlineData(BalanceModes.Maximum)]
     public void Balance_excludes_unskilled_candidates_but_preserves_manual_assignment(string mode)
     {
-        var role = Guid.NewGuid();
-        BalancePersonInput[] people = [new(Guid.NewGuid(), "Manual", [role], [], []), new(Guid.NewGuid(), "Wrong", [role], [], ["CSS"]), new(Guid.NewGuid(), "Match", [role], [], ["SQL"])];
+        var team = Guid.NewGuid();
+        var backend = Guid.NewGuid();
+        var css = Guid.NewGuid();
+        BalancePersonInput[] people = [new(Guid.NewGuid(), "Manual", [team], [backend]), new(Guid.NewGuid(), "Wrong", [team], [css]), new(Guid.NewGuid(), "Match", [team], [backend])];
         var start = new DateOnly(2026, 10, 5);
-        var task = new BalanceTaskInput(Guid.NewGuid(), "Task", "Planned", null, 8, start, start, null, role, people[0].Id, ["sql"]);
+        var task = new BalanceTaskInput(Guid.NewGuid(), "Task", "Planned", null, 8, start, start, null, team, people[0].Id, [backend]);
         var problem = BalanceMath.Build(mode, Guid.NewGuid(), start, start.AddDays(4), people, CapacityMath.DefaultCalendar, [task], []);
         var options = Assert.Single(problem.Tasks).Options;
         Assert.Equal(0, options[0].Person);
         Assert.DoesNotContain(options, x => x.Person == 1);
         Assert.Contains(options, x => x.Person == 2);
-        Assert.Single(options, x => x.Person == 0);
+        Assert.Contains(options, x => x.Person == 0);
+    }
+
+    [Fact]
+    public void Maximum_finds_a_person_with_a_shared_skill_in_another_sub_team()
+    {
+        var first = new Guid("00000000-0000-0000-0000-000000000001");
+        var second = new Guid("00000000-0000-0000-0000-000000000002");
+        var shared = Guid.NewGuid();
+        BalancePersonInput[] people = [new(Guid.NewGuid(), "A", [first], [shared]), new(Guid.NewGuid(), "B", [second], [shared])];
+        var start = new DateOnly(2026, 10, 5);
+        var task = new BalanceTaskInput(Guid.NewGuid(), "Task", "Planned", null, 8, start, start, null, people[0].Id, people[0].Id, [shared]);
+
+        var gentle = BalanceMath.Build(BalanceModes.Gentle, Guid.NewGuid(), start, start.AddDays(4), people, CapacityMath.DefaultCalendar, [task], []);
+        var maximum = BalanceMath.Build(BalanceModes.Maximum, Guid.NewGuid(), start, start.AddDays(4), people, CapacityMath.DefaultCalendar, [task], []);
+
+        Assert.DoesNotContain(gentle.Tasks.Single().Options, option => option.Person == 1);
+        Assert.Contains(maximum.Tasks.Single().Options, option => option.Person == 1);
     }
 
     [Fact]

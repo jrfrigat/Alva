@@ -269,10 +269,10 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
             throw new NotSupportedException("Demo: режимы «Сроки и связи» и «Максимум» требуют сервера — решатель OR-Tools работает только там.");
         var sprint = store.Sprints.FirstOrDefault(s => s.Id == sprintId) ?? throw new InvalidOperationException("Спринт не найден.");
         var people = store.Actors.Where(a => a.TeamId == teamId && a.Kind == "Person").ToArray();
-        var persons = people.Select(p => new BalancePersonInput(p.Id, p.Name, p.RoleIds, p.DepartmentIds, p.Skills)).ToArray();
+        var persons = people.Select(p => new BalancePersonInput(p.Id, p.Name, Departments: p.DepartmentIds, SkillIds: p.SkillIds)).ToArray();
         // Готовые задачи тоже нужны как якоря связей; фоном они не станут — Build их исключает.
         var tasks = OpenTasks(store, teamId, includeClosed: true).Select(x => new BalanceTaskInput(x.Task.Id, x.Task.Title, x.Task.Status, x.Task.ParentId,
-            x.Task.EstimateHours, x.Start, x.End, x.Task.Deadline, x.Task.AssignmentTargetId, x.Task.ResolvedPersonId, x.Task.RequiredSkills, x.Task.Priority, x.Task.DatesFixed, x.Task.DailyHoursLimit)).ToArray();
+            x.Task.EstimateHours, x.Start, x.End, x.Task.Deadline, x.Task.AssignmentTargetId, x.Task.ResolvedPersonId, x.Task.RequiredSkillIds, x.Task.Priority, x.Task.DatesFixed, x.Task.DailyHoursLimit)).ToArray();
         var links = TeamDependencies(store, teamId).Select(d => new BalanceLinkInput(d.PredecessorId, d.SuccessorId, d.Kind, d.LagDays)).ToArray();
         var problem = BalanceMath.Build(mode, sprintId, sprint.StartDate, sprint.EndDate, persons, id => CalendarOf(store, people.First(p => p.Id == id)), tasks, links);
         if (problem.Infeasible is not null) return BalanceMath.Proposal(problem, [], BalanceMath.Infeasible);

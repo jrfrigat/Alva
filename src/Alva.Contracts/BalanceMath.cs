@@ -31,12 +31,17 @@ public record BalanceProposalDto(string Mode, string Status, BalanceMetricsDto B
 /// <summary>Задача спринта, которую автобаланс не двигал, и причина.</summary>
 public record BalanceExcludedDto(Guid TaskId, string Title, ReasonDto Reason);
 
-/// <summary>Человек команды для автобаланса: роли и подкоманды определяют, какие задачи ему можно дать.</summary>
-public record BalancePersonInput(Guid Id, string Name, Guid[] Roles, Guid[] Departments, string[]? Skills = null);
+/// <summary>Человек команды для автобаланса: подкоманды и навыки определяют, какие задачи ему можно дать.</summary>
+public record BalancePersonInput(Guid Id, string Name, Guid[] Departments, Guid[] SkillIds)
+{
+    /// <summary>Transitional shape for callers that still pass roles first; the roles are read as sub-teams.</summary>
+    public BalancePersonInput(Guid Id, string Name, Guid[] Roles, Guid[] Departments, string[]? Skills)
+        : this(Id, Name, Departments, []) { }
+}
 
 /// <summary>Задача команды для автобаланса: двигаемая, фон или якорь связи. Start и End — окно задачи; Deadline — срок.</summary>
 public record BalanceTaskInput(Guid Id, string Title, string Status, Guid? ParentId, decimal? EstimateHours,
-    DateOnly? Start, DateOnly? End, DateOnly? Deadline, Guid? TargetId, Guid? ResolvedPersonId, string[]? RequiredSkills = null, string Priority = "Normal",
+    DateOnly? Start, DateOnly? End, DateOnly? Deadline, Guid? TargetId, Guid? ResolvedPersonId, Guid[]? RequiredSkillIds = null, string Priority = "Normal",
     bool DatesFixed = false, decimal? DailyHoursLimit = null);
 
 /// <summary>Связь задач: тип FS, SS, FF или SF и лаг в днях.</summary>
@@ -45,13 +50,13 @@ public record BalanceLinkInput(Guid PredecessorId, Guid SuccessorId, string Kind
 /// <summary>Режимы автобаланса.</summary>
 public static class BalanceModes
 {
-    /// <summary>Только переназначения внутри роли или подкоманды; даты не трогаются.</summary>
+    /// <summary>Только переназначения внутри подкоманды; даты не трогаются.</summary>
     public const string Gentle = "Gentle";
 
     /// <summary>Переназначения и сдвиг дат внутри спринта; главное — сроки и связи.</summary>
     public const string Deadlines = "Deadlines";
 
-    /// <summary>Всё сразу, включая людей с той же ролью из других подкоманд.</summary>
+    /// <summary>Всё сразу, включая людей с общими навыками из других подкоманд.</summary>
     public const string Maximum = "Maximum";
 
     public static string Normalize(string? mode) => mode switch
@@ -172,8 +177,8 @@ public static class BalanceMath
             return row;
         }).ToArray();
 
-        // Группы для разброса свободных часов: роли и подкоманды, где есть хотя бы двое.
-        var groups = people.SelectMany((p, i) => p.Roles.Concat(p.Departments).Distinct().Select(g => (g, i)))
+        // Группы для разброса свободных часов: подкоманды, где есть хотя бы двое.
+        var groups = people.SelectMany((p, i) => p.Departments.Distinct().Select(g => (g, i)))
             .GroupBy(x => x.g).Select(g => g.Select(x => x.i).ToArray()).Where(g => g.Length > 1).ToArray();
 
         var tasks = movable.Select(t =>
@@ -185,7 +190,7 @@ public static class BalanceMath
             var current = PersonOf(t) ?? -1;
             var targetIsGroup = !personIndex.ContainsKey(t.TargetId!.Value);
             var candidates = Candidates(mode, people, t.TargetId!.Value, targetIsGroup, current)
-                .Where(i => SkillMath.Compatible(t.RequiredSkills, people[i].Skills)).ToArray();
+                .Where(i => SkillMath.Compatible(t.RequiredSkillIds, people[i].SkillIds)).ToArray();
             // Фиксированная задача остаётся на своём дне начала при любом режиме; меняться может только человек.
             var keepDates = t.DatesFixed || mode == BalanceModes.Gentle;
             var starts = keepDates ? [start] : Enumerable.Range(0, sprintDays).Prepend(start).Distinct().ToArray();
@@ -279,10 +284,10 @@ public static class BalanceMath
         if (current >= 0) result.Add(current);
         if (targetIsGroup)
             for (var i = 0; i < people.Count; i++)
-                if (people[i].Roles.Contains(target) || people[i].Departments.Contains(target)) result.Add(i);
+                if (people[i].Departments.Contains(target)) result.Add(i);
         if (mode == BalanceModes.Maximum && current >= 0)
             for (var i = 0; i < people.Count; i++)
-                if (people[i].Roles.Intersect(people[current].Roles).Any()) result.Add(i);
+                if (people[i].SkillIds.Intersect(people[current].SkillIds).Any()) result.Add(i);
         return result.Order();
     }
 
@@ -449,7 +454,7 @@ public static class BalanceMath
             if (to.Person < 0) continue;
             var fromPerson = from.Person >= 0 ? problem.People[from.Person] : null;
             var toPerson = problem.People[to.Person];
-            var target = task.TargetIsGroup && task.TargetId is { } group && (toPerson.Roles.Contains(group) || toPerson.Departments.Contains(group)) ? group : toPerson.Id;
+            var target = task.TargetIsGroup && task.TargetId is { } group && toPerson.Departments.Contains(group) ? group : toPerson.Id;
             changes.Add(new BalanceChangeDto(task.Id, task.Title, fromPerson?.Id, fromPerson?.Name, target, toPerson.Id, toPerson.Name,
                 problem.Day(from.Start), problem.Day(from.Start + task.StoredLength - 1), problem.Day(to.Start), problem.Day(to.Start + to.Length - 1),
                 Reason(problem, task, from, to, before, after)));
