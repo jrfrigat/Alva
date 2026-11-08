@@ -305,7 +305,7 @@ public static class PlanningEndpoints
     }
 
     /// <summary>Календари людей команды вместе с общими графиками их подкоманд — так их видят ёмкость и риски.</summary>
-    internal static async Task<(List<Actor> People, Func<Guid, CalendarDto> CalendarOf)> PeopleCalendars(AlvaDbContext db, Guid teamId)
+    internal static async Task<(List<Actor> People, Func<Guid, DateOnly, CalendarDto> CalendarOf)> PeopleCalendars(AlvaDbContext db, Guid teamId)
     {
         var people = await db.Actors.AsNoTracking().Where(x => x.TeamId == teamId && !x.Archived && x.Kind == ActorKind.Person).OrderBy(x => x.Name).ToListAsync();
         var departments = await db.Actors.AsNoTracking().Where(x => x.TeamId == teamId && !x.Archived && x.Kind == ActorKind.Department).ToDictionaryAsync(x => x.Id, x => x.ParentId);
@@ -317,9 +317,9 @@ public static class PlanningEndpoints
         var exceptions = await db.CalendarExceptions.AsNoTracking().Where(x => calendarIds.Contains(x.CalendarId)).ToListAsync();
         var blocks = await db.RecurringBlocks.AsNoTracking().Where(x => calendarIds.Contains(x.CalendarId)).ToListAsync();
         var dtos = calendars.ToDictionary(x => x.ActorId, x => ToCalendarDto(x, exceptions, blocks));
-        CalendarDto CalendarOf(Guid id)
+        CalendarDto CalendarOf(Guid id, DateOnly day)
         {
-            var own = memberships.Where(x => x.ActorId == id).Select(x => x.DepartmentId).Where(departments.ContainsKey);
+            var own = memberships.Where(x => x.ActorId == id && x.ActiveOn(day)).Select(x => x.DepartmentId).Where(departments.ContainsKey);
             var shared = CapacityMath.DepartmentsWithParents(own, x => departments.TryGetValue(x, out var parent) && parent is { } p && departments.ContainsKey(p) ? p : null);
             return CapacityMath.Combine(dtos.GetValueOrDefault(id) ?? CapacityMath.DefaultCalendar(id), shared.Select(x => dtos.GetValueOrDefault(x)).OfType<CalendarDto>());
         }
@@ -364,7 +364,9 @@ public static class PlanningEndpoints
             var target = x.Assignment is not null && person is null ? targets.GetValueOrDefault(x.Assignment.TargetId) : null;
             return new RiskTask(x.Task.Id, x.Task.ParentId, x.Task.Title, x.Task.EstimateHours, x.Start, x.End, x.Task.Deadline, person?.Id, person?.Name, target, x.Task.Status.ToString(), x.Task.RemainingHours, x.Task.Priority.ToString(), x.Task.BacklogRank, x.Task.DailyHoursLimit);
         }).ToArray();
-        return RiskMath.Assess(tasks, dependencies, calendarOf, DateOnly.FromDateTime(DateTime.Today));
+        var today = DateOnly.FromDateTime(DateTime.Today);
+        // Risk looks at today's membership; a mid-period move is reflected by the capacity endpoint.
+        return RiskMath.Assess(tasks, dependencies, id => calendarOf(id, today), today);
     }
 
     private static async Task<DashboardDto> Dashboard(AlvaDbContext db, Guid teamId)

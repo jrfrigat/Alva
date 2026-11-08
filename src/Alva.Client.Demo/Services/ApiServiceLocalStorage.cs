@@ -228,7 +228,7 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
         var people = store.Actors.Where(a => a.TeamId == teamId && a.Kind == "Person").ToArray();
         var work = PlannedTasks(store, teamId).Select(x => (x, Person: PersonOf(store, x.Task))).Where(w => w.Person.HasValue)
             .Select(w => new CapacityWork(w.Person!.Value, w.x.Task.EstimateHours ?? 0m, w.x.Start, w.x.End, w.x.Task.Deadline, w.x.Task.DailyHoursLimit));
-        return CapacityMath.Build(people.Select(p => (p.Id, p.Name)), id => CalendarOf(store, people.First(p => p.Id == id)), work, from, to);
+        return CapacityMath.Build(people.Select(p => (p.Id, p.Name)), (id, _) => CalendarOf(store, people.First(p => p.Id == id)), work, from, to);
     }
 
     /// <summary>Кто делает задачу — тем же правилом, что в API: выбранный человек, иначе цель назначения, если это человек.</summary>

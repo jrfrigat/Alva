@@ -37,6 +37,9 @@ public static class CapacityMath
         return Math.Max(0m, hours);
     }
 
+    /// <summary>Available hours from the calendar that applies on this exact day.</summary>
+    public static decimal Available(Func<DateOnly, CalendarDto> calendarOf, DateOnly day) => Available(calendarOf(day), day);
+
     /// <summary>
     /// Календарь человека вместе с календарями его подразделений: часы недели — личные,
     /// исключения и повторяющиеся вычеты подразделений добавляются к личным.
@@ -79,12 +82,16 @@ public static class CapacityMath
     /// ещё есть, а то, что в окно не помещается, — за окончание, по лимиту в каждый день с доступными часами.
     /// Так человек остаётся занят задачей столько, сколько она действительно займёт.
     /// </summary>
-    public static IEnumerable<(DateOnly Day, decimal Hours)> Spread(CalendarDto calendar, decimal estimate, DateOnly start, DateOnly end, decimal? dailyLimit = null)
+    public static IEnumerable<(DateOnly Day, decimal Hours)> Spread(CalendarDto calendar, decimal estimate, DateOnly start, DateOnly end, decimal? dailyLimit = null) =>
+        Spread(_ => calendar, estimate, start, end, dailyLimit);
+
+    /// <summary>Spreads the estimate over the calendars that apply on each day of the window.</summary>
+    public static IEnumerable<(DateOnly Day, decimal Hours)> Spread(Func<DateOnly, CalendarDto> calendarOf, decimal estimate, DateOnly start, DateOnly end, decimal? dailyLimit = null)
     {
         if (estimate <= 0 || end < start) yield break;
         var days = Enumerable.Range(0, end.DayNumber - start.DayNumber + 1).Select(start.AddDays).ToArray();
-        var weights = days.Select(day => Available(calendar, day)).ToArray();
-        if (weights.Sum() == 0) weights = days.Select(day => Nominal(calendar, day.DayOfWeek) > 0 ? 1m : 0m).ToArray();
+        var weights = days.Select(day => Available(calendarOf(day), day)).ToArray();
+        if (weights.Sum() == 0) weights = days.Select(day => Nominal(calendarOf(day), day.DayOfWeek) > 0 ? 1m : 0m).ToArray();
         if (weights.Sum() == 0) weights = days.Select(_ => 1m).ToArray();
         if (dailyLimit is not > 0)
         {
@@ -100,7 +107,7 @@ public static class CapacityMath
         var left = estimate - shares.Sum();
         for (var day = end.AddDays(1); left > 0 && day.DayNumber - end.DayNumber <= SpillDays; day = day.AddDays(1))
         {
-            if (Available(calendar, day) <= 0) continue;
+            if (Available(calendarOf(day), day) <= 0) continue;
             var take = Math.Min(left, limit);
             yield return (day, take);
             left -= take;
@@ -160,21 +167,24 @@ public static class CapacityMath
     public static decimal Overload(IEnumerable<CapacityDto> days) => days.Sum(d => Math.Max(0m, d.AllocatedHours - d.AvailableHours));
 
     /// <summary>Строки ёмкости по людям и дням диапазона: доступные часы и распределённая на них работа.</summary>
-    public static CapacityDto[] Build(IEnumerable<(Guid Id, string Name)> people, Func<Guid, CalendarDto> calendarOf, IEnumerable<CapacityWork> work, DateOnly from, DateOnly to)
+    public static CapacityDto[] Build(IEnumerable<(Guid Id, string Name)> people, Func<Guid, CalendarDto> calendarOf, IEnumerable<CapacityWork> work, DateOnly from, DateOnly to) =>
+        Build(people, (id, _) => calendarOf(id), work, from, to);
+
+    /// <summary>Builds capacity with the calendar that applies to each person on each exact day.</summary>
+    public static CapacityDto[] Build(IEnumerable<(Guid Id, string Name)> people, Func<Guid, DateOnly, CalendarDto> calendarOf, IEnumerable<CapacityWork> work, DateOnly from, DateOnly to)
     {
         var persons = people.ToArray();
-        var calendars = persons.ToDictionary(x => x.Id, x => calendarOf(x.Id));
         var allocated = new Dictionary<(Guid, DateOnly), decimal>();
         foreach (var item in work)
         {
-            if (!calendars.TryGetValue(item.PersonId, out var calendar) || Window(item.Start, item.End, item.Deadline) is not { } window) continue;
-            foreach (var (day, hours) in Spread(calendar, item.EstimateHours, window.Start, window.End, item.DailyHoursLimit))
+            if (Window(item.Start, item.End, item.Deadline) is not { } window) continue;
+            foreach (var (day, hours) in Spread(day => calendarOf(item.PersonId, day), item.EstimateHours, window.Start, window.End, item.DailyHoursLimit))
                 if (day >= from && day <= to) allocated[(item.PersonId, day)] = allocated.GetValueOrDefault((item.PersonId, day)) + hours;
         }
         var rows = new List<CapacityDto>();
         foreach (var (id, name) in persons)
             for (var day = from; day <= to; day = day.AddDays(1))
-                rows.Add(new CapacityDto(id, name, day, Available(calendars[id], day), Math.Round(allocated.GetValueOrDefault((id, day)), 2)));
+                rows.Add(new CapacityDto(id, name, day, Available(day => calendarOf(id, day), day), Math.Round(allocated.GetValueOrDefault((id, day)), 2)));
         return [.. rows];
     }
 }

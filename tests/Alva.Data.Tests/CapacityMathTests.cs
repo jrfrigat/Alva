@@ -26,6 +26,17 @@ public sealed class CapacityMathTests
     }
 
     [Fact]
+    public void Build_uses_the_calendar_active_on_each_day()
+    {
+        var active = Week();
+        var off = Week() with { Monday = 0m };
+        var rows = CapacityMath.Build([(Person, "Анна")], (_, day) => day < Monday ? active : off, [], Friday, Monday);
+
+        Assert.Equal(6m, rows.Single(x => x.Date == Friday).AvailableHours);
+        Assert.Equal(0m, rows.Single(x => x.Date == Monday).AvailableHours);
+    }
+
+    [Fact]
     public void Sunday_block_uses_dotnet_numbering()
     {
         var calendar = Week(blocks: [new(Guid.NewGuid(), (int)DayOfWeek.Sunday, 2m, "Дежурство")], sunday: 5m);

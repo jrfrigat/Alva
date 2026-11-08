@@ -68,7 +68,8 @@ public static class BalanceEndpoints
         var (people, calendarOf) = await PlanningEndpoints.PeopleCalendars(db, teamId);
         var ids = people.Select(x => x.Id).ToArray();
         var actorSkills = (await db.ActorSkills.AsNoTracking().Where(x => ids.Contains(x.ActorId)).ToListAsync()).ToLookup(x => x.ActorId, x => x.SkillId);
-        var departments = (await db.ActorDepartments.AsNoTracking().Where(x => ids.Contains(x.ActorId)).ToListAsync()).ToLookup(x => x.ActorId, x => x.DepartmentId);
+        var departments = (await db.ActorDepartments.AsNoTracking().Where(x => ids.Contains(x.ActorId)).ToListAsync())
+            .Where(x => x.ActiveOn(sprint.StartDate)).ToLookup(x => x.ActorId, x => x.DepartmentId);
         var persons = people.Select(x => new BalancePersonInput(x.Id, x.Name, [.. departments[x.Id]], [.. actorSkills[x.Id]])).ToArray();
 
         // Все неархивные задачи: готовые и «в работе» с датами нужны как якоря связей, даже когда не двигаются.
@@ -85,6 +86,7 @@ public static class BalanceEndpoints
         }).ToArray();
         var links = await db.Dependencies.AsNoTracking().Where(x => taskIds.Contains(x.SuccessorId))
             .Select(x => new BalanceLinkInput(x.PredecessorId, x.SuccessorId, x.Kind.ToString(), x.LagDays)).ToListAsync();
-        return BalanceMath.Build(mode ?? BalanceModes.Gentle, sprint.Id, sprint.StartDate, sprint.EndDate, persons, calendarOf, inputs, links);
+        // Auto-balance uses the membership on the sprint start; periods inside the sprint are a later refinement.
+        return BalanceMath.Build(mode ?? BalanceModes.Gentle, sprint.Id, sprint.StartDate, sprint.EndDate, persons, id => calendarOf(id, sprint.StartDate), inputs, links);
     }
 }
