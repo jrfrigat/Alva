@@ -30,8 +30,9 @@ dotnet run --project src/Alva.Client.Demo --urls http://localhost:5200
 - **Data** goes through `IApiService`/`AlvaSession` only; a page never knows about the transport.
 - **Components** come from Flare; the project's own CSS and JS stay minimal.
 - **Nullable** is enabled; an unknown Razor component is a build error (`RZ10012`).
-- **Strings** are read through `Strings.T("...")`, with resources in `AppStrings.resx` (English) and
-  `AppStrings.ru.resx` (Russian). The key is the Russian source text.
+- **Strings** are read through the generated `AlvaStrings` properties, with resources in
+  `AppStrings.resx` (English) and `AppStrings.ru.resx` (Russian). `Strings.T("...")` is only for the
+  dynamic `plural.*` and `reason.*` keys.
 - **Comments** explain "why", not what the code already says.
 
 ## Adding a page

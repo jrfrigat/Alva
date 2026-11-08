@@ -1,8 +1,8 @@
 # Alva
 
-Resource planning for teams: a task tree, sprints, people and roles, capacity, risks and a
-two-dimensional Gantt. The web client is a Blazor WebAssembly PWA; the host serves it together with
-the API. Built on .NET 10 and Flare.
+Resource planning for teams: a task tree, sprints, people and sub-teams, a shared skill dictionary,
+capacity, risks and a two-dimensional Gantt. The web client is a Blazor WebAssembly PWA; the host
+serves it together with the API. Built on .NET 10 and Flare.
 
 This image is the whole application. It needs a PostgreSQL database that you provide; it does not
 bundle one.
@@ -31,8 +31,9 @@ Persist the Data Protection keys (cookies) on a volume. Set a stable
 
 ## Compose
 
-The repository ships `docker-compose.yml` with PostgreSQL and an optional Caddy HTTPS profile. Locally the
-prepare .env and a local docker-compose.override.yml, then run `run-docker-compose.bat`; `publish-docker.bat` tags and pushes the built image.
+The repository ships `docker-compose.yml` with PostgreSQL and an optional Caddy HTTPS profile. Locally,
+prepare `.env` and a local `docker-compose.override.yml`, then run `run-docker-compose.bat`;
+`publish-docker.bat` tags and pushes the built image.
 
 ## Links
 

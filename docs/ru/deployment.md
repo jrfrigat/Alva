@@ -50,7 +50,7 @@ BAT содержит одну команду `docker compose up -d --build --for
 Он не создаёт .env или override. Для ожидания готовности после запуска:
 `docker compose up -d --wait app`.
 Имя проекта alva и volumes postgres-data/protection-keys сохранены при переходе
-с compose.yaml; не меняйте имя проекта при обновлении существующего стека.
+с прежнего `compose.yaml`; не меняйте имя проекта при обновлении существующего стека.
 `docker compose down` сохраняет volumes; `down -v` удаляет данные.
 
 ## Локальный доступ без NPM

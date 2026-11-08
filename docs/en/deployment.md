@@ -50,7 +50,7 @@ The BAT contains one command: `docker compose up -d --build --force-recreate`.
 It does not create .env or the override. To wait for readiness after starting:
 `docker compose up -d --wait app`.
 The project name alva and volumes postgres-data/protection-keys are preserved when migrating
-from compose.yaml; keep the project name when upgrading an existing stack.
+from the old `compose.yaml`; keep the project name when upgrading an existing stack.
 `docker compose down` keeps volumes; `down -v` deletes the data.
 
 ## Local access without NPM

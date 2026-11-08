@@ -13,19 +13,21 @@
 distribute the workload across people as well as possible — without busywork — highlight the risks of
 slipping deadlines and show at once why the team is falling behind.
 
-Core pieces: flexible task assignment (people, sub-teams and roles), a two-dimensional Gantt (by task and
-by assignee), capacity and risk analysis, sprint auto-balancing and a full directory of participants.
+Core pieces: flexible task assignment (people and sub-teams), a shared skill dictionary, a two-dimensional
+Gantt (by task and by assignee), capacity and risk analysis, sprint auto-balancing and a full directory of
+participants.
 
 **Demo:** <https://jrfrigat.github.io/Alva/> — runs entirely in the browser, no server required.
 
 ## Features
 
 - **Planning** — projects (M:N with teams), sprints, an unlimited task tree, change history, FS/SS/FF/SF
-  dependencies, assignment to a person, a sub-team or a role.
+  dependencies, assignment to a person or a sub-team; required skills are matched against the team's
+  skill dictionary.
 - **Gantt** — full-width axis, lanes, rollup, critical path, links, drag and drop, zoom and virtualization;
   one component behind three pages.
 - **Capacity** — work schedules with exceptions and recurring blocks, spreading an estimate over available
-  hours, unmet demand by role and sub-team.
+  hours, unmet demand by skill and sub-team.
 - **Risk** — no assignee, overdue, forecast past the due date, overload, unfinished dependency; a summary,
   filters and reason chips, plus a notification bell.
 - **Auto-balance** — assignment and date optimization (OR-Tools) in several modes, with the proposal shown
@@ -87,6 +89,7 @@ Full configuration is in [Configuration](docs/en/configuration.md).
 | `Alva.Api` | Minimal API, authentication, permissions, serves the WASM client |
 | `Alva.Client.UI` | Shared interface library and `IApiService` |
 | `Alva.Client`, `Alva.Client.Demo` | Production and demo shells |
+| `Alva.Integrations.Abstractions`, `Alva.Integrations.YandexTracker` | External task-source contracts and the Yandex Tracker integration |
 | `Alva.Theme.Alva` | Alva theme; Gantt comes from the Flare.Components.Gantt package |
 
 ## Documentation

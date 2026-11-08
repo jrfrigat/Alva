@@ -28,6 +28,8 @@ Browser (Blazor WASM)                 Server (ASP.NET Core)
 | `Alva.Client.UI` | Interface library: pages, layout, models, `IApiService`, `AlvaSession` |
 | `Alva.Client` | Production shell: an `IApiService` implementation over HTTP |
 | `Alva.Client.Demo` | Demo shell: an `IApiService` implementation on `localStorage` |
+| `Alva.Integrations.Abstractions` | Contracts for external task sources |
+| `Alva.Integrations.YandexTracker` | Yandex Tracker task-source integration |
 | `Alva.Theme.Alva` | The Alva Stitch theme derived from Material 3 Expressive |
 | `Flare.Components.Gantt` | External Flare NuGet package used by Alva.Client.UI |
 
@@ -44,9 +46,10 @@ and the task-list context.
 ## Localization
 
 Interface strings live in `Alva.Client.UI/Resources/AppStrings.resx` (neutral, English) and
-`AppStrings.ru.resx` (Russian). Components and classes read them through `Strings.T(key)`, a facade over the
-same resources as the `IStringLocalizer` registered in the shells; a missing key returns the key itself, so
-the interface never breaks. `CultureService` picks the language (`localStorage` → browser → English).
+`AppStrings.ru.resx` (Russian). Components and classes use the generated `AlvaStrings` properties: the
+compiler checks them and the resx files list them. `Strings.T(key)` remains only for keys assembled at run
+time (`plural.*` and `reason.*`); a missing key returns the key itself, so the interface never breaks.
+`CultureService` picks the language (`localStorage` → browser → English).
 
 ## Server side
 

@@ -28,6 +28,8 @@ Alva — PWA на Blazor WebAssembly с серверной частью на ASP
 | `Alva.Client.UI` | Библиотека интерфейса: страницы, макет, модели, `IApiService`, `AlvaSession` |
 | `Alva.Client` | Прод-оболочка: реализация `IApiService` поверх HTTP |
 | `Alva.Client.Demo` | Демо-оболочка: реализация `IApiService` на `localStorage` |
+| `Alva.Integrations.Abstractions` | Контракты внешних источников задач |
+| `Alva.Integrations.YandexTracker` | Интеграция с Яндекс Трекером как источником задач |
 | `Alva.Theme.Alva` | Тема Alva Stitch на базе Material 3 Expressive |
 | `Flare.Components.Gantt` | Внешний NuGet-пакет Flare, используемый Alva.Client.UI |
 
@@ -43,10 +45,12 @@ Alva — PWA на Blazor WebAssembly с серверной частью на ASP
 
 ## Локализация
 
-Ресурсы Alva.Client.UI/Resources/AppStrings.resx (English) и AppStrings.ru.resx
-(Русский) читаются через Strings.T(key) и IStringLocalizer. Отсутствующий ключ
-возвращается как есть. CultureService выбирает язык: localStorage, затем язык
-браузера, затем English. Переключатель EN/RU сохраняет выбор на устройстве.
+Строки интерфейса лежат в `Alva.Client.UI/Resources/AppStrings.resx` (нейтральный, английский) и
+`AppStrings.ru.resx` (русский). Компоненты и классы используют сгенерированные свойства
+`AlvaStrings`: их проверяет компилятор, а ключи перечислены в resx. `Strings.T(key)` остаётся
+только для ключей, собираемых во время выполнения (`plural.*` и `reason.*`); отсутствующий
+ключ возвращается как есть, поэтому интерфейс не ломается. `CultureService` выбирает язык:
+`localStorage` → браузер → английский. Переключатель EN/RU сохраняет выбор на устройстве.
 
 ## Серверная часть
 
