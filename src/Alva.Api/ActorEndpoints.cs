@@ -51,11 +51,10 @@ public static class ActorEndpoints
         if (kind != ActorKind.Person && memberships.Count > 0) throw new ApiException(400, "Членство в подкомандах задаётся для людей.");
         if (kind == ActorKind.Skill && (request.ParentId.HasValue || memberships.Count > 0 || skillIds.Length > 0)) throw new ApiException(400, "У навыка не может быть родительского отдела или других навыков.");
         if (memberships.Any(d => d.To is { } to && to < d.From)) throw new ApiException(400, "Окончание периода раньше начала.");
-        foreach (var period in memberships.OrderBy(d => d.From))
-        {
-            var next = memberships.OrderBy(d => d.From).SkipWhile(d => d != period).Skip(1).FirstOrDefault();
-            if (next is not null && (period.To is null || next.From <= period.To.Value)) throw new ApiException(400, "Периоды членства в подкомандах не могут пересекаться.");
-        }
+        var ordered = memberships.OrderBy(d => d.From).ToArray();
+        for (var i = 1; i < ordered.Length; i++)
+            if (ordered[i - 1].To is null || ordered[i].From <= ordered[i - 1].To!.Value)
+                throw new ApiException(400, "Периоды членства в подкомандах не могут пересекаться.");
         if (request.ParentId is { } parentId)
         {
             var parent = actors.SingleOrDefault(a => a.Id == parentId && a.Kind == ActorKind.Department) ?? throw new ApiException(400, "Родитель должен быть отделом этой команды.");
