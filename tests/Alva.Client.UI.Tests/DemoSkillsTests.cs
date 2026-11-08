@@ -28,18 +28,21 @@ public sealed class DemoSkillsTests
         var storage=new Storage();
         var api=new ApiServiceLocalStorage(storage);
         await api.Initialize();
-        await api.Send(HttpMethod.Post,api.TeamPath("actors"),new ActorRequest("Skills person","Person",Skills:[" SQL ","sql"]));
+        var backend = (await api.Get<ActorModel[]>(api.TeamPath("actors"))).Single(x => x.Name == "Backend" && x.Kind == "Skill");
+        await api.Send(HttpMethod.Post, api.TeamPath("actors"), new ActorRequest("SQL", "Skill"));
+        var sql = (await api.Get<ActorModel[]>(api.TeamPath("actors"))).Single(x => x.Name == "SQL" && x.Kind == "Skill");
+        await api.Send(HttpMethod.Post,api.TeamPath("actors"),new ActorRequest("Skills person","Person",SkillIds:[backend.Id]));
         var actor=(await api.Get<ActorModel[]>(api.TeamPath("actors"))).Single(x=>x.Name=="Skills person");
-        var task=await api.Save<TaskModel>(HttpMethod.Post,api.TeamPath("tasks"),new TaskRequest("Skills task",RequiredSkills:["C#"]));
+        var task=await api.Save<TaskModel>(HttpMethod.Post,api.TeamPath("tasks"),new TaskRequest("Skills task",RequiredSkillIds:[sql.Id]));
         await api.Send(HttpMethod.Put,api.TeamPath($"tasks/{task.Id}/assignment"),new AssignmentRequest(actor.Id));
         await api.Save<TaskModel>(HttpMethod.Put,api.TeamPath($"tasks/{task.Id}"),new TaskRequest("Updated"));
         var reloaded=new ApiServiceLocalStorage(storage);
         await reloaded.Initialize();
-        Assert.Equal(["SQL"],(await reloaded.Get<ActorModel[]>(reloaded.TeamPath("actors"))).Single(x=>x.Id==actor.Id).Skills);
+        Assert.Equal([backend.Id],(await reloaded.Get<ActorModel[]>(reloaded.TeamPath("actors"))).Single(x=>x.Id==actor.Id).SkillIds);
         var saved=(await reloaded.Get<TaskModel[]>(reloaded.TeamPath("tasks"))).Single(x=>x.Id==task.Id);
-        Assert.Equal(["C#"],saved.RequiredSkills);
+        Assert.Equal([sql.Id], saved.RequiredSkillIds);
         Assert.Equal(actor.Id,saved.AssignmentTargetId);
-        Assert.False(SkillMath.Compatible(saved.RequiredSkills,actor.Skills));
+        Assert.False(SkillMath.Compatible(saved.RequiredSkillIds,actor.SkillIds));
     }
 
     private sealed class Storage : IJSRuntime

@@ -462,6 +462,7 @@
     private string ActorName(Guid? id) => Actors.FirstOrDefault(x => x.Id == id)?.Name ?? AlvaStrings.Common_UnassignedTask;
     private string SkillName(Guid id) => Actors.FirstOrDefault(x => x.Id == id)?.Name ?? "";
     private IEnumerable<ActorModel> SkillActors => Actors.Where(a => a.Kind == "Skill");
+    private string[] SkillNames(ActorModel actor) => actor.SkillIds.Select(id => Actors.FirstOrDefault(a => a.Id == id)?.Name).OfType<string>().ToArray();
 
     private static string KindLabel(string kind) => kind switch
     {
@@ -551,7 +552,7 @@
                                     @if (actor.Id == recommended) { <AlvaStatusChip Tone="AlvaTone.Ok">@(AlvaStrings.Task_Recommended)</AlvaStatusChip> }
                                 </FlareStack>
                                 <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@CandidateMeta(actor)</FlareText>
-                                @if (actor.Kind == "Person" && actor.Skills.Length > 0) { <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@(AlvaStrings.Task_Skills): @string.Join(", ", actor.Skills)</FlareText> }
+                                @if (actor.Kind == "Person" && SkillNames(actor) is { Length: > 0 } actorSkills) { <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@(AlvaStrings.Task_Skills): @string.Join(", ", actorSkills)</FlareText> }
                                 <SkillMatch Required="_model.RequiredSkillIds" Person="actor" Skills="SkillActors" />
                                 @if (percent is not null)
                                 {

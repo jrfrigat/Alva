@@ -40,10 +40,10 @@ else
                             <FlareStack Gap="FlareSpacing.None">
                                 <FlareText Typo="TypographyScale.LabelMedium">@actor.Name</FlareText>
                                 @if (Kind == "Person" && !string.IsNullOrWhiteSpace(actor.Email)) { <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@actor.Email</FlareText> }
-                                @if (Kind == "Person" && actor.Skills.Length > 0)
+                                @if (Kind == "Person" && SkillNames(actor) is { Length: > 0 } skills)
                                 {
                                     <FlareStack Row Wrap Gap="FlareSpacing.XSmall">
-                                        @foreach (var skill in actor.Skills) { <FlareChip Variant="ChipVariant.Filled" Color="FlareColor.Secondary" Size="ChipSize.Xs">@skill</FlareChip> }
+                                        @foreach (var skill in skills) { <FlareChip Variant="ChipVariant.Filled" Color="FlareColor.Secondary" Size="ChipSize.Xs">@skill</FlareChip> }
                                     </FlareStack>
                                 }
                                 @if (Kind != "Skill") { <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@ActorName(actor.ParentId)</FlareText> }
@@ -129,7 +129,8 @@ else
     }
 
     public void Dispose() => _draft?.Dispose();
-    private void EditActor(ActorModel model){_saved=false;Close();_actor=new ActorModel{Id=model.Id,Name=model.Name,Kind=model.Kind,Email=model.Email,ParentId=model.ParentId,SkillIds=[..model.SkillIds],DepartmentIds=[..model.DepartmentIds],UserId=model.UserId,Skills=[..model.Skills]};_actorSnapshot=DraftSnapshot.Of(_actor);}
+    private void EditActor(ActorModel model){_saved=false;Close();_actor=new ActorModel{Id=model.Id,Name=model.Name,Kind=model.Kind,Email=model.Email,ParentId=model.ParentId,SkillIds=[..model.SkillIds],DepartmentIds=[..model.DepartmentIds],UserId=model.UserId};_actorSnapshot=DraftSnapshot.Of(_actor);}
+    private string[] SkillNames(ActorModel actor) => actor.SkillIds.Select(id => _actors.FirstOrDefault(a => a.Id == id)?.Name).OfType<string>().ToArray();
     private void ToggleDepartment(Guid id,bool value)=>_actor!.DepartmentIds=value?_actor.DepartmentIds.Append(id).Distinct().ToArray():_actor.DepartmentIds.Where(x=>x!=id).ToArray();
     private string ActorName(Guid? id)=>_actors.FirstOrDefault(a=>a.Id==id)?.Name??AlvaStrings.People_NoSubTeam;
     private async Task SaveActor()

@@ -409,11 +409,10 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
     private static void AddActor(DemoStore store, Guid teamId, object value)
     {
         var request = Read<ActorRequest>(value);
-        var skills = ActorSkills(request);
         var actor = new ActorModel
         {
             Id = Guid.NewGuid(), TeamId = teamId, Name = request.Name, Kind = request.Kind, Email = request.Email,
-            ParentId = request.ParentId, UserId = request.UserId, RoleIds = request.RoleIds ?? [], DepartmentIds = request.DepartmentIds ?? [], Skills = skills
+            ParentId = request.ParentId, UserId = request.UserId, SkillIds = request.SkillIds ?? [], DepartmentIds = request.DepartmentIds ?? []
         };
         store.Actors.Add(actor);
         if (actor.Kind == "Person") store.Calendars.Add(new CalendarDto(actor.Id, "Europe/Moscow", 8m, 8m, 8m, 8m, 8m, 0m, 0m, [], []));
@@ -422,24 +421,14 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
     private static void UpdateActor(DemoStore store, Guid id, object value)
     {
         var request = Read<ActorRequest>(value);
-        var skills = ActorSkills(request);
         var actor = store.Actors.FirstOrDefault(a => a.Id == id) ?? throw new InvalidOperationException("Участник не найден.");
         actor.Name = request.Name;
         actor.Kind = request.Kind;
         actor.Email = request.Email;
         actor.ParentId = request.ParentId;
         actor.UserId = request.UserId;
-        actor.RoleIds = request.RoleIds ?? [];
+        actor.SkillIds = request.SkillIds ?? [];
         actor.DepartmentIds = request.DepartmentIds ?? [];
-        if (request.Skills is not null) actor.Skills = skills;
-        if (actor.Kind != "Person") actor.Skills = [];
-    }
-
-    private static string[] ActorSkills(ActorRequest request)
-    {
-        if (request.Kind != "Person" && request.Skills is { Length: > 0 }) throw new InvalidOperationException("Навыки задаются только для человека.");
-        try { return SkillMath.Normalize(request.Skills); }
-        catch (ArgumentException) { throw new InvalidOperationException("Укажите не более 50 навыков длиной до 80 символов."); }
     }
 
     /// <summary>Родитель охватывает детей — то же правило, что в API; версия предков не меняется.</summary>
@@ -513,9 +502,7 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
         var request = Read<TaskRequest>(value);
         if (request.SetRemainingHours && request.RemainingHours is < 0 or > 100000) throw new InvalidOperationException("Остаток должен быть от 0 до 100000 часов.");
         if (request.SetDailyHoursLimit && request.DailyHoursLimit is <= 0 or > 24) throw new InvalidOperationException("Лимит в день должен быть больше 0 и не больше 24 часов.");
-        string[] skills;
-        try { skills = SkillMath.Normalize(request.RequiredSkills); }
-        catch (ArgumentException) { throw new InvalidOperationException("Укажите не более 50 навыков длиной до 80 символов."); }
+        var requiredSkillIds = SkillMath.Normalize(request.RequiredSkillIds ?? []);
         var datesFixed = request.DatesFixed ?? false;
         if (datesFixed && (request.StartDate is null || request.EndDate is null))
             throw new InvalidOperationException("У задачи с фиксированными датами должны быть заданы начало и окончание.");
@@ -526,7 +513,7 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
                 Id = Guid.NewGuid(), TeamId = teamId, ProjectId = request.ProjectId, ParentId = request.ParentId,
                 Title = request.Title, Description = request.Description, Status = request.Status, EstimateHours = request.EstimateHours,
                 RemainingHours = request.SetRemainingHours ? request.RemainingHours : null,
-                Deadline = request.Deadline, StartDate = request.StartDate, EndDate = request.EndDate, Order = request.Order, Version = 1, RequiredSkills = skills, Priority = request.Priority ?? "Normal",
+                Deadline = request.Deadline, StartDate = request.StartDate, EndDate = request.EndDate, Order = request.Order, Version = 1, RequiredSkillIds = requiredSkillIds, Priority = request.Priority ?? "Normal",
                 DatesFixed = datesFixed, DailyHoursLimit = request.SetDailyHoursLimit ? request.DailyHoursLimit : null
             };
             ValidateTaskDates(store, created, request, datesFixed);
@@ -559,7 +546,7 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
         task.Order = request.Order;
         task.DatesFixed = datesFixed;
         if (request.Priority is { } priority) task.Priority = priority;
-        if (request.RequiredSkills is not null) task.RequiredSkills = skills;
+        if (request.RequiredSkillIds is not null) task.RequiredSkillIds = requiredSkillIds;
         task.Version++;
         AddHistory(store, task.Id, $"Изменена (статус {Labels.Status(task.Status)})");
         if (wasFixed != task.DatesFixed) AddHistory(store, task.Id, task.DatesFixed ? "Даты зафиксированы" : "Фиксация дат снята");
@@ -896,11 +883,11 @@ internal static class DemoSeed
             Actors =
             [
                 new ActorModel { Id = DemoIds.Department, Name = "Разработка", Kind = "Department" },
-                new ActorModel { Id = DemoIds.BackendRole, Name = "Backend", Kind = "Role", DepartmentIds = [DemoIds.Department] },
-                new ActorModel { Id = DemoIds.FrontendRole, Name = "Frontend", Kind = "Role", DepartmentIds = [DemoIds.Department] },
-                new ActorModel { Id = DemoIds.Anna, Name = "Анна Ковалёва", Kind = "Person", Email = "anna@alva.local", UserId = DemoIds.User, ParentId = DemoIds.Department, RoleIds = [DemoIds.BackendRole], DepartmentIds = [DemoIds.Department] },
-                new ActorModel { Id = DemoIds.Petr, Name = "Пётр Смирнов", Kind = "Person", Email = "petr@alva.local", ParentId = DemoIds.Department, RoleIds = [DemoIds.FrontendRole], DepartmentIds = [DemoIds.Department] },
-                new ActorModel { Id = DemoIds.Olga, Name = "Ольга Демидова", Kind = "Person", Email = "olga@alva.local", ParentId = DemoIds.Department, RoleIds = [DemoIds.BackendRole], DepartmentIds = [DemoIds.Department] }
+                new ActorModel { Id = DemoIds.BackendRole, Name = "Backend", Kind = "Skill" },
+                new ActorModel { Id = DemoIds.FrontendRole, Name = "Frontend", Kind = "Skill" },
+                new ActorModel { Id = DemoIds.Anna, Name = "Анна Ковалёва", Kind = "Person", Email = "anna@alva.local", UserId = DemoIds.User, ParentId = DemoIds.Department, SkillIds = [DemoIds.BackendRole], DepartmentIds = [DemoIds.Department] },
+                new ActorModel { Id = DemoIds.Petr, Name = "Пётр Смирнов", Kind = "Person", Email = "petr@alva.local", ParentId = DemoIds.Department, SkillIds = [DemoIds.FrontendRole], DepartmentIds = [DemoIds.Department] },
+                new ActorModel { Id = DemoIds.Olga, Name = "Ольга Демидова", Kind = "Person", Email = "olga@alva.local", ParentId = DemoIds.Department, SkillIds = [DemoIds.BackendRole], DepartmentIds = [DemoIds.Department] }
             ],
             Calendars =
             [
@@ -918,9 +905,9 @@ internal static class DemoSeed
             Tasks =
             [
                 new TaskModel { Id = DemoIds.ParentTask, TeamId = DemoIds.Team, ProjectId = DemoIds.Project, Title = "Планирование ресурсов", Description = "Иерархия работ и сроки", Status = "InProgress", StartDate = today.AddDays(-7), EndDate = today.AddDays(6), Deadline = today.AddDays(8), Order = 1, Version = 1 },
-                new TaskModel { Id = DemoIds.ApiTask, TeamId = DemoIds.Team, ProjectId = DemoIds.Project, ParentId = DemoIds.ParentTask, Title = "API планирования", Description = "Проекты, задачи, спринты", Status = "InProgress", EstimateHours = 16m, StartDate = today.AddDays(-7), EndDate = today.AddDays(1), Deadline = today.AddDays(3), Order = 1, AssignmentTargetId = DemoIds.BackendRole, ResolvedPersonId = DemoIds.Anna, Version = 1 },
-                new TaskModel { Id = DemoIds.UiTask, TeamId = DemoIds.Team, ProjectId = DemoIds.MobileProject, ParentId = DemoIds.ParentTask, Title = "Экраны планирования", Description = "Задачи и спринты на планшете", Status = "Planned", EstimateHours = 10m, StartDate = today.AddDays(-2), EndDate = today.AddDays(4), Deadline = today.AddDays(6), Order = 2, AssignmentTargetId = DemoIds.FrontendRole, ResolvedPersonId = DemoIds.Petr, Version = 1 },
-                new TaskModel { Id = DemoIds.LateTask, TeamId = DemoIds.Team, ProjectId = DemoIds.Project, Title = "Отчёт по загрузке", Description = "Риск: срок уже прошёл", Status = "InProgress", EstimateHours = 8m, StartDate = today.AddDays(-5), EndDate = today.AddDays(3), Deadline = today.AddDays(-2), Order = 3, AssignmentTargetId = DemoIds.BackendRole, ResolvedPersonId = DemoIds.Olga, Version = 1 }
+                new TaskModel { Id = DemoIds.ApiTask, TeamId = DemoIds.Team, ProjectId = DemoIds.Project, ParentId = DemoIds.ParentTask, Title = "API планирования", Description = "Проекты, задачи, спринты", Status = "InProgress", EstimateHours = 16m, StartDate = today.AddDays(-7), EndDate = today.AddDays(1), Deadline = today.AddDays(3), Order = 1, AssignmentTargetId = DemoIds.Department, ResolvedPersonId = DemoIds.Anna, RequiredSkillIds = [DemoIds.BackendRole], Version = 1 },
+                new TaskModel { Id = DemoIds.UiTask, TeamId = DemoIds.Team, ProjectId = DemoIds.MobileProject, ParentId = DemoIds.ParentTask, Title = "Экраны планирования", Description = "Задачи и спринты на планшете", Status = "Planned", EstimateHours = 10m, StartDate = today.AddDays(-2), EndDate = today.AddDays(4), Deadline = today.AddDays(6), Order = 2, AssignmentTargetId = DemoIds.Department, ResolvedPersonId = DemoIds.Petr, RequiredSkillIds = [DemoIds.FrontendRole], Version = 1 },
+                new TaskModel { Id = DemoIds.LateTask, TeamId = DemoIds.Team, ProjectId = DemoIds.Project, Title = "Отчёт по загрузке", Description = "Риск: срок уже прошёл", Status = "InProgress", EstimateHours = 8m, StartDate = today.AddDays(-5), EndDate = today.AddDays(3), Deadline = today.AddDays(-2), Order = 3, AssignmentTargetId = DemoIds.Department, ResolvedPersonId = DemoIds.Olga, RequiredSkillIds = [DemoIds.BackendRole], Version = 1 }
             ],
             History =
             {

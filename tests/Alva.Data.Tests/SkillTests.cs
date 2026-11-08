@@ -84,7 +84,6 @@ public sealed class SkillTests
         Assert.Throws<ArgumentException>(() => SkillMath.Normalize([new string('a', 81)]));
         Assert.Throws<ArgumentException>(() => SkillMath.Normalize(Enumerable.Range(0, 51).Select(i => i.ToString())));
         var request = JsonSerializer.Deserialize<TaskRequest>("{\"title\":\"Old client\"}", new JsonSerializerOptions(JsonSerializerDefaults.Web))!;
-        Assert.Null(request.RequiredSkills);
         Assert.Null(request.RequiredSkillIds);
     }
 

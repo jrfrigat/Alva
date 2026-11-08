@@ -111,4 +111,30 @@ public sealed class DataTransferTests
         }
         Assert.Throws<FormatException>(() => DataTransfer.Decode(buffer.ToArray(), "xlsx"));
     }
+
+    [Fact]
+    public void Upgrade_reads_version_one_skills_and_roles_once()
+    {
+        var team = Guid.NewGuid();
+        var role = Guid.NewGuid();
+        var person = Guid.NewGuid();
+        var task = Guid.NewGuid();
+        DataRow Row(string kind, Guid id, string json) => new(kind, id, JsonDocument.Parse(json).RootElement.Clone());
+        var package = new DataPackage(1, team,
+        [
+            Row("actor", role, $$"""{"id":"{{role}}","teamId":"{{team}}","name":"Backend","kind":"Skill","archived":false}"""),
+            Row("actor", person, $$"""{"id":"{{person}}","teamId":"{{team}}","name":"Anna","kind":"Person","archived":false,"skills":[" Backend ","SQL"]}"""),
+            Row("task", task, $$"""{"id":"{{task}}","teamId":"{{team}}","title":"T","order":0,"version":1,"archived":false,"requiredSkills":["sql"]}"""),
+            Row("actorRole", Guid.NewGuid(), $$"""{"actorId":"{{person}}","roleId":"{{role}}"}""")
+        ]);
+
+        var upgraded = DataTransfer.Upgrade(package);
+
+        Assert.Equal(2, upgraded.Version);
+        Assert.DoesNotContain(upgraded.Rows, row => row.Payload.TryGetProperty("skills", out _) || row.Payload.TryGetProperty("requiredSkills", out _));
+        var sql = Assert.Single(upgraded.Rows, row => row.Kind == "actor" && row.Payload.GetProperty("name").GetString() == "SQL");
+        Assert.Equal(2, upgraded.Rows.Count(row => row.Kind == "actorSkill"));
+        Assert.Equal(1, upgraded.Rows.Count(row => row.Kind == "taskSkill"));
+        Assert.Contains(upgraded.Rows, row => row.Kind == "taskSkill" && row.Payload.GetProperty("skillId").GetGuid() == sql.Id);
+    }
 }

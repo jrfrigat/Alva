@@ -7,6 +7,7 @@ using System.IO.Compression;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using System.Xml;
 using System.Xml.Linq;
@@ -37,6 +38,8 @@ public static class DataEndpoints
             Add("dependency", await db.Dependencies.AsNoTracking().Where(x => taskIds.Contains(x.PredecessorId) || taskIds.Contains(x.SuccessorId)).ToArrayAsync(ct));
             foreach (var skill in await db.ActorSkills.AsNoTracking().Where(x => actorIds.Contains(x.ActorId) || actorIds.Contains(x.SkillId)).ToArrayAsync(ct))
                 rows.Add(new("actorSkill", Guid.NewGuid(), JsonSerializer.SerializeToElement(skill, DataTransfer.Json)));
+            foreach (var skill in await db.TaskSkills.AsNoTracking().Where(x => taskIds.Contains(x.TaskId)).ToArrayAsync(ct))
+                rows.Add(new("taskSkill", Guid.NewGuid(), JsonSerializer.SerializeToElement(skill, DataTransfer.Json)));
             foreach (var department in await db.ActorDepartments.AsNoTracking().Where(x => actorIds.Contains(x.ActorId) || actorIds.Contains(x.DepartmentId)).ToArrayAsync(ct))
                 rows.Add(new("actorDepartment", Guid.NewGuid(), JsonSerializer.SerializeToElement(department, DataTransfer.Json)));
             var calendars = await db.Calendars.AsNoTracking().Where(x => actorIds.Contains(x.ActorId)).ToArrayAsync(ct);
@@ -44,7 +47,7 @@ public static class DataEndpoints
             var calendarIds = calendars.Select(x => x.Id).ToArray();
             Add("exception", await db.CalendarExceptions.AsNoTracking().Where(x => calendarIds.Contains(x.CalendarId)).ToArrayAsync(ct));
             Add("block", await db.RecurringBlocks.AsNoTracking().Where(x => calendarIds.Contains(x.CalendarId)).ToArrayAsync(ct));
-            var package = new DataPackage(1, teamId, rows.ToArray());
+            var package = new DataPackage(2, teamId, rows.ToArray());
             var errors = DataTransfer.Validate(package);
             if (errors.Count != 0) return Results.Conflict(new { message = "Данные команды содержат непереносимые связи. Исправьте их перед экспортом.", errors });
             await snapshot.CommitAsync(ct);
@@ -70,6 +73,7 @@ public static class DataEndpoints
             try { package = DataTransfer.Decode(body.ToArray(), DataTransfer.Format(format)); }
             catch (Exception ex) when (ex is JsonException or FormatException or InvalidDataException or XmlException or ArgumentException)
             { return Results.BadRequest(new { errors = new[] { new DataIssue(0, "file", "Некорректный формат: " + ex.Message) } }); }
+            package = DataTransfer.Upgrade(package);
             var errors = DataTransfer.Validate(package);
             if (errors.Count > 0) return Results.BadRequest(new { errors });
             await using var transaction = await db.Database.BeginTransactionAsync(ct);
@@ -97,6 +101,7 @@ public static class DataEndpoints
                         x.TeamId = teamId; x.ProjectId = Optional(x.ProjectId); x.ParentId = Optional(x.ParentId); x.Version = 1; db.Tasks.Add(x); break;
                     case Actor x: x.TeamId = teamId; x.ParentId = Optional(x.ParentId); x.UserId = null; db.Actors.Add(x); break;
                     case ActorSkill x: x.ActorId = Map(x.ActorId); x.SkillId = Map(x.SkillId); db.ActorSkills.Add(x); break;
+                    case TaskSkill x: x.TaskId = Map(x.TaskId); x.SkillId = Map(x.SkillId); db.TaskSkills.Add(x); break;
                     case ActorDepartment x: x.ActorId = Map(x.ActorId); x.DepartmentId = Map(x.DepartmentId); db.ActorDepartments.Add(x); break;
                     case Assignment x: x.TaskId = Map(x.TaskId); x.TargetId = Map(x.TargetId); x.ResolvedPersonId = Optional(x.ResolvedPersonId); db.Assignments.Add(x); break;
                     case TaskDependency x: x.PredecessorId = Map(x.PredecessorId); x.SuccessorId = Map(x.SuccessorId); db.Dependencies.Add(x); break;
@@ -126,10 +131,106 @@ public static class DataTransfer
     public static object Entity(DataRow row) => row.Kind switch
     {
         "project" => Read<Project>(row), "sprint" => Read<Sprint>(row), "task" => ReadTask(row), "actor" => Read<Actor>(row),
-        "actorSkill" => Read<ActorSkill>(row), "actorDepartment" => Read<ActorDepartment>(row), "assignment" => Read<Assignment>(row), "dependency" => Read<TaskDependency>(row),
+        "actorSkill" => Read<ActorSkill>(row), "taskSkill" => Read<TaskSkill>(row), "actorDepartment" => Read<ActorDepartment>(row), "assignment" => Read<Assignment>(row), "dependency" => Read<TaskDependency>(row),
         "calendar" => Read<WorkCalendar>(row), "exception" => Read<CalendarException>(row), "block" => Read<RecurringBlock>(row),
         _ => throw new FormatException("Неизвестный тип записи.")
     };
+
+    /// <summary>
+    /// Reads a version 1 package as version 2: roles become skills, free-text skill names are matched to
+    /// the dictionary (missing ones are added once), and task requirements become task-skill rows.
+    /// </summary>
+    internal static DataPackage Upgrade(DataPackage package)
+    {
+        if (package.Version != 1) return package;
+        var rows = package.Rows.ToList();
+        var skills = new Dictionary<string, Guid>(StringComparer.OrdinalIgnoreCase);
+        string? Text(JsonElement payload, string name) =>
+            payload.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
+        string[] Names(JsonElement payload, string name) =>
+            payload.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.Array
+                ? value.EnumerateArray().Select(item => SkillMath.Name(item.GetString())).Where(text => text.Length > 0).ToArray()
+                : [];
+
+        foreach (var row in rows.Where(r => r.Kind == "actor"))
+            if (Text(row.Payload, "kind") == nameof(ActorKind.Skill) && SkillMath.Name(Text(row.Payload, "name")) is { Length: > 0 } name)
+                skills[name] = row.Id;
+
+        var names = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var row in rows)
+            foreach (var name in row.Kind switch
+            {
+                "actor" => Names(row.Payload, "skills"),
+                "task" => Names(row.Payload, "requiredSkills"),
+                _ => []
+            })
+                names.Add(name);
+
+        foreach (var name in names.Where(name => !skills.ContainsKey(name)))
+        {
+            var id = Guid.NewGuid();
+            var skill = new Actor { Id = id, TeamId = package.SourceTeamId, Kind = ActorKind.Skill, Name = name };
+            rows.Add(new DataRow("actor", id, JsonSerializer.SerializeToElement(skill, Json)));
+            skills[name] = id;
+        }
+
+        var upgraded = new List<DataRow>(rows.Count);
+        foreach (var row in rows)
+        {
+            if (row.Kind is not ("actor" or "task" or "actorRole"))
+            {
+                upgraded.Add(row);
+                continue;
+            }
+            var node = JsonNode.Parse(row.Payload.GetRawText())!.AsObject();
+            if (row.Kind == "actorRole")
+            {
+                var actorId = node["actorId"]?.GetValue<Guid>() ?? Guid.Empty;
+                var roleId = node["roleId"]?.GetValue<Guid>() ?? Guid.Empty;
+                var link = new ActorSkill { ActorId = actorId, SkillId = roleId };
+                upgraded.Add(new DataRow("actorSkill", Guid.NewGuid(), JsonSerializer.SerializeToElement(link, Json)));
+                continue;
+            }
+            if (node["skills"] is JsonArray actorSkills)
+            {
+                foreach (var name in Names(row.Payload, "skills"))
+                {
+                    var link = new ActorSkill { ActorId = row.Id, SkillId = skills[name] };
+                    upgraded.Add(new DataRow("actorSkill", Guid.NewGuid(), JsonSerializer.SerializeToElement(link, Json)));
+                }
+                actorSkills.Clear();
+                node.Remove("skills");
+            }
+            if (node["requiredSkills"] is JsonArray taskSkills)
+            {
+                foreach (var name in Names(row.Payload, "requiredSkills"))
+                {
+                    var link = new TaskSkill { TaskId = row.Id, SkillId = skills[name] };
+                    upgraded.Add(new DataRow("taskSkill", Guid.NewGuid(), JsonSerializer.SerializeToElement(link, Json)));
+                }
+                taskSkills.Clear();
+                node.Remove("requiredSkills");
+            }
+            upgraded.Add(row with { Payload = JsonSerializer.SerializeToElement(node, Json) });
+        }
+        // A v1 person can carry both a role link and the same name in skills; keep each link once.
+        var actorLinks = new HashSet<(Guid ActorId, Guid SkillId)>();
+        var taskLinks = new HashSet<(Guid TaskId, Guid SkillId)>();
+        var unique = new List<DataRow>(upgraded.Count);
+        foreach (var row in upgraded)
+        {
+            if (row.Kind == "actorSkill")
+            {
+                if (!actorLinks.Add((row.Payload.GetProperty("actorId").GetGuid(), row.Payload.GetProperty("skillId").GetGuid()))) continue;
+            }
+            else if (row.Kind == "taskSkill")
+            {
+                if (!taskLinks.Add((row.Payload.GetProperty("taskId").GetGuid(), row.Payload.GetProperty("skillId").GetGuid()))) continue;
+            }
+            unique.Add(row);
+        }
+        return new DataPackage(2, package.SourceTeamId, [.. unique]);
+    }
     private static T Read<T>(DataRow row) => row.Payload.Deserialize<T>(Json) ?? throw new JsonException("Пустая запись.");
 
     /// <summary>Задача без устаревшего поля sprintId: спринт теперь следует из дат (см. LegacySprint).</summary>
@@ -148,8 +249,9 @@ public static class DataTransfer
     public static List<DataIssue> Validate(DataPackage? package)
     {
         var errors = new List<DataIssue>();
-        if (package is null || package.Version != 1 || package.SourceTeamId == Guid.Empty || package.Rows is null || package.Rows.Length > MaxRows)
-        { errors.Add(new(0, "package", "Нужны version=1, sourceTeamId и не более 10000 записей.")); return errors; }
+        package = package is null ? null : Upgrade(package);
+        if (package is null || package.Version != 2 || package.SourceTeamId == Guid.Empty || package.Rows is null || package.Rows.Length > MaxRows)
+        { errors.Add(new(0, "package", "Нужны version=1 или 2, sourceTeamId и не более 10000 записей.")); return errors; }
         var values = new Dictionary<Guid, object>(); var rowNumbers = new Dictionary<Guid, int>();
         var legacy = package.Rows.Where(r => r is not null).GroupBy(r => r.Id).Select(g => g.First()).Where(r => LegacySprint(r) is not null).ToDictionary(r => r.Id, LegacySprint);
         for (var i = 0; i < package.Rows.Length; i++)
@@ -197,6 +299,9 @@ public static class DataTransfer
                 case ActorSkill x:
                     Ref<Actor>(id, x.ActorId, "actorId"); Ref<Actor>(id, x.SkillId, "skillId");
                     if (values.GetValueOrDefault(x.ActorId) is Actor a && a.Kind != ActorKind.Person || values.GetValueOrDefault(x.SkillId) is Actor skill && skill.Kind != ActorKind.Skill) Error(id, "skill", "Навык связывается только с человеком."); break;
+                case TaskSkill x:
+                    Ref<TaskCard>(id, x.TaskId, "taskId"); Ref<Actor>(id, x.SkillId, "skillId");
+                    if (values.GetValueOrDefault(x.SkillId) is Actor requiredSkill && requiredSkill.Kind != ActorKind.Skill) Error(id, "skill", "Требование задачи должно указывать на навык."); break;
                 case ActorDepartment x:
                     Ref<Actor>(id, x.ActorId, "actorId"); Ref<Actor>(id, x.DepartmentId, "departmentId");
                     if (values.GetValueOrDefault(x.ActorId) is Actor personActor && personActor.Kind != ActorKind.Person || values.GetValueOrDefault(x.DepartmentId) is Actor department && department.Kind != ActorKind.Department) Error(id, "department", "Подразделение связывается только с человеком."); break;
@@ -227,7 +332,7 @@ public static class DataTransfer
             bool Walk(Guid start) { var seen = new HashSet<Guid>(); for (Guid? current = start; current.HasValue && seen.Add(current.Value); current = (values.GetValueOrDefault(current.Value) as Actor)?.ParentId) if (current == department) return true; return false; }
             return Walk(person) || values.Values.OfType<ActorDepartment>().Where(x => x.ActorId == person).Any(x => Walk(x.DepartmentId));
         }
-        Duplicate<Assignment>(x => x.TaskId, "assignment"); Duplicate<WorkCalendar>(x => x.ActorId, "calendar"); Duplicate<TaskDependency>(x => (x.PredecessorId, x.SuccessorId), "dependency"); Duplicate<ActorSkill>(x => (x.ActorId, x.SkillId), "actorSkill"); Duplicate<ActorDepartment>(x => (x.ActorId, x.DepartmentId), "actorDepartment");
+        Duplicate<Assignment>(x => x.TaskId, "assignment"); Duplicate<WorkCalendar>(x => x.ActorId, "calendar"); Duplicate<TaskDependency>(x => (x.PredecessorId, x.SuccessorId), "dependency"); Duplicate<ActorSkill>(x => (x.ActorId, x.SkillId), "actorSkill"); Duplicate<TaskSkill>(x => (x.TaskId, x.SkillId), "taskSkill"); Duplicate<ActorDepartment>(x => (x.ActorId, x.DepartmentId), "actorDepartment");
         void Duplicate<T>(Func<T, object> key, string field) { foreach (var group in values.Where(x => x.Value is T).GroupBy(x => key((T)x.Value)).Where(x => x.Count() > 1)) foreach (var entry in group) Error(entry.Key, field, "Повторяющаяся связь."); }
         Cycles(values.Where(x => x.Value is TaskCard).Select(x => (x.Key, ((TaskCard)x.Value).ParentId)), "task.parent");
         Cycles(values.Where(x => x.Value is Actor).Select(x => (x.Key, ((Actor)x.Value).ParentId)), "actor.parent");

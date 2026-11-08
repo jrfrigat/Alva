@@ -15,15 +15,11 @@ public static class ActorEndpoints
         var ids = actors.Select(a => a.Id).ToArray();
         var skills = await db.ActorSkills.Where(r => ids.Contains(r.ActorId)).ToListAsync();
         var departments = await db.ActorDepartments.Where(d => ids.Contains(d.ActorId)).ToListAsync();
-        var skillNames = await db.Actors.Where(a => a.TeamId == teamId && a.Kind == ActorKind.Skill).ToDictionaryAsync(a => a.Id, a => a.Name);
         return actors.Select(a =>
         {
             var skillIds = skills.Where(r => r.ActorId == a.Id).Select(r => r.SkillId).ToArray();
-            // The name list keeps the old card rendering until TASK-205 switches it to SkillIds.
-            var kind = a.Kind.ToString();
-            var names = skillIds.Select(id => skillNames.GetValueOrDefault(id)).OfType<string>().ToArray();
-            return new ActorDto(a.Id, a.TeamId, a.Name, kind, a.Email, a.ParentId, a.UserId, skillIds,
-                departments.Where(d => d.ActorId == a.Id).Select(d => d.DepartmentId).ToArray(), names, skillIds);
+            return new ActorDto(a.Id, a.TeamId, a.Name, a.Kind.ToString(), a.Email, a.ParentId, a.UserId, skillIds,
+                departments.Where(d => d.ActorId == a.Id).Select(d => d.DepartmentId).ToArray());
         }).ToArray();
     }
     private static ActorKind ParseKind(string? text)
@@ -38,13 +34,7 @@ public static class ActorEndpoints
     {
         var kind = ParseKind(request.Kind);
         var actors = await db.Actors.Where(a => a.TeamId == teamId && !a.Archived).ToListAsync();
-        var skillIds = (request.SkillIds ?? request.RoleIds ?? []).Distinct().ToArray();
-        // The old client sends free-text skills; resolve them into the dictionary instead of dropping the edit.
-        if (request.Skills is { Length: > 0 })
-        {
-            if (kind != ActorKind.Person) throw new ApiException(400, "Навыки задаются только для человека.");
-            skillIds = skillIds.Concat(await SkillResolver.ResolveAsync(db, teamId, request.Skills)).Distinct().ToArray();
-        }
+        var skillIds = (request.SkillIds ?? []).Distinct().ToArray();
         var departmentIds = (request.DepartmentIds ?? []).Concat(kind == ActorKind.Person && request.ParentId.HasValue ? [request.ParentId.Value] : Array.Empty<Guid>()).Distinct().ToArray();
         if (skillIds.Any(id => actors.All(a => a.Id != id || a.Kind != ActorKind.Skill)) || departmentIds.Any(id => actors.All(a => a.Id != id || a.Kind != ActorKind.Department))) throw new ApiException(400, "Навыки и отделы должны принадлежать этой команде.");
         if (kind != ActorKind.Person && departmentIds.Length > 0) throw new ApiException(400, "Членство в отделах задаётся для людей.");

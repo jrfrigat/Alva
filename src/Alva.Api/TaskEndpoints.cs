@@ -219,14 +219,10 @@ public static class TaskEndpoints
             throw new ApiException(400, "Даты задачи зафиксированы — переносить её нельзя. Снимите фиксацию, чтобы изменить даты.");
         if (request.ProjectId is { } projectId && !await db.ProjectTeams.AnyAsync(x => x.TeamId == teamId && x.ProjectId == projectId)) throw new ApiException(400, "Проект не связан с командой.");
         await ValidateParent(db, teamId, task, request.ParentId);
-        if (request.RequiredSkillIds is not null || request.RequiredSkills is not null)
+        if (request.RequiredSkillIds is not null)
         {
-            var resolved = request.RequiredSkillIds is null
-                ? await SkillResolver.ResolveAsync(db, teamId, request.RequiredSkills)
-                : [];
-            var required = request.RequiredSkillIds is null ? resolved : SkillMath.Normalize(request.RequiredSkillIds);
+            var required = SkillMath.Normalize(request.RequiredSkillIds);
             var valid = (await db.Actors.Where(a => a.TeamId == teamId && a.Kind == ActorKind.Skill).Select(a => a.Id).ToListAsync()).ToHashSet();
-            valid.UnionWith(resolved);
             if (required.Any(id => !valid.Contains(id))) throw new ApiException(400, "Навыки должны принадлежать этой команде.");
             var old = await db.TaskSkills.Where(x => x.TaskId == task.Id).ToListAsync();
             db.RemoveRange(old.Where(x => !required.Contains(x.SkillId)));
@@ -292,8 +288,6 @@ public static class TaskEndpoints
         var assignments = await db.Assignments.AsNoTracking().Where(x => ids.Contains(x.TaskId)).ToDictionaryAsync(x => x.TaskId);
         var external = await db.ExternalTaskLinks.AsNoTracking().Where(x => ids.Contains(x.TaskId)).ToDictionaryAsync(x => x.TaskId);
         var taskSkills = await db.TaskSkills.AsNoTracking().Where(x => ids.Contains(x.TaskId)).ToListAsync();
-        var skillNames = await db.Actors.AsNoTracking().Where(a => a.TeamId == teamId && a.Kind == ActorKind.Skill)
-            .ToDictionaryAsync(a => a.Id, a => a.Name);
         var requiredSkills = taskSkills.ToLookup(x => x.TaskId, x => x.SkillId);
         var estimates = EffectiveEstimates(tasks);
         var deadlines = EffectiveDeadlines(tasks);
@@ -307,9 +301,7 @@ public static class TaskEndpoints
             Guid[] inSprints = [.. sprints[x.Id]];
             external.TryGetValue(x.Id, out var link);
             var requiredIds = requiredSkills[x.Id].ToArray();
-            // RequiredSkills keeps the old client rendering the same names until TASK-204 switches it to the ids.
-            var requiredNames = requiredIds.Select(id => skillNames.GetValueOrDefault(id)).OfType<string>().ToArray();
-            return new TaskDto(x.Id, x.TeamId, x.ProjectId, x.ParentId, x.Title, x.Description, x.Status.ToString(), x.EstimateHours, x.Deadline, x.StartDate, x.EndDate, x.Order, assignment?.TargetId, assignment?.ResolvedPersonId, x.Version, estimates.GetValueOrDefault(x.Id), deadlines.GetValueOrDefault(x.Id), inSprints, requiredNames, x.Priority.ToString(), x.BacklogRank, x.RemainingHours, x.DatesFixed, x.DailyHoursLimit, link?.ExternalKey, link?.ExternalUrl, requiredIds);
+            return new TaskDto(x.Id, x.TeamId, x.ProjectId, x.ParentId, x.Title, x.Description, x.Status.ToString(), x.EstimateHours, x.Deadline, x.StartDate, x.EndDate, x.Order, assignment?.TargetId, assignment?.ResolvedPersonId, x.Version, estimates.GetValueOrDefault(x.Id), deadlines.GetValueOrDefault(x.Id), inSprints, requiredIds, x.Priority.ToString(), x.BacklogRank, x.RemainingHours, x.DatesFixed, x.DailyHoursLimit, link?.ExternalKey, link?.ExternalUrl);
         }).ToArray();
     }
 

@@ -22,16 +22,12 @@ public sealed class ActorModel
     public string? Email { get; set; }
     public Guid? ParentId { get; set; }
     public Guid[] SkillIds { get; set; } = [];
-    /// <summary>Transitional alias for the demo while it still speaks the old request shape.</summary>
-    public Guid[] RoleIds { get => SkillIds; set => SkillIds = value; }
     public Guid[] DepartmentIds { get; set; } = [];
     public Guid? UserId { get; set; }
 }
 public sealed class TaskModel
 {
     public Guid[] RequiredSkillIds { get; set; } = [];
-    /// <summary>Display names until TASK-205 removes the compatibility alias.</summary>
-    public string[] RequiredSkills { get; set; } = [];
     public Guid Id { get; set; }
     public Guid TeamId { get; set; }
     public Guid? ProjectId { get; set; }
