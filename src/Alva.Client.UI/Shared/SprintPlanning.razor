@@ -184,20 +184,20 @@
         <section class="alva-panel">
             <header class="alva-panel__header">
                 <FlareIconView Value="@MaterialDesign3Icons.Regular.Balance" Size="20px" Class="alva-panel__icon" />
-                <div><h2 class="alva-panel__title">@(AlvaStrings.Sprint_SkillsBalancePlanVsAvailability)</h2><p class="alva-panel__subtitle">@(AlvaStrings.Sprint_ByPeopleSRolesAndTasksAssignedToARole)</p></div>
+                <div><h2 class="alva-panel__title">@(AlvaStrings.Sprint_SubTeamBalance)</h2><p class="alva-panel__subtitle">@(AlvaStrings.Sprint_SubTeamBalanceSubtitle)</p></div>
             </header>
             <div class="alva-skills">
-                @foreach (var (role, plan, avail) in Skills)
+                @foreach (var (team, plan, avail) in SubTeams)
                 {
                     var pct = Pct(plan, avail);
                     var tone = avail <= 0 && plan > 0 ? AlvaTone.Critical : pct > 100 ? AlvaTone.Critical : pct > 85 ? AlvaTone.Info : AlvaTone.Ok;
                     <div class="alva-skill alva-skill--@tone.ToString().ToLowerInvariant()">
-                        <div class="alva-skill__head"><b>@role.Name</b><AlvaStatusChip Tone="tone">@(avail > 0 ? $"{pct}%" : AlvaStrings.Sprint_NoPeople) @(tone == AlvaTone.Critical ? AlvaStrings.Common_OverloadShort : tone == AlvaTone.Info ? AlvaStrings.Common_Optimal : AlvaStrings.Sprint_Buffer)</AlvaStatusChip></div>
-                        <FlareProgressLinear Value="@Math.Min(100, pct)" Size="TrackSize.Xs" Color="@ToneColor(tone)" aria-label="@string.Format(AlvaStrings.Sprint_RoleBalance, role.Name)" />
+                        <div class="alva-skill__head"><b>@team.Name</b><AlvaStatusChip Tone="tone">@(avail > 0 ? $"{pct}%" : AlvaStrings.Sprint_NoPeople) @(tone == AlvaTone.Critical ? AlvaStrings.Common_OverloadShort : tone == AlvaTone.Info ? AlvaStrings.Common_Optimal : AlvaStrings.Sprint_Buffer)</AlvaStatusChip></div>
+                        <FlareProgressLinear Value="@Math.Min(100, pct)" Size="TrackSize.Xs" Color="@ToneColor(tone)" aria-label="@string.Format(AlvaStrings.Sprint_SubTeamBalanceAria, team.Name)" />
                         <div class="alva-skill__foot alva-num"><span>@(AlvaStrings.Sprint_Plan) @AlvaFormat.Hours(plan) @(AlvaStrings.Sprint_HoursShort)</span><span class="@(plan > avail ? "alva-kpi__alert" : "alva-kpi__aside--primary")">@(plan > avail ? string.Format(AlvaStrings.Common_DeficitH, AlvaFormat.Hours(plan - avail)) : string.Format(AlvaStrings.Sprint_ReserveH, AlvaFormat.Hours(avail - plan))) (@(AlvaStrings.Sprint_Avail) @AlvaFormat.Hours(avail) @(AlvaStrings.Sprint_HoursShort))</span></div>
                     </div>
                 }
-                @if (!Skills.Any()) { <p class="alva-kpi__note">@(AlvaStrings.Sprint_GivePeopleRolesToSeeTheSkillsBalance)</p> }
+                @if (!SubTeams.Any()) { <p class="alva-kpi__note">@(AlvaStrings.Sprint_GivePeopleSubTeamsToSeeTheBalance)</p> }
             </div>
         </section>
 
@@ -310,7 +310,7 @@
     private IEnumerable<(string Key, string Label)> PoolFilters =>
         new[] { ("all", AlvaStrings.Sprint_All) }
         .Concat(_projects.Where(p => Pool.Any(t => t.ProjectId == p.Id)).Select(p => (p.Id.ToString(), p.Name)))
-        .Concat(new[] { ("ready", AlvaStrings.Sprint_ReadyToPlan), ("routine", AlvaStrings.Sprint_Ongoing), ("unassigned", AlvaStrings.Common_Unassigned), ("role", AlvaStrings.Sprint_WithARole) });
+        .Concat(new[] { ("ready", AlvaStrings.Sprint_ReadyToPlan), ("routine", AlvaStrings.Sprint_Ongoing), ("unassigned", AlvaStrings.Common_Unassigned), ("group", AlvaStrings.Sprint_WithASubTeam) });
 
     private bool Matches(TaskModel t, string key) => key switch
     {
@@ -318,7 +318,7 @@
         "ready" => Ready(t),
         "routine" => t.ProjectId is null,
         "unassigned" => Assignees.Person(t, _actors) is null,
-        "role" => t.ResolvedPersonId is null && _actors.FirstOrDefault(a => a.Id == t.AssignmentTargetId)?.Kind is "Role" or "Department",
+        "group" => t.ResolvedPersonId is null && _actors.FirstOrDefault(a => a.Id == t.AssignmentTargetId)?.Kind is "Department",
         _ => t.ProjectId?.ToString() == key
     };
 
@@ -326,14 +326,14 @@
         || t.Title.Contains(_search, StringComparison.OrdinalIgnoreCase)
         || AlvaFormat.Code(t.Id).Contains(_search.Trim().TrimStart('#'), StringComparison.OrdinalIgnoreCase);
 
-    /// <summary>Роли: план — задачи спринта на роль или на людей с ролью; доступно — ёмкость людей роли.</summary>
-    private IEnumerable<(ActorModel Role, decimal Plan, decimal Available)> Skills => _actors.Where(a => a.Kind == "Role")
-        .Select(role =>
+    /// <summary>Подкоманды: план — задачи спринта на подкоманду или на её людей; доступно — ёмкость этих людей.</summary>
+    private IEnumerable<(ActorModel Team, decimal Plan, decimal Available)> SubTeams => _actors.Where(a => a.Kind == "Department")
+        .Select(team =>
         {
-            var people = _actors.Where(a => a.Kind == "Person" && a.RoleIds.Contains(role.Id)).Select(a => a.Id).ToHashSet();
-            var plan = InSprint.Where(t => t.AssignmentTargetId == role.Id || (t.ResolvedPersonId ?? t.AssignmentTargetId) is { } p && people.Contains(p)).Sum(t => SprintHours.Of(t, Sprint));
+            var people = _actors.Where(a => a.Kind == "Person" && (a.ParentId == team.Id || a.DepartmentIds.Contains(team.Id))).Select(a => a.Id).ToHashSet();
+            var plan = InSprint.Where(t => t.AssignmentTargetId == team.Id || (t.ResolvedPersonId ?? t.AssignmentTargetId) is { } p && people.Contains(p)).Sum(t => SprintHours.Of(t, Sprint));
             var avail = people.Sum(p => _load.TryGetValue(p, out var l) ? l.Available : 0);
-            return (role, plan, avail);
+            return (team, plan, avail);
         })
         .Where(x => x.plan > 0 || x.avail > 0);
 

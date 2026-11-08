@@ -101,7 +101,7 @@
         .Select(person =>
         {
             var days = Capacity.Where(c => c.ActorId == person.Id && c.Date >= Sprint.StartDate && c.Date <= Sprint.EndDate).ToArray();
-            var roles = string.Join(" / ", Actors.Where(a => person.RoleIds.Contains(a.Id)).Select(a => a.Name).DefaultIfEmpty(AlvaStrings.Capacity_TeamMember));
+            var roles = string.Join(" / ", Actors.Where(a => person.SkillIds.Contains(a.Id)).Select(a => a.Name).DefaultIfEmpty(AlvaStrings.Capacity_TeamMember));
             return new PersonLoad(person, roles, days.Sum(d => d.AvailableHours), days.Sum(d => d.AllocatedHours), Absences(days));
         })
         .Where(p => p.Available > 0 || p.Allocated > 0)

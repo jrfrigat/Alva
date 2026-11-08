@@ -1,5 +1,6 @@
 @page "/team"
 @page "/team/departments"
+@page "/team/skills"
 @page "/team/roles"
 @implements IDisposable
 @inject AlvaSession Session
@@ -18,7 +19,7 @@ else
 <FlareTabs @bind-ActiveIndex="TabIndex">
     <FlareTab Label="@(AlvaStrings.Nav_People)" />
     <FlareTab Label="@(AlvaStrings.Common_SubTeams)" />
-    <FlareTab Label="@(AlvaStrings.Common_Roles)" />
+    <FlareTab Label="@(AlvaStrings.Common_Skills)" />
 </FlareTabs>
 <FlareGrid MinColumnWidth="min(100%,24rem)" Gap="FlareSpacing.Large" AlignItems="FlareAlignItems.Start">
 <FlareCard Variant="CardVariant.Outlined">
@@ -45,7 +46,7 @@ else
                                         @foreach (var skill in actor.Skills) { <FlareChip Variant="ChipVariant.Filled" Color="FlareColor.Secondary" Size="ChipSize.Xs">@skill</FlareChip> }
                                     </FlareStack>
                                 }
-                                @if (Kind != "Role") { <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@ActorName(actor.ParentId)</FlareText> }
+                                @if (Kind != "Skill") { <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@ActorName(actor.ParentId)</FlareText> }
                             </FlareStack>
                         </ChildContent>
                     </FlareListItem>
@@ -63,12 +64,9 @@ else
             @if (_formErrors.Count > 0) { <div tabindex="-1" @ref="_errorSummary"><AlvaValidationSummary Messages="_formErrors" /></div> }
             <FlareTextField Label="@(AlvaStrings.People_NameOrTitle)" ErrorText="@_nameError" @bind-Value="_actor.Name" Required />
             @if(_actor.Kind=="Person") { <FlareTextField Label="@(AlvaStrings.Common_EmailField)" ErrorText="@_emailError" @bind-Value="_actor.Email" Type="email" /> }
-            @if(_actor.Kind=="Person") { <SkillTagEditor Label="@(AlvaStrings.Task_Skills)" @bind-Values="_actor.Skills" Suggestions="_skillSuggestions" /> }
-            @if(_actor.Kind!="Role") { <FlareSelect TValue="Guid?" Label="@(_actor.Kind=="Department" ? AlvaStrings.People_ParentSubTeam : AlvaStrings.Common_SubTeam)" Items="@(_actors.Where(a=>a.Kind=="Department" && a.Id!=_actor.Id).Select(a=>(Guid?)a.Id))" ItemLabel="ActorName" NullOption="@(AlvaStrings.People_NoSubTeam)" @bind-Value="_actor.ParentId" /> }
+            @if(_actor.Kind=="Person") { <FlareMultiSelect TValue="Guid" Label="@(AlvaStrings.Common_Skills)" Items="@(_actors.Where(a=>a.Kind=="Skill").Select(a=>a.Id))" ItemLabel="id => ActorName(id)" Chips="true" Searchable="true" HelperText="@(AlvaStrings.People_SkillsHelper)" Values="@_actor.SkillIds" ValuesChanged="(IReadOnlyList<Guid> skills) => _actor.SkillIds = skills.ToArray()" /> }
+            @if(_actor.Kind!="Skill") { <FlareSelect TValue="Guid?" Label="@(_actor.Kind=="Department" ? AlvaStrings.People_ParentSubTeam : AlvaStrings.Common_SubTeam)" Items="@(_actors.Where(a=>a.Kind=="Department" && a.Id!=_actor.Id).Select(a=>(Guid?)a.Id))" ItemLabel="ActorName" NullOption="@(AlvaStrings.People_NoSubTeam)" @bind-Value="_actor.ParentId" /> }
             @if(_actor.Kind=="Person") { @foreach(var department in _actors.Where(a=>a.Kind=="Department")){<FlareCheckbox Value="_actor.DepartmentIds.Contains(department.Id)" ValueChanged="(bool value)=>ToggleDepartment(department.Id,value)">@department.Name</FlareCheckbox>} }
-            @if(_actor.Kind!="Role") {
-            <FlareMultiSelect TValue="Guid" Label="@(AlvaStrings.Common_Roles)" Items="@(_actors.Where(a=>a.Kind=="Role").Select(a=>a.Id))" ItemLabel="id => ActorName(id)" Chips="true" Searchable="true" Values="@_actor.RoleIds" ValuesChanged="(IReadOnlyList<Guid> roles) => _actor.RoleIds = roles.ToArray()" />
-            }
         </FlareStack>
     </FlareCardContent>
     <FlareCardActions>
@@ -76,7 +74,7 @@ else
         <FlareButton Variant="ButtonVariant.Text" OnClick="CloseActor">@(AlvaStrings.Common_Close)</FlareButton>
         @if(_actor.Id!=Guid.Empty)
         {
-            @if(_actor.Kind!="Role") { <FlareButton Href="@(_actor.Kind=="Department"?$"capacity/{_actor.Id}/schedule":$"capacity/{_actor.Id}")" Variant="ButtonVariant.Text">@(AlvaStrings.People_WorkSchedule)</FlareButton> }
+            @if(_actor.Kind!="Skill") { <FlareButton Href="@(_actor.Kind=="Department"?$"capacity/{_actor.Id}/schedule":$"capacity/{_actor.Id}")" Variant="ButtonVariant.Text">@(AlvaStrings.People_WorkSchedule)</FlareButton> }
             <FlareButton Variant="ButtonVariant.Text" Color="FlareColor.Error" OnClick="ArchiveActor">@(AlvaStrings.Common_Archive)</FlareButton>
         }
     </FlareCardActions>
@@ -91,33 +89,30 @@ else
     [CascadingParameter] public FlareConfirmDialogProvider? Confirm { get; set; }
     internal bool IsDirty => _actor is not null && DraftSnapshot.Of(_actor) != _actorSnapshot;
     protected override void OnInitialized() => _draft = Drafts.Track(() => IsDirty);
-    private string[] _skillSuggestions=[];
     private string Route=>AppRoutes.Current(Navigation);
-    private string Kind=>Route.EndsWith("departments")?"Department":Route.EndsWith("roles")?"Role":"Person";
-    private string Title=>Kind=="Role"?AlvaStrings.People_TeamRoles:Kind=="Department"?AlvaStrings.Common_SubTeams:AlvaStrings.People_TeamPeople;
-    private string Category=>Kind=="Role"?AlvaStrings.People_RegistryRoles:Kind=="Department"?AlvaStrings.People_RegistrySubTeams:AlvaStrings.People_RegistryPeople;
+    private string Kind=>Route.EndsWith("departments")?"Department":Route.EndsWith("skills")||Route.EndsWith("roles")?"Skill":"Person";
+    private string Title=>Kind=="Skill"?AlvaStrings.People_TeamSkills:Kind=="Department"?AlvaStrings.Common_SubTeams:AlvaStrings.People_TeamPeople;
+    private string Category=>Kind=="Skill"?AlvaStrings.People_RegistrySkills:Kind=="Department"?AlvaStrings.People_RegistrySubTeams:AlvaStrings.People_RegistryPeople;
 
     // Адрес — источник истины: вкладка только переводит индекс в маршрут.
     private int TabIndex
     {
-        get => Kind == "Role" ? 2 : Kind == "Department" ? 1 : 0;
+        get => Kind == "Skill" ? 2 : Kind == "Department" ? 1 : 0;
         set
         {
-            var path = value switch { 1 => "team/departments", 2 => "team/roles", _ => "team" };
+            var path = value switch { 1 => "team/departments", 2 => "team/skills", _ => "team" };
             if (!Route.Equals(path, StringComparison.OrdinalIgnoreCase)) Navigation.NavigateTo(path);
         }
     }
 
-    protected override async Task OnParametersSetAsync(){Close();await Load();}
-    private async Task Run(Func<Task> action){_busy=true;_error=null;try{await action();}catch(Exception e) when(e is HttpRequestException or InvalidOperationException){_error=PageFeedback.Describe(e);}finally{_busy=false;}}
-    private Task Load()=>Run(async()=>{await Session.Initialize();if(Session.TeamId is null)return;_actors=await Session.Get<ActorModel[]>(Session.TeamPath("actors"));await LoadSkillSuggestions();});
-    private async Task LoadSkillSuggestions()
+    protected override async Task OnParametersSetAsync()
     {
-        var tags = _actors.SelectMany(a=>a.Skills);
-        try { tags = tags.Concat((await Session.Get<TaskModel[]>(Session.TeamPath("tasks"))).SelectMany(t=>t.RequiredSkills)); }
-        catch (HttpRequestException e) when(e.StatusCode==System.Net.HttpStatusCode.Forbidden) { }
-        _skillSuggestions=tags.Distinct(StringComparer.OrdinalIgnoreCase).Order(StringComparer.CurrentCultureIgnoreCase).ToArray();
+        // Old bookmarks keep working: roles became the team's skills.
+        if (Route.EndsWith("roles", StringComparison.OrdinalIgnoreCase)) { Navigation.NavigateTo("team/skills"); return; }
+        Close(); await Load();
     }
+    private async Task Run(Func<Task> action){_busy=true;_error=null;try{await action();}catch(Exception e) when(e is HttpRequestException or InvalidOperationException){_error=PageFeedback.Describe(e);}finally{_busy=false;}}
+    private Task Load()=>Run(async()=>{await Session.Initialize();if(Session.TeamId is null)return;_actors=await Session.Get<ActorModel[]>(Session.TeamPath("actors"));});
     private void New(){_saved=false;_actor=new ActorModel {Kind=Kind};_actorSnapshot=DraftSnapshot.Of(_actor);}
     private void Close(){_actor=null;_actorSnapshot=null;}
     private async Task CloseActor()
@@ -134,7 +129,7 @@ else
     }
 
     public void Dispose() => _draft?.Dispose();
-    private void EditActor(ActorModel model){_saved=false;Close();_actor=new ActorModel{Id=model.Id,Name=model.Name,Kind=model.Kind,Email=model.Email,ParentId=model.ParentId,RoleIds=[..model.RoleIds],DepartmentIds=[..model.DepartmentIds],UserId=model.UserId,Skills=[..model.Skills]};_actorSnapshot=DraftSnapshot.Of(_actor);}
+    private void EditActor(ActorModel model){_saved=false;Close();_actor=new ActorModel{Id=model.Id,Name=model.Name,Kind=model.Kind,Email=model.Email,ParentId=model.ParentId,SkillIds=[..model.SkillIds],DepartmentIds=[..model.DepartmentIds],UserId=model.UserId,Skills=[..model.Skills]};_actorSnapshot=DraftSnapshot.Of(_actor);}
     private void ToggleDepartment(Guid id,bool value)=>_actor!.DepartmentIds=value?_actor.DepartmentIds.Append(id).Distinct().ToArray():_actor.DepartmentIds.Where(x=>x!=id).ToArray();
     private string ActorName(Guid? id)=>_actors.FirstOrDefault(a=>a.Id==id)?.Name??AlvaStrings.People_NoSubTeam;
     private async Task SaveActor()
@@ -144,7 +139,7 @@ else
         if (string.IsNullOrWhiteSpace(a.Name)) { _nameError=AlvaStrings.Common_ANameIsRequired; _formErrors.Add(_nameError); }
         if (a.Kind=="Person" && !string.IsNullOrWhiteSpace(a.Email) && !System.Net.Mail.MailAddress.TryCreate(a.Email, out _)) { _emailError=AlvaStrings.Common_EnterAValidEmailAddress; _formErrors.Add(_emailError); }
         if (_formErrors.Count > 0) { StateHasChanged(); await SafeFocus.Async(_errorSummary); return; }
-        await Run(async()=>{await Session.Send(a.Id==Guid.Empty?HttpMethod.Post:HttpMethod.Put,Session.TeamPath("actors"+(a.Id==Guid.Empty?"":$"/{a.Id}")),new ActorRequest(a.Name,a.Kind,a.Email,a.ParentId,a.UserId,a.RoleIds,a.DepartmentIds,a.Skills));_saved=true;Close();_actors=await Session.Get<ActorModel[]>(Session.TeamPath("actors"));});
+        await Run(async()=>{await Session.Send(a.Id==Guid.Empty?HttpMethod.Post:HttpMethod.Put,Session.TeamPath("actors"+(a.Id==Guid.Empty?"":$"/{a.Id}")),new ActorRequest(a.Name,a.Kind,a.Email,a.ParentId,a.UserId,SkillIds:a.SkillIds,DepartmentIds:a.DepartmentIds));_saved=true;Close();_actors=await Session.Get<ActorModel[]>(Session.TeamPath("actors"));});
     }
     private async Task ArchiveActor()
     {

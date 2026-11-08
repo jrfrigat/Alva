@@ -65,8 +65,9 @@ else
     @if (_formErrors.Count > 0) { <div tabindex="-1" @ref="_errorSummary"><AlvaValidationSummary Messages="_formErrors" /></div> }
     <FlareTextField Label="@(AlvaStrings.Common_Title)" @bind-Value="_editing.Title" ErrorText="@_titleError" Required MaxLength="500" Autofocus />
     <FlareTextArea Label="@(AlvaStrings.Common_Description)" @bind-Value="_editing.Description" AutoGrow />
-    <SkillTagEditor Label="@(AlvaStrings.Common_RequiredSkills)" @bind-Values="_editing.RequiredSkills"
-                    Suggestions="_actors.SelectMany(a=>a.Skills).Concat(_tasks.SelectMany(t=>t.RequiredSkills)).Distinct(StringComparer.OrdinalIgnoreCase)" />
+    <FlareMultiSelect TValue="Guid" Label="@(AlvaStrings.Common_RequiredSkills)" Items="SkillActors.Select(a=>a.Id)"
+                      ItemLabel="SkillName" Chips="true" Searchable="true"
+                      Values="_editing.RequiredSkillIds" ValuesChanged="(IReadOnlyList<Guid> skills) => _editing.RequiredSkillIds = skills.ToArray()" />
     <FlareGrid MinColumnWidth="min(100%,12rem)">
         <FlareSelect TValue="string" Label="@(AlvaStrings.Common_Status)" Items="_statuses" ItemLabel="Labels.Status" @bind-Value="_editing.Status" />
         <FlareSelect TValue="string" Label="@(AlvaStrings.Common_Priority)" Items="Labels.Priorities" ItemLabel="Labels.Priority" @bind-Value="_editing.Priority" />
@@ -82,9 +83,9 @@ else
     </FlareGrid>
     <FlareSwitch @bind-Value="_editing.DatesFixed" Label="@(AlvaStrings.Common_FixedDatesDoNotMove)"
                  Disabled="@(_editing.StartDate is null || _editing.EndDate is null)" />
-    <FlareSelect TValue="Guid?" Label="@(AlvaStrings.Tasks_AssigneeSubTeamOrRole)" Items="_actors.Select(x => (Guid?)x.Id)" ItemLabel="ActorName" NullOption="@(AlvaStrings.Common_UnassignedTask)" @bind-Value="_editing.AssignmentTargetId" Searchable />
-    <SkillMatch Required="_editing.RequiredSkills" Person="@(_actors.FirstOrDefault(a=>a.Id==(_editing.ResolvedPersonId ?? _editing.AssignmentTargetId)))" />
-    @if(_actors.FirstOrDefault(a=>a.Id==_editing.AssignmentTargetId)?.Kind is "Role" or "Department") { <FlareSelect TValue="Guid?" Label="@(AlvaStrings.Common_SpecificAssignee)" Items="@(_actors.Where(a=>a.Kind=="Person").Select(a=>(Guid?)a.Id))" ItemLabel="ActorName" NullOption="@(AlvaStrings.Tasks_NotChosenYet)" @bind-Value="_editing.ResolvedPersonId" Searchable /> }
+    <FlareSelect TValue="Guid?" Label="@(AlvaStrings.Tasks_AssigneeSubTeamOrRole)" Items="AssignableActorIds" ItemLabel="id => ActorName(id)" NullOption="@(AlvaStrings.Common_UnassignedTask)" @bind-Value="_editing.AssignmentTargetId" Searchable />
+    <SkillMatch Required="_editing.RequiredSkillIds" Person="@(_actors.FirstOrDefault(a=>a.Id==(_editing.ResolvedPersonId ?? _editing.AssignmentTargetId)))" Skills="SkillActors" />
+    @if(_actors.FirstOrDefault(a=>a.Id==_editing.AssignmentTargetId)?.Kind is "Department") { <FlareSelect TValue="Guid?" Label="@(AlvaStrings.Common_SpecificAssignee)" Items="@(_actors.Where(a=>a.Kind=="Person").Select(a=>(Guid?)a.Id))" ItemLabel="ActorName" NullOption="@(AlvaStrings.Tasks_NotChosenYet)" @bind-Value="_editing.ResolvedPersonId" Searchable /> }
     <FlareStack Row Wrap><FlareButton Loading="_busy" Disabled="@(string.IsNullOrWhiteSpace(_editing.Title) || !IsDirty)" OnClick="Save">@(AlvaStrings.Tasks_SaveTheTask)</FlareButton><EditorStatus Dirty="IsDirty" Saving="_busy" />
         @if(_editing.Id != Guid.Empty) { <FlareButton Variant="ButtonVariant.Text" OnClick="() => NewChild(_editing.Id)">@(AlvaStrings.Common_Subtask)</FlareButton><FlareButton Color="FlareColor.Error" Variant="ButtonVariant.Text" OnClick="Archive">@(AlvaStrings.Common_Archive)</FlareButton> }
     </FlareStack>
@@ -97,6 +98,8 @@ else
 @code {
     [Parameter] public Guid? TaskId { get; set; }
     private TaskModel[] _tasks=[]; private ProjectModel[] _projects=[]; private SprintModel[] _sprints=[]; private ActorModel[] _actors=[]; private HistoryDto[] _history=[];
+    private IEnumerable<ActorModel> SkillActors => _actors.Where(a => a.Kind == "Skill");
+    private IEnumerable<Guid?> AssignableActorIds => _actors.Where(a => a.Kind is "Person" or "Department").Select(a => (Guid?)a.Id);
     private TaskModel? _editing; private string? _editingSnapshot; private IDisposable? _draft;
     private string? _error,_search,_statusFilter; private Guid? _projectFilter; private bool _busy,_loaded;
     private string? _titleError,_parentError,_startError,_endError,_estimateError,_remainingError,_limitError;
@@ -115,6 +118,7 @@ else
     private string SprintName(Guid? id)=>_sprints.FirstOrDefault(x=>x.Id==id)?.Name??AlvaStrings.Common_NoSprint;
     private string TaskName(Guid? id)=>_tasks.FirstOrDefault(x=>x.Id==id)?.Title??AlvaStrings.Common_RootTask;
     private string ActorName(Guid? id) { var actor=_actors.FirstOrDefault(x=>x.Id==id);return actor is null?AlvaStrings.Common_UnassignedTask:$"{actor.Name} · {Labels.Kind(actor.Kind)}"; }
+    private string SkillName(Guid id) => _actors.FirstOrDefault(x => x.Id == id)?.Name ?? "";
     private TaskModel? Current => TaskId.HasValue ? _tasks.FirstOrDefault(t=>t.Id==TaskId) : null;
     protected override async Task OnInitializedAsync()
     {
@@ -217,7 +221,7 @@ else
             return;
         }
         await Run(async()=>{
-            var model=_editing!;var request=new TaskRequest(model.Title,model.Description,model.Status,model.ProjectId,model.ParentId,model.EstimateHours,model.Deadline,model.StartDate,model.EndDate,model.Order,model.Id==Guid.Empty?null:model.Version,model.RequiredSkills,model.Priority, RemainingHours:model.RemainingHours, SetRemainingHours:true, DatesFixed:model.DatesFixed, DailyHoursLimit:model.DailyHoursLimit, SetDailyHoursLimit:true);
+            var model=_editing!;var request=new TaskRequest(model.Title,model.Description,model.Status,model.ProjectId,model.ParentId,model.EstimateHours,model.Deadline,model.StartDate,model.EndDate,model.Order,model.Id==Guid.Empty?null:model.Version,RequiredSkillIds:model.RequiredSkillIds,Priority:model.Priority, RemainingHours:model.RemainingHours, SetRemainingHours:true, DatesFixed:model.DatesFixed, DailyHoursLimit:model.DailyHoursLimit, SetDailyHoursLimit:true);
             var saved=await Session.Save<TaskModel>(model.Id==Guid.Empty?HttpMethod.Post:HttpMethod.Put,Session.TeamPath("tasks"+(model.Id==Guid.Empty?"":$"/{model.Id}")),request);
             if(model.AssignmentTargetId.HasValue)await Session.Send(HttpMethod.Put,Session.TeamPath($"tasks/{saved.Id}/assignment"),new AssignmentRequest(model.AssignmentTargetId.Value,model.ResolvedPersonId));
             else if(model.Id!=Guid.Empty && _tasks.Any(t=>t.Id==model.Id && t.AssignmentTargetId.HasValue))await Session.Send(HttpMethod.Delete,Session.TeamPath($"tasks/{saved.Id}/assignment"),new{});

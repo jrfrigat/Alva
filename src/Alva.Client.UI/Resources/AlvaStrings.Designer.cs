@@ -726,7 +726,7 @@ public static class AlvaStrings
     /// <summary>Assignee not found.</summary>
     public static string Gantt_AssigneeNotFound => Get("Gantt_AssigneeNotFound");
 
-    /// <summary>Assignee, sub-team or role</summary>
+    /// <summary>Assignee: person or sub-team</summary>
     public static string Tasks_AssigneeSubTeamOrRole => Get("Tasks_AssigneeSubTeamOrRole");
 
     /// <summary>History</summary>
@@ -1584,6 +1584,30 @@ public static class AlvaStrings
     /// <summary>Team roles</summary>
     public static string People_TeamRoles => Get("People_TeamRoles");
 
+    /// <summary>Skills</summary>
+    public static string Common_Skills => Get("Common_Skills");
+
+    /// <summary>Team skills</summary>
+    public static string People_TeamSkills => Get("People_TeamSkills");
+
+    /// <summary>Registry · Skills</summary>
+    public static string People_RegistrySkills => Get("People_RegistrySkills");
+
+    /// <summary>Choose skills from the team dictionary.</summary>
+    public static string People_SkillsHelper => Get("People_SkillsHelper");
+
+    /// <summary>Sub-team balance: plan vs availability</summary>
+    public static string Sprint_SubTeamBalance => Get("Sprint_SubTeamBalance");
+
+    /// <summary>By sub-teams and tasks assigned to them</summary>
+    public static string Sprint_SubTeamBalanceSubtitle => Get("Sprint_SubTeamBalanceSubtitle");
+
+    /// <summary>Give people sub-teams to see the balance.</summary>
+    public static string Sprint_GivePeopleSubTeamsToSeeTheBalance => Get("Sprint_GivePeopleSubTeamsToSeeTheBalance");
+
+    /// <summary>Balance of {0}</summary>
+    public static string Sprint_SubTeamBalanceAria => Get("Sprint_SubTeamBalanceAria");
+
     /// <summary>Role</summary>
     public static string Common_Role => Get("Common_Role");
 
@@ -1601,6 +1625,12 @@ public static class AlvaStrings
 
     /// <summary>With a role</summary>
     public static string Sprint_WithARole => Get("Sprint_WithARole");
+
+    /// <summary>With a sub-team</summary>
+    public static string Sprint_WithASubTeam => Get("Sprint_WithASubTeam");
+
+    /// <summary>A task cannot be assigned to a skill. Choose a person or a sub-team.</summary>
+    public static string Gantt_ATaskCannotBeAssignedToASkillChooseAPersonOrASubTeam => Get("Gantt_ATaskCannotBeAssignedToASkillChooseAPersonOrASubTeam");
 
     /// <summary>Most loaded</summary>
     public static string Sprint_MostLoaded => Get("Sprint_MostLoaded");

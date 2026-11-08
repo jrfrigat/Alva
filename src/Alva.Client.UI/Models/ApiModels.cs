@@ -21,12 +21,16 @@ public sealed class ActorModel
     public string Kind { get; set; } = "Person";
     public string? Email { get; set; }
     public Guid? ParentId { get; set; }
-    public Guid[] RoleIds { get; set; } = [];
+    public Guid[] SkillIds { get; set; } = [];
+    /// <summary>Transitional alias for the demo while it still speaks the old request shape.</summary>
+    public Guid[] RoleIds { get => SkillIds; set => SkillIds = value; }
     public Guid[] DepartmentIds { get; set; } = [];
     public Guid? UserId { get; set; }
 }
 public sealed class TaskModel
 {
+    public Guid[] RequiredSkillIds { get; set; } = [];
+    /// <summary>Display names until TASK-205 removes the compatibility alias.</summary>
     public string[] RequiredSkills { get; set; } = [];
     public Guid Id { get; set; }
     public Guid TeamId { get; set; }
@@ -107,5 +111,5 @@ public static class Labels
     public static string Status(string value) => value switch { "Backlog" => AlvaStrings.Common_InThePool, "Planned" => AlvaStrings.Common_Planned, "InProgress" => AlvaStrings.Common_InProgress, "Done" => AlvaStrings.Common_Done, "Cancelled" => AlvaStrings.Common_Cancelled, "Active" => AlvaStrings.Common_Active, "Completed" => AlvaStrings.Common_Completed, _ => value };
     public static readonly string[] Priorities = ["Low", "Normal", "High", "Critical"];
     public static string Priority(string value) => value switch { "Low" => AlvaStrings.Common_Low, "High" => AlvaStrings.Common_High, "Critical" => AlvaStrings.Common_Critical, _ => AlvaStrings.Common_Normal };
-    public static string Kind(string value) => value switch { "Person" => AlvaStrings.Common_Person, "Department" => AlvaStrings.Common_SubTeam, "Role" => AlvaStrings.Common_Role, _ => value };
+    public static string Kind(string value) => value switch { "Person" => AlvaStrings.Common_Person, "Department" => AlvaStrings.Common_SubTeam, "Skill" => AlvaStrings.Common_Skills, _ => value };
 }

@@ -43,7 +43,7 @@ public static class NavigationItems
         [
             new("team", AlvaStrings.Nav_People, Flare.Icons.MaterialDesign3Icons.Regular.Badge, true, AlvaStrings.Nav_People),
             new("team/departments", AlvaStrings.Common_SubTeams, Flare.Icons.MaterialDesign3Icons.Regular.Hub, false),
-            new("team/roles", AlvaStrings.Common_Roles, Flare.Icons.MaterialDesign3Icons.Regular.ManageAccounts, false)
+            new("team/skills", AlvaStrings.Common_Skills, Flare.Icons.MaterialDesign3Icons.Regular.ManageAccounts, false)
         ]),
         new(AlvaStrings.Nav_Analytics,
         [

@@ -19,8 +19,8 @@ public static class ActorEndpoints
         return actors.Select(a =>
         {
             var skillIds = skills.Where(r => r.ActorId == a.Id).Select(r => r.SkillId).ToArray();
-            // "Role" and the name list keep the old client working until TASK-204 switches it to SkillIds.
-            var kind = a.Kind == ActorKind.Skill ? "Role" : a.Kind.ToString();
+            // The name list keeps the old card rendering until TASK-205 switches it to SkillIds.
+            var kind = a.Kind.ToString();
             var names = skillIds.Select(id => skillNames.GetValueOrDefault(id)).OfType<string>().ToArray();
             return new ActorDto(a.Id, a.TeamId, a.Name, kind, a.Email, a.ParentId, a.UserId, skillIds,
                 departments.Where(d => d.ActorId == a.Id).Select(d => d.DepartmentId).ToArray(), names, skillIds);

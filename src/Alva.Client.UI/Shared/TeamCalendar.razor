@@ -79,7 +79,7 @@ else
         {
             var mine = _rows.Where(r => r.ActorId == focused.Id && r.Date.Month == _month.Month).ToArray();
             <FlareCard Variant="CardVariant.Outlined">
-                <FlareCardHeader Title="@focused.Name" Subtitle="@string.Join(" / ", _actors.Where(a => focused.RoleIds.Contains(a.Id)).Select(a => a.Name).DefaultIfEmpty(AlvaStrings.Capacity_TeamMember))">
+                <FlareCardHeader Title="@focused.Name" Subtitle="@string.Join(" / ", _actors.Where(a => focused.SkillIds.Contains(a.Id)).Select(a => a.Name).DefaultIfEmpty(AlvaStrings.Capacity_TeamMember))">
                     <AvatarContent><FlareAvatar Text="@AlvaFormat.Initials(focused.Name)" Alt="@focused.Name" Size="AvatarSize.Sm" /></AvatarContent>
                 </FlareCardHeader>
                 <FlareCardContent>

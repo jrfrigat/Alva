@@ -235,7 +235,7 @@
   <data name="Task_AssigneeSlot" xml:space="preserve"><value>Исполнитель / слот</value></data>
   <data name="Gantt_AssigneeWorkloadOverThePeriod" xml:space="preserve"><value>Исполнитель · загрузка за период</value></data>
   <data name="Gantt_AssigneeNotFound" xml:space="preserve"><value>Исполнитель не найден.</value></data>
-  <data name="Tasks_AssigneeSubTeamOrRole" xml:space="preserve"><value>Исполнитель, подкоманда или роль</value></data>
+  <data name="Tasks_AssigneeSubTeamOrRole" xml:space="preserve"><value>Исполнитель: человек или подкоманда</value></data>
   <data name="Tasks_History" xml:space="preserve"><value>История</value></data>
   <data name="Capacity_FundTotal" xml:space="preserve"><value>Итог фонда</value></data>
   <data name="Sprint_SelectionTotalsPlan" xml:space="preserve"><value>Итоги по выборке: План:</value></data>
@@ -521,12 +521,22 @@
   <data name="Gantt_AParentTaskWaitsForItsSubtasksTheSolidPartIsItsOwnWork" xml:space="preserve"><value>Родительская задача ждёт окончания подзадач; сплошная часть — её собственная работа</value></data>
   <data name="Common_Roles" xml:space="preserve"><value>Роли</value></data>
   <data name="People_TeamRoles" xml:space="preserve"><value>Роли команды</value></data>
+  <data name="Common_Skills" xml:space="preserve"><value>Навыки</value></data>
+  <data name="People_TeamSkills" xml:space="preserve"><value>Навыки команды</value></data>
+  <data name="People_RegistrySkills" xml:space="preserve"><value>Реестр · Навыки</value></data>
+  <data name="People_SkillsHelper" xml:space="preserve"><value>Выберите навыки из справочника команды.</value></data>
+  <data name="Sprint_SubTeamBalance" xml:space="preserve"><value>Баланс подкоманд: план и доступность</value></data>
+  <data name="Sprint_SubTeamBalanceSubtitle" xml:space="preserve"><value>По подкомандам и задачам, назначенным на них</value></data>
+  <data name="Sprint_GivePeopleSubTeamsToSeeTheBalance" xml:space="preserve"><value>Назначьте людям подкоманды, чтобы увидеть баланс.</value></data>
+  <data name="Sprint_SubTeamBalanceAria" xml:space="preserve"><value>Баланс подкоманды {0}</value></data>
   <data name="Common_Role" xml:space="preserve"><value>Роль</value></data>
   <data name="Capacity_RoleStatus" xml:space="preserve"><value>Роль / статус</value></data>
   <data name="Capacity_From" xml:space="preserve"><value>С</value></data>
   <data name="Capacity_WithAScheduleThisMonth" xml:space="preserve"><value>С рабочим графиком в этом месяце</value></data>
   <data name="Sprint_WithRisks" xml:space="preserve"><value>С рисками</value></data>
   <data name="Sprint_WithARole" xml:space="preserve"><value>С ролью</value></data>
+  <data name="Sprint_WithASubTeam" xml:space="preserve"><value>С подкомандой</value></data>
+  <data name="Gantt_ATaskCannotBeAssignedToASkillChooseAPersonOrASubTeam" xml:space="preserve"><value>Задачу нельзя назначить на навык. Выберите человека или подкоманду.</value></data>
   <data name="Sprint_MostLoaded" xml:space="preserve"><value>Самый перегруженный</value></data>
   <data name="Capacity_Sat" xml:space="preserve"><value>СБ</value></data>
   <data name="Sprint_Balance" xml:space="preserve"><value>Сбалансировать</value></data>

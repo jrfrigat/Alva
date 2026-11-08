@@ -64,7 +64,7 @@
                 </span>
             }
             <span class="alva-gantt-row__meta">@Data.Assignee(task) · @AlvaFormat.Hours(task.EffectiveEstimateHours) @(AlvaStrings.Sprint_HoursShort)</span>
-            <SkillMatch Required="task.RequiredSkills" Person="@(Data.Actor(task.ResolvedPersonId ?? task.AssignmentTargetId))" />
+            <SkillMatch Required="task.RequiredSkillIds" Person="@(Data.Actor(task.ResolvedPersonId ?? task.AssignmentTargetId))" Skills="Data.SkillDictionary" />
         </span>
         @if (RowActions is not null) { @RowActions(task) }
     };

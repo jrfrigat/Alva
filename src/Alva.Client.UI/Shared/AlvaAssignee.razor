@@ -1,4 +1,4 @@
-@* Исполнитель или слот задачи: человек — аватар с инициалами; роль/подкоманда — аватар с иконкой
+@* Исполнитель или слот задачи: человек — аватар с инициалами; подкоманда — аватар с иконкой
    и «Требуется человек», пока конкретный исполнитель не выбран. Загрузка, если передана, заменяет
    подпись под именем: >100% — перегрузка. *@
 @if (Target is null)
@@ -25,7 +25,7 @@ else if (Person is not null)
             {
                 <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@(Target.Kind == "Person" ? AlvaStrings.Common_Person : $"{Labels.Kind(Target.Kind)}: {Target.Name}")</FlareText>
             }
-            <SkillMatch Required="Task.RequiredSkills" Person="Person" />
+            <SkillMatch Required="Task.RequiredSkillIds" Person="Person" Skills="SkillDictionary" />
         </FlareStack>
     </FlareStack>
 }
@@ -50,4 +50,5 @@ else
 
     private ActorModel? Target => Actors.FirstOrDefault(a => a.Id == Task.AssignmentTargetId);
     private ActorModel? Person => Actors.FirstOrDefault(a => a.Id == Task.ResolvedPersonId) ?? (Target?.Kind == "Person" ? Target : null);
+    private IEnumerable<ActorModel> SkillDictionary => Actors.Where(a => a.Kind == "Skill");
 }

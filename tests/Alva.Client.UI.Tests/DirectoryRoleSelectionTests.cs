@@ -7,15 +7,15 @@ using DirectoryPage = Alva.Client.Pages.Directory;
 
 namespace Alva.Client.UI.Tests;
 
-/// <summary>Роли в карточке человека выбираются одним множественным списком из справочника.</summary>
+/// <summary>Навыки в карточке человека выбираются одним множественным списком из справочника.</summary>
 public sealed class DirectoryRoleSelectionTests : UiTestBase
 {
     [Fact]
-    public void Picking_and_removing_a_role_updates_the_selection_and_the_saved_request()
+    public void Picking_and_removing_a_skill_updates_the_selection_and_the_saved_request()
     {
-        var role = new ActorModel { Id = Guid.NewGuid(), Name = "Backend", Kind = "Role" };
+        var skill = new ActorModel { Id = Guid.NewGuid(), Name = "Backend", Kind = "Skill" };
         var person = new ActorModel { Id = Guid.NewGuid(), Name = "Иван Петров", Kind = "Person" };
-        Api.Answer("actors", _ => new[] { person, role })
+        Api.Answer("actors", _ => new[] { person, skill })
            .Answer("tasks", _ => Array.Empty<TaskModel>());
         var cut = Render<FlareConfirmDialogProvider>(p => p.AddChildContent<DirectoryPage>());
 
@@ -39,7 +39,7 @@ public sealed class DirectoryRoleSelectionTests : UiTestBase
         cut.WaitForAssertion(() =>
         {
             var request = Assert.IsType<ActorRequest>(Api.Sent.Single(x => x.Method == HttpMethod.Put).Value);
-            Assert.Equal(role.Id, Assert.Single(request.RoleIds!));
+            Assert.Equal(skill.Id, Assert.Single(request.SkillIds!));
         });
     }
 

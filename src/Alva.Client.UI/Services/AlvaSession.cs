@@ -58,7 +58,9 @@ public sealed class AlvaSession(IApiService api, IJSRuntime js)
                 var person = actors.FirstOrDefault(a => a.Kind == "Person" && a.Id == (task?.ResolvedPersonId ?? task?.AssignmentTargetId));
                 if (task is not null && person is not null)
                 {
-                    var missing = SkillMath.Missing(task.RequiredSkills, person.Skills);
+                    var names = actors.Where(a => a.Kind == "Skill").ToDictionary(a => a.Id, a => a.Name);
+                    var missing = SkillMath.Missing(task.RequiredSkillIds, person.SkillIds)
+                        .Select(id => names.GetValueOrDefault(id)).OfType<string>().ToArray();
                     if (missing.Length > 0) AssignmentNotice = $"{task.Title} — {person.Name}: {AlvaStrings.Common_MissingSkills} {string.Join(", ", missing)}";
                 }
             }

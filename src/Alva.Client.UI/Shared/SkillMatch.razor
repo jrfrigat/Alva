@@ -1,11 +1,14 @@
 @if (Required.Length > 0 && Person is { Kind: "Person" })
 {
-    var missing = SkillMath.Missing(Required, Person.Skills);
+    var names = Skills.ToDictionary(skill => skill.Id, skill => skill.Name);
+    var missing = SkillMath.Missing(Required, Person.SkillIds).Select(id => names.GetValueOrDefault(id)).OfType<string>().ToArray();
     <FlareText Typo="TypographyScale.BodySmall" Color="@(missing.Length > 0 ? FlareColor.Warning : FlareColor.OnSurfaceVariant)" role="status">
         @(missing.Length > 0 ? AlvaStrings.Common_MissingSkills + " " + string.Join(", ", missing) : AlvaStrings.Common_AllRequiredSkillsArePresent)
     </FlareText>
 }
 @code {
-    [Parameter] public string[] Required { get; set; } = [];
+    [Parameter] public Guid[] Required { get; set; } = [];
     [Parameter] public ActorModel? Person { get; set; }
+    /// <summary>The team's skill dictionary, used to show the missing skills by name.</summary>
+    [Parameter] public IEnumerable<ActorModel> Skills { get; set; } = [];
 }

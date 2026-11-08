@@ -120,7 +120,7 @@ public sealed class GanttPeopleData
     private PeopleRow PersonRow(ActorModel person)
     {
         var rows = _capacityOf[person.Id].ToArray();
-        var roles = string.Join(" / ", Data.Actors.Where(a => person.RoleIds.Contains(a.Id)).Select(a => a.Name).DefaultIfEmpty(AlvaStrings.Capacity_TeamMember));
+        var roles = string.Join(" / ", Data.Actors.Where(a => person.SkillIds.Contains(a.Id)).Select(a => a.Name).DefaultIfEmpty(AlvaStrings.Capacity_TeamMember));
         var load = string.Format(AlvaStrings.Gantt_HoursRatio, AlvaFormat.Hours(rows.Sum(r => r.AllocatedHours)), AlvaFormat.Hours(rows.Sum(r => r.AvailableHours)));
         return new PeopleRow(PersonKey(person.Id), "person", person.Name, $"{roles} · {load}", person, []);
     }
@@ -225,8 +225,8 @@ public sealed class GanttPeopleData
     public static bool IsRowKey(string key) => key == Pool || key.Length > 2 && key[1] == ':';
 
     /// <summary>
-    /// Переназначает задачу на строку: человеку (сохраняя роль или подкоманду назначения, если человек в ней),
-    /// роли или подкоманде без человека, либо снимает назначение для «Не назначено».
+    /// Переназначает задачу на строку: человеку (сохраняя подкоманду назначения, если человек в ней)
+    /// или подкоманде без человека, либо снимает назначение для «Не назначено».
     /// </summary>
     public Task Reassign(AlvaSession session, TaskModel task, string rowKey)
     {
@@ -234,9 +234,10 @@ public sealed class GanttPeopleData
         if (rowKey == Pool) return session.Send(HttpMethod.Delete, path, new { });
         if (IsGroup(rowKey)) throw new InvalidOperationException(GroupRefusal);
         var actor = Data.Actor(Guid.ParseExact(rowKey[2..], "N")) ?? throw new InvalidOperationException(AlvaStrings.Gantt_AssigneeNotFound);
+        if (actor.Kind == "Skill") throw new InvalidOperationException(AlvaStrings.Gantt_ATaskCannotBeAssignedToASkillChooseAPersonOrASubTeam);
         if (actor.Kind != "Person") return session.Send(HttpMethod.Put, path, new AssignmentRequest(actor.Id));
         var keep = Data.Actor(task.AssignmentTargetId) is { Kind: not "Person" } target
-            && (actor.RoleIds.Contains(target.Id) || actor.DepartmentIds.Contains(target.Id));
+            && (actor.SkillIds.Contains(target.Id) || actor.DepartmentIds.Contains(target.Id));
         return session.Send(HttpMethod.Put, path, keep ? new AssignmentRequest(task.AssignmentTargetId!.Value, actor.Id) : new AssignmentRequest(actor.Id));
     }
 }

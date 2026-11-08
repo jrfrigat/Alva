@@ -87,7 +87,7 @@ else
             @foreach (var person in people)
             {
                 <div class="alva-matrix__row" role="row" @key="person.Id">
-                    <span role="cell" class="alva-matrix__who"><span class="alva-slot__mark" aria-hidden="true">@AlvaFormat.Initials(person.Name)</span><span><a href="@($"capacity/{person.Id}")" class="alva-matrix__name">@person.Name</a><small>@RolesOf(person)</small></span></span>
+                    <span role="cell" class="alva-matrix__who"><span class="alva-slot__mark" aria-hidden="true">@AlvaFormat.Initials(person.Name)</span><span><a href="@($"capacity/{person.Id}")" class="alva-matrix__name">@person.Name</a><small>@SkillsOf(person)</small></span></span>
                     <span role="cell"><AlvaStatusChip Tone="AlvaTone.Info">@(AlvaStrings.Capacity_Staff)</AlvaStatusChip></span>
                     <span role="cell" class="alva-num alva-matrix__fund">@AlvaFormat.Hours(Available(person.Id)) @(AlvaStrings.Sprint_HoursShort)</span>
                     @foreach (var period in _periods)
@@ -173,7 +173,7 @@ else
 
     private Guid? GroupOf(ActorModel person) => person.DepartmentIds.FirstOrDefault(id => _departments.Any(d => d.Id == id)) is var id && id != Guid.Empty ? id : (Guid?)null;
     private Guid? GroupOfRole(ActorModel actor) => actor.Kind == "Department" ? actor.Id : actor.ParentId is { } parent && _departments.Any(d => d.Id == parent) ? parent : null;
-    private string RolesOf(ActorModel person) => string.Join(" / ", _actors.Where(a => person.RoleIds.Contains(a.Id)).Select(a => a.Name).DefaultIfEmpty(AlvaStrings.Capacity_TeamMember));
+    private string SkillsOf(ActorModel person) => string.Join(" / ", _actors.Where(a => person.SkillIds.Contains(a.Id)).Select(a => a.Name).DefaultIfEmpty(AlvaStrings.Capacity_TeamMember));
 
     private (decimal Available, decimal Allocated) Cell(Guid actorId, Period period)
     {

@@ -122,7 +122,7 @@
     private static DateOnly Today => DateOnly.FromDateTime(DateTime.Today);
     private static DateOnly Monday(DateOnly d) => d.AddDays(-(((int)d.DayOfWeek + 6) % 7));
     private ActorModel? Person => _actors.FirstOrDefault(a => a.Id == ActorId);
-    private IEnumerable<string> Tags => Person is null ? [] : _actors.Where(a => Person.RoleIds.Contains(a.Id) || Person.DepartmentIds.Contains(a.Id)).Select(a => a.Name);
+    private IEnumerable<string> Tags => Person is null ? [] : _actors.Where(a => Person.SkillIds.Contains(a.Id) || Person.DepartmentIds.Contains(a.Id)).Select(a => a.Name);
     private SprintModel? SprintOfWeek => _sprints.Where(s => s.StartDate <= _monday.AddDays(6) && s.EndDate >= _monday).OrderBy(s => s.StartDate).FirstOrDefault();
     private static int Pct(decimal part, decimal whole) => whole <= 0 ? 0 : (int)Math.Round(part / whole * 100);
 

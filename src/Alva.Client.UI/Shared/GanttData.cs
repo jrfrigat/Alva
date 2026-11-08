@@ -15,6 +15,7 @@ public sealed class GanttData
     public TaskModel[] Tasks { get; private init; } = [];
     public SprintModel[] Sprints { get; private init; } = [];
     public ActorModel[] Actors { get; private init; } = [];
+    public IEnumerable<ActorModel> SkillDictionary => Actors.Where(a => a.Kind == "Skill");
     public RiskDto[] Risks { get; private init; } = [];
     public DependencyDto[] Dependencies { get; private init; } = [];
 
@@ -168,7 +169,8 @@ public sealed class GanttData
         var title = $"{task.Title} · {dates} · {Assignee(task)}";
         if (Actor(task.ResolvedPersonId ?? task.AssignmentTargetId) is { Kind: "Person" } person)
         {
-            var missing = SkillMath.Missing(task.RequiredSkills, person.Skills);
+            var missing = SkillMath.Missing(task.RequiredSkillIds, person.SkillIds)
+                .Select(id => Actors.FirstOrDefault(skill => skill.Id == id)?.Name).OfType<string>().ToArray();
             if (missing.Length > 0) title += $"\n{AlvaStrings.Common_MissingSkills} {string.Join(", ", missing)}";
         }
         if (ChildrenOf(task).Any()) title += "\n" + AlvaStrings.Gantt_HatchingWaitingForSubtasks;
