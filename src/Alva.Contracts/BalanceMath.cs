@@ -32,7 +32,8 @@ public record BalanceProposalDto(string Mode, string Status, BalanceMetricsDto B
 public record BalanceExcludedDto(Guid TaskId, string Title, ReasonDto Reason);
 
 /// <summary>Человек команды для автобаланса: подкоманды и навыки определяют, какие задачи ему можно дать.</summary>
-public record BalancePersonInput(Guid Id, string Name, Guid[] Departments, Guid[] SkillIds)
+/// <param name="DepartmentClosure">Direct sub-teams plus their parents; a task targeted at any of them admits this person.</param>
+public record BalancePersonInput(Guid Id, string Name, Guid[] Departments, Guid[] SkillIds, Guid[]? DepartmentClosure = null)
 {
     /// <summary>Transitional shape for callers that still pass roles first; the roles are read as sub-teams.</summary>
     public BalancePersonInput(Guid Id, string Name, Guid[] Roles, Guid[] Departments, string[]? Skills)
@@ -299,7 +300,7 @@ public static class BalanceMath
         if (current >= 0) result.Add(current);
         if (targetIsGroup)
             for (var i = 0; i < people.Count; i++)
-                if (people[i].Departments.Contains(target)) result.Add(i);
+                if ((people[i].DepartmentClosure ?? people[i].Departments).Contains(target)) result.Add(i);
         if (mode == BalanceModes.Maximum && current >= 0)
             for (var i = 0; i < people.Count; i++)
                 if (people[i].SkillIds.Intersect(people[current].SkillIds).Any()) result.Add(i);

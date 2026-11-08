@@ -299,7 +299,7 @@
             </FlareTabs>
             @if (Actors.FirstOrDefault(a => a.Id == _assignTarget)?.Kind is "Department")
             {
-                <FlareSelect TValue="Guid?" Label="@(AlvaStrings.Common_SpecificAssignee)" Items="@(Actors.Where(a => a.Kind == "Person").Select(a => (Guid?)a.Id))" ItemLabel="ActorName" NullOption="@(AlvaStrings.Task_NotChosenYetAPersonIsRequired)" @bind-Value="_assignPerson" Searchable />
+                <FlareSelect TValue="Guid?" Label="@(AlvaStrings.Common_SpecificAssignee)" Items="AssignablePeople.Select(a => (Guid?)a.Id)" ItemLabel="ActorName" NullOption="@(AlvaStrings.Task_NotChosenYetAPersonIsRequired)" @bind-Value="_assignPerson" Searchable />
             }
             <div class="alva-assign__footer">
                 @if (Item.AssignmentTargetId is not null)
@@ -463,6 +463,22 @@
     private string SkillName(Guid id) => Actors.FirstOrDefault(x => x.Id == id)?.Name ?? "";
     private IEnumerable<ActorModel> SkillActors => Actors.Where(a => a.Kind == "Skill");
     private string[] SkillNames(ActorModel actor) => actor.SkillIds.Select(id => Actors.FirstOrDefault(a => a.Id == id)?.Name).OfType<string>().ToArray();
+    private IEnumerable<ActorModel> AssignablePeople => Actors.Where(a => a.Kind == "Person" && InTargetDepartment(a));
+    private void SelectTarget(ActorModel actor) { _assignTarget = actor.Id; _assignPerson = null; }
+    private bool InTargetDepartment(ActorModel person) =>
+        Actors.FirstOrDefault(a => a.Id == _assignTarget) is not { Kind: "Department" } department || PersonInDepartment(person, department.Id);
+    private bool PersonInDepartment(ActorModel person, Guid departmentId)
+    {
+        var departments = Actors.Where(a => a.Kind == "Department").ToDictionary(a => a.Id, a => a.ParentId);
+        bool Walk(Guid start)
+        {
+            var seen = new HashSet<Guid>();
+            for (Guid? current = start; current is { } id && seen.Add(id); current = departments.GetValueOrDefault(id))
+                if (id == departmentId) return true;
+            return false;
+        }
+        return person.DepartmentIds.Any(Walk);
+    }
 
     private static string KindLabel(string kind) => kind switch
     {
@@ -527,7 +543,7 @@
     /// <summary>Кандидаты одного вида. У людей — загрузка за окно спринта (или 14 дней).</summary>
     private RenderFragment Candidates(string kind) => __builder =>
     {
-        var list = Actors.Where(a => a.Kind == kind && (string.IsNullOrWhiteSpace(_assignSearch) || a.Name.Contains(_assignSearch, StringComparison.OrdinalIgnoreCase)))
+        var list = Actors.Where(a => a.Kind == kind && (kind != "Person" || InTargetDepartment(a)) && (string.IsNullOrWhiteSpace(_assignSearch) || a.Name.Contains(_assignSearch, StringComparison.OrdinalIgnoreCase)))
             .OrderBy(a => kind == "Person" ? SkillMath.Missing(_model.RequiredSkillIds, a.SkillIds).Length : 0)
             .ThenBy(a => _load.ContainsKey(a.Id) ? Percent(a.Id) : int.MaxValue).ThenBy(a=>a.Name).ToArray();
         var recommended = kind == "Person" ? list.Where(a => SkillMath.Compatible(_model.RequiredSkillIds, a.SkillIds) && _load.ContainsKey(a.Id) && _load[a.Id].Available > 0).OrderBy(a => Percent(a.Id)).FirstOrDefault()?.Id : null;
@@ -543,7 +559,7 @@
                     var percent = kind == "Person" && _load.ContainsKey(actor.Id) ? Percent(actor.Id) : (int?)null;
                     var reserve = _load.TryGetValue(actor.Id, out var l) ? l.Available - l.Allocated : 0;
                     var tone = percent is null ? AlvaTone.Role : percent > 100 ? AlvaTone.Critical : percent > 80 ? AlvaTone.Info : AlvaTone.Ok;
-                    <FlareListItem @key="actor.Id" Selected="@(actor.Id == _assignTarget)" OnClick="() => _assignTarget = actor.Id">
+                    <FlareListItem @key="actor.Id" Selected="@(actor.Id == _assignTarget)" OnClick="() => SelectTarget(actor)">
                         <Leading><FlareAvatar Text="@AlvaFormat.Initials(actor.Name)" Size="AvatarSize.Sm" Color="@(kind == "Person" ? FlareColor.Primary : FlareColor.Tertiary)" /></Leading>
                         <ChildContent>
                             <FlareStack Gap="FlareSpacing.None">
@@ -574,7 +590,7 @@
 
     private string CandidateMeta(ActorModel actor)
     {
-        if (actor.Kind != "Person") return $"{Labels.Kind(actor.Kind)} · {Actors.Count(a => a.Kind == "Person" && (a.SkillIds.Contains(actor.Id) || a.DepartmentIds.Contains(actor.Id)))} {AlvaStrings.Common_People}";
+        if (actor.Kind != "Person") return $"{Labels.Kind(actor.Kind)} · {Actors.Count(a => a.Kind == "Person" && (a.SkillIds.Contains(actor.Id) || PersonInDepartment(a, actor.Id)))} {AlvaStrings.Common_People}";
         var tags = Actors.Where(a => actor.SkillIds.Contains(a.Id) || actor.DepartmentIds.Contains(a.Id)).Select(a => a.Name).ToArray();
         return tags.Length > 0 ? string.Join(" / ", tags) : AlvaStrings.Capacity_TeamMember;
     }

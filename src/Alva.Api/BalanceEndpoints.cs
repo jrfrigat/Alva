@@ -70,7 +70,10 @@ public static class BalanceEndpoints
         var actorSkills = (await db.ActorSkills.AsNoTracking().Where(x => ids.Contains(x.ActorId)).ToListAsync()).ToLookup(x => x.ActorId, x => x.SkillId);
         var departments = (await db.ActorDepartments.AsNoTracking().Where(x => ids.Contains(x.ActorId)).ToListAsync())
             .Where(x => x.ActiveOn(sprint.StartDate)).ToLookup(x => x.ActorId, x => x.DepartmentId);
-        var persons = people.Select(x => new BalancePersonInput(x.Id, x.Name, [.. departments[x.Id]], [.. actorSkills[x.Id]])).ToArray();
+        var departmentParents = await db.Actors.AsNoTracking().Where(a => a.TeamId == teamId && a.Kind == ActorKind.Department)
+            .ToDictionaryAsync(a => a.Id, a => a.ParentId);
+        Guid[] Closure(Guid personId) => [.. CapacityMath.DepartmentsWithParents(departments[personId], id => departmentParents.GetValueOrDefault(id))];
+        var persons = people.Select(x => new BalancePersonInput(x.Id, x.Name, [.. departments[x.Id]], [.. actorSkills[x.Id]], Closure(x.Id))).ToArray();
 
         // Все неархивные задачи: готовые и «в работе» с датами нужны как якоря связей, даже когда не двигаются.
         var tasks = await db.Tasks.AsNoTracking().Where(x => x.TeamId == teamId && !x.Archived).ToListAsync();

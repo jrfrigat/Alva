@@ -153,6 +153,28 @@ public sealed class TaskDetailsCardTests : UiTestBase
     }
 
     [Fact]
+    public void Assignment_candidates_come_from_the_nested_departments_of_the_target()
+    {
+        var root = new ActorModel { Id = Guid.NewGuid(), Name = "Разработка", Kind = "Department" };
+        var child = new ActorModel { Id = Guid.NewGuid(), Name = "Платформа", Kind = "Department", ParentId = root.Id };
+        var other = new ActorModel { Id = Guid.NewGuid(), Name = "Продажи", Kind = "Department" };
+        var member = new ActorModel { Id = Guid.NewGuid(), Name = "Анна", Kind = "Person", DepartmentIds = [child.Id] };
+        var outsider = new ActorModel { Id = Guid.NewGuid(), Name = "Борис", Kind = "Person", DepartmentIds = [other.Id] };
+        var item = new TaskModel { Id = _task.Id, Title = _task.Title, Status = "Planned", Version = 1, AssignmentTargetId = root.Id };
+        var cut = Render<FlareConfirmDialogProvider>(p => p.AddChildContent<TaskDetails>(d => d
+            .Add(x => x.Item, item)
+            .Add(x => x.Actors, [root, child, other, member, outsider])
+            .Add(x => x.Tasks, [item])));
+
+        Button(cut, "Назначить исполнителя").Click();
+        cut.WaitForAssertion(() => Assert.Contains("Снять назначение", cut.Markup));
+        cut.FindAll("button").First(button => button.TextContent.Contains("Человек", StringComparison.Ordinal)).Click();
+
+        cut.WaitForAssertion(() => Assert.Contains("Анна", cut.Markup));
+        Assert.DoesNotContain("Борис", cut.Markup);
+    }
+
+    [Fact]
     public void Unassigned_task_offers_no_unassign_button()
     {
         var cut = Page();

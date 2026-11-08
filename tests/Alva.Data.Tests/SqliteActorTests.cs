@@ -73,4 +73,32 @@ public sealed class SqliteActorTests
         Assert.Equal(new DateOnly(1, 1, 1), membership.From);
         Assert.Null(membership.To);
     }
+
+    [Fact]
+    public async Task A_task_targeted_at_a_parent_department_accepts_people_from_its_children()
+    {
+        var server = await ApiServer.Create(app => { app.MapActors(); app.MapTasks(); });
+        await using var _ = server;
+        async Task<ActorDto> Actor(ActorRequest request)
+        {
+            var response = await server.Client.PostAsJsonAsync(server.Team("actors"), request);
+            Assert.True(response.IsSuccessStatusCode, await response.Content.ReadAsStringAsync());
+            return (await response.Content.ReadFromJsonAsync<ActorDto>())!;
+        }
+        var root = await Actor(new ActorRequest("Разработка", "Department"));
+        var child = await Actor(new ActorRequest("Платформа", "Department", ParentId: root.Id));
+        var other = await Actor(new ActorRequest("Продажи", "Department"));
+        var member = await Actor(new ActorRequest("Анна", "Person", DepartmentMemberships:
+            [new DepartmentMembershipRequest(null, child.Id, new DateOnly(2026, 1, 1), null)]));
+        var outsider = await Actor(new ActorRequest("Борис", "Person", DepartmentMemberships:
+            [new DepartmentMembershipRequest(null, other.Id, new DateOnly(2026, 1, 1), null)]));
+        var taskResponse = await server.Client.PostAsJsonAsync(server.Team("tasks"), new TaskRequest("Задача", StartDate: new DateOnly(2026, 2, 1), EndDate: new DateOnly(2026, 2, 2)));
+        var task = (await taskResponse.Content.ReadFromJsonAsync<TaskDto>())!;
+
+        var accepted = await server.Client.PutAsJsonAsync(server.Team($"tasks/{task.Id}/assignment"), new AssignmentRequest(root.Id, member.Id));
+        Assert.True(accepted.IsSuccessStatusCode, await accepted.Content.ReadAsStringAsync());
+
+        var rejected = await server.Client.PutAsJsonAsync(server.Team($"tasks/{task.Id}/assignment"), new AssignmentRequest(root.Id, outsider.Id));
+        Assert.Equal(System.Net.HttpStatusCode.BadRequest, rejected.StatusCode);
+    }
 }

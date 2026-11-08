@@ -108,6 +108,8 @@ public static class TaskEndpoints
                 var person = await db.Actors.AsNoTracking().SingleOrDefaultAsync(x => x.TeamId == teamId && x.Id == personId && x.Kind == ActorKind.Person && !x.Archived)
                     ?? throw new ApiException(400, "Конкретный исполнитель должен быть человеком команды.");
                 if (target.Kind == ActorKind.Person && target.Id != personId) throw new ApiException(400, "У человека не может быть отдельного исполнителя.");
+                if (target.Kind == ActorKind.Department && !await InDepartmentSubtree(db, teamId, personId, target.Id, task.StartDate ?? DateOnly.FromDateTime(DateTime.Today)))
+                    throw new ApiException(400, "Человек не входит в назначенную подкоманду или её вложенные подкоманды.");
             }
             if (await db.Assignments.SingleOrDefaultAsync(x => x.TaskId == taskId) is { } existing)
             {
@@ -279,6 +281,24 @@ public static class TaskEndpoints
             if (parent.ParentId is not { } next) break;
             current = next;
         }
+    }
+
+    /// <summary>Whether the person is an active member of the department or one of its descendants on that day.</summary>
+    internal static async Task<bool> InDepartmentSubtree(AlvaDbContext db, Guid teamId, Guid personId, Guid departmentId, DateOnly day, CancellationToken ct = default)
+    {
+        var departments = await db.Actors.AsNoTracking().Where(a => a.TeamId == teamId && a.Kind == ActorKind.Department)
+            .ToDictionaryAsync(a => a.Id, a => a.ParentId, ct);
+        var memberships = await db.ActorDepartments.AsNoTracking()
+            .Where(x => x.ActorId == personId && x.From <= day && (x.To == null || day <= x.To))
+            .Select(x => x.DepartmentId).ToListAsync(ct);
+        bool Walk(Guid start)
+        {
+            var seen = new HashSet<Guid>();
+            for (Guid? current = start; current is { } id && seen.Add(id); current = departments.GetValueOrDefault(id))
+                if (id == departmentId) return true;
+            return false;
+        }
+        return memberships.Any(Walk);
     }
 
     internal static async Task<TaskDto[]> List(AlvaDbContext db, Guid teamId)

@@ -42,7 +42,7 @@ public static class ActorEndpoints
         List<DepartmentMembershipRequest> memberships;
         if (request.DepartmentMemberships is not null)
             memberships = [.. request.DepartmentMemberships];
-        else if (request.DepartmentIds is not null || request.ParentId.HasValue)
+        else if (kind == ActorKind.Person && (request.DepartmentIds is not null || request.ParentId.HasValue))
             memberships = (request.DepartmentIds ?? []).Concat(request.ParentId.HasValue ? [request.ParentId.Value] : [])
                 .Distinct().Select(id => new DepartmentMembershipRequest(null, id, new DateOnly(1, 1, 1), null)).ToList();
         else

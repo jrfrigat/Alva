@@ -49,6 +49,20 @@ public sealed class SkillTests
     }
 
     [Fact]
+    public void A_group_target_admits_people_from_nested_departments()
+    {
+        var root = Guid.NewGuid();
+        var child = Guid.NewGuid();
+        var start = new DateOnly(2026, 10, 5);
+        var person = new BalancePersonInput(Guid.NewGuid(), "Вложенный", [child], [], [child, root]);
+        var task = new BalanceTaskInput(Guid.NewGuid(), "Task", "Planned", null, 8, start, start, null, root, null, []);
+
+        var problem = BalanceMath.Build(BalanceModes.Gentle, Guid.NewGuid(), start, start.AddDays(4), [person], CapacityMath.DefaultCalendar, [task], []);
+
+        Assert.Contains(problem.Tasks.Single().Options, option => option.Person == 0);
+    }
+
+    [Fact]
     public void Matching_ignores_case_whitespace_and_unicode_width()
     {
         Assert.Equal(["C#", "SQL Server"], SkillMath.Normalize([" C# ", "c#", " SQL  Server ", ""]));

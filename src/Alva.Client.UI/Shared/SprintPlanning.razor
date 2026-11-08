@@ -326,12 +326,24 @@
         || t.Title.Contains(_search, StringComparison.OrdinalIgnoreCase)
         || AlvaFormat.Code(t.Id).Contains(_search.Trim().TrimStart('#'), StringComparison.OrdinalIgnoreCase);
 
+    private bool DepartmentInTree(Guid departmentId, Guid rootId)
+    {
+        var departments = _actors.Where(a => a.Kind == "Department").ToDictionary(a => a.Id, a => a.ParentId);
+        var seen = new HashSet<Guid>();
+        for (Guid? current = departmentId; current is { } id && seen.Add(id); current = departments.GetValueOrDefault(id))
+            if (id == rootId) return true;
+        return false;
+    }
+
+    private bool PersonInDepartmentTree(ActorModel person, Guid rootId) => person.DepartmentIds.Any(id => DepartmentInTree(id, rootId));
+
     /// <summary>Подкоманды: план — задачи спринта на подкоманду или на её людей; доступно — ёмкость этих людей.</summary>
     private IEnumerable<(ActorModel Team, decimal Plan, decimal Available)> SubTeams => _actors.Where(a => a.Kind == "Department")
         .Select(team =>
         {
-            var people = _actors.Where(a => a.Kind == "Person" && (a.ParentId == team.Id || a.DepartmentIds.Contains(team.Id))).Select(a => a.Id).ToHashSet();
-            var plan = InSprint.Where(t => t.AssignmentTargetId == team.Id || (t.ResolvedPersonId ?? t.AssignmentTargetId) is { } p && people.Contains(p)).Sum(t => SprintHours.Of(t, Sprint));
+            var people = _actors.Where(a => a.Kind == "Person" && PersonInDepartmentTree(a, team.Id)).Select(a => a.Id).ToHashSet();
+            var plan = InSprint.Where(t => t.AssignmentTargetId is { } target && DepartmentInTree(target, team.Id)
+                || (t.ResolvedPersonId ?? t.AssignmentTargetId) is { } p && people.Contains(p)).Sum(t => SprintHours.Of(t, Sprint));
             var avail = people.Sum(p => _load.TryGetValue(p, out var l) ? l.Available : 0);
             return (team, plan, avail);
         })
