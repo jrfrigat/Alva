@@ -31,7 +31,7 @@ public static class NavigationItems
         ]),
         new(AlvaStrings.Nav_Charts,
         [
-            new("gantt/tasks", AlvaStrings.Gantt_TaskGantt, Flare.Icons.MaterialDesign3Icons.Regular.WaterfallChart, false),
+            new("gantt/tasks", AlvaStrings.Gantt_TaskGantt, Flare.Icons.MaterialDesign3Icons.Regular.AlignHorizontalLeft, false),
             new("gantt/people", AlvaStrings.Gantt_PeopleGantt, Flare.Icons.MaterialDesign3Icons.Regular.StackedBarChart, false)
         ]),
         new(AlvaStrings.Common_Capacity,
