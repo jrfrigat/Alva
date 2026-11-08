@@ -1596,6 +1596,18 @@ public static class AlvaStrings
     /// <summary>Choose skills from the team dictionary.</summary>
     public static string People_SkillsHelper => Get("People_SkillsHelper");
 
+    /// <summary>Sub-team periods</summary>
+    public static string People_SubTeamPeriods => Get("People_SubTeamPeriods");
+
+    /// <summary>Add a period</summary>
+    public static string People_AddPeriod => Get("People_AddPeriod");
+
+    /// <summary>Membership periods must not overlap.</summary>
+    public static string People_OverlappingPeriods => Get("People_OverlappingPeriods");
+
+    /// <summary>The end date is before the start date.</summary>
+    public static string People_PeriodEndBeforeStart => Get("People_PeriodEndBeforeStart");
+
     /// <summary>Sub-team balance: plan vs availability</summary>
     public static string Sprint_SubTeamBalance => Get("Sprint_SubTeamBalance");
 

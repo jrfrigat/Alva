@@ -23,8 +23,17 @@ public sealed class ActorModel
     public Guid? ParentId { get; set; }
     public Guid[] SkillIds { get; set; } = [];
     public Guid[] DepartmentIds { get; set; } = [];
+    public DepartmentMembershipModel[] DepartmentMemberships { get; set; } = [];
     public Guid? UserId { get; set; }
 }
+public sealed class DepartmentMembershipModel
+{
+    public Guid Id { get; set; }
+    public Guid DepartmentId { get; set; }
+    public DateOnly From { get; set; }
+    public DateOnly? To { get; set; }
+}
+
 public sealed class TaskModel
 {
     public Guid[] RequiredSkillIds { get; set; } = [];

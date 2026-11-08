@@ -525,6 +525,10 @@
   <data name="People_TeamSkills" xml:space="preserve"><value>Team skills</value></data>
   <data name="People_RegistrySkills" xml:space="preserve"><value>Registry · Skills</value></data>
   <data name="People_SkillsHelper" xml:space="preserve"><value>Choose skills from the team dictionary.</value></data>
+  <data name="People_SubTeamPeriods" xml:space="preserve"><value>Sub-team periods</value></data>
+  <data name="People_AddPeriod" xml:space="preserve"><value>Add a period</value></data>
+  <data name="People_OverlappingPeriods" xml:space="preserve"><value>Membership periods must not overlap.</value></data>
+  <data name="People_PeriodEndBeforeStart" xml:space="preserve"><value>The end date is before the start date.</value></data>
   <data name="Sprint_SubTeamBalance" xml:space="preserve"><value>Sub-team balance: plan vs availability</value></data>
   <data name="Sprint_SubTeamBalanceSubtitle" xml:space="preserve"><value>By sub-teams and tasks assigned to them</value></data>
   <data name="Sprint_GivePeopleSubTeamsToSeeTheBalance" xml:space="preserve"><value>Give people sub-teams to see the balance.</value></data>

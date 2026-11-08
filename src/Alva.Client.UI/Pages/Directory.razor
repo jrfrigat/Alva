@@ -46,7 +46,8 @@ else
                                         @foreach (var skill in skills) { <FlareChip Variant="ChipVariant.Filled" Color="FlareColor.Secondary" Size="ChipSize.Xs">@skill</FlareChip> }
                                     </FlareStack>
                                 }
-                                @if (Kind != "Skill") { <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@ActorName(actor.ParentId)</FlareText> }
+                                @if (Kind == "Person") { <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@ActiveDepartments(actor)</FlareText> }
+                                else if (Kind != "Skill") { <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@ActorName(actor.ParentId)</FlareText> }
                             </FlareStack>
                         </ChildContent>
                     </FlareListItem>
@@ -65,8 +66,23 @@ else
             <FlareTextField Label="@(AlvaStrings.People_NameOrTitle)" ErrorText="@_nameError" @bind-Value="_actor.Name" Required />
             @if(_actor.Kind=="Person") { <FlareTextField Label="@(AlvaStrings.Common_EmailField)" ErrorText="@_emailError" @bind-Value="_actor.Email" Type="email" /> }
             @if(_actor.Kind=="Person") { <FlareMultiSelect TValue="Guid" Label="@(AlvaStrings.Common_Skills)" Items="@(_actors.Where(a=>a.Kind=="Skill").Select(a=>a.Id))" ItemLabel="id => ActorName(id)" Chips="true" Searchable="true" HelperText="@(AlvaStrings.People_SkillsHelper)" Values="@_actor.SkillIds" ValuesChanged="(IReadOnlyList<Guid> skills) => _actor.SkillIds = skills.ToArray()" /> }
-            @if(_actor.Kind!="Skill") { <FlareSelect TValue="Guid?" Label="@(_actor.Kind=="Department" ? AlvaStrings.People_ParentSubTeam : AlvaStrings.Common_SubTeam)" Items="@(_actors.Where(a=>a.Kind=="Department" && a.Id!=_actor.Id).Select(a=>(Guid?)a.Id))" ItemLabel="ActorName" NullOption="@(AlvaStrings.People_NoSubTeam)" @bind-Value="_actor.ParentId" /> }
-            @if(_actor.Kind=="Person") { @foreach(var department in _actors.Where(a=>a.Kind=="Department")){<FlareCheckbox Value="_actor.DepartmentIds.Contains(department.Id)" ValueChanged="(bool value)=>ToggleDepartment(department.Id,value)">@department.Name</FlareCheckbox>} }
+            @if(_actor.Kind=="Department") { <FlareSelect TValue="Guid?" Label="@(AlvaStrings.People_ParentSubTeam)" Items="@(_actors.Where(a=>a.Kind=="Department" && a.Id!=_actor.Id).Select(a=>(Guid?)a.Id))" ItemLabel="ActorName" NullOption="@(AlvaStrings.People_NoSubTeam)" @bind-Value="_actor.ParentId" /> }
+            @if(_actor.Kind=="Person")
+            {
+                <FlareText Element="h3" Typo="TypographyScale.TitleSmall">@(AlvaStrings.People_SubTeamPeriods)</FlareText>
+                @if (_periodError is not null) { <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.Error">@_periodError</FlareText> }
+                @foreach (var period in _actor.DepartmentMemberships.OrderBy(x => x.From).ToArray())
+                {
+                    var row = period;
+                    <FlareGrid MinColumnWidth="min(100%,11rem)" AlignItems="FlareAlignItems.End">
+                        <FlareSelect TValue="Guid" Label="@(AlvaStrings.Common_SubTeams)" Items="@(_actors.Where(a=>a.Kind=="Department").Select(a=>a.Id))" ItemLabel="id => ActorName(id)" Value="row.DepartmentId" ValueChanged="id => row.DepartmentId = id" />
+                        <FlareDatePicker Label="@(AlvaStrings.Common_Start)" Value="row.From" ValueChanged="date => SetFrom(row, date)" />
+                        <FlareDatePicker Label="@(AlvaStrings.Common_End)" Value="row.To" ValueChanged="date => SetTo(row, date)" />
+                        <FlareIconButton Icon="@MaterialDesign3Icons.Regular.Delete" Size="ButtonSize.Sm" AriaLabel="@(AlvaStrings.Common_Delete)" OnClick="() => RemovePeriod(row)" />
+                    </FlareGrid>
+                }
+                <FlareButton Variant="ButtonVariant.Text" Size="ButtonSize.Sm" OnClick="AddPeriod" Disabled="@(!_actors.Any(a=>a.Kind=="Department"))"><LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.Add" Size="18px" /></LeadingIcon><ChildContent>@(AlvaStrings.People_AddPeriod)</ChildContent></FlareButton>
+            }
         </FlareStack>
     </FlareCardContent>
     <FlareCardActions>
@@ -85,7 +101,7 @@ else
 @code {
     private ActorModel[] _actors=[];private ActorModel? _actor;private bool _busy;private string? _error;
     private string? _actorSnapshot; private bool _saved; private IDisposable? _draft;
-    private string? _nameError,_emailError; private readonly List<string> _formErrors=[]; private ElementReference _errorSummary;
+    private string? _nameError,_emailError,_periodError; private readonly List<string> _formErrors=[]; private ElementReference _errorSummary;
     [CascadingParameter] public FlareConfirmDialogProvider? Confirm { get; set; }
     internal bool IsDirty => _actor is not null && DraftSnapshot.Of(_actor) != _actorSnapshot;
     protected override void OnInitialized() => _draft = Drafts.Track(() => IsDirty);
@@ -129,18 +145,44 @@ else
     }
 
     public void Dispose() => _draft?.Dispose();
-    private void EditActor(ActorModel model){_saved=false;Close();_actor=new ActorModel{Id=model.Id,Name=model.Name,Kind=model.Kind,Email=model.Email,ParentId=model.ParentId,SkillIds=[..model.SkillIds],DepartmentIds=[..model.DepartmentIds],UserId=model.UserId};_actorSnapshot=DraftSnapshot.Of(_actor);}
+    private void EditActor(ActorModel model){_saved=false;Close();_periodError=null;_actor=new ActorModel{Id=model.Id,Name=model.Name,Kind=model.Kind,Email=model.Email,ParentId=model.ParentId,SkillIds=[..model.SkillIds],DepartmentIds=[..model.DepartmentIds],DepartmentMemberships=[..model.DepartmentMemberships.Select(m => new DepartmentMembershipModel { Id=m.Id, DepartmentId=m.DepartmentId, From=m.From, To=m.To })],UserId=model.UserId};_actorSnapshot=DraftSnapshot.Of(_actor);}
     private string[] SkillNames(ActorModel actor) => actor.SkillIds.Select(id => _actors.FirstOrDefault(a => a.Id == id)?.Name).OfType<string>().ToArray();
-    private void ToggleDepartment(Guid id,bool value)=>_actor!.DepartmentIds=value?_actor.DepartmentIds.Append(id).Distinct().ToArray():_actor.DepartmentIds.Where(x=>x!=id).ToArray();
+    private string ActiveDepartments(ActorModel actor) => string.Join(" / ", _actors.Where(a => actor.DepartmentIds.Contains(a.Id)).Select(a => a.Name).DefaultIfEmpty(AlvaStrings.People_NoSubTeam));
     private string ActorName(Guid? id)=>_actors.FirstOrDefault(a=>a.Id==id)?.Name??AlvaStrings.People_NoSubTeam;
+    private void AddPeriod()
+    {
+        var department = _actors.FirstOrDefault(a => a.Kind == "Department");
+        if (department is null) return;
+        _actor!.DepartmentMemberships = [.. _actor.DepartmentMemberships, new DepartmentMembershipModel { DepartmentId = department.Id, From = DateOnly.FromDateTime(DateTime.Today) }];
+        _periodError = null;
+    }
+    private void RemovePeriod(DepartmentMembershipModel period)
+    {
+        _actor!.DepartmentMemberships = _actor.DepartmentMemberships.Where(x => x != period).ToArray();
+        _periodError = null;
+    }
+    private static void SetFrom(DepartmentMembershipModel period, DateOnly? date) { if (date is { } value) period.From = value; }
+    private static void SetTo(DepartmentMembershipModel period, DateOnly? date) => period.To = date;
+    private bool PeriodsValid()
+    {
+        var periods = _actor!.DepartmentMemberships.OrderBy(x => x.From).ToArray();
+        foreach (var period in periods)
+            if (period.DepartmentId == Guid.Empty || period.To is { } to && to < period.From) { _periodError = AlvaStrings.People_PeriodEndBeforeStart; return false; }
+        for (var i = 1; i < periods.Length; i++)
+            if (periods[i - 1].To is null || periods[i].From <= periods[i - 1].To!.Value) { _periodError = AlvaStrings.People_OverlappingPeriods; return false; }
+        _periodError = null;
+        return true;
+    }
     private async Task SaveActor()
     {
         _nameError=_emailError=null;_formErrors.Clear();
         var a=_actor!;
         if (string.IsNullOrWhiteSpace(a.Name)) { _nameError=AlvaStrings.Common_ANameIsRequired; _formErrors.Add(_nameError); }
         if (a.Kind=="Person" && !string.IsNullOrWhiteSpace(a.Email) && !System.Net.Mail.MailAddress.TryCreate(a.Email, out _)) { _emailError=AlvaStrings.Common_EnterAValidEmailAddress; _formErrors.Add(_emailError); }
+        if (a.Kind=="Person" && !PeriodsValid() && _periodError is not null) _formErrors.Add(_periodError);
         if (_formErrors.Count > 0) { StateHasChanged(); await SafeFocus.Async(_errorSummary); return; }
-        await Run(async()=>{await Session.Send(a.Id==Guid.Empty?HttpMethod.Post:HttpMethod.Put,Session.TeamPath("actors"+(a.Id==Guid.Empty?"":$"/{a.Id}")),new ActorRequest(a.Name,a.Kind,a.Email,a.ParentId,a.UserId,SkillIds:a.SkillIds,DepartmentIds:a.DepartmentIds));_saved=true;Close();_actors=await Session.Get<ActorModel[]>(Session.TeamPath("actors"));});
+        var memberships = a.DepartmentMemberships.Select(m => new DepartmentMembershipRequest(m.Id == Guid.Empty ? null : m.Id, m.DepartmentId, m.From, m.To)).ToArray();
+        await Run(async()=>{await Session.Send(a.Id==Guid.Empty?HttpMethod.Post:HttpMethod.Put,Session.TeamPath("actors"+(a.Id==Guid.Empty?"":$"/{a.Id}")),new ActorRequest(a.Name,a.Kind,a.Email,a.ParentId,a.UserId,SkillIds:a.SkillIds,DepartmentMemberships:a.Kind=="Person"?memberships:null));_saved=true;Close();_actors=await Session.Get<ActorModel[]>(Session.TeamPath("actors"));});
     }
     private async Task ArchiveActor()
     {

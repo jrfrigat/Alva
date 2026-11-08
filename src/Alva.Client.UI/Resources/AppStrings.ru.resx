@@ -525,6 +525,10 @@
   <data name="People_TeamSkills" xml:space="preserve"><value>Навыки команды</value></data>
   <data name="People_RegistrySkills" xml:space="preserve"><value>Реестр · Навыки</value></data>
   <data name="People_SkillsHelper" xml:space="preserve"><value>Выберите навыки из справочника команды.</value></data>
+  <data name="People_SubTeamPeriods" xml:space="preserve"><value>Периоды подкоманд</value></data>
+  <data name="People_AddPeriod" xml:space="preserve"><value>Добавить период</value></data>
+  <data name="People_OverlappingPeriods" xml:space="preserve"><value>Периоды членства не должны пересекаться.</value></data>
+  <data name="People_PeriodEndBeforeStart" xml:space="preserve"><value>Дата окончания раньше начала.</value></data>
   <data name="Sprint_SubTeamBalance" xml:space="preserve"><value>Баланс подкоманд: план и доступность</value></data>
   <data name="Sprint_SubTeamBalanceSubtitle" xml:space="preserve"><value>По подкомандам и задачам, назначенным на них</value></data>
   <data name="Sprint_GivePeopleSubTeamsToSeeTheBalance" xml:space="preserve"><value>Назначьте людям подкоманды, чтобы увидеть баланс.</value></data>
