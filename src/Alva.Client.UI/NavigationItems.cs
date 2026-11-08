@@ -13,50 +13,50 @@ public sealed record NavigationGroup(string Title, NavigationEntry[] Entries);
 public static class NavigationItems
 {
     public static readonly NavigationEntry Overview =
-        new(AppRoutes.Home, Strings.T("Обзор"), Flare.Icons.MaterialDesign3Icons.Regular.Dashboard, true, Strings.T("Обзор"));
+        new(AppRoutes.Home, AlvaStrings.Nav_Overview, Flare.Icons.MaterialDesign3Icons.Regular.Dashboard, true, AlvaStrings.Nav_Overview);
 
     public static readonly NavigationGroup[] Groups =
     [
-        new(Strings.T("Планирование"),
+        new(AlvaStrings.Common_Planning,
         [
-            new("sprints", Strings.T("Все спринты"), Flare.Icons.MaterialDesign3Icons.Regular.ViewTimeline, false),
-            new("sprints/plan", Strings.T("Планирование спринта"), Flare.Icons.MaterialDesign3Icons.Regular.EventAvailable, false),
-            new("projects", Strings.T("Проекты"), Flare.Icons.MaterialDesign3Icons.Regular.FolderSpecial, false)
+            new("sprints", AlvaStrings.Common_AllSprints, Flare.Icons.MaterialDesign3Icons.Regular.ViewTimeline, false),
+            new("sprints/plan", AlvaStrings.Sprint_PlanningASprint, Flare.Icons.MaterialDesign3Icons.Regular.EventAvailable, false),
+            new("projects", AlvaStrings.Common_Projects, Flare.Icons.MaterialDesign3Icons.Regular.FolderSpecial, false)
         ]),
-        new(Strings.T("Задачи"),
+        new(AlvaStrings.Common_Tasks,
         [
-            new("tasks", Strings.T("Дерево задач"), Flare.Icons.MaterialDesign3Icons.Regular.Layers, true, Strings.T("Задачи")),
-            new("unassigned", Strings.T("Без исполнителя"), Flare.Icons.MaterialDesign3Icons.Regular.Inbox, false),
-            new("my-work", Strings.T("Моя работа"), Flare.Icons.MaterialDesign3Icons.Regular.Checklist, false)
+            new("tasks", AlvaStrings.Nav_TaskTree, Flare.Icons.MaterialDesign3Icons.Regular.Layers, true, AlvaStrings.Common_Tasks),
+            new("unassigned", AlvaStrings.Common_Unassigned, Flare.Icons.MaterialDesign3Icons.Regular.Inbox, false),
+            new("my-work", AlvaStrings.Tasks_MyWork, Flare.Icons.MaterialDesign3Icons.Regular.Checklist, false)
         ]),
-        new(Strings.T("Диаграммы"),
+        new(AlvaStrings.Nav_Charts,
         [
-            new("gantt/tasks", Strings.T("Гантт по задачам"), Flare.Icons.MaterialDesign3Icons.Regular.WaterfallChart, false),
-            new("gantt/people", Strings.T("Гантт по людям"), Flare.Icons.MaterialDesign3Icons.Regular.StackedBarChart, false)
+            new("gantt/tasks", AlvaStrings.Gantt_TaskGantt, Flare.Icons.MaterialDesign3Icons.Regular.WaterfallChart, false),
+            new("gantt/people", AlvaStrings.Gantt_PeopleGantt, Flare.Icons.MaterialDesign3Icons.Regular.StackedBarChart, false)
         ]),
-        new(Strings.T("Ёмкость"),
+        new(AlvaStrings.Common_Capacity,
         [
-            new("capacity", Strings.T("Обзор ёмкости"), Flare.Icons.MaterialDesign3Icons.Regular.Speed, true, Strings.T("Ёмкость")),
-            new("capacity/people", Strings.T("Графики людей"), Flare.Icons.MaterialDesign3Icons.Regular.QueryStats, false)
+            new("capacity", AlvaStrings.Nav_CapacityOverview, Flare.Icons.MaterialDesign3Icons.Regular.Speed, true, AlvaStrings.Common_Capacity),
+            new("capacity/people", AlvaStrings.Common_PeopleSchedules, Flare.Icons.MaterialDesign3Icons.Regular.QueryStats, false)
         ]),
-        new(Strings.T("Команда"),
+        new(AlvaStrings.Common_Team,
         [
-            new("team", Strings.T("Люди"), Flare.Icons.MaterialDesign3Icons.Regular.Badge, true, Strings.T("Люди")),
-            new("team/departments", Strings.T("Подкоманды"), Flare.Icons.MaterialDesign3Icons.Regular.Hub, false),
-            new("team/roles", Strings.T("Роли"), Flare.Icons.MaterialDesign3Icons.Regular.ManageAccounts, false)
+            new("team", AlvaStrings.Nav_People, Flare.Icons.MaterialDesign3Icons.Regular.Badge, true, AlvaStrings.Nav_People),
+            new("team/departments", AlvaStrings.Common_SubTeams, Flare.Icons.MaterialDesign3Icons.Regular.Hub, false),
+            new("team/roles", AlvaStrings.Common_Roles, Flare.Icons.MaterialDesign3Icons.Regular.ManageAccounts, false)
         ]),
-        new(Strings.T("Аналитика"),
+        new(AlvaStrings.Nav_Analytics,
         [
-            new("analytics", Strings.T("Риски и причины"), Flare.Icons.MaterialDesign3Icons.Regular.Warning, false)
+            new("analytics", AlvaStrings.Nav_RisksAndReasons, Flare.Icons.MaterialDesign3Icons.Regular.Warning, false)
         ])
     ];
 
     /// <summary>Блок под разделами, как в макете: после групп, отделён линией.</summary>
     public static readonly NavigationEntry[] Tail =
     [
-        new("data", Strings.T("Данные"), Flare.Icons.MaterialDesign3Icons.Regular.SwapVert, false),
-        new("integrations", Strings.T("Интеграции"), Flare.Icons.MaterialDesign3Icons.Regular.Sync, false),
-        new("settings", Strings.T("Настройки"), Flare.Icons.MaterialDesign3Icons.Regular.Settings, false)
+        new("data", AlvaStrings.Nav_Data, Flare.Icons.MaterialDesign3Icons.Regular.SwapVert, false),
+        new("integrations", AlvaStrings.Common_Integrations, Flare.Icons.MaterialDesign3Icons.Regular.Sync, false),
+        new("settings", AlvaStrings.Common_Settings, Flare.Icons.MaterialDesign3Icons.Regular.Settings, false)
     ];
 
     /// <summary>Плоский список: пункт верхнего уровня, все разделы по порядку и хвост.</summary>

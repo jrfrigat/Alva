@@ -15,16 +15,16 @@ public static class DailyLimit
     /// <summary>Подсказка под полем лимита.</summary>
     public static string Hint(TaskModel task)
     {
-        if (task.DailyHoursLimit is not > 0) return Strings.T("Пусто — без ограничения. Например, 2 ч в день для задачи, которую ведут параллельно с другой работой.");
+        if (task.DailyHoursLimit is not > 0) return AlvaStrings.Common_EmptyMeansNoLimitForExample2HADayForATaskDoneAlongsideOtherWork;
         var limit = AlvaFormat.Hours(task.DailyHoursLimit.Value);
-        if (DaysNeeded(task) is not { } needed) return string.Format(Strings.T("Не больше {0} ч в день на эту задачу."), limit);
+        if (DaysNeeded(task) is not { } needed) return string.Format(AlvaStrings.Common_NoMoreThanHADayOnThisTask, limit);
         if (task is { StartDate: { } start, EndDate: { } end } && end >= start && AlvaFormat.WorkDays(start, end) is var have && have < needed)
-            return string.Format(Strings.T("При {0} ч в день нужно {1} {2}, а в окне {3} — работа выйдет за окончание."),
+            return string.Format(AlvaStrings.Common_AtHADayItNeedsButTheWindowHasTheWorkWillRunPastTheFinishDate,
                 limit, needed, AlvaFormat.Plural(needed, "workday"), have);
-        return string.Format(Strings.T("Не больше {0} ч в день: задаче нужно {1} {2}."), limit, needed, AlvaFormat.Plural(needed, "workday"));
+        return string.Format(AlvaStrings.Common_NoMoreThanHADayTheTaskNeeds, limit, needed, AlvaFormat.Plural(needed, "workday"));
     }
 
     /// <summary>Проверка поля формы; null — значение допустимо.</summary>
     public static string? Error(decimal? limit) =>
-        limit is <= 0 or > 24 ? Strings.T("Лимит в день — больше 0 и не больше 24 часов.") : null;
+        limit is <= 0 or > 24 ? AlvaStrings.Common_TheDailyLimitMustBeAbove0AndNoMoreThan24Hours : null;
 }

@@ -7,7 +7,7 @@
                  Links="@Data.Links().ToArray()" LinkTypes="@Types" ShowCriticalPath="Critical" RollupParents="true"
                  Markers="@DeadlineMarkers" Editable="true" AllowRowChange="false" OnChange="OnChange" OnLinkCreate="OnLinkCreate"
                  OnLinkRejected="OnLinkRejected" OnItemClick="OnItemClick" Header="Header" DropGroup="@DropGroup" DropAccepts="DropAccepts"
-                 ItemDropGroup="@ItemDropGroup" ItemDropAccepts="ItemDropAccepts" Suggested="Suggested" AriaLabel="@(Strings.T("Задачи во времени"))">
+                 ItemDropGroup="@ItemDropGroup" ItemDropAccepts="ItemDropAccepts" Suggested="Suggested" AriaLabel="@(AlvaStrings.Gantt_TasksOverTime)">
     <RowHeader Context="task">
         @if (DragRows)
         {
@@ -63,7 +63,7 @@
                     <FlareIconView Value="@MaterialDesign3Icons.Regular.Lock" Size="14px" />
                 </span>
             }
-            <span class="alva-gantt-row__meta">@Data.Assignee(task) · @AlvaFormat.Hours(task.EffectiveEstimateHours) @(Strings.T("ч"))</span>
+            <span class="alva-gantt-row__meta">@Data.Assignee(task) · @AlvaFormat.Hours(task.EffectiveEstimateHours) @(AlvaStrings.Sprint_HoursShort)</span>
             <SkillMatch Required="task.RequiredSkills" Person="@(Data.Actor(task.ResolvedPersonId ?? task.AssignmentTargetId))" />
         </span>
         @if (RowActions is not null) { @RowActions(task) }
@@ -83,7 +83,7 @@
         return ordered.Where(t => shown.Contains(t.Id));
     }
 
-    private static string FixedLabel => Strings.T("Даты зафиксированы: задача не переносится");
+    private static string FixedLabel => AlvaStrings.Gantt_DatesAreFixedTheTaskCannotBeMoved;
 
     private static string? RowClass(TaskModel task)
     {
@@ -96,5 +96,5 @@
     private IEnumerable<GanttMarker> DeadlineMarkers => Data.Tasks
         .Where(t => !GanttData.IsClosed(t) && (t.EffectiveDeadline ?? t.Deadline) is not null)
         .Select(t => new GanttMarker("deadline", (t.EffectiveDeadline ?? t.Deadline)!.Value.AddDays(1).ToDateTime(TimeOnly.MinValue),
-            GanttData.Key(t.Id), Strings.T("Срок"), GanttData.Key(t.Id)));
+            GanttData.Key(t.Id), AlvaStrings.Gantt_DueDate, GanttData.Key(t.Id)));
 }

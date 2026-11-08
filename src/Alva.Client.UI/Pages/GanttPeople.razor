@@ -6,21 +6,21 @@
 @using Flare.Components.Gantt
 @* Гантт по людям (макет p6_2d, проекция 2): дорожки людей и ролей с часами ёмкости и задачами исполнителя.
    В 2D-режиме над ними — проекция 1 на той же оси. Проекции собирает Alva из примитивов Flare.Components.Gantt. *@
-<PageTitle>@(_twoD ? Strings.T("Синхронный Гантт 2D") : Strings.T("Гантт по людям")) · Alva</PageTitle>
-<AlvaPageHeader Category="@(Strings.T("Диаграммы · Гантт"))" Title="@(_twoD ? Strings.T("Синхронный Гантт 2D") : Strings.T("Гантт по людям"))" Description="@(Strings.T("Кто чем занят во времени: часы назначенной работы против доступных, перегрузки и отсутствия. Перетащите задачу на другую строку или нажмите Ctrl+↑/↓, чтобы переназначить; Ctrl+стрелка влево/вправо переносит даты."))" />
+<PageTitle>@(_twoD ? AlvaStrings.Gantt_SynchronisedGantt2d : AlvaStrings.Gantt_PeopleGantt) · Alva</PageTitle>
+<AlvaPageHeader Category="@(AlvaStrings.Gantt_ChartsGantt)" Title="@(_twoD ? AlvaStrings.Gantt_SynchronisedGantt2d : AlvaStrings.Gantt_PeopleGantt)" Description="@(AlvaStrings.Gantt_WhoIsBusyAndWhenHoursOfAssignedWorkVersusAvailableOverloadsAndAbsencesDr_42e8e3)" />
 <PageFeedback Loading="_busy" Error="@_error" OnRetry="() => Reload()" />
 @if (Session.TeamId is null) { <TeamRequired /> }
 else if (_data is not null && _people is not null)
 {
     <div class="alva-filterbar alva-gantt-bar">
         <div class="alva-gantt-bar__fields">
-            <FlareSelect TValue="Guid?" Items="@(_data.Sprints.OrderBy(s => s.StartDate).Select(s => (Guid?)s.Id))" ItemLabel="_data.SprintName" NullOption="@(Strings.T("Все задачи"))"
-                         @bind-Value="_sprintId" @bind-Value:after="LoadCapacity" Size="FieldSize.Sm" InputAttributes="@(Aria(Strings.T("Спринт")))" />
-            <FlareSelect TValue="GanttScale" Items="GanttData.Scales" ItemLabel="GanttData.ScaleName" @bind-Value="_scale" Size="FieldSize.Sm" InputAttributes="@(Aria(Strings.T("Масштаб")))" />
+            <FlareSelect TValue="Guid?" Items="@(_data.Sprints.OrderBy(s => s.StartDate).Select(s => (Guid?)s.Id))" ItemLabel="_data.SprintName" NullOption="@(AlvaStrings.Gantt_AllTasks)"
+                         @bind-Value="_sprintId" @bind-Value:after="LoadCapacity" Size="FieldSize.Sm" InputAttributes="@(Aria(AlvaStrings.Gantt_Sprint))" />
+            <FlareSelect TValue="GanttScale" Items="GanttData.Scales" ItemLabel="GanttData.ScaleName" @bind-Value="_scale" Size="FieldSize.Sm" InputAttributes="@(Aria(AlvaStrings.Gantt_Scale))" />
             <GanttZoom View="people" Scale="_scale" @bind-Value="_unit" />
-            <FlareButton Size="ButtonSize.Sm" Variant="ButtonVariant.Text" OnClick="ToToday" Tooltip="@(Strings.T("К сегодняшнему дню (Alt + колесо — прокрутка по времени)"))">@(Strings.T("Сегодня"))</FlareButton>
+            <FlareButton Size="ButtonSize.Sm" Variant="ButtonVariant.Text" OnClick="ToToday" Tooltip="@(AlvaStrings.Gantt_ToTodayAltWheelScrollThroughTime)">@(AlvaStrings.Gantt_Today)</FlareButton>
         </div>
-        <FlareSwitch Value="_twoD" ValueChanged="SetTwoD" Label="@(Strings.T("Синхронно с задачами (2D)"))" />
+        <FlareSwitch Value="_twoD" ValueChanged="SetTwoD" Label="@(AlvaStrings.Gantt_SynchronisedWithTasks2d)" />
     </div>
 
     <GanttLegend Notice="@_notice" Items="PeopleKey" />
@@ -29,13 +29,13 @@ else if (_data is not null && _people is not null)
     <div class="alva-gantt__host" @ref="_host" tabindex="-1" @onkeydown="OnChartKey">
     <FlareGantt @ref="_chart" Range="@_range" RangeChanged="Grow" Endless="true" Scale="_scale" UnitWidth="_unit" FillWidth="true" Virtualize="true" RowHeight="36" SideWidth="@_side" DefaultSideWidth="22rem" ResizableSide="true" SideWidthChanged="SaveSide"
                 NonWorking="GanttData.IsWeekend" Markers="@GanttData.TodayMarkers" Regions="@_data.SprintRegions(Sprint)" @bind-SelectedKey="_selected"
-                AriaLabel="@(_twoD ? Strings.T("Синхронный Гантт 2D") : Strings.T("Гантт по людям"))" Class="alva-gantt">
-        <Corner><span>@(Strings.T("Исполнитель · загрузка за период"))</span></Corner>
+                AriaLabel="@(_twoD ? AlvaStrings.Gantt_SynchronisedGantt2d : AlvaStrings.Gantt_PeopleGantt)" Class="alva-gantt">
+        <Corner><span>@(AlvaStrings.Gantt_AssigneeWorkloadOverThePeriod)</span></Corner>
         <ChildContent>
             @if (_twoD)
             {
                 <GanttTaskPanel Data="_data" SprintId="_sprintId" OnChange="Change" OnLinkCreate="Link" OnLinkRejected="Rejected" OnItemClick="OpenTask">
-                    <Header>@(Strings.T("Проекция 1: иерархия работ и фазы во времени"))</Header>
+                    <Header>@(AlvaStrings.Gantt_Projection1WorkHierarchyAndPhasesOverTime)</Header>
                 </GanttTaskPanel>
             }
             <GanttPeoplePanel People="_people" Scale="_scale" Range="_range" Header="@(_twoD ? PeopleHeader : null)"
@@ -44,7 +44,7 @@ else if (_data is not null && _people is not null)
     </FlareGantt>
     </div>
     @* Панель задачи — та же, что на «Гантте по задачам»: карточка задачи целиком, без ухода со страницы. *@
-    <FlareDrawer Anchor="DrawerAnchor.Right" Open="_panelOpen" OpenChanged="OnPanelOpen" Width="34rem" ContentPadding="FlareSpacing.Large" AriaLabel="@(Strings.T("Задача"))">
+    <FlareDrawer Anchor="DrawerAnchor.Right" Open="_panelOpen" OpenChanged="OnPanelOpen" Width="34rem" ContentPadding="FlareSpacing.Large" AriaLabel="@(AlvaStrings.Common_Task)">
         @if (_open is not null)
         {
             <TaskDetails @ref="_details" Item="_open" Tasks="_data!.Tasks" Projects="_projects" Sprints="_data.Sprints" Actors="_data.Actors" Changed="@(() => Reload())" HeadingLevel="2" />
@@ -75,14 +75,14 @@ else if (_data is not null && _people is not null)
 
     private GanttLegendItem[] PeopleKey =>
     [
-        new("load", Strings.T("Загрузка, ч"), GanttLegendShape.Cell),
-        new("overload", Strings.T("Перегрузка"), GanttLegendShape.Cell),
-        new("free", Strings.T("Свободно"), GanttLegendShape.Cell),
-        new("absence", Strings.T("Отсутствие"), GanttLegendShape.Cell),
-        new("demand", Strings.T("Нужен человек"), GanttLegendShape.Cell)
+        new("load", AlvaStrings.Gantt_LoadH, GanttLegendShape.Cell),
+        new("overload", AlvaStrings.Common_OverloadLabel, GanttLegendShape.Cell),
+        new("free", AlvaStrings.Gantt_Free, GanttLegendShape.Cell),
+        new("absence", AlvaStrings.Gantt_Absence, GanttLegendShape.Cell),
+        new("demand", AlvaStrings.Gantt_APersonIsRequired, GanttLegendShape.Cell)
     ];
 
-    private static readonly RenderFragment PeopleHeader = @<span>@(Strings.T("Проекция 2: дорожки ресурсов и ёмкость (часы)"))</span>;
+    private static readonly RenderFragment PeopleHeader = @<span>@(AlvaStrings.Gantt_View2ResourceLanesAndCapacityHours)</span>;
 
     private static DateOnly Today => DateOnly.FromDateTime(DateTime.Today);
     private SprintModel? Sprint => _data?.Sprint(_sprintId);
@@ -194,7 +194,7 @@ else if (_data is not null && _people is not null)
         try
         {
             await _data!.AddLink(Session, args.Link);
-            _notice = Strings.T("Связь добавлена");
+            _notice = AlvaStrings.Gantt_LinkAdded;
         }
         catch (Exception e) when (e is HttpRequestException or InvalidOperationException) { args.Cancel = true; _error = PageFeedback.Describe(e); }
         await Reload();

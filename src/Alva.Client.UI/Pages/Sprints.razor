@@ -6,12 +6,12 @@
 @inject AlvaSession Session
 @inject NavigationManager Navigation
 @inject DraftGuard Drafts
-<PageTitle>@(Planning ? Strings.T("Планирование") : Current?.Name ?? Strings.T("Спринты")) · Alva</PageTitle>
+<PageTitle>@(Planning ? AlvaStrings.Common_Planning : Current?.Name ?? AlvaStrings.Sprint_Sprints) · Alva</PageTitle>
 <NavigationLock OnBeforeInternalNavigation="ConfirmLeave" ConfirmExternalNavigation="IsDirty" />
 @if(SprintId is null && !Planning)
 {
-<AlvaPageHeader Category="@(Strings.T("Планирование · Спринты"))" Title="@(Strings.T("Спринты команды"))" Description="@(Strings.T("Цели, сроки и состав спринтов команды."))">
-    <Actions><FlareButton @ref="_newButton" Size="ButtonSize.Sm" OnClick="New" Disabled="@(Session.TeamId is null)">@(Strings.T("Новый спринт"))</FlareButton></Actions>
+<AlvaPageHeader Category="@(AlvaStrings.Sprint_PlanningSprints)" Title="@(AlvaStrings.Sprint_TeamSprints)" Description="@(AlvaStrings.Sprint_TheTeamSSprintGoalsDatesAndScope)">
+    <Actions><FlareButton @ref="_newButton" Size="ButtonSize.Sm" OnClick="New" Disabled="@(Session.TeamId is null)">@(AlvaStrings.Sprint_NewSprint)</FlareButton></Actions>
 </AlvaPageHeader>
 }
 <PageFeedback Loading="_busy" Error="@_error" OnRetry="Load" />
@@ -21,27 +21,27 @@ else
 @if(_editing is not null)
 {
 <FlareCard Variant="CardVariant.Outlined"><FlareCardContent><FlareStack Gap="FlareSpacing.Large">
-    <FlareStack Row StretchFirst><FlareText Element="h2" Typo="TypographyScale.TitleLarge">@(_editing.Id==Guid.Empty?Strings.T("Новый спринт"):Strings.T("Параметры спринта"))</FlareText><FlareButton OnClick="Close" Variant="ButtonVariant.Text" Size="ButtonSize.Sm">@(Strings.T("Закрыть"))</FlareButton></FlareStack>
+    <FlareStack Row StretchFirst><FlareText Element="h2" Typo="TypographyScale.TitleLarge">@(_editing.Id==Guid.Empty?AlvaStrings.Sprint_NewSprint:AlvaStrings.Sprint_SprintSettings)</FlareText><FlareButton OnClick="Close" Variant="ButtonVariant.Text" Size="ButtonSize.Sm">@(AlvaStrings.Common_Close)</FlareButton></FlareStack>
     @if (_formErrors.Count > 0) { <div tabindex="-1" @ref="_errorSummary"><AlvaValidationSummary Messages="_formErrors" /></div> }
     <FlareGrid MinColumnWidth="min(100%,15rem)">
-        <FlareTextField Label="@(Strings.T("Название"))" ErrorText="@_nameError" @bind-Value="_editing.Name" Required Autofocus /><FlareTextField Label="@(Strings.T("Цель"))" @bind-Value="_editing.Goal" />
-        <FlareDatePicker Label="@(Strings.T("Начало"))" @bind-Value="_start" /><FlareDatePicker Label="@(Strings.T("Окончание"))" ErrorText="@_endError" @bind-Value="_end" Min="_start" />
-        <FlareSelect TValue="string" Label="@(Strings.T("Статус"))" Items="_statuses" ItemLabel="Labels.Status" @bind-Value="_editing.Status" />
+        <FlareTextField Label="@(AlvaStrings.Common_Title)" ErrorText="@_nameError" @bind-Value="_editing.Name" Required Autofocus /><FlareTextField Label="@(AlvaStrings.Sprint_Goal)" @bind-Value="_editing.Goal" />
+        <FlareDatePicker Label="@(AlvaStrings.Common_Start)" @bind-Value="_start" /><FlareDatePicker Label="@(AlvaStrings.Common_End)" ErrorText="@_endError" @bind-Value="_end" Min="_start" />
+        <FlareSelect TValue="string" Label="@(AlvaStrings.Common_Status)" Items="_statuses" ItemLabel="Labels.Status" @bind-Value="_editing.Status" />
     </FlareGrid>
-    <FlareStack Row><FlareButton OnClick="Save" Loading="_busy" Disabled="@(string.IsNullOrWhiteSpace(_editing.Name) || !_start.HasValue || !_end.HasValue || !IsDirty)">@(Strings.T("Сохранить спринт"))</FlareButton><EditorStatus Dirty="IsDirty" Saving="_busy" /></FlareStack>
+    <FlareStack Row><FlareButton OnClick="Save" Loading="_busy" Disabled="@(string.IsNullOrWhiteSpace(_editing.Name) || !_start.HasValue || !_end.HasValue || !IsDirty)">@(AlvaStrings.Sprint_SaveTheSprint)</FlareButton><EditorStatus Dirty="IsDirty" Saving="_busy" /></FlareStack>
 </FlareStack></FlareCardContent></FlareCard>
 }
 @if(Planning)
 {
-    <AlvaPageHeader Category="@(Strings.T("Планирование · Спринты"))" Title="@PlanningTitle" Description="@(Strings.T("Планируйте спринты, распределяйте работу и замечайте перегрузки заранее."))" />
-    if(SprintId.HasValue && Current is null){if(_loaded){<UnavailableState Title="@(Strings.T("Спринт не найден или недоступен"))" BackHref="sprints" BackLabel="@(Strings.T("К спринтам"))" />}}
+    <AlvaPageHeader Category="@(AlvaStrings.Sprint_PlanningSprints)" Title="@PlanningTitle" Description="@(AlvaStrings.Common_PlanSprintsDistributeTheWorkAndSpotOverloadsEarly)" />
+    if(SprintId.HasValue && Current is null){if(_loaded){<UnavailableState Title="@(AlvaStrings.Sprint_SprintNotFoundOrUnavailable)" BackHref="sprints" BackLabel="@(AlvaStrings.Sprint_ToSprints)" />}}
     else if(PlanSprint is not null){
         <SprintPlanning @ref="_planning" Sprint="PlanSprint" Sprints="_sprints" Tasks="_tasks" Changed="Reload" OnParams="()=>Edit(PlanSprint)" />}
-    else if(_loaded){<FlareEmptyState Title="@(Strings.T("Нечего планировать"))" Description="@(Strings.T("Создайте спринт, чтобы собрать в него задачи из пула."))"><ActionContent><FlareButton @ref="_emptyNewButton" Size="ButtonSize.Sm" OnClick="New">@(Strings.T("Новый спринт"))</FlareButton></ActionContent></FlareEmptyState>}
+    else if(_loaded){<FlareEmptyState Title="@(AlvaStrings.Sprint_NothingToPlan)" Description="@(AlvaStrings.Sprint_CreateASprintToGatherTasksFromThePool)"><ActionContent><FlareButton @ref="_emptyNewButton" Size="ButtonSize.Sm" OnClick="New">@(AlvaStrings.Sprint_NewSprint)</FlareButton></ActionContent></FlareEmptyState>}
 }
 else if(SprintId is null){<SprintRegistry Sprints="_sprints" Tasks="_tasks" />}
 else if(Current is not null){<SprintDetails Sprint="Current" Tasks="_tasks" Sprints="_sprints" OnEdit="@(()=>Navigation.NavigateTo($"sprints/{Current.Id}/plan"))" Changed="Load" />}
-else if(_loaded){<UnavailableState Title="@(Strings.T("Спринт не найден или недоступен"))" BackHref="sprints" BackLabel="@(Strings.T("К спринтам"))" />}
+else if(_loaded){<UnavailableState Title="@(AlvaStrings.Sprint_SprintNotFoundOrUnavailable)" BackHref="sprints" BackLabel="@(AlvaStrings.Sprint_ToSprints)" />}
 }
 @code {
     [Parameter]public Guid? SprintId{get;set;}
@@ -56,7 +56,7 @@ else if(_loaded){<UnavailableState Title="@(Strings.T("Спринт не най�
     /// <summary>Спринт доски: указанный в адресе (без подмены, если его нет), иначе активный, иначе ближайший запланированный.</summary>
     private SprintModel? PlanSprint => SprintId.HasValue ? Current : _sprints.FirstOrDefault(s=>s.Status=="Active") ?? _sprints.Where(s=>s.Status=="Planned").OrderBy(s=>s.StartDate).FirstOrDefault();
     /// <summary>Заголовок страницы планирования: имя спринта, если он выбран.</summary>
-    private string PlanningTitle => PlanSprint is { } sprint ? $"{Strings.T("Планирование спринта")}: {sprint.Name}" : Strings.T("Планирование спринта");
+    private string PlanningTitle => PlanSprint is { } sprint ? $"{AlvaStrings.Sprint_PlanningASprint}: {sprint.Name}" : AlvaStrings.Sprint_PlanningASprint;
     protected override async Task OnParametersSetAsync(){_editing=null;await Load();}
     private async Task Run(Func<Task> action){_busy=true;_error=null;try{await action();}catch(Exception e) when(e is HttpRequestException or InvalidOperationException){_error=PageFeedback.Describe(e);}finally{_busy=false;}}
     private Task Load()=>Run(async()=>{await Session.Initialize();if(Session.TeamId is null)return;_sprints=await Session.Get<SprintModel[]>(Session.TeamPath("sprints"));_tasks=await Session.Get<TaskModel[]>(Session.TeamPath("tasks"));_loaded=true;});
@@ -86,8 +86,8 @@ else if(_loaded){<UnavailableState Title="@(Strings.T("Спринт не най�
     private async Task Save()
     {
         _nameError=_endError=null;_formErrors.Clear();
-        if (string.IsNullOrWhiteSpace(_editing!.Name)) { _nameError=Strings.T("Название спринта обязательно."); _formErrors.Add(_nameError); }
-        if (_start is { } start && _end is { } end && start > end) { _endError=Strings.T("Окончание раньше начала."); _formErrors.Add(_endError); }
+        if (string.IsNullOrWhiteSpace(_editing!.Name)) { _nameError=AlvaStrings.Sprint_ASprintNameIsRequired; _formErrors.Add(_nameError); }
+        if (_start is { } start && _end is { } end && start > end) { _endError=AlvaStrings.Common_TheEndDateIsBeforeTheStartDate; _formErrors.Add(_endError); }
         if (_formErrors.Count > 0) { StateHasChanged(); await SafeFocus.Async(_errorSummary); return; }
         await Run(async()=>{var s=_editing!;var saved=await Session.Save<SprintModel>(s.Id==Guid.Empty?HttpMethod.Post:HttpMethod.Put,Session.TeamPath("sprints"+(s.Id==Guid.Empty?"":$"/{s.Id}")),new SprintRequest(s.Name,s.Goal,_start!.Value,_end!.Value,s.Status));_sprints=await Session.Get<SprintModel[]>(Session.TeamPath("sprints"));_editing=null;Navigation.NavigateTo($"sprints/{saved.Id}/plan");});
     }

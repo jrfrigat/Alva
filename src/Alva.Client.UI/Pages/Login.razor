@@ -2,11 +2,11 @@
 @page "/register"
 @inject AlvaSession Session
 @inject NavigationManager Navigation
-<PageTitle>@(Strings.T("Вход · Alva"))</PageTitle>
+<PageTitle>@(AlvaStrings.Auth_SignInAlva)</PageTitle>
 <FlareContainer MaxWidth="ContainerMaxWidth.Sm">
 <FlareCard Variant="CardVariant.Outlined"><FlareCardContent><FlareStack Gap="FlareSpacing.Large">
-    <FlareText Element="h1" Typo="TypographyScale.HeadlineLarge">@(_register ? Strings.T("Создайте пространство для команды") : Strings.T("Добро пожаловать в Alva"))</FlareText>
-    <FlareText>@(Strings.T("Планируйте спринты, распределяйте работу и замечайте перегрузки заранее."))</FlareText>
+    <FlareText Element="h1" Typo="TypographyScale.HeadlineLarge">@(_register ? AlvaStrings.Auth_CreateAWorkspaceForTheTeam : AlvaStrings.Auth_WelcomeToAlva)</FlareText>
+    <FlareText>@(AlvaStrings.Common_PlanSprintsDistributeTheWorkAndSpotOverloadsEarly)</FlareText>
     @* Общая сводка — для ответов сервера, которые не относятся к одному полю (неверный пароль, сбой). *@
     <PageFeedback Error="@_error" />
     @* novalidate: всплывающие подсказки браузера не связаны с полями и не читаются вместе с ними — проверяет сама форма. *@
@@ -18,18 +18,18 @@
         <FlareValidationSummary />
         @if (_register)
         {
-            <FlareTextField @ref="_nameField" Label="@(Strings.T("Ваше имя"))" Value="@_displayName" ValueChanged="v => Edit(ref _displayName, v, Field.Name)" ErrorText="@ErrorOf(Field.Name)" For="() => _displayName" Required Autocomplete="name" />
-            <FlareTextField @ref="_workspaceField" Label="@(Strings.T("Название рабочего пространства"))" Value="@_workspaceName" ValueChanged="v => Edit(ref _workspaceName, v, Field.Workspace)" ErrorText="@ErrorOf(Field.Workspace)" For="() => _workspaceName" Required />
+            <FlareTextField @ref="_nameField" Label="@(AlvaStrings.Common_YourName)" Value="@_displayName" ValueChanged="v => Edit(ref _displayName, v, Field.Name)" ErrorText="@ErrorOf(Field.Name)" For="() => _displayName" Required Autocomplete="name" />
+            <FlareTextField @ref="_workspaceField" Label="@(AlvaStrings.Auth_WorkspaceName)" Value="@_workspaceName" ValueChanged="v => Edit(ref _workspaceName, v, Field.Workspace)" ErrorText="@ErrorOf(Field.Workspace)" For="() => _workspaceName" Required />
         }
-        <FlareTextField @ref="_emailField" Label="@(Strings.T("Электронная почта"))" Value="@_email" ValueChanged="v => Edit(ref _email, v, Field.Email)" ErrorText="@ErrorOf(Field.Email)" For="() => _email" Type="email" Required Autocomplete="email" />
-        <FlarePasswordField @ref="_passwordField" Label="@(Strings.T("Пароль"))" Value="@_password" ValueChanged="v => Edit(ref _password, v, Field.Password)" ErrorText="@ErrorOf(Field.Password)" For="() => _password" Required Autocomplete="@(_register ? "new-password" : "current-password")" HelperText="@(_register ? $"{Strings.T("Не менее")} {MinPassword} {Strings.T("символов")}" : null)" ShowStrength="@_register" />
+        <FlareTextField @ref="_emailField" Label="@(AlvaStrings.Common_EmailField)" Value="@_email" ValueChanged="v => Edit(ref _email, v, Field.Email)" ErrorText="@ErrorOf(Field.Email)" For="() => _email" Type="email" Required Autocomplete="email" />
+        <FlarePasswordField @ref="_passwordField" Label="@(AlvaStrings.Auth_Password)" Value="@_password" ValueChanged="v => Edit(ref _password, v, Field.Password)" ErrorText="@ErrorOf(Field.Password)" For="() => _password" Required Autocomplete="@(_register ? "new-password" : "current-password")" HelperText="@(_register ? $"{AlvaStrings.Auth_AtLeast} {MinPassword} {AlvaStrings.Auth_Characters}" : null)" ShowStrength="@_register" />
         @if (_register)
         {
-            <FlarePasswordField @ref="_confirmField" Label="@(Strings.T("Повторите пароль"))" Value="@_passwordConfirm" ValueChanged="v => Edit(ref _passwordConfirm, v, Field.PasswordConfirm)" ErrorText="@ErrorOf(Field.PasswordConfirm)" For="() => _passwordConfirm" Required Autocomplete="new-password" />
+            <FlarePasswordField @ref="_confirmField" Label="@(AlvaStrings.Auth_RepeatPassword)" Value="@_passwordConfirm" ValueChanged="v => Edit(ref _passwordConfirm, v, Field.PasswordConfirm)" ErrorText="@ErrorOf(Field.PasswordConfirm)" For="() => _passwordConfirm" Required Autocomplete="new-password" />
         }
-        <FlareButton Type="ButtonType.Submit" Loading="_busy" FullWidth>@(_register ? Strings.T("Создать пространство") : Strings.T("Войти"))</FlareButton>
-        <FlareButton Variant="ButtonVariant.Text" OnClick="Toggle">@(_register ? Strings.T("У меня уже есть аккаунт") : Strings.T("Создать аккаунт"))</FlareButton>
-        @if (!_register) { <FlareText Typo="TypographyScale.BodySmall">@(Strings.T("Забыли пароль? Обратитесь к администратору рабочего пространства — восстановление по ссылке пока недоступно."))</FlareText> }
+        <FlareButton Type="ButtonType.Submit" Loading="_busy" FullWidth>@(_register ? AlvaStrings.Common_CreateAWorkspace : AlvaStrings.Common_SignIn)</FlareButton>
+        <FlareButton Variant="ButtonVariant.Text" OnClick="Toggle">@(_register ? AlvaStrings.Auth_IAlreadyHaveAnAccount : AlvaStrings.Auth_CreateAnAccount)</FlareButton>
+        @if (!_register) { <FlareText Typo="TypographyScale.BodySmall">@(AlvaStrings.Auth_ForgotYourPasswordContactTheWorkspaceAdministratorResetByLinkIsNotAvaila_1a773e)</FlareText> }
     </FlareStack>
     </CascadingValue>
     </EditForm>
@@ -82,15 +82,15 @@
     private void Validate()
     {
         _errors.Clear();
-        if (_register && string.IsNullOrWhiteSpace(_displayName)) _errors[Field.Name] = Strings.T("Укажите имя.");
-        if (_register && string.IsNullOrWhiteSpace(_workspaceName)) _errors[Field.Workspace] = Strings.T("Укажите название пространства.");
+        if (_register && string.IsNullOrWhiteSpace(_displayName)) _errors[Field.Name] = AlvaStrings.Auth_EnterAName;
+        if (_register && string.IsNullOrWhiteSpace(_workspaceName)) _errors[Field.Workspace] = AlvaStrings.Auth_EnterAWorkspaceName;
         var email = _email?.Trim();
-        if (string.IsNullOrEmpty(email)) _errors[Field.Email] = Strings.T("Укажите электронную почту.");
-        else if (!System.Net.Mail.MailAddress.TryCreate(email, out var parsed) || parsed.Address != email) _errors[Field.Email] = Strings.T("Почта указана в неверном формате, например: name@company.ru.");
-        if (string.IsNullOrEmpty(_password)) _errors[Field.Password] = Strings.T("Введите пароль.");
-        else if (_register && _password.Length is < MinPassword or > MaxPassword) _errors[Field.Password] = string.Format(Strings.T("Пароль должен содержать от {0} до {1} символов."), MinPassword, MaxPassword);
-        if (_register && string.IsNullOrEmpty(_passwordConfirm)) _errors[Field.PasswordConfirm] = Strings.T("Повторите пароль.");
-        else if (_register && _password != _passwordConfirm) _errors[Field.PasswordConfirm] = Strings.T("Пароли не совпадают.");
+        if (string.IsNullOrEmpty(email)) _errors[Field.Email] = AlvaStrings.Auth_EnterAnEmail;
+        else if (!System.Net.Mail.MailAddress.TryCreate(email, out var parsed) || parsed.Address != email) _errors[Field.Email] = AlvaStrings.Auth_TheEmailIsInTheWrongFormatForExampleNameCompanyRu;
+        if (string.IsNullOrEmpty(_password)) _errors[Field.Password] = AlvaStrings.Auth_EnterAPassword;
+        else if (_register && _password.Length is < MinPassword or > MaxPassword) _errors[Field.Password] = string.Format(AlvaStrings.Auth_ThePasswordMustContainFromToCharacters, MinPassword, MaxPassword);
+        if (_register && string.IsNullOrEmpty(_passwordConfirm)) _errors[Field.PasswordConfirm] = AlvaStrings.Auth_RepeatThePassword;
+        else if (_register && _password != _passwordConfirm) _errors[Field.PasswordConfirm] = AlvaStrings.Auth_PasswordsDoNotMatch;
         SyncMessages();
     }
 
@@ -130,9 +130,9 @@
             Navigation.NavigateTo(_returnUrl ?? (Session.TeamId is not null ? "/" : "workspaces"));
         }
         // Занятая почта — ошибка конкретного поля; неверный вход — своя подсказка, а не «сессия истекла».
-        catch (HttpRequestException error) when (_register && error.StatusCode == System.Net.HttpStatusCode.Conflict) { _errors[Field.Email] = Strings.T("Аккаунт с этой почтой уже существует."); SyncMessages(); _editContext?.Validate(); }
-        catch (HttpRequestException error) when (!_register && error.StatusCode == System.Net.HttpStatusCode.Unauthorized) { _error = Strings.T("Неверный email или пароль, либо вход временно заблокирован."); }
-        catch (HttpRequestException error) when (error.StatusCode == System.Net.HttpStatusCode.Forbidden) { _error = Strings.T("Сервер отклонил запрос входа или регистрации. Обратитесь к администратору Alva."); }
+        catch (HttpRequestException error) when (_register && error.StatusCode == System.Net.HttpStatusCode.Conflict) { _errors[Field.Email] = AlvaStrings.Auth_AnAccountWithThisEmailAlreadyExists; SyncMessages(); _editContext?.Validate(); }
+        catch (HttpRequestException error) when (!_register && error.StatusCode == System.Net.HttpStatusCode.Unauthorized) { _error = AlvaStrings.Auth_WrongEmailOrPasswordOrSignInIsTemporarilyBlocked; }
+        catch (HttpRequestException error) when (error.StatusCode == System.Net.HttpStatusCode.Forbidden) { _error = AlvaStrings.Auth_TheServerRejectedTheSignInOrRegistrationRequestContactYourAlvaAdministra_4c9431; }
         catch (Exception error) when (error is HttpRequestException or InvalidOperationException) { _error = PageFeedback.Describe(error); }
         finally { _busy = false; }
     }

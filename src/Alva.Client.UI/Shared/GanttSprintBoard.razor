@@ -7,14 +7,14 @@
     <header class="alva-panel__header">
         <FlareIconView Value="@MaterialDesign3Icons.Regular.WaterfallChart" Size="20px" Class="alva-panel__icon" />
         <div>
-            <h2 class="alva-panel__title">@string.Format(Strings.T("Синхронный Гантт 2D: {0} на оси"), $"{SprintCount} {AlvaFormat.Plural(SprintCount, "sprint")}")</h2>
-            <p class="alva-panel__subtitle">@(Strings.T("Бросьте задачу на день — она попадёт в спринт этого дня и получит срок; на строку человека — ещё и исполнителя. Человека — на полосу."))</p>
+            <h2 class="alva-panel__title">@string.Format(AlvaStrings.Gantt_Synchronous2dGanttOnTheAxis, $"{SprintCount} {AlvaFormat.Plural(SprintCount, "sprint")}")</h2>
+            <p class="alva-panel__subtitle">@(AlvaStrings.Gantt_DropATaskOntoADayItJoinsThatDaySSprintAndGetsADueDateOntoAPersonSRowItAl_c6e380)</p>
         </div>
         <GanttLegend Class="alva-plan-gantt__legend" Items="BoardKey">
-            <Trailing><a class="alva-plan-gantt__link" href="gantt/2d">@(Strings.T("Открыть Гантт"))</a></Trailing>
+            <Trailing><a class="alva-plan-gantt__link" href="gantt/2d">@(AlvaStrings.Gantt_OpenTheGantt)</a></Trailing>
         </GanttLegend>
         <GanttZoom View="@View" Default="DefaultUnit" @bind-Value="_unit" />
-        <FlareButton Size="ButtonSize.Sm" Variant="ButtonVariant.Text" OnClick="ToToday" Tooltip="@(Strings.T("К сегодняшнему дню (Alt + колесо — прокрутка по времени)"))">@(Strings.T("Сегодня"))</FlareButton>
+        <FlareButton Size="ButtonSize.Sm" Variant="ButtonVariant.Text" OnClick="ToToday" Tooltip="@(AlvaStrings.Gantt_ToTodayAltWheelScrollThroughTime)">@(AlvaStrings.Gantt_Today)</FlareButton>
     </header>
     @if (Data is null || People is null)
     {
@@ -25,20 +25,20 @@
         <FlareGantt @ref="_chart" Range="Range" RangeChanged="RangeChanged" Endless="true" Scale="GanttScale.Day" UnitWidth="_unit" FillWidth="true" Virtualize="true" RowHeight="34"
                     SideWidth="@_side" DefaultSideWidth="14rem" ResizableSide="true" SideWidthChanged="SaveSide" NonWorking="GanttData.IsWeekend"
                     Markers="@GanttData.TodayMarkers" Regions="@Data.PlanRegions(Sprint)" @bind-SelectedKey="_selected"
-                    AriaLabel="@(Strings.T("Гантт спринтов"))" Class="alva-gantt alva-plan-gantt__chart">
-            <Corner><span>@(Strings.T("Задача · исполнитель"))</span></Corner>
+                    AriaLabel="@(AlvaStrings.Gantt_SprintGantt)" Class="alva-gantt alva-plan-gantt__chart">
+            <Corner><span>@(AlvaStrings.Gantt_TaskAssignee)</span></Corner>
             <ChildContent>
                 <GanttTaskPanel Data="Data" SprintIds="SprintIds" DragRows="true" OnChange="OnTaskChange" OnLinkCreate="OnLinkCreate" OnLinkRejected="OnLinkRejected"
                                 DropGroup="plan" DropAccepts="IsTask" ItemDropGroup="plan" ItemDropAccepts="IsPerson" Suggested="TaskGhosts">
-                    <Header>@(Strings.T("Проекция 1: задачи спринтов"))</Header>
+                    <Header>@(AlvaStrings.Gantt_Projection1SprintTasks)</Header>
                     <RowActions Context="task">
                         <FlareIconButton Icon="@MaterialDesign3Icons.Regular.Close" Size="ButtonSize.Sm" Tooltip="@UnplanHint(task)"
-                                         AriaLabel="@string.Format(Strings.T("Вернуть «{0}» в бэклог"), task.Title)" OnClick="() => OnUnplan.InvokeAsync(task)" />
+                                         AriaLabel="@string.Format(AlvaStrings.Gantt_ReturnToTheBacklog, task.Title)" OnClick="() => OnUnplan.InvokeAsync(task)" />
                     </RowActions>
                 </GanttTaskPanel>
                 <GanttPeoplePanel People="People" Range="Range" Focus="Focus" OnChange="OnPeopleChange" OnLinkCreate="OnLinkCreate" OnLinkRejected="OnLinkRejected"
                                   DropGroup="plan" DropAccepts="IsTask" ItemDropGroup="plan" ItemDropAccepts="IsPerson" Suggested="PeopleGhosts">
-                    <Header>@(Strings.T("Проекция 2: дорожки людей и ёмкость (часы в день)"))</Header>
+                    <Header>@(AlvaStrings.Gantt_Projection2PeopleLanesAndCapacityHoursPerDay)</Header>
                 </GanttPeoplePanel>
             </ChildContent>
         </FlareGantt>
@@ -106,15 +106,15 @@
         _chart?.ResolveDrop(targetId) ?? Task.FromResult<GanttDropTarget?>(null);
 
     // Задача с подзадачами уходит в бэклог вместе с ними — подсказка говорит об этом.
-    private string UnplanHint(TaskModel task) => Data!.ChildrenOf(task).Any() ? Strings.T("Вернуть в бэклог вместе с подзадачами (снять даты)") : Strings.T("Вернуть в бэклог (снять даты)");
+    private string UnplanHint(TaskModel task) => Data!.ChildrenOf(task).Any() ? AlvaStrings.Gantt_ReturnToBacklogWithSubtasksClearDates : AlvaStrings.Gantt_ReturnToBacklogClearDates;
 
     // Свои пункты доски: окна спринтов, перегруз людей и призраки автобаланса, если он что-то предлагает.
     private IEnumerable<GanttLegendItem> BoardKey => new GanttLegendItem[]
     {
-        new("sprint", Strings.T("Выбранный спринт"), GanttLegendShape.Region),
-        new("sprint-other", Strings.T("Другие спринты"), GanttLegendShape.Region),
-        new("overload", Strings.T("Перегруз"), GanttLegendShape.Cell)
-    }.Concat(Suggested.Count > 0 ? [new GanttLegendItem("suggested", Strings.T("Предложение"), GanttLegendShape.Suggested)] : []);
+        new("sprint", AlvaStrings.Gantt_SelectedSprint, GanttLegendShape.Region),
+        new("sprint-other", AlvaStrings.Gantt_OtherSprints, GanttLegendShape.Region),
+        new("overload", AlvaStrings.Common_OverloadShort, GanttLegendShape.Cell)
+    }.Concat(Suggested.Count > 0 ? [new GanttLegendItem("suggested", AlvaStrings.Gantt_Proposal, GanttLegendShape.Suggested)] : []);
 
     private static bool IsTask(object? payload) => payload is TaskDrag;
     private static bool IsPerson(object? payload) => payload is PersonDrag;

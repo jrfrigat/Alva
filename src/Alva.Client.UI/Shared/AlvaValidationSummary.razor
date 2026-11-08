@@ -1,6 +1,6 @@
 @* Сводка ошибок вне EditForm: FlareAlert с сообщениями. Фокус на обёртку задаёт вызывающая
    страница, поэтому здесь нет собственного tabindex и перехвата фокуса. *@
-<FlareAlert Severity="AlertSeverity.Error" Title="@(Strings.T("Проверьте выделенные поля."))">
+<FlareAlert Severity="AlertSeverity.Error" Title="@(AlvaStrings.Common_CheckTheHighlightedFields)">
     <FlareStack Gap="FlareSpacing.XSmall">
         @foreach (var message in Messages)
         {

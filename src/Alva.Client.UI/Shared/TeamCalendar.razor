@@ -2,13 +2,13 @@
    сотрудника, отпусками, встречами и днями перегрузки. *@
 @inject AlvaSession Session
 @inject NavigationManager Navigation
-<AlvaPageHeader Category="@(Strings.T("Ёмкость · Графики людей"))" Title="@(Strings.T("Графики людей и доступность команды"))" Description="@(Strings.T("Рабочие часы, отпуска и регулярные встречи каждого человека — и сколько чистого времени остаётся у команды по дням."))">
+<AlvaPageHeader Category="@(AlvaStrings.Capacity_CapacityPeopleSchedules)" Title="@(AlvaStrings.Capacity_PeopleSchedulesAndTeamAvailability)" Description="@(AlvaStrings.Capacity_EveryPersonSWorkingHoursVacationsAndRecurringMeetingsAndHowMuchCleanTime_c5193e)">
     <Actions>
-        <FlareIconButton Icon="@MaterialDesign3Icons.Regular.ChevronLeft" Size="ButtonSize.Sm" AriaLabel="@(Strings.T("Предыдущий месяц"))" OnClick="() => Shift(-1)" />
+        <FlareIconButton Icon="@MaterialDesign3Icons.Regular.ChevronLeft" Size="ButtonSize.Sm" AriaLabel="@(AlvaStrings.Capacity_PreviousMonth)" OnClick="() => Shift(-1)" />
         <FlareChip Variant="ChipVariant.Filled" Color="FlareColor.Primary" Size="ChipSize.Sm">@_month.ToString("MMMM yyyy")</FlareChip>
-        <FlareIconButton Icon="@MaterialDesign3Icons.Regular.ChevronRight" Size="ButtonSize.Sm" AriaLabel="@(Strings.T("Следующий месяц"))" OnClick="() => Shift(1)" />
-        <FlareButton Variant="ButtonVariant.Text" Size="ButtonSize.Sm" OnClick="ThisMonth">@(Strings.T("Сегодня"))</FlareButton>
-        @if (Focus is { } f) { <FlareButton Href="@($"capacity/{f.Id}/schedule")" Size="ButtonSize.Sm"><LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.EventBusy" Size="18px" /></LeadingIcon><ChildContent>@(Strings.T("+ Отсутствие / отпуск"))</ChildContent></FlareButton> }
+        <FlareIconButton Icon="@MaterialDesign3Icons.Regular.ChevronRight" Size="ButtonSize.Sm" AriaLabel="@(AlvaStrings.Capacity_NextMonth)" OnClick="() => Shift(1)" />
+        <FlareButton Variant="ButtonVariant.Text" Size="ButtonSize.Sm" OnClick="ThisMonth">@(AlvaStrings.Gantt_Today)</FlareButton>
+        @if (Focus is { } f) { <FlareButton Href="@($"capacity/{f.Id}/schedule")" Size="ButtonSize.Sm"><LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.EventBusy" Size="18px" /></LeadingIcon><ChildContent>@(AlvaStrings.Capacity_AbsenceVacation)</ChildContent></FlareButton> }
     </Actions>
 </AlvaPageHeader>
 <PageFeedback Error="@_error" Loading="_busy" OnRetry="Load" />
@@ -16,18 +16,18 @@
 else
 {
 <FlareGrid MinColumnWidth="min(100%,15rem)">
-    <FlareStat Label="@(Strings.T("Активный состав команды"))" Value="@People.Length.ToString()" Unit="@AlvaFormat.Plural(People.Length, "person")" Icon="@MaterialDesign3Icons.Regular.Badge" Caption="@(Strings.T("С рабочим графиком в этом месяце"))" />
-    <FlareStat Label="@(Strings.T("Запланированные отсутствия"))" Value="@MonthAbsences.Count().ToString()" Unit="@($"−{AlvaFormat.Hours(AbsenceHours)} {Strings.T("ч")}")" Icon="@MaterialDesign3Icons.Regular.BeachAccess"
-               Caption="@(MonthAbsences.Any() && MonthAbsences.First() is var a ? $"{a.Name}: {a.Ex.From:d}–{a.Ex.To:d MMM}" : Strings.T("Отпусков в месяце нет"))" />
-    <FlareStat Label="@(Strings.T("Повторяющиеся встречи"))" Value="@AlvaFormat.Hours(MeetingsPerPerson)" Unit="@(Strings.T("ч / нед / чел."))" Icon="@MaterialDesign3Icons.Regular.Groups" Caption="@(Strings.T("Вычеты из фокусного времени"))" />
-    <FlareStat Label="@(Strings.T("Эффективный фонд команды"))" Value="@AlvaFormat.Hours(Effective)" Unit="@(Strings.T("чистых часов"))" Icon="@MaterialDesign3Icons.Regular.Speed"
-               Caption="@($"{Strings.T("из")} {AlvaFormat.Hours(NominalMonth)} {Strings.T("ч номинала")} ({Pct(Effective, NominalMonth)}%)")" />
+    <FlareStat Label="@(AlvaStrings.Capacity_ActiveTeamMembers)" Value="@People.Length.ToString()" Unit="@AlvaFormat.Plural(People.Length, "person")" Icon="@MaterialDesign3Icons.Regular.Badge" Caption="@(AlvaStrings.Capacity_WithAScheduleThisMonth)" />
+    <FlareStat Label="@(AlvaStrings.Capacity_PlannedAbsences)" Value="@MonthAbsences.Count().ToString()" Unit="@($"−{AlvaFormat.Hours(AbsenceHours)} {AlvaStrings.Sprint_HoursShort}")" Icon="@MaterialDesign3Icons.Regular.BeachAccess"
+               Caption="@(MonthAbsences.Any() && MonthAbsences.First() is var a ? $"{a.Name}: {a.Ex.From:d}–{a.Ex.To:d MMM}" : AlvaStrings.Capacity_NoVacationsThisMonth)" />
+    <FlareStat Label="@(AlvaStrings.Capacity_RecurringMeetings)" Value="@AlvaFormat.Hours(MeetingsPerPerson)" Unit="@(AlvaStrings.Capacity_HWeekPerson)" Icon="@MaterialDesign3Icons.Regular.Groups" Caption="@(AlvaStrings.Capacity_DeductionsFromFocusTime)" />
+    <FlareStat Label="@(AlvaStrings.Capacity_EffectiveTeamFund)" Value="@AlvaFormat.Hours(Effective)" Unit="@(AlvaStrings.Capacity_CleanHoursLabel)" Icon="@MaterialDesign3Icons.Regular.Speed"
+               Caption="@($"{AlvaStrings.Sprint_OutOf} {AlvaFormat.Hours(NominalMonth)} {AlvaStrings.Capacity_HNominal} ({Pct(Effective, NominalMonth)}%)")" />
 </FlareGrid>
 
 <div class="alva-capacity-bar">
-    <FlareText Typo="TypographyScale.LabelMedium" Color="FlareColor.OnSurfaceVariant"><FlareIconView Value="@MaterialDesign3Icons.Regular.FilterList" Size="16px" /> @(Strings.T("Фильтр инженера:"))</FlareText>
-    <FlareChipGroup SelectedValues="SelectedPeople" SelectedValuesChanged="SetPersonFilter" AriaLabel="@(Strings.T("Фильтр инженера"))">
-        <FlareChip Value="" Label="@($"{Strings.T("Все")} ({People.Length})")" />
+    <FlareText Typo="TypographyScale.LabelMedium" Color="FlareColor.OnSurfaceVariant"><FlareIconView Value="@MaterialDesign3Icons.Regular.FilterList" Size="16px" /> @(AlvaStrings.Capacity_EngineerFilterLabel)</FlareText>
+    <FlareChipGroup SelectedValues="SelectedPeople" SelectedValuesChanged="SetPersonFilter" AriaLabel="@(AlvaStrings.Capacity_EngineerFilter)">
+        <FlareChip Value="" Label="@($"{AlvaStrings.Sprint_All} ({People.Length})")" />
         @foreach (var person in People)
         {
             <FlareChip Value="@person.Id.ToString()">
@@ -37,13 +37,13 @@ else
         }
     </FlareChipGroup>
     <div class="alva-heat-legend alva-heat-legend--inline">
-        <span><i class="alva-heat--balance"></i>@(Strings.T("Рабочий день"))</span><span><i class="alva-heat--absence"></i>@(Strings.T("Отпуск / отсутствие"))</span><span><i class="alva-heat--critical"></i>@(Strings.T("Перегрузка"))</span><span><i class="alva-heat--empty"></i>@(Strings.T("Выходной"))</span>
+        <span><i class="alva-heat--balance"></i>@(AlvaStrings.Capacity_WorkingDay)</span><span><i class="alva-heat--absence"></i>@(AlvaStrings.Capacity_VacationAbsence)</span><span><i class="alva-heat--critical"></i>@(AlvaStrings.Common_OverloadLabel)</span><span><i class="alva-heat--empty"></i>@(AlvaStrings.Capacity_DayOff)</span>
     </div>
 </div>
 
 <div class="alva-calendar-layout">
     <FlareCard Variant="CardVariant.Outlined" Class="alva-month-grid">
-        <FlareCardHeader Title="@(Strings.T("Календарь месяца"))" />
+        <FlareCardHeader Title="@(AlvaStrings.Capacity_MonthCalendar)" />
         <FlareCardContent>
         <div class="alva-month-grid__head">@foreach (var d in WeekDays) { <span>@d</span> }</div>
         <div class="alva-month-grid__body">
@@ -60,14 +60,14 @@ else
                 var sprintEnd = _sprints.FirstOrDefault(s => s.EndDate == date);
                 var state = !inMonth ? "out" : weekend ? "off" : overloaded.Length > 0 ? "over" : absent.Length > 0 ? "absence" : "work";
                 <div class="alva-day alva-day--@state @(date == Today ? "alva-day--today" : "")" @key="date">
-                    <div class="alva-day__top"><b class="alva-num">@date.Day</b>@if (sprintStart is not null) { <span class="alva-day__flag"><FlareIconView Value="@MaterialDesign3Icons.Regular.Flag" Size="12px" /> @(Strings.T("Старт"))</span> } else if (sprintEnd is not null) { <span class="alva-day__flag">@(Strings.T("Финиш"))</span> }</div>
-                    @if (state == "off") { <span class="alva-day__note">@(Strings.T("Выходной"))</span> }
+                    <div class="alva-day__top"><b class="alva-num">@date.Day</b>@if (sprintStart is not null) { <span class="alva-day__flag"><FlareIconView Value="@MaterialDesign3Icons.Regular.Flag" Size="12px" /> @(AlvaStrings.Capacity_Start)</span> } else if (sprintEnd is not null) { <span class="alva-day__flag">@(AlvaStrings.Capacity_Finish)</span> }</div>
+                    @if (state == "off") { <span class="alva-day__note">@(AlvaStrings.Capacity_DayOff)</span> }
                     else if (inMonth)
                     {
                         @if (sprintStart is not null) { <span class="alva-day__event">@sprintStart.Name</span> }
                         @foreach (var away in absent.Take(2)) { <span class="alva-day__event alva-day__event--absence"><FlareIconView Value="@MaterialDesign3Icons.Regular.BeachAccess" Size="12px" /> @Short(away.Name)</span> }
                         @foreach (var o in overloaded.Take(1)) { <span class="alva-day__event alva-day__event--over"><FlareIconView Value="@MaterialDesign3Icons.Regular.Warning" Size="12px" /> @Short(o.ActorName) @Pct(o.AllocatedHours, o.AvailableHours)%</span> }
-                        <span class="alva-day__hours alva-num"><b>@AlvaFormat.Hours(avail) @(Strings.T("ч"))</b> @(overloaded.Length > 0 ? string.Format(Strings.T("Дефицит −{0} ч"), AlvaFormat.Hours(overloaded.Sum(o => o.AllocatedHours - o.AvailableHours))) : alloc > 0 ? $"{Strings.T("занято")} {AlvaFormat.Hours(alloc)}" : Strings.T("доступно"))</span>
+                        <span class="alva-day__hours alva-num"><b>@AlvaFormat.Hours(avail) @(AlvaStrings.Sprint_HoursShort)</b> @(overloaded.Length > 0 ? string.Format(AlvaStrings.Common_DeficitH, AlvaFormat.Hours(overloaded.Sum(o => o.AllocatedHours - o.AvailableHours))) : alloc > 0 ? $"{AlvaStrings.Common_BusyLower} {AlvaFormat.Hours(alloc)}" : AlvaStrings.Common_Available)</span>
                     }
                 </div>
             }
@@ -79,7 +79,7 @@ else
         {
             var mine = _rows.Where(r => r.ActorId == focused.Id && r.Date.Month == _month.Month).ToArray();
             <FlareCard Variant="CardVariant.Outlined">
-                <FlareCardHeader Title="@focused.Name" Subtitle="@string.Join(" / ", _actors.Where(a => focused.RoleIds.Contains(a.Id)).Select(a => a.Name).DefaultIfEmpty(Strings.T("Участник команды")))">
+                <FlareCardHeader Title="@focused.Name" Subtitle="@string.Join(" / ", _actors.Where(a => focused.RoleIds.Contains(a.Id)).Select(a => a.Name).DefaultIfEmpty(AlvaStrings.Capacity_TeamMember))">
                     <AvatarContent><FlareAvatar Text="@AlvaFormat.Initials(focused.Name)" Alt="@focused.Name" Size="AvatarSize.Sm" /></AvatarContent>
                 </FlareCardHeader>
                 <FlareCardContent>
@@ -93,15 +93,15 @@ else
                             }
                         </FlareList>
                         <FlareStack Row Wrap>
-                            <FlareButton Href="@($"capacity/{focused.Id}")" Size="ButtonSize.Sm">@(Strings.T("Персональный календарь"))</FlareButton>
-                            <FlareButton Href="@($"capacity/{focused.Id}/schedule")" Variant="ButtonVariant.Tonal" Size="ButtonSize.Sm">@(Strings.T("Редактор графика"))</FlareButton>
+                            <FlareButton Href="@($"capacity/{focused.Id}")" Size="ButtonSize.Sm">@(AlvaStrings.Capacity_PersonalCalendar)</FlareButton>
+                            <FlareButton Href="@($"capacity/{focused.Id}/schedule")" Variant="ButtonVariant.Tonal" Size="ButtonSize.Sm">@(AlvaStrings.Common_ScheduleEditor)</FlareButton>
                         </FlareStack>
                     </FlareStack>
                 </FlareCardContent>
             </FlareCard>
         }
         <FlareCard Variant="CardVariant.Outlined">
-            <FlareCardHeader Title="@(Strings.T("Люди и загрузка месяца"))" />
+            <FlareCardHeader Title="@(AlvaStrings.Capacity_PeopleAndMonthWorkload)" />
             <FlareCardContent>
                 <FlareList TItem="ActorModel" Dense>
                     @foreach (var p in People)
@@ -111,7 +111,7 @@ else
                             <ChildContent>
                                 <FlareStack Gap="FlareSpacing.XSmall">
                                     <FlareText Typo="TypographyScale.BodyMedium">@p.Name</FlareText>
-                                    <FlareProgressLinear Value="@Math.Min(100, LoadPct(p))" Size="TrackSize.Xs" Color="@LoadColor(p)" aria-label="@string.Format(Strings.T("Загрузка: {0}"), p.Name)" />
+                                    <FlareProgressLinear Value="@Math.Min(100, LoadPct(p))" Size="TrackSize.Xs" Color="@LoadColor(p)" aria-label="@string.Format(AlvaStrings.Common_Load, p.Name)" />
                                 </FlareStack>
                             </ChildContent>
                             <Trailing><FlareText Typo="TypographyScale.BodySmall"><b>@LoadPct(p)%</b></FlareText></Trailing>
@@ -125,7 +125,7 @@ else
 }
 
 @code {
-    private static readonly string[] WeekDays = [Strings.T("Понедельник"), Strings.T("Вторник"), Strings.T("Среда"), Strings.T("Четверг"), Strings.T("Пятница"), Strings.T("Суббота"), Strings.T("Воскресенье")];
+    private static readonly string[] WeekDays = [AlvaStrings.Capacity_Monday, AlvaStrings.Capacity_Tuesday, AlvaStrings.Capacity_Wednesday, AlvaStrings.Capacity_Thursday, AlvaStrings.Capacity_Friday, AlvaStrings.Capacity_Saturday, AlvaStrings.Capacity_Sunday];
     private DateOnly _month = new(DateTime.Today.Year, DateTime.Today.Month, 1);
     private ActorModel[] _actors = [];
     private SprintModel[] _sprints = [];
@@ -182,11 +182,11 @@ else
     };
 
     private PersonStat[] StatsOf(ActorModel focused, CapacityDto[] mine) => [
-        new(Strings.T("Фонд месяца по графику"), $"{AlvaFormat.Hours(NominalOf(focused.Id))} {Strings.T("ч")}", FlareColor.OnSurface),
-        new(Strings.T("Встречи и вычеты"), $"−{AlvaFormat.Hours(Math.Max(0, NominalOf(focused.Id) - mine.Sum(r => r.AvailableHours) - AbsenceOf(focused.Id)))} {Strings.T("ч")}", FlareColor.Primary),
-        new(Strings.T("Отпуска"), $"−{AlvaFormat.Hours(AbsenceOf(focused.Id))} {Strings.T("ч")}", FlareColor.Error),
-        new(Strings.T("Чистая ёмкость"), $"{AlvaFormat.Hours(mine.Sum(r => r.AvailableHours))} {Strings.T("ч")}", FlareColor.Primary),
-        new(Strings.T("Запланировано задач"), $"{AlvaFormat.Hours(mine.Sum(r => r.AllocatedHours))} {Strings.T("ч")}", mine.Sum(r => r.AllocatedHours) > mine.Sum(r => r.AvailableHours) ? FlareColor.Error : FlareColor.OnSurface)
+        new(AlvaStrings.Capacity_MonthFundFromTheSchedule, $"{AlvaFormat.Hours(NominalOf(focused.Id))} {AlvaStrings.Sprint_HoursShort}", FlareColor.OnSurface),
+        new(AlvaStrings.Capacity_MeetingsAndDeductions, $"−{AlvaFormat.Hours(Math.Max(0, NominalOf(focused.Id) - mine.Sum(r => r.AvailableHours) - AbsenceOf(focused.Id)))} {AlvaStrings.Sprint_HoursShort}", FlareColor.Primary),
+        new(AlvaStrings.Capacity_Vacations, $"−{AlvaFormat.Hours(AbsenceOf(focused.Id))} {AlvaStrings.Sprint_HoursShort}", FlareColor.Error),
+        new(AlvaStrings.Capacity_CleanCapacity, $"{AlvaFormat.Hours(mine.Sum(r => r.AvailableHours))} {AlvaStrings.Sprint_HoursShort}", FlareColor.Primary),
+        new(AlvaStrings.Capacity_TasksPlanned, $"{AlvaFormat.Hours(mine.Sum(r => r.AllocatedHours))} {AlvaStrings.Sprint_HoursShort}", mine.Sum(r => r.AllocatedHours) > mine.Sum(r => r.AvailableHours) ? FlareColor.Error : FlareColor.OnSurface)
     ];
 
     protected override Task OnInitializedAsync() => Load();

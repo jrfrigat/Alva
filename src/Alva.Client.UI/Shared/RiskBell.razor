@@ -9,14 +9,14 @@
         </FlareBadge>
     </AnchorContent>
     <ChildContent>
-        <div class="alva-bell__panel" role="region" aria-label="@(Strings.T("Уведомления о рисках"))">
+        <div class="alva-bell__panel" role="region" aria-label="@(AlvaStrings.Common_RiskNotifications)">
             <div class="alva-bell__head">
-                <FlareText Element="h2" Typo="TypographyScale.TitleMedium">@(Strings.T("Риски"))</FlareText>
+                <FlareText Element="h2" Typo="TypographyScale.TitleMedium">@(AlvaStrings.Risks_Risks)</FlareText>
                 <FlareText Typo="TypographyScale.LabelMedium" Class="alva-bell__scope">@ScopeLabel(Notifications.Scope)</FlareText>
             </div>
             @if (Notifications.Items.Length == 0)
             {
-                <FlareText Typo="TypographyScale.BodyMedium" Class="alva-bell__empty">@(Strings.T("Рисков по вашей подписке нет."))</FlareText>
+                <FlareText Typo="TypographyScale.BodyMedium" Class="alva-bell__empty">@(AlvaStrings.Risks_NoRisksMatchYourSubscription)</FlareText>
             }
             else
             {
@@ -25,9 +25,9 @@
                     {
                         <li class="alva-bell__item @(item.New ? "alva-bell__item--new" : "")">
                             <div class="alva-bell__title">
-                                <AlvaStatusChip Tone="AlvaTones.Severity(item.Risk.Severity)">@(item.Risk.Severity == "High" ? Strings.T("Высокий") : Strings.T("Средний"))</AlvaStatusChip>
+                                <AlvaStatusChip Tone="AlvaTones.Severity(item.Risk.Severity)">@(item.Risk.Severity == "High" ? AlvaStrings.Common_High : AlvaStrings.Risks_Medium)</AlvaStatusChip>
                                 <a href="tasks/@item.Risk.TaskId" @onclick="Close">@item.Risk.Title</a>
-                                @if (item.New) { <span class="alva-bell__new">@(Strings.T("новый"))</span> }
+                                @if (item.New) { <span class="alva-bell__new">@(AlvaStrings.Risks_New)</span> }
                             </div>
                             <FlareText Typo="TypographyScale.BodySmall" Class="alva-bell__reasons">
                                 @for (var i = 0; i < item.Risk.Reasons.Length; i++)
@@ -42,21 +42,21 @@
                 </ul>
             }
             <div class="alva-bell__actions">
-                <FlareButton Variant="ButtonVariant.Text" Size="ButtonSize.Sm" Disabled="@(Notifications.Unseen == 0)" OnClick="Notifications.MarkAllSeen">@(Strings.T("Отметить всё прочитанным"))</FlareButton>
-                <FlareButton Variant="ButtonVariant.Tonal" Size="ButtonSize.Sm" OnClick="OpenAll">@(Strings.T("Все риски"))</FlareButton>
+                <FlareButton Variant="ButtonVariant.Text" Size="ButtonSize.Sm" Disabled="@(Notifications.Unseen == 0)" OnClick="Notifications.MarkAllSeen">@(AlvaStrings.Risks_MarkAllAsRead)</FlareButton>
+                <FlareButton Variant="ButtonVariant.Tonal" Size="ButtonSize.Sm" OnClick="OpenAll">@(AlvaStrings.Common_AllRisks)</FlareButton>
             </div>
         </div>
     </ChildContent>
 </FlarePopover>
 @code {
     private bool _open;
-    private string Label => Notifications.Unseen > 0 ? $"{Strings.T("Риски: новых")} {Notifications.Unseen}" : Strings.T("Риски");
+    private string Label => Notifications.Unseen > 0 ? $"{AlvaStrings.Risks_RisksNew} {Notifications.Unseen}" : AlvaStrings.Risks_Risks;
 
     public static string ScopeLabel(RiskScope scope) => scope switch
     {
-        RiskScope.High => Strings.T("Только высокий уровень"),
-        RiskScope.Mine => Strings.T("Только мои задачи"),
-        _ => Strings.T("Все риски команды")
+        RiskScope.High => AlvaStrings.Risks_HighLevelOnly,
+        RiskScope.Mine => AlvaStrings.Risks_OnlyMyTasks,
+        _ => AlvaStrings.Risks_AllTeamRisks
     };
 
     protected override void OnInitialized() => Notifications.Changed += Refresh;

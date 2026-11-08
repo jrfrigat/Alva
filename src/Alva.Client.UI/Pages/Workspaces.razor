@@ -1,8 +1,8 @@
 @page "/workspaces"
 @inject AlvaSession Session
 @inject NavigationManager Navigation
-<PageTitle>@(Strings.T("Рабочее пространство · Alva"))</PageTitle>
-<AlvaPageHeader Title="@(Strings.T("Пространство и команды"))" />
+<PageTitle>@(AlvaStrings.Workspace_WorkspaceAlva)</PageTitle>
+<AlvaPageHeader Title="@(AlvaStrings.Workspace_WorkspaceAndTeams)" />
 <PageFeedback Loading="_busy" Error="@_error" OnRetry="Reload" />
 <EditorStatus Saved="_saved" Saving="_busy" />
 @if (Session.User is null) { <TeamRequired /> }
@@ -10,17 +10,17 @@ else
 {
 <FlareGrid MinColumnWidth="min(100%, 20rem)">
     <FlareCard Variant="CardVariant.Outlined"><FlareCardContent><FlareStack>
-        <FlareText Element="h2" Typo="TypographyScale.TitleLarge">@(Strings.T("Пространства"))</FlareText>
-        @foreach(var item in Session.Workspaces) { <FlareStack Row Align="FlareAlignItems.Center" Gap="FlareSpacing.Small"><FlareButton Variant="@(Session.WorkspaceId == item.Id ? ButtonVariant.Tonal : ButtonVariant.Text)" OnClick="() => SelectWorkspace(item.Id)">@item.Name</FlareButton>@if (Session.WorkspaceId == item.Id) { <AlvaStatusChip Tone="AlvaTone.Ok">@(Strings.T("Текущее"))</AlvaStatusChip> }</FlareStack> }
-        <FlareTextField Label="@(Strings.T("Новое пространство"))" @bind-Value="_spaceName" @bind-Value:after="() => _saved = false" />
-        <FlareButton Disabled="@(string.IsNullOrWhiteSpace(_spaceName) || _busy)" OnClick="CreateSpace">@(Strings.T("Создать пространство"))</FlareButton>
+        <FlareText Element="h2" Typo="TypographyScale.TitleLarge">@(AlvaStrings.Workspace_Workspaces)</FlareText>
+        @foreach(var item in Session.Workspaces) { <FlareStack Row Align="FlareAlignItems.Center" Gap="FlareSpacing.Small"><FlareButton Variant="@(Session.WorkspaceId == item.Id ? ButtonVariant.Tonal : ButtonVariant.Text)" OnClick="() => SelectWorkspace(item.Id)">@item.Name</FlareButton>@if (Session.WorkspaceId == item.Id) { <AlvaStatusChip Tone="AlvaTone.Ok">@(AlvaStrings.Workspace_Current)</AlvaStatusChip> }</FlareStack> }
+        <FlareTextField Label="@(AlvaStrings.Workspace_NewWorkspace)" @bind-Value="_spaceName" @bind-Value:after="() => _saved = false" />
+        <FlareButton Disabled="@(string.IsNullOrWhiteSpace(_spaceName) || _busy)" OnClick="CreateSpace">@(AlvaStrings.Common_CreateAWorkspace)</FlareButton>
     </FlareStack></FlareCardContent></FlareCard>
     <FlareCard Variant="CardVariant.Outlined"><FlareCardContent><FlareStack>
-        <FlareText Element="h2" Typo="TypographyScale.TitleLarge">@(Strings.T("Команды"))</FlareText>
-        @foreach(var item in Session.Teams) { <FlareStack Row Align="FlareAlignItems.Center" Gap="FlareSpacing.Small"><FlareButton Variant="@(Session.TeamId == item.Id ? ButtonVariant.Tonal : ButtonVariant.Text)" OnClick="() => SelectTeam(item.Id)">@item.Name</FlareButton>@if (Session.TeamId == item.Id) { <AlvaStatusChip Tone="AlvaTone.Ok">@(Strings.T("Текущее"))</AlvaStatusChip> }</FlareStack> }
-        @if (Session.Teams.Length == 0) { <FlareText>@(Strings.T("Создайте первую команду в пространстве."))</FlareText> }
-        <FlareTextField Label="@(Strings.T("Новая команда"))" @bind-Value="_teamName" @bind-Value:after="() => _saved = false" />
-        <FlareButton Disabled="@(Session.WorkspaceId is null || string.IsNullOrWhiteSpace(_teamName) || _busy)" OnClick="CreateTeam">@(Strings.T("Создать команду"))</FlareButton>
+        <FlareText Element="h2" Typo="TypographyScale.TitleLarge">@(AlvaStrings.Workspace_Teams)</FlareText>
+        @foreach(var item in Session.Teams) { <FlareStack Row Align="FlareAlignItems.Center" Gap="FlareSpacing.Small"><FlareButton Variant="@(Session.TeamId == item.Id ? ButtonVariant.Tonal : ButtonVariant.Text)" OnClick="() => SelectTeam(item.Id)">@item.Name</FlareButton>@if (Session.TeamId == item.Id) { <AlvaStatusChip Tone="AlvaTone.Ok">@(AlvaStrings.Workspace_Current)</AlvaStatusChip> }</FlareStack> }
+        @if (Session.Teams.Length == 0) { <FlareText>@(AlvaStrings.Workspace_CreateTheFirstTeamInTheWorkspace)</FlareText> }
+        <FlareTextField Label="@(AlvaStrings.Workspace_NewTeam)" @bind-Value="_teamName" @bind-Value:after="() => _saved = false" />
+        <FlareButton Disabled="@(Session.WorkspaceId is null || string.IsNullOrWhiteSpace(_teamName) || _busy)" OnClick="CreateTeam">@(AlvaStrings.Workspace_CreateATeam)</FlareButton>
     </FlareStack></FlareCardContent></FlareCard>
 </FlareGrid>
 }

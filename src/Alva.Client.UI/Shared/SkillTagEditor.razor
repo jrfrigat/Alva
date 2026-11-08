@@ -1,6 +1,6 @@
 <FlareTagField TValue="string" Label="@Label" Values="Values" ValuesChanged="Changed"
                Suggestions="Suggestions" MaxTags="50" ErrorText="@_error"
-               HelperText="@(Strings.T("Введите навык и нажмите Enter. Тег можно удалить."))" />
+               HelperText="@(AlvaStrings.Common_TypeASkillAndPressEnterTagsCanBeRemoved)" />
 
 @code {
     [Parameter] public string Label { get; set; } = "";
@@ -17,6 +17,6 @@
             _error = null;
             await ValuesChanged.InvokeAsync(normalized);
         }
-        catch (ArgumentException) { _error = Strings.T("Укажите не более 50 навыков длиной до 80 символов."); }
+        catch (ArgumentException) { _error = AlvaStrings.Common_UseUpTo50SkillsEachUpTo80Characters; }
     }
 }

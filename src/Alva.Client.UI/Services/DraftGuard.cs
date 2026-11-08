@@ -38,9 +38,9 @@ public static class DraftPrompt
     public static async Task<bool> CanDiscardAsync(FlareConfirmDialogProvider? confirm, bool dirty)
     {
         if (!dirty || confirm is null) return true;
-        var leave = await confirm.ConfirmAsync(Strings.T("Несохранённые изменения"),
-            Strings.T("Есть несохранённые правки. Уйти и потерять их?"),
-            Strings.T("Уйти без сохранения"), Strings.T("Остаться"));
+        var leave = await confirm.ConfirmAsync(AlvaStrings.Common_UnsavedChanges,
+            AlvaStrings.Common_ThereAreUnsavedChangesLeaveAndLoseThem,
+            AlvaStrings.Common_LeaveWithoutSaving, AlvaStrings.Common_Stay);
         return leave == true;
     }
 }
@@ -51,7 +51,7 @@ public static class DestructivePrompt
     public static async Task<bool> ConfirmAsync(FlareConfirmDialogProvider? confirm, string title, string message, string action)
     {
         if (confirm is null) return true;
-        return await confirm.ConfirmAsync(title, message, action, Strings.T("Отмена")) == true;
+        return await confirm.ConfirmAsync(title, message, action, AlvaStrings.Common_Cancel) == true;
     }
 }
 

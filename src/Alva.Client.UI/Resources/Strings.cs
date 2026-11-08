@@ -4,8 +4,9 @@ using System.Resources;
 namespace Alva.Client;
 
 /// <summary>
-/// Reads the application's strings from the same resources the components' localizer uses, for the
-/// classes that are not components (models, formatters, navigation) and have no dependency injection.
+/// Runtime lookup for resource keys assembled at run time (the <c>plural.*</c> and <c>reason.*</c>
+/// families). Interface text uses the generated <see cref="AlvaStrings"/> properties instead: they
+/// are checked by the compiler and listed in the resx files.
 /// </summary>
 public static class Strings
 {

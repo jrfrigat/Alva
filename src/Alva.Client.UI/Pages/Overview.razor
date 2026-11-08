@@ -1,8 +1,8 @@
 @page "/"
 @inject AlvaSession Session
-<PageTitle>@(Strings.T("Обзор · Alva"))</PageTitle>
-<AlvaPageHeader Category="@(Strings.T("Команда · Обзор"))" Title="@Session.TeamName" Description="@(Strings.T("Планы команды, ближайшие сроки и работа под риском."))">
-    <Actions><FlareButton Href="tasks" Size="ButtonSize.Sm">@(Strings.T("К задачам"))</FlareButton></Actions>
+<PageTitle>@(AlvaStrings.Overview_OverviewAlva)</PageTitle>
+<AlvaPageHeader Category="@(AlvaStrings.Overview_TeamOverview)" Title="@Session.TeamName" Description="@(AlvaStrings.Overview_TeamPlansUpcomingDeadlinesAndWorkAtRisk)">
+    <Actions><FlareButton Href="tasks" Size="ButtonSize.Sm">@(AlvaStrings.Common_ToTasks)</FlareButton></Actions>
 </AlvaPageHeader>
 <PageFeedback Error="@_error" Loading="_busy" OnRetry="Load" />
 @if(Session.TeamId is null){<TeamRequired />}
@@ -15,13 +15,13 @@ else
     @if(FirstRun)
     {
         <FlareCard Variant="CardVariant.Outlined"><FlareCardContent><FlareStack Gap="FlareSpacing.Large">
-            <FlareText Element="h2" Typo="TypographyScale.TitleLarge">@(Strings.T("Первый запуск"))</FlareText>
-            <FlareText>@(Strings.T("Настройте команду по шагам — подсказки появятся здесь."))</FlareText>
+            <FlareText Element="h2" Typo="TypographyScale.TitleLarge">@(AlvaStrings.Overview_FirstRun)</FlareText>
+            <FlareText>@(AlvaStrings.Overview_SetUpTheTeamStepByStepHintsWillAppearHere)</FlareText>
             @foreach(var step in Steps)
             {
                 <FlareStack Row StretchFirst Align="FlareAlignItems.Center" Gap="FlareSpacing.Small">
                     <FlareLink Href="@step.Href">@step.Label</FlareLink>
-                    <AlvaStatusChip Tone="@(step.Done ? AlvaTone.Ok : AlvaTone.Warning)">@(step.Done ? Strings.T("Готово") : Strings.T("Следующий шаг"))</AlvaStatusChip>
+                    <AlvaStatusChip Tone="@(step.Done ? AlvaTone.Ok : AlvaTone.Warning)">@(step.Done ? AlvaStrings.Common_DoneStatus : AlvaStrings.Overview_NextStep)</AlvaStatusChip>
                 </FlareStack>
             }
         </FlareStack></FlareCardContent></FlareCard>
@@ -29,25 +29,25 @@ else
     else
     {
     <FlareGrid MinColumnWidth="min(100%,14rem)">
-        <FlareStat Label="@(Strings.T("Задач в работе"))" Value="@_tasks.Count(t=>t.Status=="InProgress").ToString()" Icon="@MaterialDesign3Icons.Regular.Assignment" />
-        <FlareStat Label="@(Strings.T("Активных спринтов"))" Value="@_sprints.Count(s=>s.Status=="Active").ToString()" Icon="@MaterialDesign3Icons.Regular.Flag" />
-        <FlareStat Label="@(Strings.T("Задач под риском"))" Value="@_risks.Length.ToString()" Icon="@MaterialDesign3Icons.Regular.Warning" />
+        <FlareStat Label="@(AlvaStrings.Overview_TasksInProgress)" Value="@_tasks.Count(t=>t.Status=="InProgress").ToString()" Icon="@MaterialDesign3Icons.Regular.Assignment" />
+        <FlareStat Label="@(AlvaStrings.Overview_ActiveSprints)" Value="@_sprints.Count(s=>s.Status=="Active").ToString()" Icon="@MaterialDesign3Icons.Regular.Flag" />
+        <FlareStat Label="@(AlvaStrings.Common_TasksAtRisk)" Value="@_risks.Length.ToString()" Icon="@MaterialDesign3Icons.Regular.Warning" />
     </FlareGrid>
     <FlareGrid MinColumnWidth="min(100%,24rem)">
     <FlareCard Variant="CardVariant.Outlined"><FlareCardContent><FlareStack Gap="FlareSpacing.Large">
-        <FlareStack Row StretchFirst><FlareText Element="h2" Typo="TypographyScale.TitleLarge">@(Strings.T("Спринты"))</FlareText><FlareButton Href="sprints" Variant="ButtonVariant.Text" Size="ButtonSize.Sm">@(Strings.T("Все спринты"))</FlareButton></FlareStack>
-        @foreach(var sprint in _sprints.Where(s=>s.Status!="Completed").OrderBy(s=>s.StartDate).Take(5)) { var tasks=_tasks.Where(t=>t.SprintIds.Contains(sprint.Id)).ToArray(); <FlareStack Gap="FlareSpacing.Small"><FlareLink Href="@($"sprints/{sprint.Id}")">@sprint.Name</FlareLink><FlareText Typo="TypographyScale.BodySmall">@sprint.StartDate.ToString("dd.MM") — @sprint.EndDate.ToString("dd.MM") · @tasks.Count(t=>t.Status=="Done") / @tasks.Length @AlvaFormat.Plural(tasks.Length, "task")</FlareText><FlareProgressLinear Value="@(tasks.Length==0?0:100d*tasks.Count(t=>t.Status=="Done")/tasks.Length)" aria-label="@(Strings.T("Прогресс спринта"))" /></FlareStack> }
-        @if(!_sprints.Any(s=>s.Status!="Completed")){<FlareEmptyState Compact Title="@(Strings.T("Спланируйте первый спринт"))" Description="@(Strings.T("Задайте цель и выберите задачи из пула."))" />}
+        <FlareStack Row StretchFirst><FlareText Element="h2" Typo="TypographyScale.TitleLarge">@(AlvaStrings.Sprint_Sprints)</FlareText><FlareButton Href="sprints" Variant="ButtonVariant.Text" Size="ButtonSize.Sm">@(AlvaStrings.Common_AllSprints)</FlareButton></FlareStack>
+        @foreach(var sprint in _sprints.Where(s=>s.Status!="Completed").OrderBy(s=>s.StartDate).Take(5)) { var tasks=_tasks.Where(t=>t.SprintIds.Contains(sprint.Id)).ToArray(); <FlareStack Gap="FlareSpacing.Small"><FlareLink Href="@($"sprints/{sprint.Id}")">@sprint.Name</FlareLink><FlareText Typo="TypographyScale.BodySmall">@sprint.StartDate.ToString("dd.MM") — @sprint.EndDate.ToString("dd.MM") · @tasks.Count(t=>t.Status=="Done") / @tasks.Length @AlvaFormat.Plural(tasks.Length, "task")</FlareText><FlareProgressLinear Value="@(tasks.Length==0?0:100d*tasks.Count(t=>t.Status=="Done")/tasks.Length)" aria-label="@(AlvaStrings.Overview_SprintProgress)" /></FlareStack> }
+        @if(!_sprints.Any(s=>s.Status!="Completed")){<FlareEmptyState Compact Title="@(AlvaStrings.Overview_PlanTheFirstSprint)" Description="@(AlvaStrings.Overview_SetAGoalAndPickTasksFromThePool)" />}
     </FlareStack></FlareCardContent></FlareCard>
     <FlareCard Variant="CardVariant.Outlined"><FlareCardContent><FlareStack Gap="FlareSpacing.Large">
-        <FlareText Element="h2" Typo="TypographyScale.TitleLarge">@(Strings.T("Ближайшие дедлайны"))</FlareText>
+        <FlareText Element="h2" Typo="TypographyScale.TitleLarge">@(AlvaStrings.Overview_UpcomingDeadlines)</FlareText>
         @foreach(var task in _tasks.Where(t=>t.Deadline.HasValue && t.Status!="Done" && t.Status!="Cancelled").OrderBy(t=>t.Deadline).Take(6)){<FlareStack Row StretchFirst><FlareLink Href="@($"tasks/{task.Id}")">@task.Title</FlareLink><FlareText Typo="TypographyScale.LabelMedium">@task.Deadline!.Value.ToString("dd.MM")</FlareText></FlareStack>}
-        @if(!_tasks.Any(t=>t.Deadline.HasValue && t.Status!="Done" && t.Status!="Cancelled")){<FlareEmptyState Compact Title="@(Strings.T("Нет ближайших дедлайнов"))" Description="@(Strings.T("Сроки появятся после настройки задач."))" />}
+        @if(!_tasks.Any(t=>t.Deadline.HasValue && t.Status!="Done" && t.Status!="Cancelled")){<FlareEmptyState Compact Title="@(AlvaStrings.Overview_NoUpcomingDeadlines)" Description="@(AlvaStrings.Overview_DatesAppearOnceTheTasksAreSetUp)" />}
     </FlareStack></FlareCardContent></FlareCard>
     </FlareGrid>
-    <FlareText Element="h2" Typo="TypographyScale.TitleLarge">@(Strings.T("На что обратить внимание"))</FlareText>
-    @foreach(var risk in _risks.Take(5)){<FlareAlert Severity="@(string.Equals(risk.Severity, "High", StringComparison.OrdinalIgnoreCase) ? AlertSeverity.Error : AlertSeverity.Warning)" Title="@risk.Title"><FlareStack Gap="FlareSpacing.Small"><FlareText>@ReasonText.Join(risk.Reasons, " · ")</FlareText><FlareLink Href="@($"tasks/{risk.TaskId}")">@(Strings.T("Открыть задачу"))</FlareLink></FlareStack></FlareAlert>}
-    @if(_risks.Length==0){<FlareEmptyState Compact Title="@(Strings.T("Открытых рисков нет"))" Description="@(Strings.T("Alva проверяет загрузку, сроки и назначение задач."))" />}
+    <FlareText Element="h2" Typo="TypographyScale.TitleLarge">@(AlvaStrings.Overview_WhatToWatch)</FlareText>
+    @foreach(var risk in _risks.Take(5)){<FlareAlert Severity="@(string.Equals(risk.Severity, "High", StringComparison.OrdinalIgnoreCase) ? AlertSeverity.Error : AlertSeverity.Warning)" Title="@risk.Title"><FlareStack Gap="FlareSpacing.Small"><FlareText>@ReasonText.Join(risk.Reasons, " · ")</FlareText><FlareLink Href="@($"tasks/{risk.TaskId}")">@(AlvaStrings.Risks_OpenTask)</FlareLink></FlareStack></FlareAlert>}
+    @if(_risks.Length==0){<FlareEmptyState Compact Title="@(AlvaStrings.Common_NoOpenRisks)" Description="@(AlvaStrings.Overview_AlvaChecksWorkloadDeadlinesAndTaskAssignment)" />}
     }
 }
 @code {
@@ -57,10 +57,10 @@ else
     private bool FirstRun => _tasks.Length == 0 && _sprints.Length == 0 && _projects.Length == 0 && _actors.Length == 0;
     private (string Label, string Href, bool Done)[] Steps =>
     [
-        (Strings.T("Люди и графики"), "team", _actors.Length > 0),
-        (Strings.T("Проект"), "projects", _projects.Length > 0),
-        (Strings.T("Задачи"), "tasks", _tasks.Length > 0),
-        (Strings.T("Спринт"), "sprints", _sprints.Length > 0)
+        (AlvaStrings.Overview_PeopleAndSchedules, "team", _actors.Length > 0),
+        (AlvaStrings.Common_Project, "projects", _projects.Length > 0),
+        (AlvaStrings.Common_Tasks, "tasks", _tasks.Length > 0),
+        (AlvaStrings.Gantt_Sprint, "sprints", _sprints.Length > 0)
     ];
 
     protected override Task OnInitializedAsync() => Load();

@@ -164,18 +164,18 @@ public sealed class GanttData
     /// <summary>Подсказка полосы: название, даты, кто делает и, если задача под угрозой, почему.</summary>
     public string Title(TaskModel task)
     {
-        var dates = Window(task) is { } w ? $"{w.Start:dd.MM}–{w.End:dd.MM}" : Strings.T("без дат");
+        var dates = Window(task) is { } w ? $"{w.Start:dd.MM}–{w.End:dd.MM}" : AlvaStrings.Gantt_Undated;
         var title = $"{task.Title} · {dates} · {Assignee(task)}";
         if (Actor(task.ResolvedPersonId ?? task.AssignmentTargetId) is { Kind: "Person" } person)
         {
             var missing = SkillMath.Missing(task.RequiredSkills, person.Skills);
-            if (missing.Length > 0) title += $"\n{Strings.T("Не хватает навыков:")} {string.Join(", ", missing)}";
+            if (missing.Length > 0) title += $"\n{AlvaStrings.Common_MissingSkills} {string.Join(", ", missing)}";
         }
-        if (ChildrenOf(task).Any()) title += "\n" + Strings.T("Штриховка — ожидание подзадач");
-        if (task.DatesFixed) title += $"\n{Strings.T("Даты зафиксированы: задача не переносится")}";
-        if (task.DailyHoursLimit is > 0) title += "\n" + string.Format(Strings.T("Не больше {0} ч в день"), AlvaFormat.Hours(task.DailyHoursLimit.Value));
+        if (ChildrenOf(task).Any()) title += "\n" + AlvaStrings.Gantt_HatchingWaitingForSubtasks;
+        if (task.DatesFixed) title += $"\n{AlvaStrings.Gantt_DatesAreFixedTheTaskCannotBeMoved}";
+        if (task.DailyHoursLimit is > 0) title += "\n" + string.Format(AlvaStrings.Gantt_NoMoreThanHADay, AlvaFormat.Hours(task.DailyHoursLimit.Value));
         return RiskOf(task) is { Severity: "High" or "Medium" } risk
-            ? $"{title}\n{(risk.Severity == "High" ? Strings.T("Высокий") : Strings.T("Средний"))} {Strings.T("риск:")} {ReasonText.Join(risk.Reasons)}"
+            ? $"{title}\n{(risk.Severity == "High" ? AlvaStrings.Common_High : AlvaStrings.Risks_Medium)} {AlvaStrings.Gantt_Risk} {ReasonText.Join(risk.Reasons)}"
             : title;
     }
 
@@ -202,8 +202,8 @@ public sealed class GanttData
     public string Assignee(TaskModel task) => Actor(task.ResolvedPersonId)?.Name ?? Actor(task.AssignmentTargetId) switch
     {
         { Kind: "Person" } person => person.Name,
-        { } target => string.Format(Strings.T("Требуется: {0}"), target.Name),
-        null => Strings.T("Без исполнителя")
+        { } target => string.Format(AlvaStrings.Gantt_Required, target.Name),
+        null => AlvaStrings.Common_Unassigned
     };
 
     /// <summary>
@@ -248,12 +248,12 @@ public sealed class GanttData
     public async Task<string> Apply(AlvaSession session, GanttChangeEventArgs args)
     {
         await Save(session, args.Changes);
-        return args.Changes.Count > 1 ? string.Format(Strings.T("Даты сохранены, сдвинуто последователей: {0}"), args.Changes.Count - 1) : Strings.T("Даты сохранены");
+        return args.Changes.Count > 1 ? string.Format(AlvaStrings.Gantt_DatesSavedSuccessorsMoved, args.Changes.Count - 1) : AlvaStrings.Gantt_DatesSaved;
     }
 
     /// <summary>Сообщение об отказе переноса фиксированной задачи.</summary>
     public static InvalidOperationException FixedError(TaskModel task) =>
-        new(string.Format(Strings.T("Задача «{0}» с фиксированными датами не переносится. Снимите фиксацию в карточке задачи."), task.Title));
+        new(string.Format(AlvaStrings.Gantt_TaskHasFixedDatesAndCannotBeMovedClearTheFixInTheTaskCard, task.Title));
 
     /// <summary>
     /// Ручной жест не должен ухудшать связи, затрагивающие изменённые задачи: нарушение после не больше, чем до.
@@ -278,7 +278,7 @@ public sealed class GanttData
             var otherId = proposed.ContainsKey(dependency.PredecessorId) ? dependency.SuccessorId : dependency.PredecessorId;
             var other = Tasks.FirstOrDefault(t => t.Id == otherId);
             throw new InvalidOperationException(string.Format(
-                Strings.T("Связь {0} с задачей «{1}» не позволяет так изменить даты: нарушение увеличится на {2} дн."),
+                AlvaStrings.Gantt_LinkWithTheTaskDoesNotAllowThisChangeTheViolationWillGrowByDayS,
                 dependency.Kind, other?.Title ?? "", after - before));
         }
     }
@@ -352,8 +352,8 @@ public sealed class GanttData
 
     public Task AddLink(AlvaSession session, GanttLink link)
     {
-        var successor = Task(link.ToKey) ?? throw new InvalidOperationException(Strings.T("Задача не найдена."));
-        var predecessor = Task(link.FromKey) ?? throw new InvalidOperationException(Strings.T("Задача не найдена."));
+        var successor = Task(link.ToKey) ?? throw new InvalidOperationException(AlvaStrings.Gantt_TaskNotFound);
+        var predecessor = Task(link.FromKey) ?? throw new InvalidOperationException(AlvaStrings.Gantt_TaskNotFound);
         return session.Send(HttpMethod.Post, session.TeamPath($"tasks/{successor.Id}/dependencies"),
             new DependencyRequest(predecessor.Id, successor.Id, Code(link.Type)));
     }
@@ -370,18 +370,18 @@ public sealed class GanttData
 
     public static readonly GanttScale[] Scales = [GanttScale.Day, GanttScale.Week, GanttScale.Month];
 
-    public static string ScaleName(GanttScale scale) => scale switch { GanttScale.Week => Strings.T("Недели"), GanttScale.Month => Strings.T("Месяцы"), _ => Strings.T("Дни") };
+    public static string ScaleName(GanttScale scale) => scale switch { GanttScale.Week => AlvaStrings.Gantt_Weeks, GanttScale.Month => AlvaStrings.Gantt_Months, _ => AlvaStrings.Gantt_Days };
 
     /// <summary>Ширина единицы оси: дню хватает места на часы, неделе и месяцу — на подпись.</summary>
     public static double UnitWidth(GanttScale scale) => scale switch { GanttScale.Week => 96, GanttScale.Month => 140, _ => 40 };
 
     public static bool IsWeekend(DateOnly day) => day.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday;
 
-    public static GanttMarker[] TodayMarkers => [new GanttMarker("today", DateTime.Today.AddHours(12), Label: Strings.T("Сегодня"))];
+    public static GanttMarker[] TodayMarkers => [new GanttMarker("today", DateTime.Today.AddHours(12), Label: AlvaStrings.Gantt_Today)];
 
     public SprintModel? Sprint(Guid? id) => id is { } value ? _sprints.GetValueOrDefault(value) : null;
 
-    public string SprintName(Guid? id) => Sprint(id) is { } s ? $"{s.Name} ({s.StartDate:dd.MM}–{s.EndDate:dd.MM})" : Strings.T("Все задачи");
+    public string SprintName(Guid? id) => Sprint(id) is { } s ? $"{s.Name} ({s.StartDate:dd.MM}–{s.EndDate:dd.MM})" : AlvaStrings.Gantt_AllTasks;
 
     /// <summary>Окно выбранного спринта, а без выбора — окна активных спринтов.</summary>
     public IEnumerable<GanttRegion> SprintRegions(SprintModel? sprint) => sprint is { } s

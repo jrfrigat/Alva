@@ -3,9 +3,9 @@
 @inject NavigationManager Navigation
 @if (!_dismissed && Session.AssignmentNotice is { } notice)
 {
-    <div role="status"><FlareAlert Severity="AlertSeverity.Warning" Title="@(Strings.T("Проверка навыков"))">
+    <div role="status"><FlareAlert Severity="AlertSeverity.Warning" Title="@(AlvaStrings.Common_SkillCheck)">
         @notice
-        <FlareButton Variant="ButtonVariant.Text" Size="ButtonSize.Sm" OnClick="()=>_dismissed=true">@(Strings.T("Закрыть"))</FlareButton>
+        <FlareButton Variant="ButtonVariant.Text" Size="ButtonSize.Sm" OnClick="()=>_dismissed=true">@(AlvaStrings.Common_Close)</FlareButton>
     </FlareAlert></div>
 }
 @code {

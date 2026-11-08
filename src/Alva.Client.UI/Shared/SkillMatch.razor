@@ -2,7 +2,7 @@
 {
     var missing = SkillMath.Missing(Required, Person.Skills);
     <FlareText Typo="TypographyScale.BodySmall" Color="@(missing.Length > 0 ? FlareColor.Warning : FlareColor.OnSurfaceVariant)" role="status">
-        @(missing.Length > 0 ? Strings.T("Не хватает навыков:") + " " + string.Join(", ", missing) : Strings.T("Все необходимые навыки есть"))
+        @(missing.Length > 0 ? AlvaStrings.Common_MissingSkills + " " + string.Join(", ", missing) : AlvaStrings.Common_AllRequiredSkillsArePresent)
     </FlareText>
 }
 @code {

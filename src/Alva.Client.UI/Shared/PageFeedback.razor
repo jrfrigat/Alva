@@ -1,13 +1,13 @@
 @if (!string.IsNullOrEmpty(Error))
 {
-    <FlareAlert Severity="AlertSeverity.Error" Title="@(Strings.T("Не удалось выполнить действие"))">
+    <FlareAlert Severity="AlertSeverity.Error" Title="@(AlvaStrings.Common_TheActionFailed)">
         <FlareStack Gap="FlareSpacing.Small">
             <span>@Error</span>
-            @if (OnRetry.HasDelegate) { <FlareButton Size="ButtonSize.Sm" Variant="ButtonVariant.Tonal" OnClick="Retry">@(Strings.T("Повторить"))</FlareButton> }
+            @if (OnRetry.HasDelegate) { <FlareButton Size="ButtonSize.Sm" Variant="ButtonVariant.Tonal" OnClick="Retry">@(AlvaStrings.Common_TryAgain)</FlareButton> }
         </FlareStack>
     </FlareAlert>
 }
-@if (Loading) { <div class="alva-page-loading" role="status" aria-busy="true"><FlareProgressLinear Value="null" aria-label="@(Strings.T("Загрузка данных"))" /></div> }
+@if (Loading) { <div class="alva-page-loading" role="status" aria-busy="true"><FlareProgressLinear Value="null" aria-label="@(AlvaStrings.Common_LoadingData)" /></div> }
 @code {
     [Parameter] public string? Error { get; set; }
     [Parameter] public bool Loading { get; set; }
@@ -24,16 +24,16 @@
     public static string Describe(Exception error) => error switch
     {
         ServerRefusalException { StatusCode: System.Net.HttpStatusCode.BadRequest or System.Net.HttpStatusCode.NotFound or System.Net.HttpStatusCode.Conflict or System.Net.HttpStatusCode.UnprocessableEntity } refusal => refusal.Message,
-        HttpRequestException { StatusCode: System.Net.HttpStatusCode.Unauthorized } => Strings.T("Сессия истекла. Войдите снова."),
-        HttpRequestException { StatusCode: System.Net.HttpStatusCode.Forbidden } => Strings.T("Нет доступа: у вашей роли нет прав на эти данные. Попросите владельца пространства выдать доступ."),
-        HttpRequestException { StatusCode: System.Net.HttpStatusCode.NotFound } => Strings.T("Запись не найдена: возможно, её уже удалили."),
-        HttpRequestException { StatusCode: System.Net.HttpStatusCode.Conflict } => Strings.T("Данные уже изменились. Обновите страницу и повторите."),
-        HttpRequestException { StatusCode: System.Net.HttpStatusCode.TooManyRequests } => Strings.T("Слишком много запросов. Подождите и повторите."),
-        HttpRequestException { StatusCode: System.Net.HttpStatusCode.BadRequest } => Strings.T("Проверьте введённые данные."),
-        HttpRequestException { StatusCode: { } status } when (int)status >= 500 => Strings.T("Сервер не смог выполнить действие. Повторите позже."),
-        HttpRequestException => Strings.T("Не удалось связаться с сервером. Проверьте соединение и повторите."),
-        TimeoutException or TaskCanceledException => Strings.T("Сервер не ответил вовремя. Повторите."),
+        HttpRequestException { StatusCode: System.Net.HttpStatusCode.Unauthorized } => AlvaStrings.Common_YourSessionHasExpiredSignInAgain,
+        HttpRequestException { StatusCode: System.Net.HttpStatusCode.Forbidden } => AlvaStrings.Common_NoAccessYourRoleHasNoRightsToThisDataAskTheWorkspaceOwnerForAccess,
+        HttpRequestException { StatusCode: System.Net.HttpStatusCode.NotFound } => AlvaStrings.Common_TheRecordWasNotFoundItMayHaveBeenDeleted,
+        HttpRequestException { StatusCode: System.Net.HttpStatusCode.Conflict } => AlvaStrings.Common_TheDataHasAlreadyChangedRefreshThePageAndTryAgain,
+        HttpRequestException { StatusCode: System.Net.HttpStatusCode.TooManyRequests } => AlvaStrings.Common_TooManyRequestsWaitAndTryAgain,
+        HttpRequestException { StatusCode: System.Net.HttpStatusCode.BadRequest } => AlvaStrings.Common_CheckTheEnteredData,
+        HttpRequestException { StatusCode: { } status } when (int)status >= 500 => AlvaStrings.Common_TheServerCouldNotCompleteTheActionTryAgainLater,
+        HttpRequestException => AlvaStrings.Common_CouldNotReachTheServerCheckTheConnectionAndTryAgain,
+        TimeoutException or TaskCanceledException => AlvaStrings.Common_TheServerDidNotRespondInTimeTryAgain,
         InvalidOperationException or NotSupportedException when !string.IsNullOrWhiteSpace(error.Message) => error.Message,
-        _ => Strings.T("Не удалось выполнить действие. Повторите.")
+        _ => AlvaStrings.Common_TheActionCouldNotBeCompletedTryAgain
     };
 }

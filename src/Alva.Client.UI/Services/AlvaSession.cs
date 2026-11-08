@@ -59,13 +59,13 @@ public sealed class AlvaSession(IApiService api, IJSRuntime js)
                 if (task is not null && person is not null)
                 {
                     var missing = SkillMath.Missing(task.RequiredSkills, person.Skills);
-                    if (missing.Length > 0) AssignmentNotice = $"{task.Title} — {person.Name}: {Strings.T("Не хватает навыков:")} {string.Join(", ", missing)}";
+                    if (missing.Length > 0) AssignmentNotice = $"{task.Title} — {person.Name}: {AlvaStrings.Common_MissingSkills} {string.Join(", ", missing)}";
                 }
             }
             catch (Exception e) when (e is HttpRequestException or InvalidOperationException)
             {
                 // The assignment already succeeded; checking it must not turn success into a failed write.
-                AssignmentNotice = Strings.T("Назначение сохранено. Не удалось проверить навыки.");
+                AssignmentNotice = AlvaStrings.Common_AssignmentSavedSkillsCouldNotBeChecked;
             }
         }
         AssignmentChecked?.Invoke();

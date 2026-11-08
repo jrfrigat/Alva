@@ -6,8 +6,8 @@
         </Found>
         <NotFound>
             <LayoutView Layout="typeof(MainLayout)">
-                <FlareEmptyState Title="@(Strings.T("Страница не найдена"))" Description="@(Strings.T("Проверьте адрес или вернитесь к обзору."))">
-                    <ActionContent><FlareButton Href="@AppRoutes.Home">@(Strings.T("Обзор команды"))</FlareButton></ActionContent>
+                <FlareEmptyState Title="@(AlvaStrings.Common_PageNotFound)" Description="@(AlvaStrings.Common_CheckTheAddressOrReturnToTheOverview)">
+                    <ActionContent><FlareButton Href="@AppRoutes.Home">@(AlvaStrings.Common_TeamOverview)</FlareButton></ActionContent>
                 </FlareEmptyState>
             </LayoutView>
         </NotFound>

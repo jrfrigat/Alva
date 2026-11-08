@@ -1,33 +1,33 @@
 @page "/data"
 @inject AlvaSession Session
-<PageTitle>@(Strings.T("Данные · Alva"))</PageTitle>
-<AlvaPageHeader Title="@(Strings.T("Импорт и экспорт"))" />
+<PageTitle>@(AlvaStrings.Data_DataAlva)</PageTitle>
+<AlvaPageHeader Title="@(AlvaStrings.Data_ImportAndExport)" />
 <PageFeedback Loading="_busy" Error="@_error" OnRetry="Reload" />
 @if (_formErrors.Count > 0) { <div tabindex="-1" @ref="_errorSummary"><AlvaValidationSummary Messages="_formErrors" /></div> }
 @if(Session.TeamId is null){<TeamRequired />}
 else
 {
 @* Демо без сервера не умеет ни разбирать файлы, ни выгружать их — говорим об этом до любых действий, а не после. *@
-@if(!Session.SupportsDataTransfer){<FlareAlert Severity="AlertSeverity.Info" Title="@(Strings.T("Импорт и экспорт недоступны в демо"))">@(Strings.T("В демо данные хранятся только в этом браузере: импорт и экспорт файлов работают в версии Alva с сервером."))</FlareAlert>}
+@if(!Session.SupportsDataTransfer){<FlareAlert Severity="AlertSeverity.Info" Title="@(AlvaStrings.Data_ImportAndExportAreUnavailableInTheDemo)">@(AlvaStrings.Data_InTheDemoTheDataLivesOnlyInThisBrowserFileImportAndExportWorkInTheServer_00b40a)</FlareAlert>}
 <FlareGrid MinColumnWidth="min(100%,24rem)">
-<FlareCard Variant="CardVariant.Outlined"><FlareCardContent><FlareStack Gap="FlareSpacing.Large"><FlareText Element="h2" Typo="TypographyScale.TitleLarge">@(Strings.T("Экспорт данных команды"))</FlareText><FlareText>@(Strings.T("Скачайте данные для резервной копии или работы в таблицах."))</FlareText><FlareText Typo="TypographyScale.BodySmall">@(Strings.T("Экспорт откроется в новой вкладке; сохраните файл, если браузер его не скачал."))</FlareText><FlareStack Row Wrap>@foreach(var format in Formats){<FlareButton Href="@(Session.SupportsDataTransfer ? Session.TeamPath("data/export?format="+format) : null)" Disabled="@(!Session.SupportsDataTransfer)" Variant="ButtonVariant.Tonal" Target="_blank">@format.ToUpperInvariant()</FlareButton>}</FlareStack></FlareStack></FlareCardContent></FlareCard>
+<FlareCard Variant="CardVariant.Outlined"><FlareCardContent><FlareStack Gap="FlareSpacing.Large"><FlareText Element="h2" Typo="TypographyScale.TitleLarge">@(AlvaStrings.Data_ExportTeamData)</FlareText><FlareText>@(AlvaStrings.Data_DownloadTheDataForABackupOrToWorkInSpreadsheets)</FlareText><FlareText Typo="TypographyScale.BodySmall">@(AlvaStrings.Data_ExportOpensInANewTabSaveTheFileIfTheBrowserDidNotDownloadIt)</FlareText><FlareStack Row Wrap>@foreach(var format in Formats){<FlareButton Href="@(Session.SupportsDataTransfer ? Session.TeamPath("data/export?format="+format) : null)" Disabled="@(!Session.SupportsDataTransfer)" Variant="ButtonVariant.Tonal" Target="_blank">@format.ToUpperInvariant()</FlareButton>}</FlareStack></FlareStack></FlareCardContent></FlareCard>
 <FlareCard Variant="CardVariant.Outlined"><FlareCardContent><FlareStack Gap="FlareSpacing.Large">
-    <FlareText Element="h2" Typo="TypographyScale.TitleLarge">@(Strings.T("Импорт данных"))</FlareText>
-    <FlareText>@(Strings.T("Выберите файл JSON, CSV или XLSX. Используйте экспорт Alva как образец структуры."))</FlareText>
-    <FlareSelect TValue="string" Label="@(Strings.T("Формат"))" Items="Formats" @bind-Value="_format" Disabled="@(!Session.SupportsDataTransfer)" />
-    <FlareFileUploadButton Text="@(Strings.T("Выбрать файл"))" Accept=".json,.csv,.xlsx" Multiple="false" OnFilesChanged="SelectFiles" ShowFileList MaxFileSize="10485760" Disabled="@(!Session.SupportsDataTransfer)" />
-    @if(_file is not null) { <FlareText Typo="TypographyScale.BodySmall">@string.Format(Strings.T("Файл: {0} · {1}"), _file.Name, Size(_file.Size))</FlareText> }
-    @if(_preview.Length > 0) { <FlareText Typo="TypographyScale.LabelMedium">@(Strings.T("Предпросмотр"))</FlareText>@foreach(var line in _preview) { <FlareText Typo="TypographyScale.BodySmall">@line</FlareText> } }
+    <FlareText Element="h2" Typo="TypographyScale.TitleLarge">@(AlvaStrings.Data_ImportData)</FlareText>
+    <FlareText>@(AlvaStrings.Data_ChooseAJsonCsvOrXlsxFileUseAnAlvaExportAsTheStructureSample)</FlareText>
+    <FlareSelect TValue="string" Label="@(AlvaStrings.Data_Format)" Items="Formats" @bind-Value="_format" Disabled="@(!Session.SupportsDataTransfer)" />
+    <FlareFileUploadButton Text="@(AlvaStrings.Data_ChooseFile)" Accept=".json,.csv,.xlsx" Multiple="false" OnFilesChanged="SelectFiles" ShowFileList MaxFileSize="10485760" Disabled="@(!Session.SupportsDataTransfer)" />
+    @if(_file is not null) { <FlareText Typo="TypographyScale.BodySmall">@string.Format(AlvaStrings.Data_File, _file.Name, Size(_file.Size))</FlareText> }
+    @if(_preview.Length > 0) { <FlareText Typo="TypographyScale.LabelMedium">@(AlvaStrings.Data_Preview)</FlareText>@foreach(var line in _preview) { <FlareText Typo="TypographyScale.BodySmall">@line</FlareText> } }
     @if(_fileError is not null){<FlareText Typo="TypographyScale.BodySmall" Class="alva-field-error">@_fileError</FlareText>}
-    <FlareButton OnClick="Import" Loading="_busy" Disabled="@(_file is null || !Session.SupportsDataTransfer)">@(Strings.T("Импортировать"))</FlareButton>
+    <FlareButton OnClick="Import" Loading="_busy" Disabled="@(_file is null || !Session.SupportsDataTransfer)">@(AlvaStrings.Data_Import)</FlareButton>
     @if(_result is not null)
     {
-        <FlareAlert Severity="AlertSeverity.Success" Title="@(Strings.T("Импорт завершён"))">
+        <FlareAlert Severity="AlertSeverity.Success" Title="@(AlvaStrings.Data_ImportComplete)">
             <FlareStack Gap="FlareSpacing.Small">
-                <FlareText>@string.Format(Strings.T("Импортировано записей: {0}."), _result.Imported)</FlareText>
-                @if(_result.Warnings.Length > 0) { <FlareText Typo="TypographyScale.LabelMedium">@(Strings.T("Предупреждения импорта"))</FlareText>@foreach(var warning in _result.Warnings) { <FlareText Typo="TypographyScale.BodySmall">@warning</FlareText> } }
-                <FlareText Typo="TypographyScale.BodySmall">@(Strings.T("Проверьте задачи, проекты и спринты."))</FlareText>
-                <FlareStack Row Wrap><FlareButton Href="tasks" Variant="ButtonVariant.Text" Size="ButtonSize.Sm">@(Strings.T("К задачам"))</FlareButton><FlareButton Href="projects" Variant="ButtonVariant.Text" Size="ButtonSize.Sm">@(Strings.T("Проекты"))</FlareButton><FlareButton Href="sprints" Variant="ButtonVariant.Text" Size="ButtonSize.Sm">@(Strings.T("Спринты"))</FlareButton></FlareStack>
+                <FlareText>@string.Format(AlvaStrings.Data_RecordsImported, _result.Imported)</FlareText>
+                @if(_result.Warnings.Length > 0) { <FlareText Typo="TypographyScale.LabelMedium">@(AlvaStrings.Data_ImportWarnings)</FlareText>@foreach(var warning in _result.Warnings) { <FlareText Typo="TypographyScale.BodySmall">@warning</FlareText> } }
+                <FlareText Typo="TypographyScale.BodySmall">@(AlvaStrings.Data_CheckTasksProjectsAndSprints)</FlareText>
+                <FlareStack Row Wrap><FlareButton Href="tasks" Variant="ButtonVariant.Text" Size="ButtonSize.Sm">@(AlvaStrings.Common_ToTasks)</FlareButton><FlareButton Href="projects" Variant="ButtonVariant.Text" Size="ButtonSize.Sm">@(AlvaStrings.Common_Projects)</FlareButton><FlareButton Href="sprints" Variant="ButtonVariant.Text" Size="ButtonSize.Sm">@(AlvaStrings.Sprint_Sprints)</FlareButton></FlareStack>
             </FlareStack>
         </FlareAlert>
     }
@@ -45,7 +45,7 @@ else
         _file=files.FirstOrDefault();_result=null;_preview=[];_fileError=null;
         if(_file is null)return;
         var ext=Path.GetExtension(_file.Name).TrimStart('.').ToLowerInvariant();
-        if(!Formats.Contains(ext)){_fileError=Strings.T("Формат не удалось определить по расширению. Выберите формат вручную.");return;}
+        if(!Formats.Contains(ext)){_fileError=AlvaStrings.Data_TheFormatCouldNotBeDetectedFromTheExtensionChooseItManually;return;}
         _format=ext;
         _preview=await Preview(_file,ext);
     }
@@ -68,19 +68,19 @@ else
         catch(Exception e) when(e is IOException or InvalidOperationException or NotSupportedException){return [];}
     }
 
-    private static string Size(long bytes)=>bytes>=1024*1024?$"{bytes/1024d/1024d:0.#} {Strings.T("МБ")}":bytes>=1024?$"{bytes/1024d:0.#} {Strings.T("КБ")}":$"{bytes} {Strings.T("Б")}";
+    private static string Size(long bytes)=>bytes>=1024*1024?$"{bytes/1024d/1024d:0.#} {AlvaStrings.Data_MegabytesShort}":bytes>=1024?$"{bytes/1024d:0.#} {AlvaStrings.Data_KilobytesShort}":$"{bytes} {AlvaStrings.Data_BytesShort}";
     // Успех показывается только после того, как импорт действительно прошёл; любая ошибка — включая неподдерживаемую операцию — без «успеха».
     private async Task Import()
     {
         _fileError=null;_formErrors.Clear();
         if(!Session.SupportsDataTransfer)return;
-        if(_file is null) { _fileError=Strings.T("Файл не выбран."); _formErrors.Add(_fileError); }
+        if(_file is null) { _fileError=AlvaStrings.Data_ChooseAFile; _formErrors.Add(_fileError); }
         else if(!string.Equals(Path.GetExtension(_file.Name).TrimStart('.'),_format,StringComparison.OrdinalIgnoreCase))
-        { _fileError=Strings.T("Расширение файла не совпадает с форматом."); _formErrors.Add(_fileError); }
+        { _fileError=AlvaStrings.Data_TheFileExtensionDoesNotMatchTheFormat; _formErrors.Add(_fileError); }
         if(_formErrors.Count > 0) { StateHasChanged(); await SafeFocus.Async(_errorSummary); return; }
-        if(!await DestructivePrompt.ConfirmAsync(Confirm, Strings.T("Импортировать данные"),
-            string.Format(Strings.T("Файл «{0}» будет импортирован в команду; существующие данные могут измениться."), _file.Name),
-            Strings.T("Импортировать"))) return;
+        if(!await DestructivePrompt.ConfirmAsync(Confirm, AlvaStrings.Data_ImportDataConfirm,
+            string.Format(AlvaStrings.Data_FileWillBeImportedIntoTheTeamExistingDataMayChange, _file.Name),
+            AlvaStrings.Data_Import)) return;
         _busy=true;_result=null;_error=null;
         try{await using var stream=_file.OpenReadStream(10*1024*1024);_result=await Session.Import(_format,stream);}
         catch(Exception e) when(e is HttpRequestException or InvalidOperationException or IOException or NotSupportedException){_error=PageFeedback.Describe(e);}

@@ -3,8 +3,8 @@
 @inject NavigationManager Navigation
 @* Риски и причины сдвига сроков: сводка, быстрые фильтры по видам причин и список задач под риском.
    Макета для страницы нет — разметка по DESIGN.md и образцам реестра спринтов и обзора ёмкости. *@
-<PageTitle>@(Strings.T("Аналитика · Alva"))</PageTitle>
-<AlvaPageHeader Category="@(Strings.T("Аналитика · Риски"))" Title="@(Strings.T("Риски и причины сдвига сроков"))" Description="@(Strings.T("Какие задачи могут не успеть и почему: перегрузка и отпуска исполнителей, работа без человека, просроченные сроки и незакрытые зависимости."))" />
+<PageTitle>@(AlvaStrings.Risks_AnalyticsAlva)</PageTitle>
+<AlvaPageHeader Category="@(AlvaStrings.Risks_AnalyticsRisks)" Title="@(AlvaStrings.Risks_RisksAndReasonsForSlippingDeadlines)" Description="@(AlvaStrings.Risks_WhichTasksMayBeLateAndWhyAssigneeOverloadAndVacationsWorkWithoutAPersonM_250586)" />
 <PageFeedback Loading="_busy" Error="@_error" OnRetry="Load" />
 @if (Session.TeamId is null) { <TeamRequired /> }
 else if (_busy)
@@ -14,21 +14,21 @@ else if (_busy)
 else
 {
 <FlareGrid MinColumnWidth="min(100%,15rem)">
-    <FlareStat Label="@(Strings.T("Задач под риском"))" Value="@_risks.Length.ToString()" Unit="@($"{Strings.T("из")} {OpenTasks} {Strings.T("открытых")}")" Icon="@MaterialDesign3Icons.Regular.Warning"
-               Caption="@(_risks.Length == 0 ? (_tasks.Length == 0 ? Strings.T("Нет задач для оценки") : Strings.T("Все сроки держатся")) : string.Format(Strings.T("{0}% открытых задач"), Pct(_risks.Length, OpenTasks)))" />
-    <FlareStat Label="@(Strings.T("Высокий уровень"))" Value="@High.ToString()" Unit="@AlvaFormat.Plural(High, "task")" Icon="@MaterialDesign3Icons.Regular.Error"
-               Caption="@(Strings.T("Срок прошёл или прогноз позже срока больше чем на 3 дня"))" />
-    <FlareStat Label="@(Strings.T("Ближайший срыв"))" Value="@(Nearest?.Risk.Title ?? Strings.T("Не ожидается"))" Icon="@MaterialDesign3Icons.Regular.EventBusy"
-               Caption="@(Nearest is { } n ? string.Format(Strings.T("Срок {0:d MMM}, прогноз {1:d MMM} (+{2} дн.)"), n.Due, n.Risk.ForecastDate!.Value, Slip(n.Risk)) : _tasks.Length == 0 ? Strings.T("Нет задач для оценки") : Strings.T("Прогнозы укладываются в сроки"))" />
-    <FlareStat Label="@(Strings.T("Без человека"))" Value="@Count(RiskKind.Unassigned).ToString()" Unit="@AlvaFormat.Plural(Count(RiskKind.Unassigned), "task")" Icon="@MaterialDesign3Icons.Regular.PersonSearch">
-        <CaptionContent><FlareLink Href="unassigned">@(Strings.T("Без исполнителя"))</FlareLink></CaptionContent>
+    <FlareStat Label="@(AlvaStrings.Common_TasksAtRisk)" Value="@_risks.Length.ToString()" Unit="@($"{AlvaStrings.Sprint_OutOf} {OpenTasks} {AlvaStrings.Risks_Open}")" Icon="@MaterialDesign3Icons.Regular.Warning"
+               Caption="@(_risks.Length == 0 ? (_tasks.Length == 0 ? AlvaStrings.Risks_NoTasksToAssess : AlvaStrings.Risks_AllDeadlinesHold) : string.Format(AlvaStrings.Risks_OfOpenTasks, Pct(_risks.Length, OpenTasks)))" />
+    <FlareStat Label="@(AlvaStrings.Risks_HighLevel)" Value="@High.ToString()" Unit="@AlvaFormat.Plural(High, "task")" Icon="@MaterialDesign3Icons.Regular.Error"
+               Caption="@(AlvaStrings.Risks_PastDueOrTheForecastIsMoreThan3DaysLate)" />
+    <FlareStat Label="@(AlvaStrings.Risks_NearestSlippage)" Value="@(Nearest?.Risk.Title ?? AlvaStrings.Risks_NotExpected)" Icon="@MaterialDesign3Icons.Regular.EventBusy"
+               Caption="@(Nearest is { } n ? string.Format(AlvaStrings.Risks_DueForecastD, n.Due, n.Risk.ForecastDate!.Value, Slip(n.Risk)) : _tasks.Length == 0 ? AlvaStrings.Risks_NoTasksToAssess : AlvaStrings.Risks_ForecastsFitTheDeadlines)" />
+    <FlareStat Label="@(AlvaStrings.Risks_NoAssignee)" Value="@Count(RiskKind.Unassigned).ToString()" Unit="@AlvaFormat.Plural(Count(RiskKind.Unassigned), "task")" Icon="@MaterialDesign3Icons.Regular.PersonSearch">
+        <CaptionContent><FlareLink Href="unassigned">@(AlvaStrings.Common_Unassigned)</FlareLink></CaptionContent>
     </FlareStat>
 </FlareGrid>
 
 <FlareStack Row Wrap Align="FlareAlignItems.Center" Gap="FlareSpacing.Small">
-    <FlareText Typo="TypographyScale.LabelMedium" Color="FlareColor.OnSurfaceVariant"><FlareIconView Value="@MaterialDesign3Icons.Regular.FilterList" Size="16px" /> @(Strings.T("Причины:"))</FlareText>
-    <FlareChipGroup SelectedValues="SelectedKinds" SelectedValuesChanged="SetKind" AriaLabel="@(Strings.T("Причины"))">
-        <FlareChip Variant="ChipVariant.Filled" Color="FlareColor.Primary" Value="" Label="@($"{Strings.T("Все")} ({_risks.Length})")" />
+    <FlareText Typo="TypographyScale.LabelMedium" Color="FlareColor.OnSurfaceVariant"><FlareIconView Value="@MaterialDesign3Icons.Regular.FilterList" Size="16px" /> @(AlvaStrings.Risks_ReasonsLabel)</FlareText>
+    <FlareChipGroup SelectedValues="SelectedKinds" SelectedValuesChanged="SetKind" AriaLabel="@(AlvaStrings.Risks_Reasons)">
+        <FlareChip Variant="ChipVariant.Filled" Color="FlareColor.Primary" Value="" Label="@($"{AlvaStrings.Sprint_All} ({_risks.Length})")" />
         @foreach (var kind in Kinds.Where(k => Count(k) > 0))
         {
             <FlareChip Variant="ChipVariant.Filled" Color="FlareColor.Primary" Value="@kind.ToString()" Label="@($"{Label(kind)} ({Count(kind)})")" />
@@ -38,32 +38,32 @@ else
 
 <div class="alva-filterbar">
     <FlareTabs @bind-ActiveIndex="_level" Class="alva-filterbar__tabs">
-        <FlareTab Label="@(Strings.T("Все уровни"))" Badge="@_risks.Length.ToString()" BadgeColor="FlareColor.Secondary" />
-        <FlareTab Label="@(Strings.T("Высокий"))" Badge="@High.ToString()" BadgeColor="FlareColor.Error" />
-        <FlareTab Label="@(Strings.T("Средний"))" Badge="@((_risks.Length - High).ToString())" BadgeColor="FlareColor.Secondary" />
+        <FlareTab Label="@(AlvaStrings.Risks_AllLevels)" Badge="@_risks.Length.ToString()" BadgeColor="FlareColor.Secondary" />
+        <FlareTab Label="@(AlvaStrings.Common_High)" Badge="@High.ToString()" BadgeColor="FlareColor.Error" />
+        <FlareTab Label="@(AlvaStrings.Risks_Medium)" Badge="@((_risks.Length - High).ToString())" BadgeColor="FlareColor.Secondary" />
     </FlareTabs>
-    <FlareSelect TValue="Guid?" Items="@(People.Select(p => (Guid?)p.Id))" ItemLabel="PersonName" NullOption="@(Strings.T("Все исполнители"))" @bind-Value="_person" Size="FieldSize.Sm" InputAttributes="@(new Dictionary<string, object> { ["aria-label"] = Strings.T("Исполнитель") })" Class="alva-filterbar__person" />
-    <FlareTextField @bind-Value="_search" Immediate Clearable Placeholder="@(Strings.T("Поиск по задаче или причине"))" AriaLabel="@(Strings.T("Поиск риска"))" Class="alva-filterbar__search">
+    <FlareSelect TValue="Guid?" Items="@(People.Select(p => (Guid?)p.Id))" ItemLabel="PersonName" NullOption="@(AlvaStrings.Risks_AllAssignees)" @bind-Value="_person" Size="FieldSize.Sm" InputAttributes="@(new Dictionary<string, object> { ["aria-label"] = AlvaStrings.Risks_Assignee })" Class="alva-filterbar__person" />
+    <FlareTextField @bind-Value="_search" Immediate Clearable Placeholder="@(AlvaStrings.Risks_SearchByTaskOrReason)" AriaLabel="@(AlvaStrings.Risks_SearchARisk)" Class="alva-filterbar__search">
         <AdornmentStart><FlareIconView Value="@MaterialDesign3Icons.Regular.Search" Size="18px" /></AdornmentStart>
     </FlareTextField>
 </div>
 
 @if (_tasks.Length == 0)
 {
-    <FlareEmptyState Title="@(Strings.T("Нет задач для оценки"))" Description="@(Strings.T("Добавьте задачи — тогда появятся сроки, прогноз и риски."))"><ActionContent><FlareButton Href="tasks">@(Strings.T("К задачам"))</FlareButton></ActionContent></FlareEmptyState>
+    <FlareEmptyState Title="@(AlvaStrings.Risks_NoTasksToAssess)" Description="@(AlvaStrings.Risks_AddTasksToSeeDeadlinesTheForecastAndRisks)"><ActionContent><FlareButton Href="tasks">@(AlvaStrings.Common_ToTasks)</FlareButton></ActionContent></FlareEmptyState>
 }
 else if (_risks.Length == 0)
 {
-    <FlareEmptyState Title="@(Strings.T("Открытых рисков нет"))" Description="@(Strings.T("Проверены сроки, прогнозы по графикам исполнителей, отпуска, перегрузка, назначения и зависимости."))" />
+    <FlareEmptyState Title="@(AlvaStrings.Common_NoOpenRisks)" Description="@(AlvaStrings.Risks_DeadlinesForecastsFromAssigneeSchedulesVacationsOverloadAssignmentsAndDe_f1a29c)" />
 }
 else
 {
 <FlareCard Variant="CardVariant.Outlined" Class="alva-risk-panel">
-    <FlareCardHeader Title="@(Strings.T("Задачи под риском"))" />
+    <FlareCardHeader Title="@(AlvaStrings.Risks_TasksAtRisk)" />
     <FlareCardContent>
         <FlareDataGrid TItem="RiskDto" Items="Visible" Height="auto" Dense="true" RowKey="r => r!.TaskId">
             <Columns>
-                <FlareColumn TItem="RiskDto" Title="@(Strings.T("Задача"))">
+                <FlareColumn TItem="RiskDto" Title="@(AlvaStrings.Common_Task)">
                     <Template Context="risk">
                         <FlareStack Gap="FlareSpacing.None">
                             <FlareLink Href="@($"tasks/{risk!.TaskId}")">@risk.Title</FlareLink>
@@ -71,10 +71,10 @@ else
                         </FlareStack>
                     </Template>
                 </FlareColumn>
-                <FlareColumn TItem="RiskDto" Title="@(Strings.T("Уровень"))">
-                    <Template Context="risk"><AlvaStatusChip Tone="AlvaTones.Severity(risk!.Severity)">@(risk.Severity == "High" ? Strings.T("Высокий") : Strings.T("Средний"))</AlvaStatusChip></Template>
+                <FlareColumn TItem="RiskDto" Title="@(AlvaStrings.Risks_Level)">
+                    <Template Context="risk"><AlvaStatusChip Tone="AlvaTones.Severity(risk!.Severity)">@(risk.Severity == "High" ? AlvaStrings.Common_High : AlvaStrings.Risks_Medium)</AlvaStatusChip></Template>
                 </FlareColumn>
-                <FlareColumn TItem="RiskDto" Title="@(Strings.T("Причины"))">
+                <FlareColumn TItem="RiskDto" Title="@(AlvaStrings.Risks_Reasons)">
                     <Template Context="risk">
                         <FlareStack Row Wrap Gap="FlareSpacing.XSmall">
                             @foreach (var reason in risk!.Reasons)
@@ -84,12 +84,12 @@ else
                             }
                             @foreach (var note in (risk.ForecastNotes ?? []).Except(risk.Reasons))
                             {
-                                <FlareLink Href="@($"tasks/{risk.TaskId}")" title="@(Strings.T("Открыть задачу"))">@ReasonText.Describe(note)</FlareLink>
+                                <FlareLink Href="@($"tasks/{risk.TaskId}")" title="@(AlvaStrings.Risks_OpenTask)">@ReasonText.Describe(note)</FlareLink>
                             }
                         </FlareStack>
                     </Template>
                 </FlareColumn>
-                <FlareColumn TItem="RiskDto" Title="@(Strings.T("Исполнитель"))">
+                <FlareColumn TItem="RiskDto" Title="@(AlvaStrings.Risks_Assignee)">
                     <Template Context="risk">
                         @if (TaskOf(risk!.TaskId)?.ResolvedPersonId is { } personId && Actor(personId) is { } person)
                         {
@@ -100,30 +100,30 @@ else
                         }
                         else
                         {
-                            <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@(TaskOf(risk.TaskId)?.AssignmentTargetId is { } target ? Actor(target)?.Name ?? "—" : Strings.T("Не назначена"))</FlareText>
+                            <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@(TaskOf(risk.TaskId)?.AssignmentTargetId is { } target ? Actor(target)?.Name ?? "—" : AlvaStrings.Common_UnassignedTask)</FlareText>
                         }
                     </Template>
                 </FlareColumn>
-                <FlareColumn TItem="RiskDto" Title="@(Strings.T("Срок / прогноз"))">
+                <FlareColumn TItem="RiskDto" Title="@(AlvaStrings.Risks_DueDateForecast)">
                     <Template Context="risk">
                         <FlareStack Gap="FlareSpacing.None">
-                            <FlareText Typo="TypographyScale.BodySmall">@(DueOf(TaskOf(risk!.TaskId)) is { } due ? due.ToString("d MMM") : Strings.T("без срока"))</FlareText>
-                            <FlareText Typo="TypographyScale.BodySmall" Color="@(Slip(risk) > 0 ? FlareColor.Error : FlareColor.OnSurfaceVariant)">@(risk.ForecastDate is { } forecast ? $"→ {forecast:d MMM}" : Strings.T("→ не рассчитан"))@(Slip(risk) > 0 ? string.Format(Strings.T(" (+{0} дн.)"), Slip(risk)) : "")</FlareText>
+                            <FlareText Typo="TypographyScale.BodySmall">@(DueOf(TaskOf(risk!.TaskId)) is { } due ? due.ToString("d MMM") : AlvaStrings.Risks_NoDueDate)</FlareText>
+                            <FlareText Typo="TypographyScale.BodySmall" Color="@(Slip(risk) > 0 ? FlareColor.Error : FlareColor.OnSurfaceVariant)">@(risk.ForecastDate is { } forecast ? $"→ {forecast:d MMM}" : AlvaStrings.Risks_NotCalculated)@(Slip(risk) > 0 ? string.Format(AlvaStrings.Risks_SlipDaysSuffix, Slip(risk)) : "")</FlareText>
                         </FlareStack>
                     </Template>
                 </FlareColumn>
             </Columns>
             <EmptyStateContent>
                 <FlareStack Gap="FlareSpacing.Small">
-                    <FlareText Typo="TypographyScale.BodyMedium">@(Strings.T("По этим условиям рисков нет. Смените фильтр или поиск."))</FlareText>
-                    <FlareButton Variant="ButtonVariant.Text" Size="ButtonSize.Sm" OnClick="ResetFilters">@(Strings.T("Сбросить фильтр"))</FlareButton>
+                    <FlareText Typo="TypographyScale.BodyMedium">@(AlvaStrings.Risks_NoRisksMatchTheseConditionsChangeTheFilterOrSearch)</FlareText>
+                    <FlareButton Variant="ButtonVariant.Text" Size="ButtonSize.Sm" OnClick="ResetFilters">@(AlvaStrings.Risks_ResetTheFilter)</FlareButton>
                 </FlareStack>
             </EmptyStateContent>
         </FlareDataGrid>
-        <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@(Strings.T("Прогноз учитывает очередь, календарь и зависимости; это не обещание."))</FlareText>
+        <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@(AlvaStrings.Risks_TheForecastUsesTheQueueCalendarsAndDependenciesItIsNotAPromise)</FlareText>
         <details class="alva-risk-panel__details">
-            <summary>@(Strings.T("Подробнее о прогнозе"))</summary>
-            <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@(Strings.T("Прогноз учитывает остаток работы, общую очередь исполнителя во всех проектах команды, календарь и зависимости. Порядок: приоритет, позиция в бэклоге, срок. Горизонт — 730 дней. Неизвестный остаток начатой задачи делает очередь неопределённой. Для остальных задач без остатка используется исходная оценка; для завершённых предшественников — плановые даты. Ограничения родителей наследуются всеми подзадачами, поэтому прогноз консервативный и не обещает оптимального расписания. Загрузка из других команд не учитывается. Плановые даты не меняются."))</FlareText>
+            <summary>@(AlvaStrings.Risks_MoreAboutTheForecast)</summary>
+            <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@(AlvaStrings.Risks_TheForecastUsesRemainingWorkASharedQueueAcrossAllProjectsInThisTeamCalen_2be3c7)</FlareText>
         </details>
     </FlareCardContent>
 </FlareCard>
@@ -147,7 +147,7 @@ else
     private int High => _risks.Count(r => r.Severity == "High");
     private TaskModel? TaskOf(Guid id) => _tasks.FirstOrDefault(t => t.Id == id);
     private ActorModel? Actor(Guid id) => _actors.FirstOrDefault(a => a.Id == id);
-    private string PersonName(Guid? id) => id is { } value ? Actor(value)?.Name ?? "—" : Strings.T("Все исполнители");
+    private string PersonName(Guid? id) => id is { } value ? Actor(value)?.Name ?? "—" : AlvaStrings.Risks_AllAssignees;
     private IEnumerable<ActorModel> People => _risks.Select(r => TaskOf(r.TaskId)?.ResolvedPersonId).OfType<Guid>().Distinct().Select(Actor).OfType<ActorModel>().OrderBy(a => a.Name);
 
     /// <summary>Вид причины по её коду: коды задаёт расчёт рисков (RiskMath).</summary>
@@ -164,13 +164,13 @@ else
 
     private static string Label(RiskKind kind) => kind switch
     {
-        RiskKind.Overdue => Strings.T("Срок прошёл"),
-        RiskKind.Forecast => Strings.T("Не успевает к сроку"),
-        RiskKind.Overload => Strings.T("Перегрузка"),
-        RiskKind.Absence => Strings.T("Отпуск исполнителя"),
-        RiskKind.Unassigned => Strings.T("Нет человека"),
-        RiskKind.Dependency => Strings.T("Зависимости"),
-        _ => Strings.T("Прочее")
+        RiskKind.Overdue => AlvaStrings.Risks_PastDue,
+        RiskKind.Forecast => AlvaStrings.Risks_WillMissTheDueDate,
+        RiskKind.Overload => AlvaStrings.Common_OverloadLabel,
+        RiskKind.Absence => AlvaStrings.Risks_AssigneeVacation,
+        RiskKind.Unassigned => AlvaStrings.Risks_NoPerson,
+        RiskKind.Dependency => AlvaStrings.Common_Dependencies,
+        _ => AlvaStrings.Risks_Other
     };
 
     private static string Tone(RiskKind kind) => kind switch

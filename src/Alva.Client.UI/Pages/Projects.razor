@@ -5,10 +5,10 @@
 @inject DraftGuard Drafts
 @* Реестр проектов по макету p13: карточки проектов слева, выбранный проект справа — KPI,
    команды и их спринты, дерево задач (WBS). Статус проекта выводится из его задач. *@
-<PageTitle>@(Strings.T("Проекты · Alva"))</PageTitle>
+<PageTitle>@(AlvaStrings.Projects_ProjectsAlva)</PageTitle>
 <NavigationLock OnBeforeInternalNavigation="ConfirmLeave" ConfirmExternalNavigation="IsDirty" />
-<AlvaPageHeader Category="@(Strings.T("Проекты нескольких команд"))" Title="@(Strings.T("Проекты"))" Description="@(Strings.T("Реестр проектов и вовлечённость команд. Проекты объединяют задачи, исполняемые спринтами разных команд."))">
-    <Actions><FlareButton Size="ButtonSize.Sm" OnClick="New" Disabled="@(Session.TeamId is null)"><LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.AddCircle" Size="18px" /></LeadingIcon><ChildContent>@(Strings.T("Новый проект"))</ChildContent></FlareButton></Actions>
+<AlvaPageHeader Category="@(AlvaStrings.Projects_ProjectsOfSeveralTeams)" Title="@(AlvaStrings.Common_Projects)" Description="@(AlvaStrings.Projects_ProjectRegistryAndTeamInvolvementProjectsUniteTasksDeliveredBySprintsOfD_6fd9fb)">
+    <Actions><FlareButton Size="ButtonSize.Sm" OnClick="New" Disabled="@(Session.TeamId is null)"><LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.AddCircle" Size="18px" /></LeadingIcon><ChildContent>@(AlvaStrings.Projects_NewProject)</ChildContent></FlareButton></Actions>
 </AlvaPageHeader>
 <PageFeedback Loading="_busy" Error="@_error" OnRetry="Load" />
 <EditorStatus Dirty="IsDirty" Saving="_busy" Saved="_saved" />
@@ -17,43 +17,43 @@ else
 {
 <FlareStack Gap="FlareSpacing.Small">
     <FlareTabs @bind-ActiveIndex="FilterIndex">
-        <FlareTab Label="@($"{Strings.T("Все проекты")} ({_projects.Length})")" />
-        <FlareTab Label="@($"{Strings.T("В работе")} ({_projects.Count(p => Status(p) == "active")})")" />
-        <FlareTab Label="@($"{Strings.T("Не начаты")} ({_projects.Count(p => Status(p) == "new")})")" />
-        <FlareTab Label="@($"{Strings.T("Завершены")} ({_projects.Count(p => Status(p) == "done")})")" />
+        <FlareTab Label="@($"{AlvaStrings.Projects_AllProjects} ({_projects.Length})")" />
+        <FlareTab Label="@($"{AlvaStrings.Common_InProgress} ({_projects.Count(p => Status(p) == "active")})")" />
+        <FlareTab Label="@($"{AlvaStrings.Projects_NotStartedTab} ({_projects.Count(p => Status(p) == "new")})")" />
+        <FlareTab Label="@($"{AlvaStrings.Projects_Completed} ({_projects.Count(p => Status(p) == "done")})")" />
     </FlareTabs>
-    <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant"><FlareIconView Value="@MaterialDesign3Icons.Regular.Info" Size="16px" /> @(Strings.T("Проект не имеет собственных спринтов — исполнение через спринты команд"))</FlareText>
+    <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant"><FlareIconView Value="@MaterialDesign3Icons.Regular.Info" Size="16px" /> @(AlvaStrings.Projects_AProjectHasNoSprintsOfItsOwnItIsDeliveredThroughTeamSprints)</FlareText>
 </FlareStack>
 
 @if (_project is not null)
 {
 <FlareCard Variant="CardVariant.Outlined"><FlareCardContent><FlareStack>
-    <FlareText Element="h2" Typo="TypographyScale.TitleLarge">@(_project.Id == Guid.Empty ? Strings.T("Новый проект") : Strings.T("Настройки проекта"))</FlareText>
-    <FlareTextField Label="@(Strings.T("Название"))" @bind-Value="_project.Name" Required />
-    <FlareTextArea Label="@(Strings.T("Описание"))" @bind-Value="_project.Description" AutoGrow />
-    <FlareText Typo="TypographyScale.LabelLarge">@(Strings.T("Команды проекта"))</FlareText>
+    <FlareText Element="h2" Typo="TypographyScale.TitleLarge">@(_project.Id == Guid.Empty ? AlvaStrings.Projects_NewProject : AlvaStrings.Projects_ProjectSettings)</FlareText>
+    <FlareTextField Label="@(AlvaStrings.Common_Title)" @bind-Value="_project.Name" Required />
+    <FlareTextArea Label="@(AlvaStrings.Common_Description)" @bind-Value="_project.Description" AutoGrow />
+    <FlareText Typo="TypographyScale.LabelLarge">@(AlvaStrings.Projects_ProjectTeams)</FlareText>
     @foreach (var team in Session.Teams) { <FlareCheckbox TValue="bool" Value="_project.TeamIds.Contains(team.Id)" ValueChanged="(bool value) => ToggleTeam(team.Id, value)">@team.Name</FlareCheckbox> }
     <FlareStack Row Wrap>
-        <FlareButton Loading="_busy" OnClick="SaveProject" Disabled="@(string.IsNullOrWhiteSpace(_project.Name) || !IsDirty)">@(Strings.T("Сохранить"))</FlareButton>
-        <FlareButton Variant="ButtonVariant.Text" OnClick="CloseProject">@(Strings.T("Закрыть"))</FlareButton>
-        @if (_project.Id != Guid.Empty) { <FlareButton Variant="ButtonVariant.Text" Color="FlareColor.Error" OnClick="ArchiveProject">@(Strings.T("Архивировать"))</FlareButton> }
+        <FlareButton Loading="_busy" OnClick="SaveProject" Disabled="@(string.IsNullOrWhiteSpace(_project.Name) || !IsDirty)">@(AlvaStrings.Common_Save)</FlareButton>
+        <FlareButton Variant="ButtonVariant.Text" OnClick="CloseProject">@(AlvaStrings.Common_Close)</FlareButton>
+        @if (_project.Id != Guid.Empty) { <FlareButton Variant="ButtonVariant.Text" Color="FlareColor.Error" OnClick="ArchiveProject">@(AlvaStrings.Common_Archive)</FlareButton> }
     </FlareStack>
 </FlareStack></FlareCardContent></FlareCard>
 }
 
 @if (_projects.Length == 0 && !_busy)
 {
-    <FlareEmptyState Title="@(Strings.T("Добавьте первый проект"))" Description="@(Strings.T("Объедините связанные задачи общим результатом."))" />
+    <FlareEmptyState Title="@(AlvaStrings.Projects_AddTheFirstProject)" Description="@(AlvaStrings.Projects_TieRelatedTasksTogetherWithASharedOutcome)" />
 }
 else
 {
 <div class="alva-proj-layout">
     <FlareCard Variant="CardVariant.Outlined">
-        <FlareCardHeader Title="@(Strings.T("Реестр проектов"))" Subtitle="@(Strings.T("Сортировка: нагрузка"))" />
+        <FlareCardHeader Title="@(AlvaStrings.Projects_ProjectRegistry)" Subtitle="@(AlvaStrings.Projects_SortWorkload)" />
         <FlareCardContent>
             @if (!Visible.Any())
             {
-                <FlareEmptyState Compact Title="@(Strings.T("Проектов нет"))" Description="@(Strings.T("Смените фильтр статуса."))" />
+                <FlareEmptyState Compact Title="@(AlvaStrings.Projects_NoProjects)" Description="@(AlvaStrings.Projects_ChangeTheStatusFilter)" />
             }
             else
             {
@@ -71,9 +71,9 @@ else
                                         <AlvaStatusChip Tone="StatusTone(Status(project))">@StatusLabel(Status(project))</AlvaStatusChip>
                                     </FlareStack>
                                     @if (!string.IsNullOrWhiteSpace(project.Description)) { <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@project.Description</FlareText> }
-                                    <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@(Strings.T("Команды:")) @project.TeamIds.Length @AlvaFormat.Plural(project.TeamIds.Length, "team") · @string.Join(" · ", project.TeamIds.Select(TeamName))</FlareText>
-                                    <FlareProgressLinear Value="@Pct(done, total)" Size="TrackSize.Xs" Color="FlareColor.Primary" aria-label="@(Strings.T("Прогресс проекта"))" />
-                                    <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@Pct(done, total)% (@tasks.Count(t => t.Status == "Done") / @tasks.Length @AlvaFormat.Plural(tasks.Length, "task")) · @(Strings.T("Последний срок задач:")) @(LatestDeadline(project)?.ToString("d MMM yyyy") ?? "—")</FlareText>
+                                    <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@(AlvaStrings.Projects_Teams) @project.TeamIds.Length @AlvaFormat.Plural(project.TeamIds.Length, "team") · @string.Join(" · ", project.TeamIds.Select(TeamName))</FlareText>
+                                    <FlareProgressLinear Value="@Pct(done, total)" Size="TrackSize.Xs" Color="FlareColor.Primary" aria-label="@(AlvaStrings.Projects_ProjectProgress)" />
+                                    <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@Pct(done, total)% (@tasks.Count(t => t.Status == "Done") / @tasks.Length @AlvaFormat.Plural(tasks.Length, "task")) · @(AlvaStrings.Projects_LatestTaskDeadline) @(LatestDeadline(project)?.ToString("d MMM yyyy") ?? "—")</FlareText>
                                 </FlareStack>
                             </ChildContent>
                         </FlareListItem>
@@ -82,7 +82,7 @@ else
             }
             <FlareStack Row Align="FlareAlignItems.Center" Gap="FlareSpacing.Small">
                 <FlareIconView Value="@MaterialDesign3Icons.Regular.Hub" Size="18px" />
-                <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant"><b>@(Strings.T("Проект нескольких команд."))</b> @(Strings.T("Проект не привязан к одной команде: его задачи затягиваются разными командами в их спринты."))</FlareText>
+                <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant"><b>@(AlvaStrings.Projects_AProjectOfSeveralTeams)</b> @(AlvaStrings.Projects_AProjectIsNotTiedToOneTeamDifferentTeamsPullItsTasksIntoTheirSprints)</FlareText>
             </FlareStack>
         </FlareCardContent>
     </FlareCard>
@@ -102,29 +102,29 @@ else
                 <FlareCardHeader Class="alva-proj-detail__head" Title="@p.Name" Subtitle="@p.Description">
                     <AvatarContent><AlvaStatusChip Tone="StatusTone(Status(p))">@StatusLabel(Status(p))</AlvaStatusChip></AvatarContent>
                     <ActionContent>
-                        <FlareButton Variant="ButtonVariant.Tonal" Size="ButtonSize.Sm" OnClick="() => Edit(p)"><LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.Edit" Size="18px" /></LeadingIcon><ChildContent>@(Strings.T("Настройки проекта"))</ChildContent></FlareButton>
-                        <FlareButton Href="@($"tasks?new=1&project={p.Id}&back=project")" Size="ButtonSize.Sm"><LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.AddTask" Size="18px" /></LeadingIcon><ChildContent>@(Strings.T("Создать задачу"))</ChildContent></FlareButton>
+                        <FlareButton Variant="ButtonVariant.Tonal" Size="ButtonSize.Sm" OnClick="() => Edit(p)"><LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.Edit" Size="18px" /></LeadingIcon><ChildContent>@(AlvaStrings.Projects_ProjectSettings)</ChildContent></FlareButton>
+                        <FlareButton Href="@($"tasks?new=1&project={p.Id}&back=project")" Size="ButtonSize.Sm"><LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.AddTask" Size="18px" /></LeadingIcon><ChildContent>@(AlvaStrings.Projects_CreateATask)</ChildContent></FlareButton>
                     </ActionContent>
                 </FlareCardHeader>
                 <FlareCardContent>
                 <FlareGrid MinColumnWidth="min(100%,10rem)">
-                    <FlareStat Label="@(Strings.T("Общий прогресс"))" Value="@($"{Pct(done, total)}%")">
+                    <FlareStat Label="@(AlvaStrings.Projects_OverallProgress)" Value="@($"{Pct(done, total)}%")">
                         <CaptionContent>
                             <FlareStack Gap="FlareSpacing.XSmall">
-                                <FlareProgressLinear Value="@Pct(done, total)" Size="TrackSize.Xs" Color="FlareColor.Primary" aria-label="@(Strings.T("Общий прогресс"))" />
-                                <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@all.Count(t => t.Status == "Done") @(Strings.T("из")) @all.Length @(Strings.T("задач закрыто"))</FlareText>
-                                @if (p.TeamIds.Length > 1) { <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@(Strings.T("Вклад команды")) «@TeamName(Session.TeamId!.Value)»: @Pct(teamDone, teamTotal)% · @tasks.Length @AlvaFormat.Plural(tasks.Length, "task")</FlareText> }
-                                @if (closed > 0) { <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@(Strings.T("Без команд, к которым нет доступа:")) @closed</FlareText> }
+                                <FlareProgressLinear Value="@Pct(done, total)" Size="TrackSize.Xs" Color="FlareColor.Primary" aria-label="@(AlvaStrings.Projects_OverallProgress)" />
+                                <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@all.Count(t => t.Status == "Done") @(AlvaStrings.Sprint_OutOf) @all.Length @(AlvaStrings.Projects_TasksClosed)</FlareText>
+                                @if (p.TeamIds.Length > 1) { <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@(AlvaStrings.Projects_TeamContribution) «@TeamName(Session.TeamId!.Value)»: @Pct(teamDone, teamTotal)% · @tasks.Length @AlvaFormat.Plural(tasks.Length, "task")</FlareText> }
+                                @if (closed > 0) { <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@(AlvaStrings.Projects_ExcludingTeamsYouCannotAccess) @closed</FlareText> }
                             </FlareStack>
                         </CaptionContent>
                     </FlareStat>
-                    <FlareStat Label="@(Strings.T("Трудозатраты"))" Value="@($"{AlvaFormat.Hours(total)} {Strings.T("ч")}")" Caption="@($"{Strings.T("Закрыто:")} {AlvaFormat.Hours(done)} {Strings.T("ч")} / {Strings.T("Остаток:")} {AlvaFormat.Hours(total - done)} {Strings.T("ч")}")" />
-                    <FlareStat Label="@(Strings.T("Активные спринты"))" Value="@($"{sprints.Count(s => s.Status == "Active")} {AlvaFormat.Plural(sprints.Count(s => s.Status == "Active"), "sprint")}")" Caption="@($"{all.Count(t => t.Status == "InProgress")} {AlvaFormat.Plural(all.Count(t => t.Status == "InProgress"), "task")} {Strings.T("сейчас в работе")}")" />
-                    <FlareStat Label="@(Strings.T("Последний срок задач"))" Value="@(latest?.ToString("d MMM") ?? "—")">
+                    <FlareStat Label="@(AlvaStrings.Projects_Effort)" Value="@($"{AlvaFormat.Hours(total)} {AlvaStrings.Sprint_HoursShort}")" Caption="@($"{AlvaStrings.Sprint_ClosedPrefix} {AlvaFormat.Hours(done)} {AlvaStrings.Sprint_HoursShort} / {AlvaStrings.Sprint_RemainingPrefix} {AlvaFormat.Hours(total - done)} {AlvaStrings.Sprint_HoursShort}")" />
+                    <FlareStat Label="@(AlvaStrings.Projects_ActiveSprints)" Value="@($"{sprints.Count(s => s.Status == "Active")} {AlvaFormat.Plural(sprints.Count(s => s.Status == "Active"), "sprint")}")" Caption="@($"{all.Count(t => t.Status == "InProgress")} {AlvaFormat.Plural(all.Count(t => t.Status == "InProgress"), "task")} {AlvaStrings.Projects_InProgressNow}")" />
+                    <FlareStat Label="@(AlvaStrings.Projects_LatestTaskDeadlineStat)" Value="@(latest?.ToString("d MMM") ?? "—")">
                         <CaptionContent>
                             <FlareStack Gap="FlareSpacing.XSmall">
-                                <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@(latest is { } r ? string.Format(Strings.T("{0} (осталось {1} дн.)"), r.Year, Math.Max(0, r.DayNumber - DateOnly.FromDateTime(DateTime.Today).DayNumber)) : Strings.T("Дедлайны не заданы"))</FlareText>
-                                @if (risks > 0) { <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.Error">@risks @AlvaFormat.Plural(risks, "risk") @(Strings.T("по задачам"))</FlareText> }
+                                <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@(latest is { } r ? string.Format(AlvaStrings.Projects_DLeft, r.Year, Math.Max(0, r.DayNumber - DateOnly.FromDateTime(DateTime.Today).DayNumber)) : AlvaStrings.Projects_NoDeadlinesSet)</FlareText>
+                                @if (risks > 0) { <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.Error">@risks @AlvaFormat.Plural(risks, "risk") @(AlvaStrings.Projects_AcrossTasks)</FlareText> }
                             </FlareStack>
                         </CaptionContent>
                     </FlareStat>
@@ -132,14 +132,14 @@ else
                 </FlareCardContent>
             </FlareCard>
 
-            <h3 class="alva-section-title"><FlareIconView Value="@MaterialDesign3Icons.Regular.Hub" Size="18px" /> @(Strings.T("Команды и их спринты по проекту"))</h3>
+            <h3 class="alva-section-title"><FlareIconView Value="@MaterialDesign3Icons.Regular.Hub" Size="18px" /> @(AlvaStrings.Projects_TeamsAndTheirSprintsPerProject)</h3>
             <div class="alva-proj-teams">
                 @foreach (var teamId in p.TeamIds)
                 {
                     <FlareCard Variant="CardVariant.Outlined" Class="alva-proj-team" @key="teamId">
                         <FlareCardHeader Title="@TeamName(teamId)">
                             <AvatarContent><FlareAvatar Text="@AlvaFormat.Initials(TeamName(teamId))" Size="AvatarSize.Sm" Color="FlareColor.Primary" /></AvatarContent>
-                            <ActionContent>@if (teamId == Session.TeamId) { <AlvaStatusChip Tone="AlvaTone.Info">@(Strings.T("Текущая команда"))</AlvaStatusChip> }</ActionContent>
+                            <ActionContent>@if (teamId == Session.TeamId) { <AlvaStatusChip Tone="AlvaTone.Info">@(AlvaStrings.Projects_CurrentTeam)</AlvaStatusChip> }</ActionContent>
                         </FlareCardHeader>
                         <FlareCardContent>
                             @if (teamId == Session.TeamId)
@@ -155,7 +155,7 @@ else
                                                 <ChildContent>
                                                     <FlareStack Gap="FlareSpacing.None">
                                                         <FlareText Typo="TypographyScale.LabelMedium">@sprint.Name</FlareText>
-                                                        <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@(Strings.T("Взято задач проекта:")) @inSprint.Length (@AlvaFormat.Hours(SprintHours.Sum(inSprint, sprint)) @(Strings.T("ч")))</FlareText>
+                                                        <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@(AlvaStrings.Projects_ProjectTasksTaken) @inSprint.Length (@AlvaFormat.Hours(SprintHours.Sum(inSprint, sprint)) @(AlvaStrings.Sprint_HoursShort))</FlareText>
                                                     </FlareStack>
                                                 </ChildContent>
                                                 <Trailing><AlvaStatusChip Tone="AlvaTones.Status(sprint.Status)">@Labels.Status(sprint.Status)</AlvaStatusChip></Trailing>
@@ -163,11 +163,11 @@ else
                                         }
                                     </FlareList>
                                 }
-                                <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@(Strings.T("В бэклоге команды:")) @tasks.Count(t => !t.Planned && t.Status is not ("Done" or "Cancelled")) @AlvaFormat.Plural(tasks.Count(t => !t.Planned && t.Status is not ("Done" or "Cancelled")), "task") (@AlvaFormat.Hours(tasks.Where(t => !t.Planned && t.Status is not ("Done" or "Cancelled")).Sum(t => t.EstimateHours ?? 0)) @(Strings.T("ч")))</FlareText>
+                                <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@(AlvaStrings.Projects_InTheTeamBacklog) @tasks.Count(t => !t.Planned && t.Status is not ("Done" or "Cancelled")) @AlvaFormat.Plural(tasks.Count(t => !t.Planned && t.Status is not ("Done" or "Cancelled")), "task") (@AlvaFormat.Hours(tasks.Where(t => !t.Planned && t.Status is not ("Done" or "Cancelled")).Sum(t => t.EstimateHours ?? 0)) @(AlvaStrings.Sprint_HoursShort))</FlareText>
                             }
                             else
                             {
-                                <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@(Strings.T("Задачи и спринты этой команды видны в её собственном пространстве."))</FlareText>
+                                <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@(AlvaStrings.Projects_ThisTeamSTasksAndSprintsAreVisibleInItsOwnWorkspace)</FlareText>
                             }
                         </FlareCardContent>
                     </FlareCard>
@@ -175,14 +175,14 @@ else
             </div>
 
             <FlareCard Variant="CardVariant.Outlined" Class="alva-wbs">
-                <FlareCardHeader Title="@(Strings.T("Дерево задач проекта"))" Subtitle="@(Strings.T("Иерархия задач с проекцией на спринты и исполнителей"))">
+                <FlareCardHeader Title="@(AlvaStrings.Projects_ProjectTaskTree)" Subtitle="@(AlvaStrings.Projects_TaskHierarchyProjectedOntoSprintsAndAssignees)">
                     <AvatarContent><FlareIconView Value="@MaterialDesign3Icons.Regular.AccountTree" Size="20px" /></AvatarContent>
-                    <ActionContent><FlareTextField @bind-Value="_wbsSearch" Immediate Clearable Placeholder="@(Strings.T("Поиск в дереве…"))" AriaLabel="@(Strings.T("Поиск в дереве задач"))"><AdornmentStart><FlareIconView Value="@MaterialDesign3Icons.Regular.Search" Size="18px" /></AdornmentStart></FlareTextField></ActionContent>
+                    <ActionContent><FlareTextField @bind-Value="_wbsSearch" Immediate Clearable Placeholder="@(AlvaStrings.Projects_SearchTheTree)" AriaLabel="@(AlvaStrings.Projects_SearchTheTaskTree)"><AdornmentStart><FlareIconView Value="@MaterialDesign3Icons.Regular.Search" Size="18px" /></AdornmentStart></FlareTextField></ActionContent>
                 </FlareCardHeader>
                 <FlareCardContent>
                     @if (!Tree(tasks).Any())
                     {
-                        <FlareEmptyState Compact Title="@(Strings.T("Задач в проекте пока нет."))" />
+                        <FlareEmptyState Compact Title="@(AlvaStrings.Projects_TheProjectHasNoTasksYet)" />
                     }
                     else
                     {
@@ -194,7 +194,7 @@ else
                                     <ChildContent>
                                         <FlareStack Gap="FlareSpacing.None">
                                             <FlareText Typo="TypographyScale.LabelMedium">@task.Title</FlareText>
-                                            <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@(task.SprintIds.Length == 0 ? Strings.T("Бэклог команды") : string.Join(", ", _sprints.Where(s => task.SprintIds.Contains(s.Id)).OrderBy(s => s.StartDate).Select(s => s.Name))) · @(task.Deadline?.ToString("d MMM") ?? "—")</FlareText>
+                                            <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@(task.SprintIds.Length == 0 ? AlvaStrings.Projects_TeamBacklog : string.Join(", ", _sprints.Where(s => task.SprintIds.Contains(s.Id)).OrderBy(s => s.StartDate).Select(s => s.Name))) · @(task.Deadline?.ToString("d MMM") ?? "—")</FlareText>
                                             <AlvaAssignee Task="task" Actors="_actors" />
                                         </FlareStack>
                                     </ChildContent>
@@ -203,7 +203,7 @@ else
                             }
                         </FlareList>
                     }
-                    <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@(Strings.T("Связанные задачи распределяются по спринтам команд")) · @(Strings.T("Всего в проекте:")) @tasks.Length @AlvaFormat.Plural(tasks.Length, "task")</FlareText>
+                    <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@(AlvaStrings.Projects_LinkedTasksAreDistributedAcrossTeamSprints) · @(AlvaStrings.Projects_TotalInTheProject) @tasks.Length @AlvaFormat.Plural(tasks.Length, "task")</FlareText>
                 </FlareCardContent>
             </FlareCard>
         </section>
@@ -212,7 +212,7 @@ else
 }
 }
 @code {
-    private (string Key, string Label)[] Filters => [("all", Strings.T("Все проекты")), ("active", Strings.T("В работе")), ("new", Strings.T("Не начаты")), ("done", Strings.T("Завершены"))];
+    private (string Key, string Label)[] Filters => [("all", AlvaStrings.Projects_AllProjects), ("active", AlvaStrings.Common_InProgress), ("new", AlvaStrings.Projects_NotStartedTab), ("done", AlvaStrings.Projects_Completed)];
     private ProjectModel[] _projects = [];
     private TaskModel[] _tasks = [];
     private SprintModel[] _sprints = [];
@@ -257,7 +257,7 @@ else
     private DateOnly? LatestDeadline(ProjectModel p) => ProjectTasks(p).Where(t => t.Deadline.HasValue).Select(t => t.Deadline).Max();
     private SprintModel[] SprintsOf(ProjectModel p) => _sprints.Where(s => TasksOf(p).Any(t => t.SprintIds.Contains(s.Id))).OrderBy(s => s.StartDate).ToArray();
     private static int Pct(decimal part, decimal whole) => whole <= 0 ? 0 : (int)Math.Round(part / whole * 100);
-    private string TeamName(Guid id) => Session.Teams.FirstOrDefault(t => t.Id == id)?.Name ?? (id == Session.TeamId ? Session.TeamName : Strings.T("Другая команда"));
+    private string TeamName(Guid id) => Session.Teams.FirstOrDefault(t => t.Id == id)?.Name ?? (id == Session.TeamId ? Session.TeamName : AlvaStrings.Projects_AnotherTeam);
 
     /// <summary>Статус проекта из задач: в работе / не начат / завершён.</summary>
     private string Status(ProjectModel p)
@@ -266,7 +266,7 @@ else
         if (tasks.Length > 0 && tasks.All(t => t.Status == "Done")) return "done";
         return tasks.Any(t => t.Status is "InProgress" or "Done" || t.SprintIds.Length > 0) ? "active" : "new";
     }
-    private static string StatusLabel(string status) => status switch { "done" => Strings.T("Завершён"), "active" => Strings.T("В работе"), _ => Strings.T("Не начат") };
+    private static string StatusLabel(string status) => status switch { "done" => AlvaStrings.Common_Completed, "active" => AlvaStrings.Common_InProgress, _ => AlvaStrings.Projects_NotStarted };
     private static AlvaTone StatusTone(string status) => status switch { "done" => AlvaTone.Ok, "active" => AlvaTone.Info, _ => AlvaTone.Neutral };
 
     /// <summary>Задачи проекта в порядке дерева: корень (родитель вне проекта) и его потомки с глубиной.</summary>
@@ -356,9 +356,9 @@ else
 
     private async Task ArchiveProject()
     {
-        if (!await DestructivePrompt.ConfirmAsync(Confirm, Strings.T("Архивировать проект"),
-            string.Format(Strings.T("Проект «{0}» уйдёт из реестра. Вернуть его из приложения пока нельзя."), _project!.Name),
-            Strings.T("Архивировать"))) return;
+        if (!await DestructivePrompt.ConfirmAsync(Confirm, AlvaStrings.Projects_ArchiveProject,
+            string.Format(AlvaStrings.Projects_ProjectWillLeaveTheRegistryItCanTBeBroughtBackFromTheAppYet, _project!.Name),
+            AlvaStrings.Common_Archive)) return;
         await Run(async () =>
         {
             await Session.Send(HttpMethod.Delete, Session.TeamPath($"projects/{_project!.Id}"), new { });

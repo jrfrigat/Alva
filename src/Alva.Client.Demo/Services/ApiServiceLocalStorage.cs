@@ -25,7 +25,7 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
     public TeamInfo[] Teams { get; private set; } = [];
     public Guid? WorkspaceId { get; private set; }
     public Guid? TeamId { get; private set; }
-    public string TeamName => Teams.FirstOrDefault(t => t.Id == TeamId)?.Name ?? Strings.T("Выбрать команду");
+    public string TeamName => Teams.FirstOrDefault(t => t.Id == TeamId)?.Name ?? AlvaStrings.Common_ChooseTeam;
     public bool Initialized { get; private set; }
 
     /// <summary>Разбор JSON/CSV/XLSX и выгрузка живут на сервере; демо хранит данные только в этом браузере.</summary>
@@ -103,10 +103,10 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
     public Task<DataImportResult> Import(string format, Stream stream) => throw new NotSupportedException(DemoTransferNote);
 
     /// <summary>Почему в демо нет импорта и экспорта — показывается на странице «Данные» до выбора файла.</summary>
-    internal static string DemoTransferNote => Strings.T("В демо данные хранятся только в этом браузере: импорт и экспорт файлов работают в версии Alva с сервером.");
+    internal static string DemoTransferNote => AlvaStrings.Data_InTheDemoTheDataLivesOnlyInThisBrowserFileImportAndExportWorkInTheServer_00b40a;
 
     /// <summary>Почему в демо нет интеграций: токены хранит сервер, а браузер к внешнему трекеру напрямую не пустят.</summary>
-    internal static string DemoIntegrationsNote => Strings.T("Интеграции работают в версии Alva с сервером: он хранит токены и сам обращается к трекеру.");
+    internal static string DemoIntegrationsNote => AlvaStrings.Integrations_IntegrationsWorkInAlvaWithAServerItKeepsTheTokensAndTalksToTheTrackerIts_391ef1;
 
     public async Task<T> Get<T>(string path)
     {

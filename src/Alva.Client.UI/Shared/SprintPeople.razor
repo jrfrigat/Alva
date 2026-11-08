@@ -1,14 +1,14 @@
 @* «Люди спринта»: кому ещё можно дать работу. Свободные часы в окне спринта, загрузка, роли и
    отсутствия; человека перетаскивают на задачу или назначают кнопкой. Подённая загрузка — в ячейках Гантта. *@
 <FlareCard Variant="CardVariant.Outlined" Class="alva-plan-people">
-    <FlareCardHeader Title="@(Strings.T("Люди спринта"))" Subtitle="@(Strings.T("Перетащите человека на задачу или назначьте кнопкой. Клик — показать на Гантте."))">
+    <FlareCardHeader Title="@(AlvaStrings.Sprint_SprintPeople)" Subtitle="@(AlvaStrings.Sprint_DragAPersonOntoATaskOrAssignWithTheButtonClickToShowOnTheGantt)">
         <AvatarContent><FlareIconView Value="@MaterialDesign3Icons.Regular.Groups" Size="20px" /></AvatarContent>
         <ActionContent><FlareChip Variant="ChipVariant.Filled" Color="FlareColor.Primary" Size="ChipSize.Sm">@Rows.Count</FlareChip></ActionContent>
     </FlareCardHeader>
     <FlareCardContent>
         @if (Rows.Count == 0)
         {
-            <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@(Strings.T("В команде нет людей с графиком на этот спринт."))</FlareText>
+            <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@(AlvaStrings.Sprint_NoTeamMemberHasAScheduleForThisSprint)</FlareText>
         }
         else
         {
@@ -24,13 +24,13 @@
                                 <FlareStack Gap="FlareSpacing.XXSmall">
                                     <FlareText Typo="TypographyScale.LabelMedium">@person.Name</FlareText>
                                     <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@row.Roles</FlareText>
-                                    <FlareProgressLinear Value="@Math.Min(100, row.Percent)" Size="TrackSize.Xs" Color="@ToneColor(row.Tone)" aria-label="@string.Format(Strings.T("{0}: назначено {1} ч из {2} ч"), person.Name, AlvaFormat.Hours(row.Allocated), AlvaFormat.Hours(row.Available))" />
+                                    <FlareProgressLinear Value="@Math.Min(100, row.Percent)" Size="TrackSize.Xs" Color="@ToneColor(row.Tone)" aria-label="@string.Format(AlvaStrings.Common_HAssignedOutOfH, person.Name, AlvaFormat.Hours(row.Allocated), AlvaFormat.Hours(row.Available))" />
                                     <FlareStack Row Wrap Align="FlareAlignItems.Center" Gap="FlareSpacing.Small">
-                                        <FlareText Typo="TypographyScale.BodySmall" Color="@ToneColor(row.Tone)">@(row.Free >= 0 ? $"{AlvaFormat.Hours(row.Free)} {Strings.T("ч")} {Strings.T("свободно")}" : $"−{AlvaFormat.Hours(-row.Free)} {Strings.T("ч")} {Strings.T("перегруз")}")</FlareText>
+                                        <FlareText Typo="TypographyScale.BodySmall" Color="@ToneColor(row.Tone)">@(row.Free >= 0 ? $"{AlvaFormat.Hours(row.Free)} {AlvaStrings.Sprint_HoursShort} {AlvaStrings.Common_FreeLower}" : $"−{AlvaFormat.Hours(-row.Free)} {AlvaStrings.Sprint_HoursShort} {AlvaStrings.Common_Overload}")</FlareText>
                                         @if (Shift.GetValueOrDefault(person.Id) is var shift && shift != 0)
                                         {
                                             var after = row.Free - shift;
-                                            <FlareText Typo="TypographyScale.BodySmall" Color="@(shift > 0 ? FlareColor.Error : FlareColor.Success)">→ @(after >= 0 ? $"{AlvaFormat.Hours(after)} {Strings.T("ч")}" : $"−{AlvaFormat.Hours(-after)} {Strings.T("ч")}")</FlareText>
+                                            <FlareText Typo="TypographyScale.BodySmall" Color="@(shift > 0 ? FlareColor.Error : FlareColor.Success)">→ @(after >= 0 ? $"{AlvaFormat.Hours(after)} {AlvaStrings.Sprint_HoursShort}" : $"−{AlvaFormat.Hours(-after)} {AlvaStrings.Sprint_HoursShort}")</FlareText>
                                         }
                                         @foreach (var absence in row.Absences)
                                         {
@@ -42,8 +42,8 @@
                         </ChildContent>
                         <Trailing>
                             <FlareStack Row Align="FlareAlignItems.Center" Gap="FlareSpacing.XSmall">
-                                <AlvaStatusChip Tone="@(row.Tone == "critical" ? AlvaTone.Critical : row.Tone == "info" ? AlvaTone.Info : AlvaTone.Ok)" Title="@(Strings.T("Загрузка за период"))">@row.Percent%</AlvaStatusChip>
-                                <FlareIconButton Icon="@MaterialDesign3Icons.Regular.PersonAdd" Size="ButtonSize.Sm" Tooltip="@(Strings.T("Назначить исполнителя"))" AriaLabel="@($"{Strings.T("Назначить исполнителя")}: {person.Name}")" OnClick="() => OpenAssign(person.Id)" />
+                                <AlvaStatusChip Tone="@(row.Tone == "critical" ? AlvaTone.Critical : row.Tone == "info" ? AlvaTone.Info : AlvaTone.Ok)" Title="@(AlvaStrings.Common_WorkloadOverThePeriod)">@row.Percent%</AlvaStatusChip>
+                                <FlareIconButton Icon="@MaterialDesign3Icons.Regular.PersonAdd" Size="ButtonSize.Sm" Tooltip="@(AlvaStrings.Common_AssignAnAssignee)" AriaLabel="@($"{AlvaStrings.Common_AssignAnAssignee}: {person.Name}")" OnClick="() => OpenAssign(person.Id)" />
                             </FlareStack>
                         </Trailing>
                     </FlareListItem>
@@ -53,16 +53,16 @@
     </FlareCardContent>
 </FlareCard>
 
-<FlareDialog @bind-Visible="_assignOpen" Title="@(Strings.T("Назначение исполнителя"))" Size="DialogSize.Sm">
+<FlareDialog @bind-Visible="_assignOpen" Title="@(AlvaStrings.Task_Assignment)" Size="DialogSize.Sm">
     <ChildContent>
         <FlareStack Gap="FlareSpacing.Medium">
             <FlareText Typo="TypographyScale.BodyMedium">@(_assignPerson is { } id ? PeopleName(id) : "")</FlareText>
-            <FlareSelect TValue="Guid?" Label="@(Strings.T("Задача"))" Items="AssignableTasks" ItemLabel="TaskName" NullOption="@(Strings.T("Выберите задачу"))" @bind-Value="_assignTask" Searchable />
+            <FlareSelect TValue="Guid?" Label="@(AlvaStrings.Common_Task)" Items="AssignableTasks" ItemLabel="TaskName" NullOption="@(AlvaStrings.Common_ChooseATask)" @bind-Value="_assignTask" Searchable />
         </FlareStack>
     </ChildContent>
     <ActionsContent>
-        <FlareButton Variant="ButtonVariant.Text" OnClick="() => _assignOpen = false">@(Strings.T("Отмена"))</FlareButton>
-        <FlareButton Disabled="@(_assignPerson is null || _assignTask is null)" OnClick="ApplyAssign">@(Strings.T("Применить назначение"))</FlareButton>
+        <FlareButton Variant="ButtonVariant.Text" OnClick="() => _assignOpen = false">@(AlvaStrings.Common_Cancel)</FlareButton>
+        <FlareButton Disabled="@(_assignPerson is null || _assignTask is null)" OnClick="ApplyAssign">@(AlvaStrings.Common_ApplyTheAssignment)</FlareButton>
     </ActionsContent>
 </FlareDialog>
 
@@ -101,7 +101,7 @@
         .Select(person =>
         {
             var days = Capacity.Where(c => c.ActorId == person.Id && c.Date >= Sprint.StartDate && c.Date <= Sprint.EndDate).ToArray();
-            var roles = string.Join(" / ", Actors.Where(a => person.RoleIds.Contains(a.Id)).Select(a => a.Name).DefaultIfEmpty(Strings.T("Участник команды")));
+            var roles = string.Join(" / ", Actors.Where(a => person.RoleIds.Contains(a.Id)).Select(a => a.Name).DefaultIfEmpty(AlvaStrings.Capacity_TeamMember));
             return new PersonLoad(person, roles, days.Sum(d => d.AvailableHours), days.Sum(d => d.AllocatedHours), Absences(days));
         })
         .Where(p => p.Available > 0 || p.Allocated > 0)
@@ -133,7 +133,7 @@
             var j = i;
             // Соседние рабочие дни (через выходные тоже) — один диапазон.
             while (j + 1 < off.Length && Enumerable.Range(1, off[j + 1].DayNumber - off[j].DayNumber - 1).All(k => GanttData.IsWeekend(off[j].AddDays(k)))) j++;
-            ranges.Add(i == j ? string.Format(Strings.T("{0:d MMM}: нет в графике"), off[i]) : string.Format(Strings.T("{0:d}–{1:d MMM}: нет в графике"), off[i], off[j]));
+            ranges.Add(i == j ? string.Format(AlvaStrings.Sprint_NotScheduled, off[i]) : string.Format(AlvaStrings.Sprint_NotScheduledRange, off[i], off[j]));
             i = j + 1;
         }
         return [.. ranges];

@@ -15,7 +15,7 @@ public sealed class ApiServiceHttp(HttpClient http, IJSRuntime js) : IApiService
     public TeamInfo[] Teams { get; private set; } = [];
     public Guid? WorkspaceId { get; private set; }
     public Guid? TeamId { get; private set; }
-    public string TeamName => Teams.FirstOrDefault(t => t.Id == TeamId)?.Name ?? Strings.T("Выбрать команду");
+    public string TeamName => Teams.FirstOrDefault(t => t.Id == TeamId)?.Name ?? AlvaStrings.Common_ChooseTeam;
     public bool Initialized { get; private set; }
     public bool SupportsDataTransfer => true;
     public event Action? Changed;
@@ -105,8 +105,8 @@ public sealed class ApiServiceHttp(HttpClient http, IJSRuntime js) : IApiService
         // Код ответа идёт в исключении: страницы отличают отказ в доступе (403) и занятую почту (409) от прочих ошибок.
         // 401 на входе — неверный пароль, а не завершённый сеанс, поэтому текст сервера важнее заготовки.
         var message = response.StatusCode == HttpStatusCode.Unauthorized
-            ? Strings.T("Сеанс завершён. Войдите в Alva.")
-            : string.Format(Strings.T("Запрос не выполнен ({0})."), (int)response.StatusCode);
+            ? AlvaStrings.Common_TheSessionHasEndedSignInToAlva
+            : string.Format(AlvaStrings.Common_TheRequestFailed, (int)response.StatusCode);
         try
         {
             using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());

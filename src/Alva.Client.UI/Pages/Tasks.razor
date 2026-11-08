@@ -6,7 +6,7 @@
 @inject AlvaSession Session
 @inject NavigationManager Navigation
 @inject DraftGuard Drafts
-<PageTitle>@(Current is null ? Strings.T("Задачи") : Current.Title) · Alva</PageTitle>
+<PageTitle>@(Current is null ? AlvaStrings.Common_Tasks : Current.Title) · Alva</PageTitle>
 <NavigationLock OnBeforeInternalNavigation="ConfirmLeave" ConfirmExternalNavigation="IsDirty" />
 @if (Current is not null)
 {
@@ -23,28 +23,28 @@ else if (TaskId.HasValue)
     @* Ссылка на конкретную задачу никогда не превращается в список: пока грузится — прогресс, ошибка — ошибка,
        а если задачи нет — так и сказано. *@
     <PageFeedback Error="@_error" Loading="_busy" OnRetry="Load" />
-    @if (_loaded && _error is null) { <UnavailableState Title="@(Strings.T("Задача не найдена или недоступна"))" BackHref="tasks" BackLabel="@(Strings.T("К задачам"))" /> }
+    @if (_loaded && _error is null) { <UnavailableState Title="@(AlvaStrings.Tasks_TaskNotFoundOrUnavailable)" BackHref="tasks" BackLabel="@(AlvaStrings.Common_ToTasks)" /> }
 }
 else
 {
-<AlvaPageHeader Category="@(Strings.T("Планирование · Задачи"))" Title="@PageHeading" Description="@(Strings.T("Пул задач команды: дерево, статусы и назначения."))">
-    <Actions><FlareButton @ref="_newButton" OnClick="NewTask" Disabled="@(Session.TeamId is null)" Size="ButtonSize.Sm">@(Strings.T("Новая задача"))</FlareButton></Actions>
+<AlvaPageHeader Category="@(AlvaStrings.Tasks_PlanningTasks)" Title="@PageHeading" Description="@(AlvaStrings.Tasks_TheTeamSTaskPoolTreeStatusesAndAssignments)">
+    <Actions><FlareButton @ref="_newButton" OnClick="NewTask" Disabled="@(Session.TeamId is null)" Size="ButtonSize.Sm">@(AlvaStrings.Tasks_NewTask)</FlareButton></Actions>
 </AlvaPageHeader>
 <PageFeedback Error="@_error" Loading="_busy" OnRetry="Load" />
 @if(Session.TeamId is null) { <TeamRequired /> }
 else
 {
 <FlareStack Row Wrap Gap="FlareSpacing.Small" Class="alva-task-filters">
-    <FlareTextField Label="@(Strings.T("Поиск задач"))" @bind-Value="_search" @bind-Value:after="SaveListContext" Immediate Clearable Style="flex:2;min-width:min(100%,15rem)" />
-    <FlareSelect TValue="Guid?" Label="@(Strings.T("Проект"))" Items="_projects.Select(x => (Guid?)x.Id)" ItemLabel="ProjectName" NullOption="@(Strings.T("Все проекты"))" @bind-Value="_projectFilter" @bind-Value:after="SaveListContext" Style="flex:1;min-width:12rem" />
-    <FlareSelect TValue="string" Label="@(Strings.T("Статус"))" Items="_statuses" ItemLabel="Labels.Status" NullOption="@(Strings.T("Все статусы"))" @bind-Value="_statusFilter" @bind-Value:after="SaveListContext" Style="flex:1;min-width:12rem" />
+    <FlareTextField Label="@(AlvaStrings.Tasks_SearchTasks)" @bind-Value="_search" @bind-Value:after="SaveListContext" Immediate Clearable Style="flex:2;min-width:min(100%,15rem)" />
+    <FlareSelect TValue="Guid?" Label="@(AlvaStrings.Common_Project)" Items="_projects.Select(x => (Guid?)x.Id)" ItemLabel="ProjectName" NullOption="@(AlvaStrings.Projects_AllProjects)" @bind-Value="_projectFilter" @bind-Value:after="SaveListContext" Style="flex:1;min-width:12rem" />
+    <FlareSelect TValue="string" Label="@(AlvaStrings.Common_Status)" Items="_statuses" ItemLabel="Labels.Status" NullOption="@(AlvaStrings.Tasks_AllStatuses)" @bind-Value="_statusFilter" @bind-Value:after="SaveListContext" Style="flex:1;min-width:12rem" />
 </FlareStack>
-<FlareStack Row Wrap Gap="FlareSpacing.Small"><FlareButton Href="tasks" Variant="ButtonVariant.Text" Size="ButtonSize.Sm">@(Strings.T("Все задачи"))</FlareButton><FlareButton Href="unassigned" Variant="ButtonVariant.Text" Size="ButtonSize.Sm">@(Strings.T("Без исполнителя"))</FlareButton><FlareButton Href="my-work" Variant="ButtonVariant.Text" Size="ButtonSize.Sm">@(Strings.T("Моя работа"))</FlareButton><FlareButton OnClick="Load" Variant="ButtonVariant.Text" Size="ButtonSize.Sm">@(Strings.T("Обновить"))</FlareButton></FlareStack>
+<FlareStack Row Wrap Gap="FlareSpacing.Small"><FlareButton Href="tasks" Variant="ButtonVariant.Text" Size="ButtonSize.Sm">@(AlvaStrings.Gantt_AllTasks)</FlareButton><FlareButton Href="unassigned" Variant="ButtonVariant.Text" Size="ButtonSize.Sm">@(AlvaStrings.Common_Unassigned)</FlareButton><FlareButton Href="my-work" Variant="ButtonVariant.Text" Size="ButtonSize.Sm">@(AlvaStrings.Tasks_MyWork)</FlareButton><FlareButton OnClick="Load" Variant="ButtonVariant.Text" Size="ButtonSize.Sm">@(AlvaStrings.Tasks_Refresh)</FlareButton></FlareStack>
 <FlareGrid MinColumnWidth="min(100%, 26rem)" Gap="FlareSpacing.Large">
 <FlareCard Variant="CardVariant.Outlined"><FlareCardContent>
     @if (!_loaded) { <LoadingSkeleton Height="24rem" /> }
     else if (_error is not null) { }
-    else if (!Filtered.Any()) { <FlareEmptyState Compact Title="@(Strings.T("Задач пока нет"))" Description="@(Strings.T("Добавьте первую задачу или измените фильтры."))" /> }
+    else if (!Filtered.Any()) { <FlareEmptyState Compact Title="@(AlvaStrings.Common_NoTasksYet)" Description="@(AlvaStrings.Tasks_AddTheFirstTaskOrChangeTheFilters)" /> }
     else {
     <FlareDataTree TItem="TaskModel" Items="Roots" KeySelector="t => t!.Id" ChildrenProvider="Children" HasChildren="HasChildren" ItemClick="Open" Height="34rem" id="@TaskListState.TreeElementId">
         <ItemTemplate Context="task"><FlareStack Row Align="FlareAlignItems.Center" Gap="FlareSpacing.Small" Wrap>
@@ -53,7 +53,7 @@ else
                и отменяет собственную навигацию ссылки, чтобы не было второй. *@
             <span @onclick:stopPropagation="true" @onclick="() => Open(task)" @onclick:preventDefault="true"><FlareLink Href="@($"tasks/{task!.Id}")">@task.Title</FlareLink></span><AlvaStatusChip Tone="AlvaTones.Status(task.Status)">@Labels.Status(task.Status)</AlvaStatusChip>
             @if(task.Priority is "High" or "Critical") { <AlvaStatusChip Tone="AlvaTones.Priority(task.Priority)">@Labels.Priority(task.Priority)</AlvaStatusChip> }
-            @if(task.EstimateHours.HasValue) { <FlareText Typo="TypographyScale.LabelSmall">@task.EstimateHours @(Strings.T("ч"))</FlareText> }
+            @if(task.EstimateHours.HasValue) { <FlareText Typo="TypographyScale.LabelSmall">@task.EstimateHours @(AlvaStrings.Sprint_HoursShort)</FlareText> }
         </FlareStack></ItemTemplate>
     </FlareDataTree>
     }
@@ -61,34 +61,34 @@ else
 @if(_editing is not null)
 {
 <FlareCard Variant="CardVariant.Outlined"><FlareCardContent><FlareStack Gap="FlareSpacing.Medium">
-    <FlareStack Row StretchFirst><FlareText Element="h2" Typo="TypographyScale.TitleLarge">@(_editing.Id == Guid.Empty ? Strings.T("Новая задача") : Strings.T("Карточка задачи"))</FlareText><FlareButton OnClick="Close" Variant="ButtonVariant.Text" Size="ButtonSize.Sm">@(Strings.T("Закрыть"))</FlareButton></FlareStack>
+    <FlareStack Row StretchFirst><FlareText Element="h2" Typo="TypographyScale.TitleLarge">@(_editing.Id == Guid.Empty ? AlvaStrings.Tasks_NewTask : AlvaStrings.Tasks_TaskCard)</FlareText><FlareButton OnClick="Close" Variant="ButtonVariant.Text" Size="ButtonSize.Sm">@(AlvaStrings.Common_Close)</FlareButton></FlareStack>
     @if (_formErrors.Count > 0) { <div tabindex="-1" @ref="_errorSummary"><AlvaValidationSummary Messages="_formErrors" /></div> }
-    <FlareTextField Label="@(Strings.T("Название"))" @bind-Value="_editing.Title" ErrorText="@_titleError" Required MaxLength="500" Autofocus />
-    <FlareTextArea Label="@(Strings.T("Описание"))" @bind-Value="_editing.Description" AutoGrow />
-    <SkillTagEditor Label="@(Strings.T("Необходимые навыки"))" @bind-Values="_editing.RequiredSkills"
+    <FlareTextField Label="@(AlvaStrings.Common_Title)" @bind-Value="_editing.Title" ErrorText="@_titleError" Required MaxLength="500" Autofocus />
+    <FlareTextArea Label="@(AlvaStrings.Common_Description)" @bind-Value="_editing.Description" AutoGrow />
+    <SkillTagEditor Label="@(AlvaStrings.Common_RequiredSkills)" @bind-Values="_editing.RequiredSkills"
                     Suggestions="_actors.SelectMany(a=>a.Skills).Concat(_tasks.SelectMany(t=>t.RequiredSkills)).Distinct(StringComparer.OrdinalIgnoreCase)" />
     <FlareGrid MinColumnWidth="min(100%,12rem)">
-        <FlareSelect TValue="string" Label="@(Strings.T("Статус"))" Items="_statuses" ItemLabel="Labels.Status" @bind-Value="_editing.Status" />
-        <FlareSelect TValue="string" Label="@(Strings.T("Приоритет"))" Items="Labels.Priorities" ItemLabel="Labels.Priority" @bind-Value="_editing.Priority" />
-        <FlareSelect TValue="Guid?" Label="@(Strings.T("Проект"))" Items="_projects.Select(x => (Guid?)x.Id)" ItemLabel="ProjectName" NullOption="@(Strings.T("Текучка"))" @bind-Value="_editing.ProjectId" />
-        <FlareSelect TValue="Guid?" Label="@(Strings.T("Спринт (по датам)"))" Items="_sprints.OrderBy(x => x.StartDate).Select(x => (Guid?)x.Id)" ItemLabel="SprintName" NullOption="@(Strings.T("Бэклог — без дат"))" Value="SprintDates.First(_editing, _sprints)" ValueChanged="id => SprintDates.Place(_editing, _sprints.FirstOrDefault(s => s.Id == id))" HelperText="@SprintDates.Hint(_editing, _sprints)" Disabled="_editing.DatesFixed" />
-        <FlareSelect TValue="Guid?" Label="@(Strings.T("Родительская задача"))" ErrorText="@_parentError" Items="_tasks.Where(x => x.Id != _editing.Id).Select(x => (Guid?)x.Id)" ItemLabel="TaskName" NullOption="@(Strings.T("Корневая задача"))" @bind-Value="_editing.ParentId" Searchable />
-        <FlareNumericField TValue="decimal?" Label="@(Strings.T("Оценка, часы"))" ErrorText="@_estimateError" @bind-Value="_editing.EstimateHours" Min="0" />
-        <FlareNumericField TValue="decimal?" Label="@(Strings.T("Остаток, часы"))" ErrorText="@_remainingError" @bind-Value="_editing.RemainingHours" Min="0" Max="100000" HelperText="@(Strings.T("Для начатой задачи пустое поле означает неизвестный остаток; 0 — работа закончена."))" />
-        <FlareNumericField TValue="decimal?" Label="@(Strings.T("Не больше, ч в день"))" ErrorText="@_limitError" @bind-Value="_editing.DailyHoursLimit" Min="0" Max="24" HelperText="@DailyLimit.Hint(_editing)" />
-        <FlareDatePicker Label="@(Strings.T("Дедлайн"))" @bind-Value="_editing.Deadline" />
-        <FlareDatePicker Label="@(Strings.T("Начало"))" ErrorText="@_startError" @bind-Value="_editing.StartDate" Disabled="_editing.DatesFixed" />
-        <FlareDatePicker Label="@(Strings.T("Окончание"))" ErrorText="@_endError" @bind-Value="_editing.EndDate" Disabled="_editing.DatesFixed" />
+        <FlareSelect TValue="string" Label="@(AlvaStrings.Common_Status)" Items="_statuses" ItemLabel="Labels.Status" @bind-Value="_editing.Status" />
+        <FlareSelect TValue="string" Label="@(AlvaStrings.Common_Priority)" Items="Labels.Priorities" ItemLabel="Labels.Priority" @bind-Value="_editing.Priority" />
+        <FlareSelect TValue="Guid?" Label="@(AlvaStrings.Common_Project)" Items="_projects.Select(x => (Guid?)x.Id)" ItemLabel="ProjectName" NullOption="@(AlvaStrings.Sprint_Ongoing)" @bind-Value="_editing.ProjectId" />
+        <FlareSelect TValue="Guid?" Label="@(AlvaStrings.Common_SprintByDates)" Items="_sprints.OrderBy(x => x.StartDate).Select(x => (Guid?)x.Id)" ItemLabel="SprintName" NullOption="@(AlvaStrings.Common_BacklogUndated)" Value="SprintDates.First(_editing, _sprints)" ValueChanged="id => SprintDates.Place(_editing, _sprints.FirstOrDefault(s => s.Id == id))" HelperText="@SprintDates.Hint(_editing, _sprints)" Disabled="_editing.DatesFixed" />
+        <FlareSelect TValue="Guid?" Label="@(AlvaStrings.Common_ParentTask)" ErrorText="@_parentError" Items="_tasks.Where(x => x.Id != _editing.Id).Select(x => (Guid?)x.Id)" ItemLabel="TaskName" NullOption="@(AlvaStrings.Common_RootTask)" @bind-Value="_editing.ParentId" Searchable />
+        <FlareNumericField TValue="decimal?" Label="@(AlvaStrings.Common_EstimateHours)" ErrorText="@_estimateError" @bind-Value="_editing.EstimateHours" Min="0" />
+        <FlareNumericField TValue="decimal?" Label="@(AlvaStrings.Common_RemainingWorkHours)" ErrorText="@_remainingError" @bind-Value="_editing.RemainingHours" Min="0" Max="100000" HelperText="@(AlvaStrings.Common_ForWorkInProgressLeaveBlankIfRemainingWorkIsUnknown0MeansNoWorkRemains)" />
+        <FlareNumericField TValue="decimal?" Label="@(AlvaStrings.Common_NoMoreThanHPerDay)" ErrorText="@_limitError" @bind-Value="_editing.DailyHoursLimit" Min="0" Max="24" HelperText="@DailyLimit.Hint(_editing)" />
+        <FlareDatePicker Label="@(AlvaStrings.Common_Deadline)" @bind-Value="_editing.Deadline" />
+        <FlareDatePicker Label="@(AlvaStrings.Common_Start)" ErrorText="@_startError" @bind-Value="_editing.StartDate" Disabled="_editing.DatesFixed" />
+        <FlareDatePicker Label="@(AlvaStrings.Common_End)" ErrorText="@_endError" @bind-Value="_editing.EndDate" Disabled="_editing.DatesFixed" />
     </FlareGrid>
-    <FlareSwitch @bind-Value="_editing.DatesFixed" Label="@(Strings.T("Фиксированные даты — не переносить"))"
+    <FlareSwitch @bind-Value="_editing.DatesFixed" Label="@(AlvaStrings.Common_FixedDatesDoNotMove)"
                  Disabled="@(_editing.StartDate is null || _editing.EndDate is null)" />
-    <FlareSelect TValue="Guid?" Label="@(Strings.T("Исполнитель, подкоманда или роль"))" Items="_actors.Select(x => (Guid?)x.Id)" ItemLabel="ActorName" NullOption="@(Strings.T("Не назначена"))" @bind-Value="_editing.AssignmentTargetId" Searchable />
+    <FlareSelect TValue="Guid?" Label="@(AlvaStrings.Tasks_AssigneeSubTeamOrRole)" Items="_actors.Select(x => (Guid?)x.Id)" ItemLabel="ActorName" NullOption="@(AlvaStrings.Common_UnassignedTask)" @bind-Value="_editing.AssignmentTargetId" Searchable />
     <SkillMatch Required="_editing.RequiredSkills" Person="@(_actors.FirstOrDefault(a=>a.Id==(_editing.ResolvedPersonId ?? _editing.AssignmentTargetId)))" />
-    @if(_actors.FirstOrDefault(a=>a.Id==_editing.AssignmentTargetId)?.Kind is "Role" or "Department") { <FlareSelect TValue="Guid?" Label="@(Strings.T("Конкретный исполнитель"))" Items="@(_actors.Where(a=>a.Kind=="Person").Select(a=>(Guid?)a.Id))" ItemLabel="ActorName" NullOption="@(Strings.T("Пока не выбран"))" @bind-Value="_editing.ResolvedPersonId" Searchable /> }
-    <FlareStack Row Wrap><FlareButton Loading="_busy" Disabled="@(string.IsNullOrWhiteSpace(_editing.Title) || !IsDirty)" OnClick="Save">@(Strings.T("Сохранить задачу"))</FlareButton><EditorStatus Dirty="IsDirty" Saving="_busy" />
-        @if(_editing.Id != Guid.Empty) { <FlareButton Variant="ButtonVariant.Text" OnClick="() => NewChild(_editing.Id)">@(Strings.T("Подзадача"))</FlareButton><FlareButton Color="FlareColor.Error" Variant="ButtonVariant.Text" OnClick="Archive">@(Strings.T("Архивировать"))</FlareButton> }
+    @if(_actors.FirstOrDefault(a=>a.Id==_editing.AssignmentTargetId)?.Kind is "Role" or "Department") { <FlareSelect TValue="Guid?" Label="@(AlvaStrings.Common_SpecificAssignee)" Items="@(_actors.Where(a=>a.Kind=="Person").Select(a=>(Guid?)a.Id))" ItemLabel="ActorName" NullOption="@(AlvaStrings.Tasks_NotChosenYet)" @bind-Value="_editing.ResolvedPersonId" Searchable /> }
+    <FlareStack Row Wrap><FlareButton Loading="_busy" Disabled="@(string.IsNullOrWhiteSpace(_editing.Title) || !IsDirty)" OnClick="Save">@(AlvaStrings.Tasks_SaveTheTask)</FlareButton><EditorStatus Dirty="IsDirty" Saving="_busy" />
+        @if(_editing.Id != Guid.Empty) { <FlareButton Variant="ButtonVariant.Text" OnClick="() => NewChild(_editing.Id)">@(AlvaStrings.Common_Subtask)</FlareButton><FlareButton Color="FlareColor.Error" Variant="ButtonVariant.Text" OnClick="Archive">@(AlvaStrings.Common_Archive)</FlareButton> }
     </FlareStack>
-    @if(_history.Length>0) { <FlareText Element="h3" Typo="TypographyScale.TitleMedium">@(Strings.T("История"))</FlareText>@foreach(var entry in _history) { <FlareText Typo="TypographyScale.BodySmall">@entry.At.ToLocalTime().ToString("g") · @entry.Summary</FlareText> } }
+    @if(_history.Length>0) { <FlareText Element="h3" Typo="TypographyScale.TitleMedium">@(AlvaStrings.Tasks_History)</FlareText>@foreach(var entry in _history) { <FlareText Typo="TypographyScale.BodySmall">@entry.At.ToLocalTime().ToString("g") · @entry.Summary</FlareText> } }
 </FlareStack></FlareCardContent></FlareCard>
 }
 </FlareGrid>
@@ -106,15 +106,15 @@ else
     private double _pendingScroll;
     private readonly string[] _statuses=["Backlog","Planned","InProgress","Done","Cancelled"];
     private string Route => AppRoutes.Current(Navigation);
-    private string PageHeading => Route == "my-work" ? Strings.T("Моя работа") : Route == "unassigned" ? Strings.T("Без исполнителя") : Strings.T("Задачи команды");
+    private string PageHeading => Route == "my-work" ? AlvaStrings.Tasks_MyWork : Route == "unassigned" ? AlvaStrings.Common_Unassigned : AlvaStrings.Tasks_TeamTasks;
     private IEnumerable<TaskModel> Filtered => _tasks.Where(t => (string.IsNullOrWhiteSpace(_search) || t.Title.Contains(_search,StringComparison.OrdinalIgnoreCase)) && (!_projectFilter.HasValue || t.ProjectId==_projectFilter) && (_statusFilter is null || t.Status==_statusFilter) && (Route != "unassigned" || Assignees.Person(t,_actors) is null) && (Route != "my-work" || Assignees.Person(t,_actors) is { } person && Assignees.Me(_actors,Session.User).Contains(person)));
     private IEnumerable<TaskModel> Roots => Filtered.Where(t=>t.ParentId is null || !Filtered.Any(p=>p.Id==t.ParentId)).OrderBy(t=>t.Order);
     private Task<IEnumerable<TaskModel?>> Children(TaskModel? task) => Task.FromResult(Filtered.Where(t=>t.ParentId==task!.Id).OrderBy(t=>t.Order).Cast<TaskModel?>());
     private bool HasChildren(TaskModel? task) => Filtered.Any(t=>t.ParentId==task!.Id);
-    private string ProjectName(Guid? id)=>_projects.FirstOrDefault(x=>x.Id==id)?.Name??Strings.T("Текучка");
-    private string SprintName(Guid? id)=>_sprints.FirstOrDefault(x=>x.Id==id)?.Name??Strings.T("Без спринта");
-    private string TaskName(Guid? id)=>_tasks.FirstOrDefault(x=>x.Id==id)?.Title??Strings.T("Корневая задача");
-    private string ActorName(Guid? id) { var actor=_actors.FirstOrDefault(x=>x.Id==id);return actor is null?Strings.T("Не назначена"):$"{actor.Name} · {Labels.Kind(actor.Kind)}"; }
+    private string ProjectName(Guid? id)=>_projects.FirstOrDefault(x=>x.Id==id)?.Name??AlvaStrings.Sprint_Ongoing;
+    private string SprintName(Guid? id)=>_sprints.FirstOrDefault(x=>x.Id==id)?.Name??AlvaStrings.Common_NoSprint;
+    private string TaskName(Guid? id)=>_tasks.FirstOrDefault(x=>x.Id==id)?.Title??AlvaStrings.Common_RootTask;
+    private string ActorName(Guid? id) { var actor=_actors.FirstOrDefault(x=>x.Id==id);return actor is null?AlvaStrings.Common_UnassignedTask:$"{actor.Name} · {Labels.Kind(actor.Kind)}"; }
     private TaskModel? Current => TaskId.HasValue ? _tasks.FirstOrDefault(t=>t.Id==TaskId) : null;
     protected override async Task OnInitializedAsync()
     {
@@ -230,12 +230,12 @@ else
         _titleError=_parentError=_startError=_endError=_estimateError=_remainingError=_limitError=null;
         _formErrors.Clear();
         var m=_editing!;
-        if (string.IsNullOrWhiteSpace(m.Title)) Error(ref _titleError, Strings.T("Укажите название."));
-        if (m.StartDate is { } start && m.EndDate is { } end && start > end) Error(ref _endError, Strings.T("Окончание раньше начала."));
-        if (m.EstimateHours is < 0) Error(ref _estimateError, Strings.T("Оценка не может быть отрицательной."));
-        if (m.RemainingHours is < 0) Error(ref _remainingError, Strings.T("Остаток не может быть отрицательным."));
+        if (string.IsNullOrWhiteSpace(m.Title)) Error(ref _titleError, AlvaStrings.Tasks_EnterAName);
+        if (m.StartDate is { } start && m.EndDate is { } end && start > end) Error(ref _endError, AlvaStrings.Common_TheEndDateIsBeforeTheStartDate);
+        if (m.EstimateHours is < 0) Error(ref _estimateError, AlvaStrings.Common_TheEstimateCannotBeNegative);
+        if (m.RemainingHours is < 0) Error(ref _remainingError, AlvaStrings.Common_RemainingWorkCannotBeNegative);
         if (DailyLimit.Error(m.DailyHoursLimit) is { } limitError) Error(ref _limitError, limitError);
-        if (m.ParentId is { } parent && (parent == m.Id || IsDescendant(parent, m.Id))) Error(ref _parentError, Strings.T("Родительская задача не может быть самой задачей или её потомком."));
+        if (m.ParentId is { } parent && (parent == m.Id || IsDescendant(parent, m.Id))) Error(ref _parentError, AlvaStrings.Common_AParentTaskCannotBeTheTaskItselfOrOneOfItsDescendants);
         return _formErrors.Count == 0;
     }
 
@@ -251,9 +251,9 @@ else
     private void Error(ref string? field, string message) { field=message; _formErrors.Add(message); }
     private async Task Archive()
     {
-        if (!await DestructivePrompt.ConfirmAsync(Confirm, Strings.T("Архивировать задачу"),
-            string.Format(Strings.T("Задача «{0}» уйдёт из списков. Вернуть её из приложения пока нельзя."), _editing!.Title),
-            Strings.T("Архивировать"))) return;
+        if (!await DestructivePrompt.ConfirmAsync(Confirm, AlvaStrings.Task_ArchiveTask,
+            string.Format(AlvaStrings.Common_TaskWillLeaveTheListsItCanTBeBroughtBackFromTheAppYet, _editing!.Title),
+            AlvaStrings.Common_Archive)) return;
         await Run(async()=>{await Session.Send(HttpMethod.Delete,Session.TeamPath($"tasks/{_editing!.Id}"),new{});Hide();_tasks=await Session.Get<TaskModel[]>(Session.TeamPath("tasks"));});
     }
 }

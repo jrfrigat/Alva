@@ -6,8 +6,8 @@
     <FlareStack Row Align="FlareAlignItems.Center" Gap="FlareSpacing.XSmall">
         <FlareAvatar Text="?" Size="AvatarSize.Sm" Color="FlareColor.OnSurfaceVariant" />
         <FlareStack Gap="FlareSpacing.None">
-            <FlareText Typo="TypographyScale.LabelMedium">@(Strings.T("Не назначена"))</FlareText>
-            <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.Warning">@(Strings.T("Нет исполнителя"))</FlareText>
+            <FlareText Typo="TypographyScale.LabelMedium">@(AlvaStrings.Common_UnassignedTask)</FlareText>
+            <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.Warning">@(AlvaStrings.Common_NoAssignee)</FlareText>
         </FlareStack>
     </FlareStack>
 }
@@ -19,11 +19,11 @@ else if (Person is not null)
             <FlareText Typo="TypographyScale.LabelMedium">@Person.Name</FlareText>
             @if (Load is { } load)
             {
-                <FlareText Typo="TypographyScale.BodySmall" Color="@(load > 100 ? FlareColor.Error : FlareColor.OnSurfaceVariant)">@load% @(Strings.T("ёмкости"))@(load > 100 ? $" ({Strings.T("перегруз")})" : "")</FlareText>
+                <FlareText Typo="TypographyScale.BodySmall" Color="@(load > 100 ? FlareColor.Error : FlareColor.OnSurfaceVariant)">@load% @(AlvaStrings.Common_CapacitySuffix)@(load > 100 ? $" ({AlvaStrings.Common_Overload})" : "")</FlareText>
             }
             else
             {
-                <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@(Target.Kind == "Person" ? Strings.T("Человек") : $"{Labels.Kind(Target.Kind)}: {Target.Name}")</FlareText>
+                <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@(Target.Kind == "Person" ? AlvaStrings.Common_Person : $"{Labels.Kind(Target.Kind)}: {Target.Name}")</FlareText>
             }
             <SkillMatch Required="Task.RequiredSkills" Person="Person" />
         </FlareStack>
@@ -37,7 +37,7 @@ else
         </FlareAvatar>
         <FlareStack Gap="FlareSpacing.None">
             <FlareText Typo="TypographyScale.LabelMedium">@Labels.Kind(Target.Kind): @Target.Name</FlareText>
-            <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.Error">@(Strings.T("Требуется человек"))</FlareText>
+            <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.Error">@(AlvaStrings.Common_APersonIsRequired)</FlareText>
         </FlareStack>
     </FlareStack>
 }

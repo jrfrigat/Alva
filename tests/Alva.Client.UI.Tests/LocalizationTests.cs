@@ -1,6 +1,9 @@
 using System.Globalization;
 using Alva.Client;
+using Alva.Client.Models;
+using Alva.Client.Pages;
 using Alva.Client.Services;
+using Alva.Contracts;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
 using Xunit;
@@ -18,9 +21,9 @@ public sealed class LocalizationTests : UiTestBase
         try
         {
             CultureInfo.CurrentUICulture = new CultureInfo("en");
-            Assert.Equal("Sign out", localizer["Выйти"].Value);
+            Assert.Equal("Sign out", localizer["Nav_SignOut"].Value);
             CultureInfo.CurrentUICulture = new CultureInfo("ru");
-            Assert.Equal("Выйти", localizer["Выйти"].Value);
+            Assert.Equal("Выйти", localizer["Nav_SignOut"].Value);
         }
         finally { CultureInfo.CurrentUICulture = before; }
     }
@@ -32,9 +35,9 @@ public sealed class LocalizationTests : UiTestBase
         try
         {
             CultureInfo.CurrentUICulture = new CultureInfo("en");
-            Assert.Equal("Sign out", Strings.T("Выйти"));
+            Assert.Equal("Sign out", AlvaStrings.Nav_SignOut);
             CultureInfo.CurrentUICulture = new CultureInfo("ru");
-            Assert.Equal("Выйти", Strings.T("Выйти"));
+            Assert.Equal("Выйти", AlvaStrings.Nav_SignOut);
         }
         finally { CultureInfo.CurrentUICulture = before; }
     }
@@ -63,9 +66,48 @@ public sealed class LocalizationTests : UiTestBase
         try
         {
             CultureInfo.CurrentUICulture = new CultureInfo("en");
-            Assert.Equal("Task tree", Strings.T("Дерево задач"));
+            Assert.Equal("Task tree", AlvaStrings.Nav_TaskTree);
             CultureInfo.CurrentUICulture = new CultureInfo("ru");
-            Assert.Equal("Дерево задач", Strings.T("Дерево задач"));
+            Assert.Equal("Дерево задач", AlvaStrings.Nav_TaskTree);
+        }
+        finally { CultureInfo.CurrentUICulture = before; }
+    }
+
+    [Fact]
+    public void Navigation_labels_change_with_the_culture()
+    {
+        var before = CultureInfo.CurrentUICulture;
+        try
+        {
+            CultureInfo.CurrentUICulture = new CultureInfo("en");
+            Assert.Equal("Planning", AlvaStrings.Common_Planning);
+            Assert.Equal("Tasks", AlvaStrings.Common_Tasks);
+
+            CultureInfo.CurrentUICulture = new CultureInfo("ru");
+            Assert.Equal("Планирование", AlvaStrings.Common_Planning);
+            Assert.Equal("Задачи", AlvaStrings.Common_Tasks);
+        }
+        finally { CultureInfo.CurrentUICulture = before; }
+    }
+
+    [Fact]
+    public void A_page_renders_in_both_languages()
+    {
+        Api.Answer("sprints", _ => new[] { new SprintModel { Id = Guid.NewGuid(), Name = "Спринт 7", StartDate = new DateOnly(2026, 11, 2), EndDate = new DateOnly(2026, 11, 20), Status = "Active" } })
+           .Answer("tasks", _ => Array.Empty<TaskModel>())
+           .Answer("actors", _ => Array.Empty<ActorModel>())
+           .Answer("projects", _ => Array.Empty<ProjectModel>())
+           .Answer("risks", _ => Array.Empty<RiskDto>())
+           .Answer("capacity", _ => Array.Empty<CapacityDto>());
+
+        var before = CultureInfo.CurrentUICulture;
+        try
+        {
+            CultureInfo.CurrentUICulture = new CultureInfo("en");
+            Assert.Contains("Team sprints", Render<Sprints>().Markup);
+
+            CultureInfo.CurrentUICulture = new CultureInfo("ru");
+            Assert.Contains("Спринты команды", Render<Sprints>().Markup);
         }
         finally { CultureInfo.CurrentUICulture = before; }
     }
@@ -75,7 +117,7 @@ public sealed class LocalizationTests : UiTestBase
     {
         var localizer = Services.GetRequiredService<IStringLocalizer<AppStrings>>();
 
-        Assert.Equal("нет такого ключа", localizer["нет такого ключа"].Value);
+        Assert.Equal("missing.key", localizer["missing.key"].Value);
     }
 
     [Fact]

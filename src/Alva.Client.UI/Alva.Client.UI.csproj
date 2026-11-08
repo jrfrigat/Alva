@@ -19,4 +19,12 @@
     <PackageReference Include="Flare.Icons.MaterialDesign3.Svg" Version="0.53.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Generated from Resources/AppStrings.resx by Resources/Generate-AlvaStrings.ps1. -->
+    <Compile Update="Resources\AlvaStrings.Designer.cs">
+      <DesignTime>true</DesignTime>
+      <AutoGen>true</AutoGen>
+    </Compile>
+  </ItemGroup>
+
 </Project>

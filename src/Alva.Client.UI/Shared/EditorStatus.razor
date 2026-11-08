@@ -2,15 +2,15 @@
    Ошибку показывает PageFeedback, чтобы серверный текст не дублировался. *@
 @if (Saving)
 {
-    <span role="status" aria-live="polite"><FlareChip Variant="ChipVariant.Filled" Color="FlareColor.Info" Size="ChipSize.Sm">@(Strings.T("Сохранение…"))</FlareChip></span>
+    <span role="status" aria-live="polite"><FlareChip Variant="ChipVariant.Filled" Color="FlareColor.Info" Size="ChipSize.Sm">@(AlvaStrings.Common_Saving)</FlareChip></span>
 }
 else if (Saved && !Dirty)
 {
-    <span role="status" aria-live="polite"><FlareChip Variant="ChipVariant.Filled" Color="FlareColor.Success" Size="ChipSize.Sm">@(Strings.T("Сохранено"))</FlareChip></span>
+    <span role="status" aria-live="polite"><FlareChip Variant="ChipVariant.Filled" Color="FlareColor.Success" Size="ChipSize.Sm">@(AlvaStrings.Common_Saved)</FlareChip></span>
 }
 else if (Dirty)
 {
-    <span role="status" aria-live="polite"><FlareChip Variant="ChipVariant.Filled" Color="FlareColor.Warning" Size="ChipSize.Sm">@(Strings.T("Есть несохранённые изменения"))</FlareChip></span>
+    <span role="status" aria-live="polite"><FlareChip Variant="ChipVariant.Filled" Color="FlareColor.Warning" Size="ChipSize.Sm">@(AlvaStrings.Common_ThereAreUnsavedChanges)</FlareChip></span>
 }
 
 @code {

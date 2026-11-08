@@ -1,77 +1,77 @@
 @* Обзор ёмкости по макету p14: KPI фонда, матрица «человек × период» с тепловой шкалой,
    вакантные роли с дефицитом и прогноз баланса по периодам. *@
 @inject AlvaSession Session
-<AlvaPageHeader Category="@(Strings.T("Ресурсы · Ёмкость"))" Title="@(Strings.T("Обзор ёмкости команды"))" Description="@($"{Strings.T("Сводный баланс рабочего фонда, утилизация по подкомандам и ресурсные дефициты на горизонте")} {Horizon}.")">
+<AlvaPageHeader Category="@(AlvaStrings.Capacity_ResourcesCapacity)" Title="@(AlvaStrings.Capacity_TeamCapacityOverview)" Description="@($"{AlvaStrings.Capacity_CombinedWorkFundBalanceSubTeamUtilizationAndResourceDeficitsOverTheHoriz_d6d9ad} {Horizon}.")">
     <Actions>
         <FlareButton Href="capacity/people" Variant="ButtonVariant.Tonal" Size="ButtonSize.Sm">
             <LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.EditCalendar" Size="18px" /></LeadingIcon>
-            <ChildContent>@(Strings.T("Редактор графиков"))</ChildContent>
+            <ChildContent>@(AlvaStrings.Capacity_ScheduleEditor)</ChildContent>
         </FlareButton>
         @if (_sprints.FirstOrDefault(s => s.Status == "Active") is { } active)
         {
             <FlareButton Href="@($"sprints/{active.Id}/plan")" Size="ButtonSize.Sm">
                 <LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.Balance" Size="18px" /></LeadingIcon>
-                <ChildContent>@(Strings.T("Балансировать спринт"))</ChildContent>
+                <ChildContent>@(AlvaStrings.Capacity_BalanceSprint)</ChildContent>
             </FlareButton>
         }
     </Actions>
 </AlvaPageHeader>
 
 <div class="alva-capacity-bar">
-    <FlareToggleGroup TValue="string" Value="@_mode" ValueChanged="SetMode" Size="ButtonSize.Sm" Mandatory AriaLabel="@(Strings.T("Разбивка периода"))">
+    <FlareToggleGroup TValue="string" Value="@_mode" ValueChanged="SetMode" Size="ButtonSize.Sm" Mandatory AriaLabel="@(AlvaStrings.Capacity_PeriodBreakdown)">
         @foreach (var (mode, label) in Modes)
         {
             <FlareToggleButton Value="@mode">@label</FlareToggleButton>
         }
     </FlareToggleGroup>
     <span class="alva-capacity-bar__sep" aria-hidden="true"></span>
-    <FlareText Typo="TypographyScale.LabelMedium" Color="FlareColor.OnSurfaceVariant">@(Strings.T("Подразделения:"))</FlareText>
-    <FlareChipGroup SelectedValues="SelectedDepartments" SelectedValuesChanged="SetDepartment" AriaLabel="@(Strings.T("Подкоманды"))">
-        <FlareChip Value="" Label="@($"{Strings.T("Все подкоманды")} ({_departments.Length})")" />
+    <FlareText Typo="TypographyScale.LabelMedium" Color="FlareColor.OnSurfaceVariant">@(AlvaStrings.Capacity_Departments)</FlareText>
+    <FlareChipGroup SelectedValues="SelectedDepartments" SelectedValuesChanged="SetDepartment" AriaLabel="@(AlvaStrings.Common_SubTeams)">
+        <FlareChip Value="" Label="@($"{AlvaStrings.Capacity_AllSubTeams} ({_departments.Length})")" />
         @foreach (var dept in _departments)
         {
             <FlareChip Value="@dept.Id.ToString()" Label="@($"{dept.Name}: {People.Count(p => GroupOf(p) == dept.Id)}")" />
         }
     </FlareChipGroup>
-    <FlareCheckbox TValue="bool" @bind-Value="_highlight" Label="@(Strings.T("Показывать перегрузы (>100%)"))" Class="alva-capacity-bar__check" />
+    <FlareCheckbox TValue="bool" @bind-Value="_highlight" Label="@(AlvaStrings.Capacity_ShowOverloads100)" Class="alva-capacity-bar__check" />
 </div>
 <PageFeedback Error="@_error" Loading="_busy" OnRetry="Load" />
 @if (!_loaded) { <LoadingSkeleton Height="20rem" /> }
 else
 {
 <FlareGrid MinColumnWidth="min(100%,15rem)">
-    <FlareStat Label="@(Strings.T("Доступный фонд (номинал)"))" Value="@AlvaFormat.Hours(Fund)" Unit="@(Strings.T("чел/час"))" Icon="@MaterialDesign3Icons.Regular.CalendarMonth"
+    <FlareStat Label="@(AlvaStrings.Capacity_AvailableFundNominal)" Value="@AlvaFormat.Hours(Fund)" Unit="@(AlvaStrings.Capacity_PersonHour)" Icon="@MaterialDesign3Icons.Regular.CalendarMonth"
                Caption="@($"{_periods.Length} {PeriodWord(_periods.Length)} · {VisiblePeople.Length} {AlvaFormat.Plural(VisiblePeople.Length, "person")}")" />
-    <FlareStat Label="@(Strings.T("Запланированная нагрузка"))" Value="@AlvaFormat.Hours(Planned)" Unit="@($"{Strings.T("ч")} ({Pct(Planned, Fund)}%)")" Icon="@MaterialDesign3Icons.Regular.FactCheck">
+    <FlareStat Label="@(AlvaStrings.Capacity_PlannedWorkload)" Value="@AlvaFormat.Hours(Planned)" Unit="@($"{AlvaStrings.Sprint_HoursShort} ({Pct(Planned, Fund)}%)")" Icon="@MaterialDesign3Icons.Regular.FactCheck">
         <CaptionContent>
             <FlareStack Gap="FlareSpacing.XSmall">
                 <AlvaStatusChip Tone="LoadTone">@LoadLabel</AlvaStatusChip>
-                <FlareProgressLinear Value="@Math.Min(100, Pct(Planned, Fund))" Size="TrackSize.Xs" Color="FlareColor.Primary" aria-label="@(Strings.T("Запланировано от фонда"))" />
-                <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@(Strings.T("Целевой коридор: 85–95%")) · @Horizon</FlareText>
+                <FlareProgressLinear Value="@Math.Min(100, Pct(Planned, Fund))" Size="TrackSize.Xs" Color="FlareColor.Primary" aria-label="@(AlvaStrings.Capacity_PlannedOfTheFund)" />
+                <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@(AlvaStrings.Capacity_TargetCorridor8595) · @Horizon</FlareText>
             </FlareStack>
         </CaptionContent>
     </FlareStat>
-    <FlareStat Label="@(Strings.T("Дефицитные слоты"))" Value="@($"{(Deficit > 0 ? "−" : "")}{AlvaFormat.Hours(Deficit)}")" Unit="@(Strings.T("ч дефицита"))" Icon="@MaterialDesign3Icons.Regular.Warning"
-               Caption="@($"{WorstName ?? Strings.T("Дефицита нет")} · {OverloadedCount} {Strings.T("в перегрузе")}")" />
-    <FlareStat Label="@(Strings.T("Свободный резерв"))" Value="@($"+{AlvaFormat.Hours(Reserve)}")" Unit="@(Strings.T("ч доступно"))" Icon="@MaterialDesign3Icons.Regular.Inventory2"
-               Caption="@($"{FreestName ?? Strings.T("Резерва нет")} · {Strings.T("Конец горизонта")}")" />
+    <FlareStat Label="@(AlvaStrings.Capacity_DeficitSlots)" Value="@($"{(Deficit > 0 ? "−" : "")}{AlvaFormat.Hours(Deficit)}")" Unit="@(AlvaStrings.Capacity_HDeficit)" Icon="@MaterialDesign3Icons.Regular.Warning"
+               Caption="@($"{WorstName ?? AlvaStrings.Capacity_NoDeficit} · {OverloadedCount} {AlvaStrings.Common_Overloaded}")" />
+    <FlareStat Label="@(AlvaStrings.Capacity_FreeReserve)" Value="@($"+{AlvaFormat.Hours(Reserve)}")" Unit="@(AlvaStrings.Capacity_HAvailable)" Icon="@MaterialDesign3Icons.Regular.Inventory2"
+               Caption="@($"{FreestName ?? AlvaStrings.Capacity_NoReserve} · {AlvaStrings.Capacity_EndOfHorizon}")" />
 </FlareGrid>
 
 <FlareCard Variant="CardVariant.Outlined">
-    <FlareCardHeader Title="@(Strings.T("Матрица распределения ёмкости"))" Subtitle="@($"{Strings.T("Развёртка:")} {string.Join(", ", _periods.Select(p => p.Title))}")" />
+    <FlareCardHeader Title="@(AlvaStrings.Capacity_CapacityDistributionMatrix)" Subtitle="@($"{AlvaStrings.Capacity_Spread} {string.Join(", ", _periods.Select(p => p.Title))}")" />
     <FlareCardContent>
     <div class="alva-heat-legend">
-        <span class="alva-heat-legend__title">@(Strings.T("Тепловая шкала:"))</span>
-        <span><i class="alva-heat--under"></i>@(Strings.T("<70% Недогруз"))</span>
-        <span><i class="alva-heat--balance"></i>@(Strings.T("70–100% Баланс"))</span>
-        <span><i class="alva-heat--tension"></i>@(Strings.T("101–115% Напряжение"))</span>
-        <span><i class="alva-heat--critical"></i>@(Strings.T(">115% Критичный перегруз"))</span>
+        <span class="alva-heat-legend__title">@(AlvaStrings.Capacity_HeatScale)</span>
+        <span><i class="alva-heat--under"></i>@(AlvaStrings.Capacity_Text70Underload)</span>
+        <span><i class="alva-heat--balance"></i>@(AlvaStrings.Capacity_Text70100Balanced)</span>
+        <span><i class="alva-heat--tension"></i>@(AlvaStrings.Capacity_Text101115Strained)</span>
+        <span><i class="alva-heat--critical"></i>@(AlvaStrings.Capacity_Text115CriticalOverload)</span>
     </div>
-    <div class="alva-matrix" role="table" aria-label="@(Strings.T("Распределение ёмкости"))" style="--alva-matrix-periods:@Math.Max(1, _periods.Length)">
+    <div class="alva-matrix" role="table" aria-label="@(AlvaStrings.Capacity_CapacityDistribution)" style="--alva-matrix-periods:@Math.Max(1, _periods.Length)">
         <div class="alva-matrix__head" role="row">
-            <span role="columnheader">@(Strings.T("Ресурс / подкоманда"))</span><span role="columnheader">@(Strings.T("Роль / статус"))</span><span role="columnheader">@(Strings.T("Доступно (фонд)"))</span>
+            <span role="columnheader">@(AlvaStrings.Capacity_ResourceSubTeam)</span><span role="columnheader">@(AlvaStrings.Capacity_RoleStatus)</span><span role="columnheader">@(AlvaStrings.Capacity_AvailableFund)</span>
             @foreach (var period in _periods) { <span role="columnheader" class="alva-matrix__period"><b>@period.Title</b><small class="alva-num">@period.Subtitle</small></span> }
-            <span role="columnheader">@(Strings.T("Итог фонда"))</span>
+            <span role="columnheader">@(AlvaStrings.Capacity_FundTotal)</span>
         </div>
         @foreach (var group in Groups)
         {
@@ -81,64 +81,64 @@ else
             var groupFund = people.Sum(p => Available(p.Id));
             var groupBalance = groupFund - people.Sum(p => Allocated(p.Id)) - roles.Sum(r => Demand(r));
             <div class="alva-matrix__group" role="row">
-                <span role="cell" class="alva-matrix__group-name">@group.Name <small>(@people.Length @AlvaFormat.Plural(people.Length, "person")@(roles.Length > 0 ? string.Format(Strings.T(", вакансий: {0}"), roles.Length) : ""))</small></span>
-                <span role="cell" class="alva-matrix__group-total @(groupBalance < 0 ? "alva-matrix__group-total--critical" : "")">@(groupBalance < 0 ? string.Format(Strings.T("Дефицит периода: −{0} ч"), AlvaFormat.Hours(-groupBalance)) : string.Format(Strings.T("Резерв периода: +{0} ч"), AlvaFormat.Hours(groupBalance))) · @(Strings.T("Фонд:")) @AlvaFormat.Hours(groupFund) @(Strings.T("ч"))</span>
+                <span role="cell" class="alva-matrix__group-name">@group.Name <small>(@people.Length @AlvaFormat.Plural(people.Length, "person")@(roles.Length > 0 ? string.Format(AlvaStrings.Capacity_Vacancies, roles.Length) : ""))</small></span>
+                <span role="cell" class="alva-matrix__group-total @(groupBalance < 0 ? "alva-matrix__group-total--critical" : "")">@(groupBalance < 0 ? string.Format(AlvaStrings.Capacity_PeriodDeficitH, AlvaFormat.Hours(-groupBalance)) : string.Format(AlvaStrings.Capacity_PeriodReserveH, AlvaFormat.Hours(groupBalance))) · @(AlvaStrings.Capacity_Fund) @AlvaFormat.Hours(groupFund) @(AlvaStrings.Sprint_HoursShort)</span>
             </div>
             @foreach (var person in people)
             {
                 <div class="alva-matrix__row" role="row" @key="person.Id">
                     <span role="cell" class="alva-matrix__who"><span class="alva-slot__mark" aria-hidden="true">@AlvaFormat.Initials(person.Name)</span><span><a href="@($"capacity/{person.Id}")" class="alva-matrix__name">@person.Name</a><small>@RolesOf(person)</small></span></span>
-                    <span role="cell"><AlvaStatusChip Tone="AlvaTone.Info">@(Strings.T("Штат"))</AlvaStatusChip></span>
-                    <span role="cell" class="alva-num alva-matrix__fund">@AlvaFormat.Hours(Available(person.Id)) @(Strings.T("ч"))</span>
+                    <span role="cell"><AlvaStatusChip Tone="AlvaTone.Info">@(AlvaStrings.Capacity_Staff)</AlvaStatusChip></span>
+                    <span role="cell" class="alva-num alva-matrix__fund">@AlvaFormat.Hours(Available(person.Id)) @(AlvaStrings.Sprint_HoursShort)</span>
                     @foreach (var period in _periods)
                     {
                         var (avail, alloc) = Cell(person.Id, period);
                         var pct = Pct(alloc, avail);
                         var over = Overload(person.Id, period);
                         <span role="cell" class="alva-heat alva-heat--@Heat(pct, avail, alloc) @(_highlight && over > 0 ? "alva-heat--flag" : "")">
-                            <span class="alva-heat__top alva-num"><span>@AlvaFormat.Hours(alloc) @(Strings.T("ч")) / @AlvaFormat.Hours(avail) @(Strings.T("ч"))</span><b>@(avail > 0 ? $"{pct}%" : "—")</b></span>
+                            <span class="alva-heat__top alva-num"><span>@AlvaFormat.Hours(alloc) @(AlvaStrings.Sprint_HoursShort) / @AlvaFormat.Hours(avail) @(AlvaStrings.Sprint_HoursShort)</span><b>@(avail > 0 ? $"{pct}%" : "—")</b></span>
                             <span class="alva-heat__bar"><span style="width:@Math.Min(100, pct)%"></span></span>
                             <span class="alva-heat__note">@CellNote(avail, alloc, over)</span>
                         </span>
                     }
-                    <span role="cell" class="alva-num alva-matrix__total @(Allocated(person.Id) > Available(person.Id) ? "alva-matrix__total--critical" : "")">@AlvaFormat.Hours(Allocated(person.Id)) @(Strings.T("ч")) / @AlvaFormat.Hours(Available(person.Id)) @(Strings.T("ч"))</span>
+                    <span role="cell" class="alva-num alva-matrix__total @(Allocated(person.Id) > Available(person.Id) ? "alva-matrix__total--critical" : "")">@AlvaFormat.Hours(Allocated(person.Id)) @(AlvaStrings.Sprint_HoursShort) / @AlvaFormat.Hours(Available(person.Id)) @(AlvaStrings.Sprint_HoursShort)</span>
                 </div>
             }
             @foreach (var role in roles)
             {
                 <div class="alva-matrix__row alva-matrix__row--vacancy" role="row" @key="role.Id">
-                    <span role="cell" class="alva-matrix__who"><span class="alva-slot__mark alva-slot__mark--vacancy" aria-hidden="true"><FlareIconView Value="@MaterialDesign3Icons.Regular.PersonAdd" Size="14px" /></span><span><span class="alva-matrix__name alva-matrix__name--critical">@Labels.Kind(role.Kind): @role.Name</span><small>@(Strings.T("Требуется человек / вакантный слот"))</small></span></span>
-                    <span role="cell"><AlvaStatusChip Tone="AlvaTone.Critical">@(Strings.T("Вакансия"))</AlvaStatusChip></span>
-                    <span role="cell" class="alva-num alva-matrix__fund alva-matrix__total--critical">0 @(Strings.T("ч"))</span>
+                    <span role="cell" class="alva-matrix__who"><span class="alva-slot__mark alva-slot__mark--vacancy" aria-hidden="true"><FlareIconView Value="@MaterialDesign3Icons.Regular.PersonAdd" Size="14px" /></span><span><span class="alva-matrix__name alva-matrix__name--critical">@Labels.Kind(role.Kind): @role.Name</span><small>@(AlvaStrings.Capacity_APersonRequiredVacantSlot)</small></span></span>
+                    <span role="cell"><AlvaStatusChip Tone="AlvaTone.Critical">@(AlvaStrings.Capacity_Vacancy)</AlvaStatusChip></span>
+                    <span role="cell" class="alva-num alva-matrix__fund alva-matrix__total--critical">0 @(AlvaStrings.Sprint_HoursShort)</span>
                     @foreach (var period in _periods)
                     {
                         var demand = Demand(role, period);
                         <span role="cell" class="alva-heat @(demand > 0 ? "alva-heat--critical" : "alva-heat--empty")">
-                            <span class="alva-heat__top alva-num"><span>@AlvaFormat.Hours(demand) @(Strings.T("ч")) / 0 @(Strings.T("ч"))</span>@if (demand > 0) { <b>@(Strings.T("НЕТ СЛОТА"))</b> }</span>
-                            <span class="alva-heat__note">@(demand > 0 ? string.Format(Strings.T("Дефицит: −{0} ч"), AlvaFormat.Hours(demand)) : Strings.T("Нет назначений"))</span>
+                            <span class="alva-heat__top alva-num"><span>@AlvaFormat.Hours(demand) @(AlvaStrings.Sprint_HoursShort) / 0 @(AlvaStrings.Sprint_HoursShort)</span>@if (demand > 0) { <b>@(AlvaStrings.Capacity_NoSlot)</b> }</span>
+                            <span class="alva-heat__note">@(demand > 0 ? string.Format(AlvaStrings.Capacity_DeficitH, AlvaFormat.Hours(demand)) : AlvaStrings.Capacity_NoAssignments)</span>
                         </span>
                     }
-                    <span role="cell" class="alva-num alva-matrix__total alva-matrix__total--critical">−@AlvaFormat.Hours(Demand(role)) @(Strings.T("ч"))<br /><small>@(Strings.T("Дефицит"))</small></span>
+                    <span role="cell" class="alva-num alva-matrix__total alva-matrix__total--critical">−@AlvaFormat.Hours(Demand(role)) @(AlvaStrings.Sprint_HoursShort)<br /><small>@(AlvaStrings.Capacity_Deficit)</small></span>
                 </div>
             }
         }
-        @if (!VisiblePeople.Any() && !Vacancies.Any()) { <FlareEmptyState Compact Title="@(Strings.T("Нет людей с рабочими графиками за горизонт."))" /> }
+        @if (!VisiblePeople.Any() && !Vacancies.Any()) { <FlareEmptyState Compact Title="@(AlvaStrings.Capacity_NoPeopleHaveSchedulesOverTheHorizon)" /> }
     </div>
     </FlareCardContent>
     <FlareCardActions Align="CardActionsAlign.Between">
-        <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@(Strings.T("Показано:")) @VisiblePeople.Length @AlvaFormat.Plural(VisiblePeople.Length, "person") @(Strings.T("в")) @Groups.Count(g => VisiblePeople.Any(p => GroupOf(p) == g.Id)) @AlvaFormat.Plural(Groups.Count(g => VisiblePeople.Any(p => GroupOf(p) == g.Id)), "subteam")</FlareText>
-        <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@(Strings.T("Фонд — по рабочим графикам людей с учётом отпусков и блоков"))</FlareText>
+        <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@(AlvaStrings.Capacity_Shown) @VisiblePeople.Length @AlvaFormat.Plural(VisiblePeople.Length, "person") @(AlvaStrings.Capacity_In) @Groups.Count(g => VisiblePeople.Any(p => GroupOf(p) == g.Id)) @AlvaFormat.Plural(Groups.Count(g => VisiblePeople.Any(p => GroupOf(p) == g.Id)), "subteam")</FlareText>
+        <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@(AlvaStrings.Capacity_FundFromPeopleSWorkSchedulesVacationsAndBlocksIncluded)</FlareText>
     </FlareCardActions>
 </FlareCard>
 
 @if (_periods.Length > 0)
 {
     <FlareCard Variant="CardVariant.Outlined">
-        <FlareCardHeader Title="@(Strings.T("Прогноз баланса ёмкости по периодам"))" Subtitle="@(Strings.T("Сравнение номинала фонда, запланированной работы и ресурсного дефицита"))" />
+        <FlareCardHeader Title="@(AlvaStrings.Capacity_CapacityBalanceForecastByPeriod)" Subtitle="@(AlvaStrings.Capacity_ComparisonOfTheFundNominalPlannedWorkAndResourceDeficit)" />
         <FlareCardContent>
             <FlareChart Type="ChartType.Bar" Data="Forecast" Height="260" ComponentCssClass="alva-forecast-chart"
-                        Description="@ForecastSummary" DataTable="true" aria-label="@(Strings.T("Фонд, план и дефицит по периодам"))" />
-            <FlareText Element="p" Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant"><b>@(Strings.T("Ключевой вывод:"))</b> @ForecastSummary</FlareText>
+                        Description="@ForecastSummary" DataTable="true" aria-label="@(AlvaStrings.Capacity_FundPlanAndDeficitByPeriod)" />
+            <FlareText Element="p" Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant"><b>@(AlvaStrings.Capacity_KeyTakeaway)</b> @ForecastSummary</FlareText>
         </FlareCardContent>
     </FlareCard>
 }
@@ -146,7 +146,7 @@ else
 
 @code {
     private sealed record Period(string Title, string Subtitle, DateOnly From, DateOnly To);
-    private (string Mode, string Label)[] Modes => [("sprints", Strings.T("По спринтам")), ("weeks", Strings.T("По неделям")), ("days", Strings.T("По дням"))];
+    private (string Mode, string Label)[] Modes => [("sprints", AlvaStrings.Capacity_BySprint), ("weeks", AlvaStrings.Capacity_ByWeek), ("days", AlvaStrings.Capacity_ByDay)];
 
     private CapacityDto[] _rows = [];
     private CapacityDemandDto[] _demand = [];
@@ -169,11 +169,11 @@ else
         .Where(a => a.Kind != "Person" && (_department is null || GroupOfRole(a) == _department) && Demand(a) > 0).ToArray();
 
     private IEnumerable<(Guid? Id, string Name)> Groups =>
-        _departments.Select(d => ((Guid?)d.Id, d.Name)).Append((null, Strings.T("Без подкоманды")));
+        _departments.Select(d => ((Guid?)d.Id, d.Name)).Append((null, AlvaStrings.People_NoSubTeam));
 
     private Guid? GroupOf(ActorModel person) => person.DepartmentIds.FirstOrDefault(id => _departments.Any(d => d.Id == id)) is var id && id != Guid.Empty ? id : (Guid?)null;
     private Guid? GroupOfRole(ActorModel actor) => actor.Kind == "Department" ? actor.Id : actor.ParentId is { } parent && _departments.Any(d => d.Id == parent) ? parent : null;
-    private string RolesOf(ActorModel person) => string.Join(" / ", _actors.Where(a => person.RoleIds.Contains(a.Id)).Select(a => a.Name).DefaultIfEmpty(Strings.T("Участник команды")));
+    private string RolesOf(ActorModel person) => string.Join(" / ", _actors.Where(a => person.RoleIds.Contains(a.Id)).Select(a => a.Name).DefaultIfEmpty(AlvaStrings.Capacity_TeamMember));
 
     private (decimal Available, decimal Allocated) Cell(Guid actorId, Period period)
     {
@@ -198,9 +198,9 @@ else
     private decimal Reserve => VisiblePeople.Sum(p => Math.Max(0, Available(p.Id) - Allocated(p.Id)));
     private int OverloadedCount => VisiblePeople.Count(p => Overload(p.Id) > 0);
     private string? WorstName => VisiblePeople.Select(p => (p.Name, Gap: Overload(p.Id))).Concat(Vacancies.Select(v => (v.Name, Gap: Demand(v)))).Where(x => x.Gap > 0).OrderByDescending(x => x.Gap).Select(x => x.Name).FirstOrDefault();
-    private string? FreestName => VisiblePeople.Select(p => (p.Name, Free: Available(p.Id) - Allocated(p.Id))).Where(x => x.Free > 0).OrderByDescending(x => x.Free).Select(x => string.Format(Strings.T("{0} (+{1} ч)"), x.Name, AlvaFormat.Hours(x.Free))).FirstOrDefault();
+    private string? FreestName => VisiblePeople.Select(p => (p.Name, Free: Available(p.Id) - Allocated(p.Id))).Where(x => x.Free > 0).OrderByDescending(x => x.Free).Select(x => string.Format(AlvaStrings.Capacity_PersonWithReserve, x.Name, AlvaFormat.Hours(x.Free))).FirstOrDefault();
     private AlvaTone LoadTone => Pct(Planned, Fund) switch { > 100 => AlvaTone.Critical, >= 85 and <= 95 => AlvaTone.Ok, > 95 => AlvaTone.Warning, _ => AlvaTone.Info };
-    private string LoadLabel => Pct(Planned, Fund) switch { > 100 => Strings.T("Перегруз"), >= 85 and <= 95 => Strings.T("Оптимально"), > 95 => Strings.T("На пределе"), _ => Strings.T("Недогруз") };
+    private string LoadLabel => Pct(Planned, Fund) switch { > 100 => AlvaStrings.Common_OverloadShort, >= 85 and <= 95 => AlvaStrings.Common_Optimal, > 95 => AlvaStrings.Capacity_AtTheLimit, _ => AlvaStrings.Capacity_Underload };
 
     private static int Pct(decimal part, decimal whole) => whole <= 0 ? (part > 0 ? 999 : 0) : (int)Math.Round(part / whole * 100);
     private IReadOnlyCollection<string> SelectedDepartments => _department is null ? [""] : [_department.Value.ToString()];
@@ -208,8 +208,8 @@ else
         _department = values.FirstOrDefault() is { Length: > 0 } key && Guid.TryParse(key, out var id) ? id : null;
     private static string Heat(int pct, decimal avail, decimal alloc) => avail <= 0 && alloc <= 0 ? "empty" : pct > 115 ? "critical" : pct > 100 ? "tension" : pct >= 70 ? "balance" : "under";
     private static string CellNote(decimal avail, decimal alloc, decimal over) =>
-        over > 0 && alloc <= avail ? $"{Strings.T("Перегруз по дням:")} {AlvaFormat.Hours(over)} {Strings.T("ч")}" :
-        avail <= 0 && alloc <= 0 ? Strings.T("Нет графика") : alloc > avail ? string.Format(Strings.T("Перегрузка: −{0} ч"), AlvaFormat.Hours(alloc - avail)) : alloc == avail ? Strings.T("Полный баланс") : string.Format(Strings.T("Резерв: +{0} ч"), AlvaFormat.Hours(avail - alloc));
+        over > 0 && alloc <= avail ? $"{AlvaStrings.Capacity_DailyOverload} {AlvaFormat.Hours(over)} {AlvaStrings.Sprint_HoursShort}" :
+        avail <= 0 && alloc <= 0 ? AlvaStrings.Capacity_NoSchedule : alloc > avail ? string.Format(AlvaStrings.Capacity_OverloadH, AlvaFormat.Hours(alloc - avail)) : alloc == avail ? AlvaStrings.Capacity_FullBalance : string.Format(AlvaStrings.Capacity_ReserveH, AlvaFormat.Hours(avail - alloc));
     private string PeriodWord(int n) => _mode switch
     {
         "sprints" => AlvaFormat.Plural(n, "sprint"),
@@ -221,9 +221,9 @@ else
 
     private ChartData Forecast => new(
     [
-        new ChartSeries(Strings.T("Номинал фонда"), _periods.Select(p => (double)VisiblePeople.Sum(x => Cell(x.Id, p).Available)).ToArray(), "var(--alva-chart-fund)"),
-        new ChartSeries(Strings.T("Запланировано"), _periods.Select(p => (double)VisiblePeople.Sum(x => Cell(x.Id, p).Allocated)).ToArray(), "var(--alva-chart-planned)"),
-        new ChartSeries(Strings.T("Дефицит"), _periods.Select(p => (double)PeriodDeficit(p)).ToArray(), "var(--alva-chart-deficit)"),
+        new ChartSeries(AlvaStrings.Capacity_FundNominal, _periods.Select(p => (double)VisiblePeople.Sum(x => Cell(x.Id, p).Available)).ToArray(), "var(--alva-chart-fund)"),
+        new ChartSeries(AlvaStrings.Capacity_Planned, _periods.Select(p => (double)VisiblePeople.Sum(x => Cell(x.Id, p).Allocated)).ToArray(), "var(--alva-chart-planned)"),
+        new ChartSeries(AlvaStrings.Capacity_Deficit, _periods.Select(p => (double)PeriodDeficit(p)).ToArray(), "var(--alva-chart-deficit)"),
     ], _periods.Select(p => p.Title).ToArray());
 
     /// <summary>Видимый текстовый вывод: те же значения, что в графике, без опоры только на цвет и форму.</summary>
@@ -231,14 +231,14 @@ else
     {
         get
         {
-            if (VisiblePeople.Length == 0 && Vacancies.Length == 0) return Strings.T("Нет данных для прогноза.");
+            if (VisiblePeople.Length == 0 && Vacancies.Length == 0) return AlvaStrings.Capacity_NoDataForTheForecast;
             var fund = _periods.Sum(p => VisiblePeople.Sum(x => Cell(x.Id, p).Available));
             var planned = _periods.Sum(p => VisiblePeople.Sum(x => Cell(x.Id, p).Allocated));
             var pct = Pct(planned, fund);
             var worst = _periods.Select(p => (p.Title, Hours: PeriodDeficit(p))).OrderByDescending(x => x.Hours).First();
             return worst.Hours > 0
-                ? string.Format(Strings.T("Запланировано {0} ч из {1} ч фонда ({2}%). Наибольший дефицит — {3} ч в период «{4}»."), AlvaFormat.Hours(planned), AlvaFormat.Hours(fund), pct, AlvaFormat.Hours(worst.Hours), worst.Title)
-                : string.Format(Strings.T("Запланировано {0} ч из {1} ч фонда ({2}%). Дефицита по периодам нет."), AlvaFormat.Hours(planned), AlvaFormat.Hours(fund), pct);
+                ? string.Format(AlvaStrings.Capacity_PlannedHOfHFundLargestDeficitHIn, AlvaFormat.Hours(planned), AlvaFormat.Hours(fund), pct, AlvaFormat.Hours(worst.Hours), worst.Title)
+                : string.Format(AlvaStrings.Capacity_PlannedHOfHFundNoDeficitByPeriod, AlvaFormat.Hours(planned), AlvaFormat.Hours(fund), pct);
         }
     }
 
@@ -284,7 +284,7 @@ else
             if (_mode == "sprints") _mode = "weeks";
             var monday = Today.AddDays(-(((int)Today.DayOfWeek + 6) % 7));
             _periods = Enumerable.Range(0, 4).Select(i => monday.AddDays(7 * i))
-                .Select(w => new Period(string.Format(Strings.T("Неделя {0}"), System.Globalization.ISOWeek.GetWeekOfYear(w.ToDateTime(TimeOnly.MinValue))), $"{w:d MMM} — {w.AddDays(6):d MMM}", w, w.AddDays(6))).ToArray();
+                .Select(w => new Period(string.Format(AlvaStrings.Capacity_Week, System.Globalization.ISOWeek.GetWeekOfYear(w.ToDateTime(TimeOnly.MinValue))), $"{w:d MMM} — {w.AddDays(6):d MMM}", w, w.AddDays(6))).ToArray();
         }
         _rows = await Session.Get<CapacityDto[]>(Session.TeamPath($"capacity?from={_periods[0].From:yyyy-MM-dd}&to={_periods[^1].To:yyyy-MM-dd}"));
         _demand = await Session.Get<CapacityDemandDto[]>(Session.TeamPath($"capacity/demand?from={_periods[0].From:yyyy-MM-dd}&to={_periods[^1].To:yyyy-MM-dd}"));

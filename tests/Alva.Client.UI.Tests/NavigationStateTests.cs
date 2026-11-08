@@ -30,11 +30,11 @@ public sealed class NavigationStateTests : UiTestBase
     [Fact]
     public void Planning_holds_sprints_and_projects_and_my_work_lives_under_tasks()
     {
-        var planning = NavigationItems.Groups.Single(g => g.Title == Strings.T("Планирование"));
-        Assert.Contains(planning.Entries, e => e.Path == "sprints" && e.Label == Strings.T("Все спринты"));
+        var planning = NavigationItems.Groups.Single(g => g.Title == AlvaStrings.Common_Planning);
+        Assert.Contains(planning.Entries, e => e.Path == "sprints" && e.Label == AlvaStrings.Common_AllSprints);
         Assert.Contains(planning.Entries, e => e.Path == "projects");
 
-        var tasks = NavigationItems.Groups.Single(g => g.Title == Strings.T("Задачи"));
+        var tasks = NavigationItems.Groups.Single(g => g.Title == AlvaStrings.Common_Tasks);
         Assert.Contains(tasks.Entries, e => e.Path == "my-work");
         Assert.DoesNotContain(NavigationItems.Tail, e => e.Path == "my-work");
         Assert.DoesNotContain(NavigationItems.All, e => e.Label.Contains("Дашборд", StringComparison.Ordinal));
@@ -47,11 +47,11 @@ public sealed class NavigationStateTests : UiTestBase
         var cut = Render<DirectoryPage>();
         cut.WaitForAssertion(() => Assert.Contains("Подкоманды", cut.Markup));
 
-        var active = cut.FindAll("[role=tab]").First(a => a.TextContent.Trim() == Strings.T("Подкоманды"));
+        var active = cut.FindAll("[role=tab]").First(a => a.TextContent.Trim() == AlvaStrings.Common_SubTeams);
         Assert.Equal("true", active.GetAttribute("aria-selected"));
         Assert.Contains("flare-tabs__tab--active", active.ClassList);
 
-        var people = cut.FindAll("[role=tab]").First(a => a.TextContent.Trim() == Strings.T("Люди"));
+        var people = cut.FindAll("[role=tab]").First(a => a.TextContent.Trim() == AlvaStrings.Nav_People);
         Assert.Equal("false", people.GetAttribute("aria-selected"));
         Assert.DoesNotContain("flare-tabs__tab--active", people.ClassList);
     }
@@ -65,7 +65,7 @@ public sealed class NavigationStateTests : UiTestBase
         Api.SelectedWorkspaceId = space.Id;
 
         var cut = Render<Workspaces>();
-        cut.WaitForAssertion(() => Assert.Equal(2, cut.FindAll(".flare-chip").Count(c => c.TextContent.Contains(Strings.T("Текущее")))));
+        cut.WaitForAssertion(() => Assert.Equal(2, cut.FindAll(".flare-chip").Count(c => c.TextContent.Contains(AlvaStrings.Workspace_Current))));
     }
 
     [Fact]

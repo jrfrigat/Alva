@@ -16,10 +16,10 @@ public static class RiskActions
     /// <summary>Подпись действия для title и aria-label.</summary>
     public static string Label(ReasonDto reason, Guid? personId = null) => reason.Code switch
     {
-        ReasonCodes.RiskDependencyOpen => Strings.T("Открыть блокирующую задачу"),
-        ReasonCodes.RiskAbsence or ReasonCodes.RiskOverload when personId is not null => Strings.T("Открыть календарь исполнителя"),
-        ReasonCodes.RiskNoAssignee or ReasonCodes.RiskRequiredPerson => Strings.T("Назначить исполнителя"),
-        _ => Strings.T("Открыть задачу")
+        ReasonCodes.RiskDependencyOpen => AlvaStrings.Risks_OpenTheBlockingTask,
+        ReasonCodes.RiskAbsence or ReasonCodes.RiskOverload when personId is not null => AlvaStrings.Risks_OpenTheAssigneeSCalendar,
+        ReasonCodes.RiskNoAssignee or ReasonCodes.RiskRequiredPerson => AlvaStrings.Common_AssignAnAssignee,
+        _ => AlvaStrings.Risks_OpenTask
     };
 
     private static Guid? Blocker(ReasonDto reason) =>

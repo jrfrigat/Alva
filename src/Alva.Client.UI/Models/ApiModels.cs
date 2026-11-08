@@ -104,8 +104,8 @@ public record CapacityDay(Guid ActorId, string ActorName, DateOnly Date, decimal
 public record RiskInfo(Guid TaskId, string Title, string Severity, ReasonDto[] Reasons, DateOnly? ForecastDate);
 public static class Labels
 {
-    public static string Status(string value) => value switch { "Backlog" => Strings.T("В пуле"), "Planned" => Strings.T("Запланирована"), "InProgress" => Strings.T("В работе"), "Done" => Strings.T("Готова"), "Cancelled" => Strings.T("Отменена"), "Active" => Strings.T("Активный"), "Completed" => Strings.T("Завершён"), _ => value };
+    public static string Status(string value) => value switch { "Backlog" => AlvaStrings.Common_InThePool, "Planned" => AlvaStrings.Common_Planned, "InProgress" => AlvaStrings.Common_InProgress, "Done" => AlvaStrings.Common_Done, "Cancelled" => AlvaStrings.Common_Cancelled, "Active" => AlvaStrings.Common_Active, "Completed" => AlvaStrings.Common_Completed, _ => value };
     public static readonly string[] Priorities = ["Low", "Normal", "High", "Critical"];
-    public static string Priority(string value) => value switch { "Low" => Strings.T("Низкий"), "High" => Strings.T("Высокий"), "Critical" => Strings.T("Критичный"), _ => Strings.T("Обычный") };
-    public static string Kind(string value) => value switch { "Person" => Strings.T("Человек"), "Department" => Strings.T("Подкоманда"), "Role" => Strings.T("Роль"), _ => value };
+    public static string Priority(string value) => value switch { "Low" => AlvaStrings.Common_Low, "High" => AlvaStrings.Common_High, "Critical" => AlvaStrings.Common_Critical, _ => AlvaStrings.Common_Normal };
+    public static string Kind(string value) => value switch { "Person" => AlvaStrings.Common_Person, "Department" => AlvaStrings.Common_SubTeam, "Role" => AlvaStrings.Common_Role, _ => value };
 }
