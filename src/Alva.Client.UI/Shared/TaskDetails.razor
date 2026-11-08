@@ -470,14 +470,17 @@
     private bool PersonInDepartment(ActorModel person, Guid departmentId)
     {
         var departments = Actors.Where(a => a.Kind == "Department").ToDictionary(a => a.Id, a => a.ParentId);
+        var periods = Actors.Where(a => a.Kind == "Department").ToDictionary(a => a.Id,
+            a => a.DepartmentParentPeriods.Select(p => new DepartmentParentPeriodDto(p.Id, p.ParentId, p.From, p.To)).ToArray());
+        var day = Item.StartDate ?? DateOnly.FromDateTime(DateTime.Today);
+        Guid? ParentAt(Guid id) => DepartmentHierarchy.ParentOf(periods.GetValueOrDefault(id), id, day, departments.GetValueOrDefault(id));
         bool Walk(Guid start)
         {
             var seen = new HashSet<Guid>();
-            for (Guid? current = start; current is { } id && seen.Add(id); current = departments.GetValueOrDefault(id))
+            for (Guid? current = start; current is { } id && seen.Add(id); current = ParentAt(id))
                 if (id == departmentId) return true;
             return false;
         }
-        var day = Item.StartDate ?? DateOnly.FromDateTime(DateTime.Today);
         var active = person.DepartmentMemberships.Where(m => m.From <= day && (m.To is null || day <= m.To)).Select(m => m.DepartmentId).ToArray();
         return (active.Length > 0 ? active : person.DepartmentIds).Any(Walk);
     }

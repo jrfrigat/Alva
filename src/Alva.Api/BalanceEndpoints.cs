@@ -72,7 +72,12 @@ public static class BalanceEndpoints
             .Where(x => x.ActiveOn(sprint.StartDate)).ToLookup(x => x.ActorId, x => x.DepartmentId);
         var departmentParents = await db.Actors.AsNoTracking().Where(a => a.TeamId == teamId && a.Kind == ActorKind.Department)
             .ToDictionaryAsync(a => a.Id, a => a.ParentId);
-        Guid[] Closure(Guid personId) => [.. CapacityMath.DepartmentsWithParents(departments[personId], id => departmentParents.GetValueOrDefault(id))];
+        var parentPeriods = await db.DepartmentParentPeriods.AsNoTracking().Where(x => departmentParents.Keys.Contains(x.DepartmentId)).ToListAsync();
+        var periodsByDepartment = parentPeriods.ToLookup(x => x.DepartmentId,
+            x => new DepartmentParentPeriodDto(x.Id, x.ParentId, x.From, x.To));
+        Guid? ParentAt(Guid departmentId) => DepartmentHierarchy.ParentOf(periodsByDepartment[departmentId], departmentId, sprint.StartDate,
+            departmentParents.GetValueOrDefault(departmentId));
+        Guid[] Closure(Guid personId) => [.. CapacityMath.DepartmentsWithParents(departments[personId], ParentAt)];
         var persons = people.Select(x => new BalancePersonInput(x.Id, x.Name, [.. departments[x.Id]], [.. actorSkills[x.Id]], Closure(x.Id))).ToArray();
 
         // Все неархивные задачи: готовые и «в работе» с датами нужны как якоря связей, даже когда не двигаются.

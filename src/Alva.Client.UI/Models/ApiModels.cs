@@ -24,12 +24,21 @@ public sealed class ActorModel
     public Guid[] SkillIds { get; set; } = [];
     public Guid[] DepartmentIds { get; set; } = [];
     public DepartmentMembershipModel[] DepartmentMemberships { get; set; } = [];
+    public DepartmentParentPeriodModel[] DepartmentParentPeriods { get; set; } = [];
     public Guid? UserId { get; set; }
 }
 public sealed class DepartmentMembershipModel
 {
     public Guid Id { get; set; }
     public Guid DepartmentId { get; set; }
+    public DateOnly From { get; set; }
+    public DateOnly? To { get; set; }
+}
+
+public sealed class DepartmentParentPeriodModel
+{
+    public Guid Id { get; set; }
+    public Guid? ParentId { get; set; }
     public DateOnly From { get; set; }
     public DateOnly? To { get; set; }
 }

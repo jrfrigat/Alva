@@ -288,13 +288,17 @@ public static class TaskEndpoints
     {
         var departments = await db.Actors.AsNoTracking().Where(a => a.TeamId == teamId && a.Kind == ActorKind.Department)
             .ToDictionaryAsync(a => a.Id, a => a.ParentId, ct);
+        var parentPeriods = await db.DepartmentParentPeriods.AsNoTracking().Where(x => departments.Keys.Contains(x.DepartmentId)).ToListAsync(ct);
+        var periodsByDepartment = parentPeriods.ToLookup(x => x.DepartmentId,
+            x => new DepartmentParentPeriodDto(x.Id, x.ParentId, x.From, x.To));
         var memberships = await db.ActorDepartments.AsNoTracking()
             .Where(x => x.ActorId == personId && x.From <= day && (x.To == null || day <= x.To))
             .Select(x => x.DepartmentId).ToListAsync(ct);
         bool Walk(Guid start)
         {
             var seen = new HashSet<Guid>();
-            for (Guid? current = start; current is { } id && seen.Add(id); current = departments.GetValueOrDefault(id))
+            for (Guid? current = start; current is { } id && seen.Add(id);
+                 current = DepartmentHierarchy.ParentOf(periodsByDepartment[id], id, day, departments.GetValueOrDefault(id)))
                 if (id == departmentId) return true;
             return false;
         }

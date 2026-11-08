@@ -106,6 +106,39 @@ public sealed class SqliteActorTests
     }
 
     [Fact]
+    public async Task Assignment_uses_the_hierarchy_that_was_active_on_the_task_start()
+    {
+        var server = await ApiServer.Create(app => { app.MapActors(); app.MapTasks(); });
+        await using var _ = server;
+        async Task<ActorDto> Actor(ActorRequest request)
+        {
+            var response = await server.Client.PostAsJsonAsync(server.Team("actors"), request);
+            Assert.True(response.IsSuccessStatusCode, await response.Content.ReadAsStringAsync());
+            return (await response.Content.ReadFromJsonAsync<ActorDto>())!;
+        }
+        var root = await Actor(new ActorRequest("Разработка", "Department"));
+        var child = await Actor(new ActorRequest("Платформа", "Department"));
+        var member = await Actor(new ActorRequest("Анна", "Person", DepartmentMemberships:
+            [new DepartmentMembershipRequest(null, child.Id, new DateOnly(2026, 1, 1), null)]));
+        var moved = await server.Client.PutAsJsonAsync(server.Team($"actors/{child.Id}"), new ActorRequest("Платформа", "Department", ParentId: root.Id));
+        Assert.True(moved.IsSuccessStatusCode, await moved.Content.ReadAsStringAsync());
+
+        async Task<Guid> Task(DateOnly start)
+        {
+            var response = await server.Client.PostAsJsonAsync(server.Team("tasks"), new TaskRequest("Задача", StartDate: start, EndDate: start.AddDays(1)));
+            return (await response.Content.ReadFromJsonAsync<TaskDto>())!.Id;
+        }
+        var today = DateOnly.FromDateTime(DateTime.Today);
+        var now = await Task(today);
+        var accepted = await server.Client.PutAsJsonAsync(server.Team($"tasks/{now}/assignment"), new AssignmentRequest(root.Id, member.Id));
+        Assert.True(accepted.IsSuccessStatusCode, await accepted.Content.ReadAsStringAsync());
+
+        var past = await Task(today.AddDays(-2));
+        var rejected = await server.Client.PutAsJsonAsync(server.Team($"tasks/{past}/assignment"), new AssignmentRequest(root.Id, member.Id));
+        Assert.Equal(System.Net.HttpStatusCode.BadRequest, rejected.StatusCode);
+    }
+
+    [Fact]
     public async Task A_task_targeted_at_a_parent_department_accepts_people_from_its_children()
     {
         var server = await ApiServer.Create(app => { app.MapActors(); app.MapTasks(); });

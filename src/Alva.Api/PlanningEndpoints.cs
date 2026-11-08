@@ -316,11 +316,16 @@ public static class PlanningEndpoints
         var calendarIds = calendars.Select(x => x.Id).ToArray();
         var exceptions = await db.CalendarExceptions.AsNoTracking().Where(x => calendarIds.Contains(x.CalendarId)).ToListAsync();
         var blocks = await db.RecurringBlocks.AsNoTracking().Where(x => calendarIds.Contains(x.CalendarId)).ToListAsync();
+        var parentPeriods = await db.DepartmentParentPeriods.AsNoTracking().Where(x => departments.Keys.Contains(x.DepartmentId)).ToListAsync();
+        var periodsByDepartment = parentPeriods.ToLookup(x => x.DepartmentId,
+            x => new DepartmentParentPeriodDto(x.Id, x.ParentId, x.From, x.To));
         var dtos = calendars.ToDictionary(x => x.ActorId, x => ToCalendarDto(x, exceptions, blocks));
         CalendarDto CalendarOf(Guid id, DateOnly day)
         {
             var own = memberships.Where(x => x.ActorId == id && x.ActiveOn(day)).Select(x => x.DepartmentId).Where(departments.ContainsKey);
-            var shared = CapacityMath.DepartmentsWithParents(own, x => departments.TryGetValue(x, out var parent) && parent is { } p && departments.ContainsKey(p) ? p : null);
+            Guid? ParentAt(Guid departmentId) => DepartmentHierarchy.ParentOf(periodsByDepartment[departmentId], departmentId, day,
+                departments.GetValueOrDefault(departmentId));
+            var shared = CapacityMath.DepartmentsWithParents(own, ParentAt);
             return CapacityMath.Combine(dtos.GetValueOrDefault(id) ?? CapacityMath.DefaultCalendar(id), shared.Select(x => dtos.GetValueOrDefault(x)).OfType<CalendarDto>());
         }
         return (people, CalendarOf);

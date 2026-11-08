@@ -329,8 +329,11 @@
     private bool DepartmentInTree(Guid departmentId, Guid rootId)
     {
         var departments = _actors.Where(a => a.Kind == "Department").ToDictionary(a => a.Id, a => a.ParentId);
+        var periods = _actors.Where(a => a.Kind == "Department").ToDictionary(a => a.Id,
+            a => a.DepartmentParentPeriods.Select(p => new DepartmentParentPeriodDto(p.Id, p.ParentId, p.From, p.To)).ToArray());
         var seen = new HashSet<Guid>();
-        for (Guid? current = departmentId; current is { } id && seen.Add(id); current = departments.GetValueOrDefault(id))
+        for (Guid? current = departmentId; current is { } id && seen.Add(id);
+             current = DepartmentHierarchy.ParentOf(periods.GetValueOrDefault(id), id, Sprint.StartDate, departments.GetValueOrDefault(id)))
             if (id == rootId) return true;
         return false;
     }

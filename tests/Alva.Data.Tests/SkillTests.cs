@@ -63,6 +63,24 @@ public sealed class SkillTests
     }
 
     [Fact]
+    public void Hierarchy_reads_the_parent_that_was_active_on_the_day()
+    {
+        var department = Guid.NewGuid();
+        var oldParent = Guid.NewGuid();
+        var newParent = Guid.NewGuid();
+        var today = new DateOnly(2027, 1, 5);
+        DepartmentParentPeriodDto[] periods =
+        [
+            new(Guid.NewGuid(), oldParent, new DateOnly(1, 1, 1), today.AddDays(-1)),
+            new(Guid.NewGuid(), newParent, today, null)
+        ];
+
+        Assert.Equal(oldParent, DepartmentHierarchy.ParentOf(periods, department, today.AddDays(-1), null));
+        Assert.Equal(newParent, DepartmentHierarchy.ParentOf(periods, department, today, null));
+        Assert.Null(DepartmentHierarchy.ParentOf([], department, today, null));
+    }
+
+    [Fact]
     public void Matching_ignores_case_whitespace_and_unicode_width()
     {
         Assert.Equal(["C#", "SQL Server"], SkillMath.Normalize([" C# ", "c#", " SQL  Server ", ""]));
