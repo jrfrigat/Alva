@@ -65,7 +65,8 @@ public sealed class DataEndpointTests
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         await server.WithDb(async db => Assert.Equal(2, await db.Tasks.CountAsync()));
         response = await server.Client.GetAsync($"/api/teams/{server.TeamId}/data/export?format={format}");
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var exported = await response.Content.ReadAsStringAsync();
+        Assert.True(response.StatusCode == HttpStatusCode.OK, exported);
         Assert.Empty(DataTransfer.Validate(DataTransfer.Decode(await response.Content.ReadAsByteArrayAsync(), format)));
     }
 

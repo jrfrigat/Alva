@@ -47,4 +47,30 @@ public sealed class SqliteActorTests
         var assigned = await server.Client.PutAsJsonAsync(server.Team($"tasks/{task.Id}/assignment"), new AssignmentRequest(skill.Id));
         Assert.Equal(System.Net.HttpStatusCode.BadRequest, assigned.StatusCode);
     }
+
+    [Fact]
+    public async Task Membership_periods_are_validated_and_the_old_field_still_works()
+    {
+        var server = await ApiServer.Create(app => app.MapActors());
+        await using var _ = server;
+        var departmentResponse = await server.Client.PostAsJsonAsync(server.Team("actors"), new ActorRequest("Разработка", "Department"));
+        var department = (await departmentResponse.Content.ReadFromJsonAsync<ActorDto>())!;
+        var first = new DepartmentMembershipRequest(null, department.Id, new DateOnly(2026, 1, 1), new DateOnly(2026, 6, 30));
+        var second = new DepartmentMembershipRequest(null, department.Id, new DateOnly(2026, 7, 1), null);
+        var personResponse = await server.Client.PostAsJsonAsync(server.Team("actors"), new ActorRequest("Анна", "Person", DepartmentMemberships: [first, second]));
+        Assert.True(personResponse.IsSuccessStatusCode, await personResponse.Content.ReadAsStringAsync());
+        var person = (await personResponse.Content.ReadFromJsonAsync<ActorDto>())!;
+        Assert.Equal(2, person.DepartmentMemberships!.Length);
+        Assert.Equal(department.Id, person.ParentId);
+
+        var overlap = await server.Client.PostAsJsonAsync(server.Team("actors"),
+            new ActorRequest("Борис", "Person", DepartmentMemberships: [first, new DepartmentMembershipRequest(null, department.Id, new DateOnly(2026, 6, 1), null)]));
+        Assert.Equal(System.Net.HttpStatusCode.BadRequest, overlap.StatusCode);
+
+        var legacyResponse = await server.Client.PostAsJsonAsync(server.Team("actors"), new ActorRequest("Вера", "Person", DepartmentIds: [department.Id]));
+        var legacy = (await legacyResponse.Content.ReadFromJsonAsync<ActorDto>())!;
+        var membership = Assert.Single(legacy.DepartmentMemberships!);
+        Assert.Equal(new DateOnly(1, 1, 1), membership.From);
+        Assert.Null(membership.To);
+    }
 }

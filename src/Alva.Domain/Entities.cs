@@ -106,10 +106,16 @@ public sealed class TaskSkill
     public Guid TaskId { get; set; }
     public Guid SkillId { get; set; }
 }
-public sealed class ActorDepartment
+public sealed class ActorDepartment : Entity
 {
     public Guid ActorId { get; set; }
     public Guid DepartmentId { get; set; }
+    /// <summary>The first day the person belongs to the sub-team; inclusive.</summary>
+    public DateOnly From { get; set; }
+    /// <summary>The last day of the membership; null means it never ends.</summary>
+    public DateOnly? To { get; set; }
+
+    public bool ActiveOn(DateOnly day) => From <= day && (To is null || day <= To.Value);
 }
 public sealed class Assignment : Entity
 {

@@ -15,11 +15,14 @@ public static class ActorEndpoints
         var ids = actors.Select(a => a.Id).ToArray();
         var skills = await db.ActorSkills.Where(r => ids.Contains(r.ActorId)).ToListAsync();
         var departments = await db.ActorDepartments.Where(d => ids.Contains(d.ActorId)).ToListAsync();
+        var today = DateOnly.FromDateTime(DateTime.Today);
         return actors.Select(a =>
         {
             var skillIds = skills.Where(r => r.ActorId == a.Id).Select(r => r.SkillId).ToArray();
-            return new ActorDto(a.Id, a.TeamId, a.Name, a.Kind.ToString(), a.Email, a.ParentId, a.UserId, skillIds,
-                departments.Where(d => d.ActorId == a.Id).Select(d => d.DepartmentId).ToArray());
+            var memberships = departments.Where(d => d.ActorId == a.Id).OrderBy(d => d.From)
+                .Select(d => new DepartmentMembershipDto(d.Id, d.DepartmentId, d.From, d.To)).ToArray();
+            var active = memberships.Where(d => d.From <= today && (d.To is null || today <= d.To)).Select(d => d.DepartmentId).Distinct().ToArray();
+            return new ActorDto(a.Id, a.TeamId, a.Name, a.Kind.ToString(), a.Email, a.ParentId, a.UserId, skillIds, active, memberships);
         }).ToArray();
     }
     private static ActorKind ParseKind(string? text)
@@ -35,10 +38,24 @@ public static class ActorEndpoints
         var kind = ParseKind(request.Kind);
         var actors = await db.Actors.Where(a => a.TeamId == teamId && !a.Archived).ToListAsync();
         var skillIds = (request.SkillIds ?? []).Distinct().ToArray();
-        var departmentIds = (request.DepartmentIds ?? []).Concat(kind == ActorKind.Person && request.ParentId.HasValue ? [request.ParentId.Value] : Array.Empty<Guid>()).Distinct().ToArray();
-        if (skillIds.Any(id => actors.All(a => a.Id != id || a.Kind != ActorKind.Skill)) || departmentIds.Any(id => actors.All(a => a.Id != id || a.Kind != ActorKind.Department))) throw new ApiException(400, "Навыки и отделы должны принадлежать этой команде.");
-        if (kind != ActorKind.Person && departmentIds.Length > 0) throw new ApiException(400, "Членство в отделах задаётся для людей.");
-        if (kind == ActorKind.Skill && (request.ParentId.HasValue || departmentIds.Length > 0 || skillIds.Length > 0)) throw new ApiException(400, "У навыка не может быть родительского отдела или других навыков.");
+        var current = await db.ActorDepartments.Where(d => d.ActorId == actor.Id).ToListAsync();
+        List<DepartmentMembershipRequest> memberships;
+        if (request.DepartmentMemberships is not null)
+            memberships = [.. request.DepartmentMemberships];
+        else if (request.DepartmentIds is not null || request.ParentId.HasValue)
+            memberships = (request.DepartmentIds ?? []).Concat(request.ParentId.HasValue ? [request.ParentId.Value] : [])
+                .Distinct().Select(id => new DepartmentMembershipRequest(null, id, new DateOnly(1, 1, 1), null)).ToList();
+        else
+            memberships = current.Select(d => new DepartmentMembershipRequest(d.Id, d.DepartmentId, d.From, d.To)).ToList();
+        if (skillIds.Any(id => actors.All(a => a.Id != id || a.Kind != ActorKind.Skill)) || memberships.Any(d => actors.All(a => a.Id != d.DepartmentId || a.Kind != ActorKind.Department))) throw new ApiException(400, "Навыки и отделы должны принадлежать этой команде.");
+        if (kind != ActorKind.Person && memberships.Count > 0) throw new ApiException(400, "Членство в подкомандах задаётся для людей.");
+        if (kind == ActorKind.Skill && (request.ParentId.HasValue || memberships.Count > 0 || skillIds.Length > 0)) throw new ApiException(400, "У навыка не может быть родительского отдела или других навыков.");
+        if (memberships.Any(d => d.To is { } to && to < d.From)) throw new ApiException(400, "Окончание периода раньше начала.");
+        foreach (var period in memberships.OrderBy(d => d.From))
+        {
+            var next = memberships.OrderBy(d => d.From).SkipWhile(d => d != period).Skip(1).FirstOrDefault();
+            if (next is not null && (period.To is null || next.From <= period.To.Value)) throw new ApiException(400, "Периоды членства в подкомандах не могут пересекаться.");
+        }
         if (request.ParentId is { } parentId)
         {
             var parent = actors.SingleOrDefault(a => a.Id == parentId && a.Kind == ActorKind.Department) ?? throw new ApiException(400, "Родитель должен быть отделом этой команды.");
@@ -55,13 +72,18 @@ public static class ActorEndpoints
         if (!string.IsNullOrWhiteSpace(request.Email) && (!MailAddress.TryCreate(request.Email, out var email) || email.Address != request.Email)) throw new ApiException(400, "Введите корректный email.");
         if (actor.Kind != kind && await db.Assignments.AnyAsync(a => a.TargetId == actor.Id || a.ResolvedPersonId == actor.Id)) throw new ApiException(400, "Нельзя менять вид назначенного участника.");
         if (actor.Kind != kind && (await db.Actors.AnyAsync(a => !a.Archived && a.ParentId == actor.Id) || await db.ActorDepartments.AnyAsync(d => d.DepartmentId == actor.Id) || await db.ActorSkills.AnyAsync(r => r.SkillId == actor.Id) || await db.TaskSkills.AnyAsync(r => r.SkillId == actor.Id))) throw new ApiException(400, "Участник используется в справочнике.");
-        actor.Name = AccessControl.RequiredName(request.Name); actor.Kind = kind; actor.Email = string.IsNullOrWhiteSpace(request.Email) ? null : request.Email.Trim(); actor.ParentId = request.ParentId; actor.UserId = request.UserId;
+        var today = DateOnly.FromDateTime(DateTime.Today);
+        var activeToday = memberships.FirstOrDefault(d => d.From <= today && (d.To is null || today <= d.To));
+        actor.Name = AccessControl.RequiredName(request.Name); actor.Kind = kind; actor.Email = string.IsNullOrWhiteSpace(request.Email) ? null : request.Email.Trim();
+        // A person's legacy parent is the sub-team they belong to today; the periods are the source of truth.
+        actor.ParentId = kind == ActorKind.Person ? activeToday?.DepartmentId : kind == ActorKind.Department ? request.ParentId : null;
+        actor.UserId = request.UserId;
         var oldSkills = await db.ActorSkills.Where(r => r.ActorId == actor.Id).ToListAsync();
         db.RemoveRange(oldSkills.Where(r => !skillIds.Contains(r.SkillId)));
         foreach (var id in skillIds.Where(id => oldSkills.All(r => r.SkillId != id))) db.Add(new ActorSkill { ActorId = actor.Id, SkillId = id });
-        var oldDepartments = await db.ActorDepartments.Where(d => d.ActorId == actor.Id).ToListAsync();
-        db.RemoveRange(oldDepartments.Where(d => !departmentIds.Contains(d.DepartmentId)));
-        foreach (var id in departmentIds.Where(id => oldDepartments.All(d => d.DepartmentId != id))) db.Add(new ActorDepartment { ActorId = actor.Id, DepartmentId = id });
+        db.RemoveRange(current);
+        foreach (var period in memberships)
+            db.Add(new ActorDepartment { Id = period.Id ?? Guid.NewGuid(), ActorId = actor.Id, DepartmentId = period.DepartmentId, From = period.From, To = period.To });
     }
     public static void MapActors(this WebApplication app)
     {

@@ -65,15 +65,27 @@ namespace Alva.Infrastructure.Migrations
 
             modelBuilder.Entity("Alva.Domain.ActorDepartment", b =>
                 {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
                     b.Property<Guid>("ActorId")
                         .HasColumnType("uuid");
 
                     b.Property<Guid>("DepartmentId")
                         .HasColumnType("uuid");
 
-                    b.HasKey("ActorId", "DepartmentId");
+                    b.Property<DateOnly>("From")
+                        .HasColumnType("date");
+
+                    b.Property<DateOnly?>("To")
+                        .HasColumnType("date");
+
+                    b.HasKey("Id");
 
                     b.HasIndex("DepartmentId");
+
+                    b.HasIndex("ActorId", "From", "To");
 
                     b.ToTable("ActorDepartments");
                 });

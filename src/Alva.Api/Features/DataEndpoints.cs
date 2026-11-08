@@ -41,7 +41,7 @@ public static class DataEndpoints
             foreach (var skill in await db.TaskSkills.AsNoTracking().Where(x => taskIds.Contains(x.TaskId)).ToArrayAsync(ct))
                 rows.Add(new("taskSkill", Guid.NewGuid(), JsonSerializer.SerializeToElement(skill, DataTransfer.Json)));
             foreach (var department in await db.ActorDepartments.AsNoTracking().Where(x => actorIds.Contains(x.ActorId) || actorIds.Contains(x.DepartmentId)).ToArrayAsync(ct))
-                rows.Add(new("actorDepartment", Guid.NewGuid(), JsonSerializer.SerializeToElement(department, DataTransfer.Json)));
+                rows.Add(new("actorDepartment", department.Id, JsonSerializer.SerializeToElement(department, DataTransfer.Json)));
             var calendars = await db.Calendars.AsNoTracking().Where(x => actorIds.Contains(x.ActorId)).ToArrayAsync(ct);
             Add("calendar", calendars);
             var calendarIds = calendars.Select(x => x.Id).ToArray();

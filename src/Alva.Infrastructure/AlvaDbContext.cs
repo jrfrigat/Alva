@@ -73,7 +73,8 @@ public class AlvaDbContext(DbContextOptions<AlvaDbContext> options) : DbContext(
         b.Entity<TaskSkill>().HasKey(x => new { x.TaskId, x.SkillId });
         b.Entity<TaskSkill>().HasOne<TaskCard>().WithMany().HasForeignKey(x => x.TaskId);
         b.Entity<TaskSkill>().HasOne<Actor>().WithMany().HasForeignKey(x => x.SkillId);
-        b.Entity<ActorDepartment>().HasKey(x => new { x.ActorId, x.DepartmentId });
+        b.Entity<ActorDepartment>().HasKey(x => x.Id);
+        b.Entity<ActorDepartment>().HasIndex(x => new { x.ActorId, x.From, x.To });
         b.Entity<ActorDepartment>().HasOne<Actor>().WithMany().HasForeignKey(x => x.ActorId);
         b.Entity<ActorDepartment>().HasOne<Actor>().WithMany().HasForeignKey(x => x.DepartmentId);
         b.Entity<Team>().HasOne<Workspace>().WithMany().HasForeignKey(x => x.WorkspaceId);
