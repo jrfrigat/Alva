@@ -73,6 +73,5 @@ cycle checks, links and external drag and drop. It knows nothing about the appli
 
 | Project | What it covers |
 | :-- | :-- |
-| `Flare.Components.Gantt.Tests` | Gantt engine and rendering (bUnit) |
 | `Alva.Client.UI.Tests` | UI pages and forms over a fake API (bUnit) |
 | `Alva.Data.Tests` | Capacity and risk maths, data transfer, API endpoints |

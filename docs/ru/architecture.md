@@ -76,6 +76,5 @@ API и базу.
 
 | Проект | Что проверяет |
 | :-- | :-- |
-| `Flare.Components.Gantt.Tests` | Движок и отрисовка Ганта (bUnit) |
 | `Alva.Client.UI.Tests` | Страницы и формы UI на поддельном API (bUnit) |
 | `Alva.Data.Tests` | Расчёты ёмкости и рисков, перенос данных, эндпоинты API |
