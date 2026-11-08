@@ -24,4 +24,27 @@ public sealed class SqliteActorTests
         var archived = await server.Client.DeleteAsync(server.Team($"actors/{actor.Id}"));
         Assert.True(archived.IsSuccessStatusCode, await archived.Content.ReadAsStringAsync());
     }
+
+    [Fact]
+    public async Task Skills_are_a_dictionary_and_cannot_be_assignment_targets()
+    {
+        var server = await ApiServer.Create(app => { app.MapActors(); app.MapTasks(); });
+        await using var _ = server;
+
+        var skillResponse = await server.Client.PostAsJsonAsync(server.Team("actors"), new ActorRequest("Backend", "Skill"));
+        Assert.True(skillResponse.IsSuccessStatusCode, await skillResponse.Content.ReadAsStringAsync());
+        var skill = (await skillResponse.Content.ReadFromJsonAsync<ActorDto>())!;
+
+        var personResponse = await server.Client.PostAsJsonAsync(server.Team("actors"), new ActorRequest("Анна", "Person", SkillIds: [skill.Id]));
+        Assert.True(personResponse.IsSuccessStatusCode, await personResponse.Content.ReadAsStringAsync());
+        var person = (await personResponse.Content.ReadFromJsonAsync<ActorDto>())!;
+        Assert.Contains(skill.Id, person.SkillIds!);
+
+        var taskResponse = await server.Client.PostAsJsonAsync(server.Team("tasks"), new TaskRequest("Задача"));
+        Assert.True(taskResponse.IsSuccessStatusCode, await taskResponse.Content.ReadAsStringAsync());
+        var task = (await taskResponse.Content.ReadFromJsonAsync<TaskDto>())!;
+
+        var assigned = await server.Client.PutAsJsonAsync(server.Team($"tasks/{task.Id}/assignment"), new AssignmentRequest(skill.Id));
+        Assert.Equal(System.Net.HttpStatusCode.BadRequest, assigned.StatusCode);
+    }
 }
