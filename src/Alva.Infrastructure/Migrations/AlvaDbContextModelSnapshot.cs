@@ -163,6 +163,33 @@ namespace Alva.Infrastructure.Migrations
                     b.ToTable("CalendarExceptions");
                 });
 
+            modelBuilder.Entity("Alva.Domain.DepartmentParentPeriod", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("DepartmentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateOnly>("From")
+                        .HasColumnType("date");
+
+                    b.Property<Guid?>("ParentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateOnly?>("To")
+                        .HasColumnType("date");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ParentId");
+
+                    b.HasIndex("DepartmentId", "From", "To");
+
+                    b.ToTable("DepartmentParentPeriods");
+                });
+
             modelBuilder.Entity("Alva.Domain.ExternalTaskLink", b =>
                 {
                     b.Property<Guid>("Id")
@@ -896,6 +923,20 @@ namespace Alva.Infrastructure.Migrations
                         .HasForeignKey("CalendarId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("Alva.Domain.DepartmentParentPeriod", b =>
+                {
+                    b.HasOne("Alva.Domain.Actor", null)
+                        .WithMany()
+                        .HasForeignKey("DepartmentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Alva.Domain.Actor", null)
+                        .WithMany()
+                        .HasForeignKey("ParentId")
+                        .OnDelete(DeleteBehavior.Restrict);
                 });
 
             modelBuilder.Entity("Alva.Domain.ExternalTaskLink", b =>

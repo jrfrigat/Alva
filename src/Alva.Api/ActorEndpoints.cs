@@ -15,14 +15,17 @@ public static class ActorEndpoints
         var ids = actors.Select(a => a.Id).ToArray();
         var skills = await db.ActorSkills.Where(r => ids.Contains(r.ActorId)).ToListAsync();
         var departments = await db.ActorDepartments.Where(d => ids.Contains(d.ActorId)).ToListAsync();
+        var parentPeriods = await db.DepartmentParentPeriods.Where(p => ids.Contains(p.DepartmentId)).ToListAsync();
         var today = DateOnly.FromDateTime(DateTime.Today);
         return actors.Select(a =>
         {
             var skillIds = skills.Where(r => r.ActorId == a.Id).Select(r => r.SkillId).ToArray();
             var memberships = departments.Where(d => d.ActorId == a.Id).OrderBy(d => d.From)
                 .Select(d => new DepartmentMembershipDto(d.Id, d.DepartmentId, d.From, d.To)).ToArray();
+            var parents = parentPeriods.Where(p => p.DepartmentId == a.Id).OrderBy(p => p.From)
+                .Select(p => new DepartmentParentPeriodDto(p.Id, p.ParentId, p.From, p.To)).ToArray();
             var active = memberships.Where(d => d.From <= today && (d.To is null || today <= d.To)).Select(d => d.DepartmentId).Distinct().ToArray();
-            return new ActorDto(a.Id, a.TeamId, a.Name, a.Kind.ToString(), a.Email, a.ParentId, a.UserId, skillIds, active, memberships);
+            return new ActorDto(a.Id, a.TeamId, a.Name, a.Kind.ToString(), a.Email, a.ParentId, a.UserId, skillIds, active, memberships, parents);
         }).ToArray();
     }
     private static ActorKind ParseKind(string? text)
@@ -55,7 +58,49 @@ public static class ActorEndpoints
         for (var i = 1; i < ordered.Length; i++)
             if (ordered[i - 1].To is null || ordered[i].From <= ordered[i - 1].To!.Value)
                 throw new ApiException(400, "Периоды членства в подкомандах не могут пересекаться.");
-        if (request.ParentId is { } parentId)
+        if (request.UserId is { } userId && (kind != ActorKind.Person || !await db.TeamMemberships.AnyAsync(m => m.TeamId == teamId && m.UserId == userId))) throw new ApiException(400, "Пользователь должен быть участником команды, а запись — человеком.");
+        if (request.UserId is { } linkedId && actors.Any(a => a.Id != actor.Id && a.UserId == linkedId)) throw new ApiException(409, "Пользователь уже связан с участником команды.");
+        if (!string.IsNullOrWhiteSpace(request.Email) && (!MailAddress.TryCreate(request.Email, out var email) || email.Address != request.Email)) throw new ApiException(400, "Введите корректный email.");
+        if (actor.Kind != kind && await db.Assignments.AnyAsync(a => a.TargetId == actor.Id || a.ResolvedPersonId == actor.Id)) throw new ApiException(400, "Нельзя менять вид назначенного участника.");
+        if (actor.Kind != kind && (await db.Actors.AnyAsync(a => !a.Archived && a.ParentId == actor.Id) || await db.ActorDepartments.AnyAsync(d => d.DepartmentId == actor.Id) || await db.ActorSkills.AnyAsync(r => r.SkillId == actor.Id) || await db.TaskSkills.AnyAsync(r => r.SkillId == actor.Id))) throw new ApiException(400, "Участник используется в справочнике.");
+        var today = DateOnly.FromDateTime(DateTime.Today);
+        var activeToday = memberships.FirstOrDefault(d => d.From <= today && (d.To is null || today <= d.To));
+        var currentParents = await db.DepartmentParentPeriods.Where(p => p.DepartmentId == actor.Id).ToListAsync();
+        List<DepartmentParentPeriodRequest> parentPeriods = [];
+        if (kind == ActorKind.Department)
+        {
+            if (request.DepartmentParentPeriods is not null) parentPeriods = [.. request.DepartmentParentPeriods];
+            else
+            {
+                var activeParent = currentParents.Where(p => p.ActiveOn(today)).OrderByDescending(p => p.From).FirstOrDefault();
+                if (activeParent is null)
+                    parentPeriods = [new DepartmentParentPeriodRequest(null, request.ParentId, new DateOnly(1, 1, 1), null)];
+                else if (activeParent.ParentId != request.ParentId)
+                {
+                    parentPeriods = activeParent.From == today
+                        ? [.. currentParents.Select(p => p.Id == activeParent.Id
+                            ? new DepartmentParentPeriodRequest(p.Id, request.ParentId, p.From, p.To)
+                            : new DepartmentParentPeriodRequest(p.Id, p.ParentId, p.From, p.To))]
+                        : [.. currentParents.Select(p => new DepartmentParentPeriodRequest(p.Id, p.ParentId, p.From,
+                                p.Id == activeParent.Id ? today.AddDays(-1) : p.To)),
+                            new DepartmentParentPeriodRequest(null, request.ParentId, today, null)];
+                }
+                else parentPeriods = [.. currentParents.Select(p => new DepartmentParentPeriodRequest(p.Id, p.ParentId, p.From, p.To))];
+            }
+            if (parentPeriods.Count == 0) throw new ApiException(400, "У подразделения должен быть хотя бы один период родителя.");
+            if (parentPeriods.Any(p => p.ParentId is { } parent && (parent == actor.Id || actors.All(a => a.Id != parent || a.Kind != ActorKind.Department))))
+                throw new ApiException(400, "Родитель должен быть другим подразделением этой команды.");
+            if (parentPeriods.Any(p => p.To is { } to && to < p.From)) throw new ApiException(400, "Окончание периода родителя раньше начала.");
+            var orderedParents = parentPeriods.OrderBy(p => p.From).ToArray();
+            for (var i = 1; i < orderedParents.Length; i++)
+                if (orderedParents[i - 1].To is null || orderedParents[i].From <= orderedParents[i - 1].To!.Value)
+                    throw new ApiException(400, "Периоды родителя не могут пересекаться.");
+        }
+        else if (request.DepartmentParentPeriods is { Length: > 0 }) throw new ApiException(400, "История родителя задаётся только для подразделения.");
+        var activeParentToday = parentPeriods.FirstOrDefault(p => p.From <= today && (p.To is null || today <= p.To));
+        if (kind == ActorKind.Department && activeParentToday is null) throw new ApiException(400, "У подразделения должен быть период родителя, активный сегодня.");
+        var desiredParent = kind == ActorKind.Department ? activeParentToday?.ParentId : request.ParentId;
+        if (desiredParent is { } parentId)
         {
             var parent = actors.SingleOrDefault(a => a.Id == parentId && a.Kind == ActorKind.Department) ?? throw new ApiException(400, "Родитель должен быть отделом этой команды.");
             var visited = new HashSet<Guid> { actor.Id };
@@ -66,16 +111,9 @@ public static class ActorEndpoints
                 parent = actors.Single(a => a.Id == next);
             }
         }
-        if (request.UserId is { } userId && (kind != ActorKind.Person || !await db.TeamMemberships.AnyAsync(m => m.TeamId == teamId && m.UserId == userId))) throw new ApiException(400, "Пользователь должен быть участником команды, а запись — человеком.");
-        if (request.UserId is { } linkedId && actors.Any(a => a.Id != actor.Id && a.UserId == linkedId)) throw new ApiException(409, "Пользователь уже связан с участником команды.");
-        if (!string.IsNullOrWhiteSpace(request.Email) && (!MailAddress.TryCreate(request.Email, out var email) || email.Address != request.Email)) throw new ApiException(400, "Введите корректный email.");
-        if (actor.Kind != kind && await db.Assignments.AnyAsync(a => a.TargetId == actor.Id || a.ResolvedPersonId == actor.Id)) throw new ApiException(400, "Нельзя менять вид назначенного участника.");
-        if (actor.Kind != kind && (await db.Actors.AnyAsync(a => !a.Archived && a.ParentId == actor.Id) || await db.ActorDepartments.AnyAsync(d => d.DepartmentId == actor.Id) || await db.ActorSkills.AnyAsync(r => r.SkillId == actor.Id) || await db.TaskSkills.AnyAsync(r => r.SkillId == actor.Id))) throw new ApiException(400, "Участник используется в справочнике.");
-        var today = DateOnly.FromDateTime(DateTime.Today);
-        var activeToday = memberships.FirstOrDefault(d => d.From <= today && (d.To is null || today <= d.To));
         actor.Name = AccessControl.RequiredName(request.Name); actor.Kind = kind; actor.Email = string.IsNullOrWhiteSpace(request.Email) ? null : request.Email.Trim();
         // A person's legacy parent is the sub-team they belong to today; the periods are the source of truth.
-        actor.ParentId = kind == ActorKind.Person ? activeToday?.DepartmentId : kind == ActorKind.Department ? request.ParentId : null;
+        actor.ParentId = kind == ActorKind.Person ? activeToday?.DepartmentId : kind == ActorKind.Department ? desiredParent : null;
         actor.UserId = request.UserId;
         var oldSkills = await db.ActorSkills.Where(r => r.ActorId == actor.Id).ToListAsync();
         db.RemoveRange(oldSkills.Where(r => !skillIds.Contains(r.SkillId)));
@@ -83,6 +121,9 @@ public static class ActorEndpoints
         db.RemoveRange(current);
         foreach (var period in memberships)
             db.Add(new ActorDepartment { Id = period.Id ?? Guid.NewGuid(), ActorId = actor.Id, DepartmentId = period.DepartmentId, From = period.From, To = period.To });
+        db.RemoveRange(currentParents);
+        foreach (var period in parentPeriods)
+            db.Add(new DepartmentParentPeriod { Id = period.Id ?? Guid.NewGuid(), DepartmentId = actor.Id, ParentId = period.ParentId, From = period.From, To = period.To });
     }
     public static void MapActors(this WebApplication app)
     {

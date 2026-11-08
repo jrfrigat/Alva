@@ -106,6 +106,16 @@ public sealed class TaskSkill
     public Guid TaskId { get; set; }
     public Guid SkillId { get; set; }
 }
+public sealed class DepartmentParentPeriod : Entity
+{
+    public Guid DepartmentId { get; set; }
+    public Guid? ParentId { get; set; }
+    public DateOnly From { get; set; }
+    public DateOnly? To { get; set; }
+
+    public bool ActiveOn(DateOnly day) => From <= day && (To is null || day <= To.Value);
+}
+
 public sealed class ActorDepartment : Entity
 {
     public Guid ActorId { get; set; }

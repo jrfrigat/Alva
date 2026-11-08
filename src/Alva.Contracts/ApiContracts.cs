@@ -15,8 +15,10 @@ public record ProjectDto(Guid Id, string Name, string Description, Guid[] TeamId
 public record ProjectRequest(string Name, string Description, Guid[] TeamIds);
 public record DepartmentMembershipDto(Guid Id, Guid DepartmentId, DateOnly From, DateOnly? To);
 public record DepartmentMembershipRequest(Guid? Id, Guid DepartmentId, DateOnly From, DateOnly? To);
-public record ActorDto(Guid Id, Guid TeamId, string Name, string Kind, string? Email, Guid? ParentId, Guid? UserId, Guid[] SkillIds, Guid[]? DepartmentIds = null, DepartmentMembershipDto[]? DepartmentMemberships = null);
-public record ActorRequest(string Name, string Kind, string? Email = null, Guid? ParentId = null, Guid? UserId = null, Guid[]? SkillIds = null, Guid[]? DepartmentIds = null, DepartmentMembershipRequest[]? DepartmentMemberships = null);
+public record DepartmentParentPeriodDto(Guid Id, Guid? ParentId, DateOnly From, DateOnly? To);
+public record DepartmentParentPeriodRequest(Guid? Id, Guid? ParentId, DateOnly From, DateOnly? To);
+public record ActorDto(Guid Id, Guid TeamId, string Name, string Kind, string? Email, Guid? ParentId, Guid? UserId, Guid[] SkillIds, Guid[]? DepartmentIds = null, DepartmentMembershipDto[]? DepartmentMemberships = null, DepartmentParentPeriodDto[]? DepartmentParentPeriods = null);
+public record ActorRequest(string Name, string Kind, string? Email = null, Guid? ParentId = null, Guid? UserId = null, Guid[]? SkillIds = null, Guid[]? DepartmentIds = null, DepartmentMembershipRequest[]? DepartmentMemberships = null, DepartmentParentPeriodRequest[]? DepartmentParentPeriods = null);
 /// <summary>Задача. SprintIds — спринты, с которыми пересекаются её даты (кэш TaskSprint).</summary>
 public record TaskDto(Guid Id, Guid TeamId, Guid? ProjectId, Guid? ParentId, string Title, string Description, string Status, decimal? EstimateHours, DateOnly? Deadline, DateOnly? StartDate, DateOnly? EndDate, int Order, Guid? AssignmentTargetId, Guid? ResolvedPersonId, long Version, decimal EffectiveEstimateHours, DateOnly? EffectiveDeadline, Guid[] SprintIds, Guid[]? RequiredSkillIds = null, string Priority = "Normal", int? BacklogRank = null, decimal? RemainingHours = null, bool DatesFixed = false, decimal? DailyHoursLimit = null, string? ExternalKey = null, string? ExternalUrl = null);
 /// <summary>Правка задачи. Priority = null сохраняет текущий приоритет: правки дат и быстрые подзадачи его не сбрасывают.

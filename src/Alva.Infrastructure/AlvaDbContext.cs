@@ -17,6 +17,7 @@ public class AlvaDbContext(DbContextOptions<AlvaDbContext> options) : DbContext(
     public DbSet<ActorSkill> ActorSkills => Set<ActorSkill>();
     public DbSet<TaskSkill> TaskSkills => Set<TaskSkill>();
     public DbSet<ActorDepartment> ActorDepartments => Set<ActorDepartment>();
+    public DbSet<DepartmentParentPeriod> DepartmentParentPeriods => Set<DepartmentParentPeriod>();
     public DbSet<Assignment> Assignments => Set<Assignment>();
     public DbSet<TaskDependency> Dependencies => Set<TaskDependency>();
     public DbSet<WorkCalendar> Calendars => Set<WorkCalendar>();
@@ -75,6 +76,10 @@ public class AlvaDbContext(DbContextOptions<AlvaDbContext> options) : DbContext(
         b.Entity<TaskSkill>().HasOne<Actor>().WithMany().HasForeignKey(x => x.SkillId);
         b.Entity<ActorDepartment>().HasKey(x => x.Id);
         b.Entity<ActorDepartment>().HasIndex(x => new { x.ActorId, x.From, x.To });
+        b.Entity<DepartmentParentPeriod>().HasKey(x => x.Id);
+        b.Entity<DepartmentParentPeriod>().HasIndex(x => new { x.DepartmentId, x.From, x.To });
+        b.Entity<DepartmentParentPeriod>().HasOne<Actor>().WithMany().HasForeignKey(x => x.DepartmentId);
+        b.Entity<DepartmentParentPeriod>().HasOne<Actor>().WithMany().HasForeignKey(x => x.ParentId);
         b.Entity<ActorDepartment>().HasOne<Actor>().WithMany().HasForeignKey(x => x.ActorId);
         b.Entity<ActorDepartment>().HasOne<Actor>().WithMany().HasForeignKey(x => x.DepartmentId);
         b.Entity<Team>().HasOne<Workspace>().WithMany().HasForeignKey(x => x.WorkspaceId);

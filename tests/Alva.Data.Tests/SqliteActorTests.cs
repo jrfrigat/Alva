@@ -75,6 +75,37 @@ public sealed class SqliteActorTests
     }
 
     [Fact]
+    public async Task Moving_a_department_records_parent_history_and_updates_same_day()
+    {
+        var server = await ApiServer.Create(app => app.MapActors());
+        await using var _ = server;
+        async Task<ActorDto> Actor(ActorRequest request)
+        {
+            var response = await server.Client.PostAsJsonAsync(server.Team("actors"), request);
+            Assert.True(response.IsSuccessStatusCode, await response.Content.ReadAsStringAsync());
+            return (await response.Content.ReadFromJsonAsync<ActorDto>())!;
+        }
+        var first = await Actor(new ActorRequest("Разработка", "Department"));
+        var second = await Actor(new ActorRequest("Платформа", "Department"));
+        var third = await Actor(new ActorRequest("Продукт", "Department"));
+
+        var moved = await server.Client.PutAsJsonAsync(server.Team($"actors/{second.Id}"), new ActorRequest("Платформа", "Department", ParentId: first.Id));
+        Assert.True(moved.IsSuccessStatusCode, await moved.Content.ReadAsStringAsync());
+        var afterFirstMove = (await moved.Content.ReadFromJsonAsync<ActorDto>())!;
+        Assert.Equal(first.Id, afterFirstMove.ParentId);
+        Assert.Equal(2, afterFirstMove.DepartmentParentPeriods!.Length);
+
+        var cycle = await server.Client.PutAsJsonAsync(server.Team($"actors/{first.Id}"), new ActorRequest("Разработка", "Department", ParentId: second.Id));
+        Assert.Equal(System.Net.HttpStatusCode.BadRequest, cycle.StatusCode);
+
+        var again = await server.Client.PutAsJsonAsync(server.Team($"actors/{second.Id}"), new ActorRequest("Платформа", "Department", ParentId: third.Id));
+        var afterSecondMove = (await again.Content.ReadFromJsonAsync<ActorDto>())!;
+        Assert.Equal(third.Id, afterSecondMove.ParentId);
+        Assert.Equal(2, afterSecondMove.DepartmentParentPeriods!.Length);
+        Assert.Equal(third.Id, afterSecondMove.DepartmentParentPeriods.Single(p => p.To is null).ParentId);
+    }
+
+    [Fact]
     public async Task A_task_targeted_at_a_parent_department_accepts_people_from_its_children()
     {
         var server = await ApiServer.Create(app => { app.MapActors(); app.MapTasks(); });
