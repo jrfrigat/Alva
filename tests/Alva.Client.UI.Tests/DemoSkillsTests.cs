@@ -1,3 +1,4 @@
+using System.Net;
 using Alva.Client.Models;
 using Alva.Client.Services;
 using Alva.Contracts;
@@ -86,6 +87,22 @@ public sealed class DemoSkillsTests
         Assert.Equal(product.Id, moved.ParentId);
         Assert.Equal(2, moved.DepartmentParentPeriods.Length);
         Assert.Equal(product.Id, moved.DepartmentParentPeriods.Single(p => p.To is null).ParentId);
+    }
+
+    [Fact]
+    public async Task Demo_refuses_a_stale_task_version()
+    {
+        var storage = new Storage();
+        var api = new ApiServiceLocalStorage(storage);
+        await api.Initialize();
+        var task = await api.Save<TaskModel>(HttpMethod.Post, api.TeamPath("tasks"), new TaskRequest("Versioned"));
+        var version = task.Version;
+        var first = await api.Save<TaskModel>(HttpMethod.Put, api.TeamPath($"tasks/{task.Id}"), new TaskRequest("First", Version: version));
+        Assert.Equal(version + 1, first.Version);
+
+        var conflict = await Assert.ThrowsAsync<ServerRefusalException>(() =>
+            api.Save<TaskModel>(HttpMethod.Put, api.TeamPath($"tasks/{task.Id}"), new TaskRequest("Second", Version: version)));
+        Assert.Equal(HttpStatusCode.Conflict, conflict.StatusCode);
     }
 
     private sealed class Storage : IJSRuntime

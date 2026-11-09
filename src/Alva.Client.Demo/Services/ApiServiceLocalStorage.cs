@@ -578,6 +578,8 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
             return WithSprints(store, [created])[0];
         }
         var task = store.Tasks.FirstOrDefault(t => t.Id == taskId) ?? throw new InvalidOperationException("Задача не найдена.");
+        if (request.Version is { } version && version != task.Version)
+            throw new ServerRefusalException("Задача изменилась. Обновите данные.", HttpStatusCode.Conflict);
         datesFixed = request.DatesFixed ?? task.DatesFixed;
         if (datesFixed && (request.StartDate is null || request.EndDate is null))
             throw new InvalidOperationException("У задачи с фиксированными датами должны быть заданы начало и окончание.");
