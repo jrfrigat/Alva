@@ -213,6 +213,7 @@ public sealed class TaskDetailsCardTests : UiTestBase
     {
         var cut = Page();
 
+        Assert.NotEmpty(cut.FindComponents<TaskFormPlan>());
         var plan = cut.FindAll("section").Single(s => s.QuerySelector("h2")?.TextContent.Trim() == "План");
         Assert.Contains("Контекст", plan.TextContent);
         Assert.Contains("Усилие", plan.TextContent);

@@ -1,5 +1,6 @@
 using Alva.Client.Models;
 using Alva.Client.Pages;
+using Alva.Client.Shared;
 using Alva.Contracts;
 using Bunit;
 using Flare.Components;
@@ -23,6 +24,17 @@ public sealed class TasksQuickCreateTests : UiTestBase
            .Answer("actors", _ => Array.Empty<ActorModel>())
            .Answer("sprints", _ => Array.Empty<SprintModel>());
         Api.SaveResult = new TaskModel { Id = _savedId, Title = "Новая", Status = "Backlog", ProjectId = _project.Id };
+    }
+
+    [Fact]
+    public void Full_create_form_uses_the_shared_plan_form()
+    {
+        var cut = Page();
+
+        Button(cut, "Новая задача").Click();
+        Button(cut, "Больше полей").Click();
+
+        Assert.NotEmpty(cut.FindComponents<TaskFormPlan>());
     }
 
     [Fact]

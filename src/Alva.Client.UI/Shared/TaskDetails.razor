@@ -184,35 +184,9 @@
         <ChildContent>
             <FlareStack Gap="FlareSpacing.Medium">
                 @if (_formErrors.Count > 0) { <div tabindex="-1" @ref="_errorSummary"><AlvaValidationSummary Messages="_formErrors" /></div> }
-                <FlareStack Gap="FlareSpacing.Small">
-                    <FlareText Typo="TypographyScale.LabelMedium" Color="FlareColor.OnSurfaceVariant">@(AlvaStrings.Task_PlanContext)</FlareText>
-                    <FlareGrid MinColumnWidth="min(100%,12rem)">
-                        <FlareSelect TValue="string" Label="@(AlvaStrings.Common_Status)" Items="Statuses" ItemLabel="Labels.Status" @bind-Value="_model.Status" />
-                        <FlareSelect TValue="string" Label="@(AlvaStrings.Common_Priority)" Items="Labels.Priorities" ItemLabel="Labels.Priority" @bind-Value="_model.Priority" />
-                        <FlareSelect TValue="Guid?" Label="@(AlvaStrings.Common_Project)" Items="Projects.Select(x => (Guid?)x.Id)" ItemLabel="ProjectName" NullOption="@(AlvaStrings.Sprint_Ongoing)" @bind-Value="_model.ProjectId" />
-                        <FlareSelect TValue="Guid?" Label="@(AlvaStrings.Common_SprintByDates)" Items="Sprints.OrderBy(x => x.StartDate).Select(x => (Guid?)x.Id)" ItemLabel="SprintName" NullOption="@(AlvaStrings.Common_BacklogUndated)" Value="SprintDates.First(_model, Sprints)" ValueChanged="id => SprintDates.Place(_model, Sprints.FirstOrDefault(s => s.Id == id))" HelperText="@SprintDates.Hint(_model, Sprints)" Disabled="_model.DatesFixed" />
-                        <FlareSelect TValue="Guid?" Label="@(AlvaStrings.Common_ParentTask)" ErrorText="@_parentError" Items="Tasks.Where(x => x.Id != Item.Id).Select(x => (Guid?)x.Id)" ItemLabel="TaskName" NullOption="@(AlvaStrings.Common_RootTask)" @bind-Value="_model.ParentId" Searchable />
-                    </FlareGrid>
-                </FlareStack>
-                <FlareStack Gap="FlareSpacing.Small">
-                    <FlareText Typo="TypographyScale.LabelMedium" Color="FlareColor.OnSurfaceVariant">@(AlvaStrings.Task_PlanEffort)</FlareText>
-                    <FlareGrid MinColumnWidth="min(100%,12rem)">
-                        <FlareNumericField TValue="decimal?" Label="@(AlvaStrings.Common_EstimateHours)" ErrorText="@_estimateError" @bind-Value="_model.EstimateHours" Min="0" />
-                        <FlareNumericField TValue="decimal?" Label="@(AlvaStrings.Common_RemainingWorkHours)" ErrorText="@_remainingError" @bind-Value="_model.RemainingHours" Min="0" Max="100000" HelperText="@(AlvaStrings.Common_ForWorkInProgressLeaveBlankIfRemainingWorkIsUnknown0MeansNoWorkRemains)" />
-                        <FlareNumericField TValue="decimal?" Label="@(AlvaStrings.Common_NoMoreThanHPerDay)" ErrorText="@_limitError" @bind-Value="_model.DailyHoursLimit" Min="0" Max="24" HelperText="@DailyLimit.Hint(_model)" />
-                    </FlareGrid>
-                </FlareStack>
-                <FlareStack Gap="FlareSpacing.Small">
-                    <FlareText Typo="TypographyScale.LabelMedium" Color="FlareColor.OnSurfaceVariant">@(AlvaStrings.Task_PlanDates)</FlareText>
-                    <FlareGrid MinColumnWidth="min(100%,12rem)">
-                        <FlareDatePicker Label="@(AlvaStrings.Common_Start)" ErrorText="@_startError" @bind-Value="_model.StartDate" Disabled="_model.DatesFixed" />
-                        <FlareDatePicker Label="@(AlvaStrings.Common_End)" ErrorText="@_endError" @bind-Value="_model.EndDate" Disabled="_model.DatesFixed" />
-                        <FlareDatePicker Label="@(AlvaStrings.Common_Deadline)" @bind-Value="_model.Deadline" />
-                    </FlareGrid>
-                    <FlareSwitch @bind-Value="_model.DatesFixed" Label="@(AlvaStrings.Common_FixedDatesDoNotMove)"
-                                 Disabled="@(_model.StartDate is null || _model.EndDate is null)" />
-                    <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@FixedHint</FlareText>
-                </FlareStack>
+                <TaskFormPlan Task="_model" Projects="Projects" Sprints="Sprints" Tasks="Tasks" SelfId="Item.Id"
+                              ParentError="@_parentError" EstimateError="@_estimateError" RemainingError="@_remainingError"
+                              LimitError="@_limitError" StartError="@_startError" EndError="@_endError" FixedHint="@FixedHint" Changed="StateHasChanged" />
             </FlareStack>
         </ChildContent>
     </FlareSection>

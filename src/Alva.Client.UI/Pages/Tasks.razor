@@ -119,28 +119,14 @@ else
     <FlareMultiSelect TValue="Guid" Label="@(AlvaStrings.Common_RequiredSkills)" Items="SkillActors.Select(a=>a.Id)"
                       ItemLabel="SkillName" Chips="true" Searchable="true"
                       Values="_editing.RequiredSkillIds" ValuesChanged="(IReadOnlyList<Guid> skills) => _editing.RequiredSkillIds = skills.ToArray()" />
-    <FlareGrid MinColumnWidth="min(100%,12rem)">
-        <FlareSelect TValue="string" Label="@(AlvaStrings.Common_Status)" Items="_statuses" ItemLabel="Labels.Status" @bind-Value="_editing.Status" />
-        <FlareSelect TValue="string" Label="@(AlvaStrings.Common_Priority)" Items="Labels.Priorities" ItemLabel="Labels.Priority" @bind-Value="_editing.Priority" />
-        <FlareSelect TValue="Guid?" Label="@(AlvaStrings.Common_Project)" Items="_projects.Select(x => (Guid?)x.Id)" ItemLabel="ProjectName" NullOption="@(AlvaStrings.Sprint_Ongoing)" @bind-Value="_editing.ProjectId" />
-        <FlareSelect TValue="Guid?" Label="@(AlvaStrings.Common_SprintByDates)" Items="_sprints.OrderBy(x => x.StartDate).Select(x => (Guid?)x.Id)" ItemLabel="SprintName" NullOption="@(AlvaStrings.Common_BacklogUndated)" Value="SprintDates.First(_editing, _sprints)" ValueChanged="id => SprintDates.Place(_editing, _sprints.FirstOrDefault(s => s.Id == id))" HelperText="@SprintDates.Hint(_editing, _sprints)" Disabled="_editing.DatesFixed" />
-        <FlareSelect TValue="Guid?" Label="@(AlvaStrings.Common_ParentTask)" ErrorText="@_parentError" Items="_tasks.Where(x => x.Id != _editing.Id).Select(x => (Guid?)x.Id)" ItemLabel="TaskName" NullOption="@(AlvaStrings.Common_RootTask)" @bind-Value="_editing.ParentId" Searchable />
-        <FlareNumericField TValue="decimal?" Label="@(AlvaStrings.Common_EstimateHours)" ErrorText="@_estimateError" @bind-Value="_editing.EstimateHours" Min="0" />
-        <FlareNumericField TValue="decimal?" Label="@(AlvaStrings.Common_RemainingWorkHours)" ErrorText="@_remainingError" @bind-Value="_editing.RemainingHours" Min="0" Max="100000" HelperText="@(AlvaStrings.Common_ForWorkInProgressLeaveBlankIfRemainingWorkIsUnknown0MeansNoWorkRemains)" />
-        <FlareNumericField TValue="decimal?" Label="@(AlvaStrings.Common_NoMoreThanHPerDay)" ErrorText="@_limitError" @bind-Value="_editing.DailyHoursLimit" Min="0" Max="24" HelperText="@DailyLimit.Hint(_editing)" />
-        <FlareDatePicker Label="@(AlvaStrings.Common_Deadline)" @bind-Value="_editing.Deadline" />
-        <FlareDatePicker Label="@(AlvaStrings.Common_Start)" ErrorText="@_startError" @bind-Value="_editing.StartDate" Disabled="_editing.DatesFixed" />
-        <FlareDatePicker Label="@(AlvaStrings.Common_End)" ErrorText="@_endError" @bind-Value="_editing.EndDate" Disabled="_editing.DatesFixed" />
-    </FlareGrid>
-    <FlareSwitch @bind-Value="_editing.DatesFixed" Label="@(AlvaStrings.Common_FixedDatesDoNotMove)"
-                 Disabled="@(_editing.StartDate is null || _editing.EndDate is null)" />
+    <TaskFormPlan Task="_editing" Projects="_projects" Sprints="_sprints" Tasks="_tasks"
+                  SelfId="@(_editing.Id == Guid.Empty ? (Guid?)null : _editing.Id)"
+                  ParentError="@_parentError" EstimateError="@_estimateError" RemainingError="@_remainingError"
+                  LimitError="@_limitError" StartError="@_startError" EndError="@_endError" Changed="StateHasChanged" />
     <FlareSelect TValue="Guid?" Label="@(AlvaStrings.Tasks_AssigneeSubTeamOrRole)" Items="AssignableActorIds" ItemLabel="id => ActorName(id)" NullOption="@(AlvaStrings.Common_UnassignedTask)" @bind-Value="_editing.AssignmentTargetId" Searchable />
     <SkillMatch Required="_editing.RequiredSkillIds" Person="@(_actors.FirstOrDefault(a=>a.Id==(_editing.ResolvedPersonId ?? _editing.AssignmentTargetId)))" Skills="SkillActors" />
     @if(_actors.FirstOrDefault(a=>a.Id==_editing.AssignmentTargetId)?.Kind is "Department") { <FlareSelect TValue="Guid?" Label="@(AlvaStrings.Common_SpecificAssignee)" Items="@(_actors.Where(a=>a.Kind=="Person").Select(a=>(Guid?)a.Id))" ItemLabel="ActorName" NullOption="@(AlvaStrings.Tasks_NotChosenYet)" @bind-Value="_editing.ResolvedPersonId" Searchable /> }
-    <FlareStack Row Wrap><FlareButton Loading="_busy" Disabled="@(string.IsNullOrWhiteSpace(_editing.Title) || !IsDirty)" OnClick="Save">@(AlvaStrings.Tasks_SaveTheTask)</FlareButton><EditorStatus Dirty="IsDirty" Saving="_busy" />
-        @if(_editing.Id != Guid.Empty) { <FlareButton Variant="ButtonVariant.Text" OnClick="() => NewChild(_editing.Id)">@(AlvaStrings.Common_Subtask)</FlareButton><FlareButton Color="FlareColor.Error" Variant="ButtonVariant.Text" OnClick="Archive">@(AlvaStrings.Common_Archive)</FlareButton> }
-    </FlareStack>
-    @if(_history.Length>0) { <FlareText Element="h3" Typo="TypographyScale.TitleMedium">@(AlvaStrings.Tasks_History)</FlareText>@foreach(var entry in _history) { <FlareText Typo="TypographyScale.BodySmall">@entry.At.ToLocalTime().ToString("g") · @entry.Summary</FlareText> } }
+    <FlareStack Row Wrap><FlareButton Loading="_busy" Disabled="@(string.IsNullOrWhiteSpace(_editing.Title) || !IsDirty)" OnClick="Save">@(AlvaStrings.Tasks_SaveTheTask)</FlareButton><EditorStatus Dirty="IsDirty" Saving="_busy" /></FlareStack>
 </FlareStack></FlareCardContent></FlareCard>
 }
 @if (Selected is { } selected)
@@ -167,7 +153,7 @@ else
 }
 @code {
     [Parameter] public Guid? TaskId { get; set; }
-    private TaskModel[] _tasks=[]; private ProjectModel[] _projects=[]; private SprintModel[] _sprints=[]; private ActorModel[] _actors=[]; private HistoryDto[] _history=[]; private RiskDto[] _risks=[];
+    private TaskModel[] _tasks=[]; private ProjectModel[] _projects=[]; private SprintModel[] _sprints=[]; private ActorModel[] _actors=[]; private RiskDto[] _risks=[];
     private IEnumerable<ActorModel> SkillActors => _actors.Where(a => a.Kind == "Skill");
     private IEnumerable<Guid?> AssignableActorIds => _actors.Where(a => a.Kind is "Person" or "Department").Select(a => (Guid?)a.Id);
     private TaskModel? _editing; private string? _editingSnapshot; private IDisposable? _draft;
@@ -518,15 +504,14 @@ else
     }
     private async Task Run(Func<Task> action) { _busy=true; _error=null;try{await action();}catch(Exception e) when(e is HttpRequestException or InvalidOperationException){_error=PageFeedback.Describe(e);}finally{_busy=false;_loaded=true;} }
     private Task Load()=>Run(async()=>{await Session.Initialize();if(Session.TeamId is null)return;_tasks=await Session.Get<TaskModel[]>(Session.TeamPath("tasks"));_projects=await Session.Get<ProjectModel[]>(Session.TeamPath("projects"));_actors=await Session.Get<ActorModel[]>(Session.TeamPath("actors"));_sprints=await Session.Get<SprintModel[]>(Session.TeamPath("sprints"));_risks=(await Session.Get<RiskDto[]>(Session.TeamPath("risks"))).Where(r=>r.HasRisk).ToArray();_loaded=true;});
-    private void NewTask(){_editing=new TaskModel { TeamId=Session.TeamId!.Value };_history=[];_editingSnapshot=DraftSnapshot.Of(_editing);}
-    private void NewChild(Guid id){NewTask();_editing!.ParentId=id;_editingSnapshot=DraftSnapshot.Of(_editing);}
+    private void NewTask(){_editing=new TaskModel { TeamId=Session.TeamId!.Value };_editingSnapshot=DraftSnapshot.Of(_editing);}
     private FlareButton? _newButton;
     private ElementReference _card;
     private TaskDetails? _details;
     private Guid? _opened;
     private bool _focusCard;
     private bool _returnFocus;
-    private void Hide(){_editing=null;_history=[];_editingSnapshot=null;}
+    private void Hide(){_editing=null;_editingSnapshot=null;}
     // Closing the editor returns focus to the button that opened it instead of dropping it to body.
     private async Task Close()
     {
@@ -587,11 +572,4 @@ else
     }
 
     private void Error(ref string? field, string message) { field=message; _formErrors.Add(message); }
-    private async Task Archive()
-    {
-        if (!await DestructivePrompt.ConfirmAsync(Confirm, AlvaStrings.Task_ArchiveTask,
-            string.Format(AlvaStrings.Common_TaskWillLeaveTheListsItCanTBeBroughtBackFromTheAppYet, _editing!.Title),
-            AlvaStrings.Common_Archive)) return;
-        await Run(async()=>{await Session.Send(HttpMethod.Delete,Session.TeamPath($"tasks/{_editing!.Id}"),new{});Hide();_tasks=await Session.Get<TaskModel[]>(Session.TeamPath("tasks"));});
-    }
 }
