@@ -42,6 +42,49 @@ public sealed class TaskDetailsCardTests : UiTestBase
     }
 
     [Fact]
+    public void Section_headings_keep_the_icon_and_title_on_the_left()
+    {
+        var cut = Page();
+
+        foreach (var title in new[] { "Риск", "Описание" })
+        {
+            var heading = cut.FindAll("h2").Single(h => h.TextContent.Trim() == title);
+            Assert.DoesNotContain("flare-stack--stretch-first", heading.ParentElement!.ClassName);
+        }
+    }
+
+    [Fact]
+    public void Title_edit_button_is_in_the_page_header_not_in_the_description_section()
+    {
+        var cut = Page();
+
+        var edit = cut.Find("[aria-label='Изменить название']");
+        Assert.NotNull(edit.Closest(".flare-page-header"));
+        var description = cut.FindAll("section").Single(s => s.QuerySelector("h2")?.TextContent.Trim() == "Описание");
+        Assert.Null(description.QuerySelector("[aria-label='Изменить название']"));
+    }
+
+    [Fact]
+    public void Title_dialog_cancel_keeps_the_title_and_apply_changes_the_draft()
+    {
+        var cut = Page();
+        var oldTitle = _task.Title;
+
+        cut.Find("[aria-label='Изменить название']").Click();
+        Field(cut, "Название").Change("Новое название");
+        var dialog = cut.FindAll("[role=dialog]").Single(d => d.TextContent.Contains("Название задачи"));
+        dialog.QuerySelectorAll("button").Single(b => b.TextContent.Trim() == "Отмена").Click();
+        Assert.Equal(oldTitle, cut.Find("h1").TextContent.Trim());
+
+        cut.Find("[aria-label='Изменить название']").Click();
+        Field(cut, "Название").Change("Новое название");
+        dialog = cut.FindAll("[role=dialog]").Single(d => d.TextContent.Contains("Название задачи"));
+        dialog.QuerySelectorAll("button").Single(b => b.TextContent.Trim() == "Применить").Click();
+        Assert.Equal("Новое название", cut.Find("h1").TextContent.Trim());
+        Assert.False(Button(cut, "Сохранить").HasAttribute("disabled"));
+    }
+
+    [Fact]
     public void Risk_block_explains_reasons_and_links_to_the_blocker()
     {
         Api.Answer("risks", _ => new[]

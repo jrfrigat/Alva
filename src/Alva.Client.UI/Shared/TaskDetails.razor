@@ -21,6 +21,7 @@
                     }
                     else { <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@externalKey</FlareText> }
                 }
+                <FlareIconButton Icon="@MaterialDesign3Icons.Regular.Edit" Size="ButtonSize.Sm" Tooltip="@(AlvaStrings.Task_EditTitle)" AriaLabel="@(AlvaStrings.Task_EditTitle)" OnClick="OpenTitleEdit" />
             </FlareStack>
         </DescriptionContent>
         <ActionsContent>
@@ -41,7 +42,7 @@
 
     <FlareSection Class="alva-task__risk">
         <HeadingContent>
-            <FlareStack Row StretchFirst Align="FlareAlignItems.Center" Gap="FlareSpacing.Small">
+            <FlareStack Row Align="FlareAlignItems.Center" Gap="FlareSpacing.Small">
                 <FlareIconView Value="@MaterialDesign3Icons.Regular.Warning" Size="20px" />
                 <FlareText Element="h2" Typo="TypographyScale.TitleLarge">@(AlvaStrings.Common_Risk)</FlareText>
                 @if (_risk is not null) { <AlvaStatusChip Tone="AlvaTones.Severity(_risk.Severity)">@(_risk.Severity == "High" ? AlvaStrings.Common_High : AlvaStrings.Risks_Medium)</AlvaStatusChip> }
@@ -76,10 +77,9 @@
 
     <FlareSection>
         <HeadingContent>
-            <FlareStack Row StretchFirst Align="FlareAlignItems.Center" Gap="FlareSpacing.Small">
+            <FlareStack Row Align="FlareAlignItems.Center" Gap="FlareSpacing.Small">
                 <FlareIconView Value="@MaterialDesign3Icons.Regular.Description" Size="20px" />
                 <FlareText Element="h2" Typo="TypographyScale.TitleLarge">@(AlvaStrings.Common_Description)</FlareText>
-                <FlareIconButton Icon="@MaterialDesign3Icons.Regular.Edit" Size="ButtonSize.Sm" Tooltip="@(AlvaStrings.Task_EditTitle)" AriaLabel="@(AlvaStrings.Task_EditTitle)" OnClick="() => _titleEditing = true" />
             </FlareStack>
         </HeadingContent>
         <ChildContent>
@@ -318,10 +318,11 @@
 
 <FlareDialog @bind-Visible="_titleEditing" Title="@(AlvaStrings.Task_TaskTitle)" Size="DialogSize.Sm">
     <ChildContent>
-        <FlareTextField Label="@(AlvaStrings.Common_Title)" @bind-Value="_model.Title" Required MaxLength="500" Autofocus />
+        <FlareTextField Label="@(AlvaStrings.Common_Title)" @bind-Value="_titleDraft" Required MaxLength="500" Autofocus />
     </ChildContent>
     <ActionsContent>
-        <FlareButton OnClick="() => _titleEditing = false">@(AlvaStrings.Common_DoneStatus)</FlareButton>
+        <FlareButton Variant="ButtonVariant.Text" OnClick="CancelTitle">@(AlvaStrings.Common_Cancel)</FlareButton>
+        <FlareButton OnClick="ApplyTitle" Disabled="@(string.IsNullOrWhiteSpace(_titleDraft))">@(AlvaStrings.Common_Apply)</FlareButton>
     </ActionsContent>
 </FlareDialog>
 
@@ -362,6 +363,7 @@
     private string? _parentError,_startError,_endError,_estimateError,_remainingError,_limitError;
     private readonly List<string> _formErrors=[]; private ElementReference _errorSummary;
     private bool _busy, _saved, _assignOpen, _adding, _titleEditing;
+    private string? _titleDraft;
     private int _assignTab;
     private Guid? _assignTarget, _assignPerson;
 
@@ -657,6 +659,23 @@
             await Changed.InvokeAsync();
         });
     }
+
+    private void OpenTitleEdit()
+    {
+        _titleDraft = _model.Title;
+        _titleEditing = true;
+    }
+
+    /// <summary>The dialog edits a draft copy: Cancel leaves the card unchanged and Apply only changes the card draft,
+    /// which is saved later with the Save action.</summary>
+    private void ApplyTitle()
+    {
+        if (string.IsNullOrWhiteSpace(_titleDraft)) return;
+        _model.Title = _titleDraft;
+        _titleEditing = false;
+    }
+
+    private void CancelTitle() => _titleEditing = false;
 
     private async Task Save()
     {
