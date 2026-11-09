@@ -295,6 +295,7 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
         {
             ["api", "teams", var t, "tasks"] => SaveTask(store, Id(t), null, value),
             ["api", "teams", _, "tasks", var id] => SaveTask(store, Guid.Empty, Id(id), value),
+            ["api", "teams", _, "tasks", var id, "assignment"] => AssignTask(store, Id(id), method, value),
             ["api", "teams", _, "tasks", _, "dependencies"] => AddDependency(store, value),
             ["api", "teams", var t, "sprints"] => SaveSprint(store, Id(t), null, value),
             ["api", "teams", _, "sprints", var id] => SaveSprint(store, Guid.Empty, Id(id), value),
@@ -757,7 +758,7 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
     }
 
 
-    private static void AssignTask(DemoStore store, Guid taskId, HttpMethod method, object value)
+    private static TaskModel AssignTask(DemoStore store, Guid taskId, HttpMethod method, object value)
     {
         var task = store.Tasks.FirstOrDefault(t => t.Id == taskId) ?? throw new InvalidOperationException("Задача не найдена.");
         if (method == HttpMethod.Delete)
@@ -774,6 +775,7 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
             AddHistory(store, task.Id, "Назначен исполнитель");
         }
         task.Version++;
+        return WithSprints(store, [task])[0];
     }
 
     private static void SaveCalendar(DemoStore store, Guid actorId, object value)

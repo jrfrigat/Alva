@@ -49,6 +49,31 @@ public sealed class SqliteActorTests
     }
 
     [Fact]
+    public async Task Removing_an_assignment_returns_the_updated_task()
+    {
+        var server = await ApiServer.Create(app => { app.MapActors(); app.MapTasks(); });
+        await using var _ = server;
+
+        var personResponse = await server.Client.PostAsJsonAsync(server.Team("actors"), new ActorRequest("Анна", "Person"));
+        Assert.True(personResponse.IsSuccessStatusCode, await personResponse.Content.ReadAsStringAsync());
+        var person = (await personResponse.Content.ReadFromJsonAsync<ActorDto>())!;
+
+        var taskResponse = await server.Client.PostAsJsonAsync(server.Team("tasks"), new TaskRequest("Задача"));
+        Assert.True(taskResponse.IsSuccessStatusCode, await taskResponse.Content.ReadAsStringAsync());
+        var task = (await taskResponse.Content.ReadFromJsonAsync<TaskDto>())!;
+
+        var assigned = await server.Client.PutAsJsonAsync(server.Team($"tasks/{task.Id}/assignment"), new AssignmentRequest(person.Id));
+        Assert.True(assigned.IsSuccessStatusCode, await assigned.Content.ReadAsStringAsync());
+        var assignedTask = (await assigned.Content.ReadFromJsonAsync<TaskDto>())!;
+
+        var removed = await server.Client.DeleteAsync(server.Team($"tasks/{task.Id}/assignment"));
+        Assert.True(removed.IsSuccessStatusCode, await removed.Content.ReadAsStringAsync());
+        var removedTask = await removed.Content.ReadFromJsonAsync<TaskDto>();
+        Assert.NotNull(removedTask);
+        Assert.Equal(assignedTask.Version + 1, removedTask!.Version);
+    }
+
+    [Fact]
     public async Task Membership_periods_are_validated_and_the_old_field_still_works()
     {
         var server = await ApiServer.Create(app => app.MapActors());

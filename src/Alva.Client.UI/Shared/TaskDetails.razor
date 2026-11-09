@@ -644,7 +644,8 @@
         var person = Actors.FirstOrDefault(a => a.Id == _assignTarget)?.Kind == "Person" ? null : _assignPerson;
         await Run(async () =>
         {
-            await Session.Send(HttpMethod.Put, Session.TeamPath($"tasks/{Item.Id}/assignment"), new AssignmentRequest(_assignTarget!.Value, person));
+            var updated = await Session.Assign(HttpMethod.Put, Session.TeamPath($"tasks/{Item.Id}/assignment"), new AssignmentRequest(_assignTarget!.Value, person));
+            SyncAssignedVersion(updated);
             await CloseAssign();
             await Changed.InvokeAsync();
         });
@@ -654,11 +655,19 @@
     {
         await Run(async () =>
         {
-            await Session.Send(HttpMethod.Delete, Session.TeamPath($"tasks/{Item.Id}/assignment"), new { });
+            var updated = await Session.Assign(HttpMethod.Delete, Session.TeamPath($"tasks/{Item.Id}/assignment"), new { });
             _assignTarget = _assignPerson = null;
+            SyncAssignedVersion(updated);
             await CloseAssign();
             await Changed.InvokeAsync();
         });
+    }
+
+    /// <summary>Assigning changes the task version on the server while the card keeps its draft: take the new
+    /// version from the response so the next Save does not conflict and the draft is not lost.</summary>
+    private void SyncAssignedVersion(TaskModel? updated)
+    {
+        if (updated is not null && updated.Id == _model.Id) _model.Version = updated.Version;
     }
 
     private void OpenTitleEdit()

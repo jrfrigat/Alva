@@ -20,9 +20,10 @@ public sealed class TaskDetailsCardTests : UiTestBase
            .Answer("capacity", _ => Array.Empty<CapacityDto>());
     }
 
-    private IRenderedComponent<FlareConfirmDialogProvider> Page(TaskModel? item = null) =>
+    private IRenderedComponent<FlareConfirmDialogProvider> Page(TaskModel? item = null, ActorModel[]? actors = null) =>
         Render<FlareConfirmDialogProvider>(p => p.AddChildContent<TaskDetails>(d => d
             .Add(x => x.Item, item ?? _task)
+            .Add(x => x.Actors, actors ?? [])
             .Add(x => x.Tasks, [item ?? _task, _blocker, _next])));
 
     private static void ConfirmDialog(IRenderedComponent<FlareConfirmDialogProvider> cut, string action)
@@ -177,6 +178,25 @@ public sealed class TaskDetailsCardTests : UiTestBase
             Assert.EndsWith($"tasks/{_task.Id}/dependencies", sent.Path);
             Assert.Equal(new DependencyRequest(_task.Id, _next.Id, "SS", 0), sent.Value);
         });
+    }
+
+    [Fact]
+    public void Assignment_keeps_the_draft_version_in_sync()
+    {
+        var actor = new ActorModel { Id = Guid.NewGuid(), Name = "Анна", Kind = "Person" };
+        var item = new TaskModel { Id = _task.Id, Title = _task.Title, Status = _task.Status, Version = 1, AssignmentTargetId = actor.Id };
+        Api.SaveResult = new TaskModel { Id = _task.Id, Title = _task.Title, Status = _task.Status, Version = 5 };
+        var cut = Page(item, [actor]);
+
+        Field(cut, "Описание и цели").Change("Черновик");
+        Button(cut, "Назначить исполнителя").Click();
+        cut.WaitForAssertion(() => Assert.Contains("Применить назначение", cut.Markup));
+        Button(cut, "Применить назначение").Click();
+        cut.WaitForAssertion(() => Assert.Contains(Api.Sent, s => s.Method == HttpMethod.Put && s.Path.EndsWith("/assignment")));
+
+        Button(cut, "Сохранить").Click();
+        cut.WaitForAssertion(() => Assert.Contains(Api.Sent,
+            s => s.Method == HttpMethod.Put && s.Path.EndsWith($"tasks/{_task.Id}") && ((TaskRequest)s.Value).Version == 5));
     }
 
     [Fact]

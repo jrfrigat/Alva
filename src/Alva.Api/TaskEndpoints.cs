@@ -129,7 +129,8 @@ public static class TaskEndpoints
             task.Version++;
             db.Add(new TaskHistory { TaskId = taskId, UserId = user.UserId(), Summary = "Назначение снято" });
             await db.SaveChangesAsync();
-            return Results.NoContent();
+            // The card keeps its draft while assignment changes: return the new version so saving it does not conflict.
+            return Results.Ok((await List(db, teamId)).Single(x => x.Id == taskId));
         });
         // All links between the team's tasks, for the Gantt chart, which needs the whole graph.
         group.MapGet("/dependencies", async (Guid teamId, ClaimsPrincipal user, AlvaDbContext db) =>

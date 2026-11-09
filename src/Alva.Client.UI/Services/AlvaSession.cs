@@ -46,6 +46,20 @@ public sealed class AlvaSession(IApiService api, IJSRuntime js)
     public async Task Send(HttpMethod method, string path, object value)
     {
         await api.Send(method, path, value);
+        await CheckAssignment(method, path);
+    }
+
+    /// <summary>An assignment write that returns the updated task: a dirty draft can take the new version
+    /// without losing its edits, and a real concurrent change still reaches the card as a conflict.</summary>
+    public async Task<TaskModel?> Assign(HttpMethod method, string path, object value)
+    {
+        var task = await api.Save<TaskModel?>(method, path, value);
+        await CheckAssignment(method, path);
+        return task;
+    }
+
+    private async Task CheckAssignment(HttpMethod method, string path)
+    {
         if (!path.EndsWith("/assignment", StringComparison.Ordinal)) return;
         AssignmentNotice = null;
         if (method != HttpMethod.Delete && Guid.TryParse(path.Split('/')[^2], out var taskId))
