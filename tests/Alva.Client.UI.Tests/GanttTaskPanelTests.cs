@@ -46,6 +46,16 @@ public sealed class GanttTaskPanelTests : UiTestBase
     }
 
     [Fact]
+    public void A_task_bar_carries_the_alva_item_kind_class()
+    {
+        var cut = Chart();
+
+        var bar = cut.Find("[role='button']");
+
+        Assert.Contains("alva-gantt-item--work", bar.ClassList);
+    }
+
+    [Fact]
     public void Enter_on_the_selected_bar_opens_the_same_panel()
     {
         var cut = Chart();

@@ -242,7 +242,7 @@ else
 <FlareSection Title="@(AlvaStrings.Sprint_CompletedSprints)">
     <FlareCard Variant="CardVariant.Outlined">
         <FlareCardContent>
-            <FlareDataGrid TItem="SprintModel" Items="VisibleCompleted" Height="auto" Dense="true" RowKey="s => s!.Id">
+            <FlareDataGrid TItem="SprintModel" Items="VisibleCompleted" Height="auto" Dense="true" RowKey="s => s!.Id" Presentation="DataGridPresentation.Auto">
                 <Columns>
                     <FlareColumn TItem="SprintModel" Title="@(AlvaStrings.Sprint_SprintPeriodGoal)" Sortable Field="s => s!.Name" SortKey="name">
                         <Template Context="sprint">

@@ -59,7 +59,7 @@ else
 <FlareCard Variant="CardVariant.Outlined" Class="alva-risk-panel">
     <FlareCardHeader Title="@(AlvaStrings.Risks_TasksAtRisk)" />
     <FlareCardContent>
-        <FlareDataGrid TItem="RiskDto" Items="Visible" Height="auto" Dense="true" RowKey="r => r!.TaskId">
+        <FlareDataGrid TItem="RiskDto" Items="Visible" Height="auto" Dense="true" RowKey="r => r!.TaskId" Presentation="DataGridPresentation.Auto">
             <Columns>
                 <FlareColumn TItem="RiskDto" Title="@(AlvaStrings.Common_Task)">
                     <Template Context="risk">

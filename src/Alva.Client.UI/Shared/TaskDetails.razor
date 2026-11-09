@@ -224,7 +224,7 @@
                         <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant"><FlareIconView Value="@MaterialDesign3Icons.Regular.Event" Size="16px" /> @(AlvaStrings.Task_Due) @last.ToString("d MMM yyyy")</FlareText>
                     }
                 </FlareStack>
-                <FlareDataGrid TItem="TaskModel" Items="Children" Height="auto" Dense="true" RowKey="c => c!.Id">
+                <FlareDataGrid TItem="TaskModel" Items="Children" Height="auto" Dense="true" RowKey="c => c!.Id" Presentation="DataGridPresentation.Auto">
                     <Columns>
                         <FlareColumn TItem="TaskModel" Title="@(AlvaStrings.Common_Subtask)">
                             <Template Context="child">

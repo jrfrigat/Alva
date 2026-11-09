@@ -167,7 +167,7 @@ else
         </ActionContent>
     </FlareCardHeader>
     <FlareCardContent>
-        <FlareDataGrid TItem="TaskModel" Items="Filtered(_filter)" Height="auto" Dense="true" RowKey="t => t!.Id">
+        <FlareDataGrid TItem="TaskModel" Items="Filtered(_filter)" Height="auto" Dense="true" RowKey="t => t!.Id" Presentation="DataGridPresentation.Auto">
             <Columns>
                 <FlareColumn TItem="TaskModel" Title="@(AlvaStrings.Common_Task)" Sortable Field="t => t!.Title" SortKey="title">
                     <Template Context="task">
