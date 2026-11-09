@@ -153,6 +153,28 @@ public sealed class TaskDetailsCardTests : UiTestBase
     }
 
     [Fact]
+    public void Header_summary_does_not_turn_unknown_remaining_into_zero()
+    {
+        var item = new TaskModel { Id = _task.Id, Title = _task.Title, Status = "Planned", Version = 1, EstimateHours = 8 };
+        var cut = Page(item);
+
+        Assert.Contains("8 / -", cut.Find(".flare-page-header").TextContent);
+    }
+
+    [Fact]
+    public void Header_summary_marks_an_overdue_deadline()
+    {
+        var item = new TaskModel
+        {
+            Id = _task.Id, Title = _task.Title, Status = "Planned", Version = 1,
+            Deadline = DateOnly.FromDateTime(DateTime.Today).AddDays(-1)
+        };
+        var cut = Page(item);
+
+        Assert.NotNull(cut.Find("[title='Дедлайн']").QuerySelector(".flare-color-error"));
+    }
+
+    [Fact]
     public void Compact_card_hides_breadcrumbs_and_links_to_the_full_page()
     {
         var cut = Render<FlareConfirmDialogProvider>(p => p.AddChildContent<TaskDetails>(d => d

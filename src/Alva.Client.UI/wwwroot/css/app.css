@@ -73,7 +73,6 @@ html,body{margin:0;min-height:100%;font-family:var(--alva-font);background:var(-
 .alva-task__status-activator{border:0;background:none;padding:0;cursor:pointer;display:inline-flex;border-radius:9999px}
 .alva-task__status-activator:focus-visible{outline:2px solid var(--flare-color-primary,var(--alva-primary));outline-offset:2px}
 .alva-task__summary-item{display:inline-flex;align-items:center;gap:.25rem;font-size:12px;line-height:16px;color:var(--flare-color-on-surface-variant,var(--alva-on-surface-variant));white-space:nowrap}
-.alva-task__summary-item--critical{color:var(--flare-color-error,var(--alva-critical))}
 .alva-task__reasons{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:.25rem}
 .alva-integration__runs{display:flex;flex-direction:column;gap:.25rem;padding-top:.5rem;border-top:1px solid var(--alva-border)}
 .alva-assign{display:flex;flex-direction:column;gap:.75rem;padding:1rem}
