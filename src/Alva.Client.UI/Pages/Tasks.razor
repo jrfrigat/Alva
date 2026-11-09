@@ -59,9 +59,9 @@ else
     @if (_riskFilter is { } riskFilter) { <FlareChip Closable="true" OnClose="ClearRisk">@(AlvaStrings.Tasks_FilterRisk): @RiskFilterLabel(riskFilter)</FlareChip> }
     <FlareButton Variant="ButtonVariant.Text" Size="ButtonSize.Sm" OnClick="ClearFilters">@(AlvaStrings.Tasks_ClearFilters)</FlareButton>
 </FlareStack>
-<FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@string.Format(AlvaStrings.Tasks_FoundCount, Matched.Count())</FlareText>
+<FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant"><span role="status" aria-live="polite">@string.Format(AlvaStrings.Tasks_FoundCount, Matched.Count())</span></FlareText>
 }
-<FlareStack Row Wrap Gap="FlareSpacing.Small"><FlareButton Href="tasks" Variant="ButtonVariant.Text" Size="ButtonSize.Sm">@(AlvaStrings.Gantt_AllTasks)</FlareButton><FlareButton Href="unassigned" Variant="ButtonVariant.Text" Size="ButtonSize.Sm">@(AlvaStrings.Common_Unassigned)</FlareButton><FlareButton Href="my-work" Variant="ButtonVariant.Text" Size="ButtonSize.Sm">@(AlvaStrings.Tasks_MyWork)</FlareButton><FlareButton OnClick="Load" Variant="ButtonVariant.Text" Size="ButtonSize.Sm">@(AlvaStrings.Tasks_Refresh)</FlareButton></FlareStack>
+<FlareStack Row Wrap Gap="FlareSpacing.Small"><FlareLink Href="tasks" Class="alva-task-view" aria-current="@(Route == "tasks" ? "page" : null)">@(AlvaStrings.Gantt_AllTasks)</FlareLink><FlareLink Href="unassigned" Class="alva-task-view" aria-current="@(Route == "unassigned" ? "page" : null)">@(AlvaStrings.Common_Unassigned)</FlareLink><FlareLink Href="my-work" Class="alva-task-view" aria-current="@(Route == "my-work" ? "page" : null)">@(AlvaStrings.Tasks_MyWork)</FlareLink><FlareButton OnClick="Load" Variant="ButtonVariant.Text" Size="ButtonSize.Sm">@(AlvaStrings.Tasks_Refresh)</FlareButton></FlareStack>
 <FlareCard Variant="CardVariant.Outlined"><FlareCardContent>
     @if (!_loaded) { <LoadingSkeleton Height="24rem" /> }
     else if (_error is not null) { }
@@ -81,11 +81,11 @@ else
         </div>
         @foreach (var row in Rows)
         {
-            <div class="alva-tree__row @RowClass(row.Task)" role="row" aria-level="@(row.Depth + 1)" aria-expanded="@(row.HasChildren ? (row.Expanded ? "true" : "false") : null)" @key="row.Task.Id" @onclick="() => Open(row.Task)">
+            <div class="alva-tree__row @RowClass(row.Task)" role="row" tabindex="0" aria-level="@(row.Depth + 1)" aria-expanded="@(row.HasChildren ? (row.Expanded ? "true" : "false") : null)" @key="row.Task.Id" @onclick="() => Open(row.Task)" @onkeydown="e => OnRowKey(e, row.Task)">
                 <div class="alva-tree__cell alva-tree__cell--task" role="gridcell" style="--alva-depth:@row.Depth">
                     @if (row.HasChildren) { <button type="button" class="alva-tree__toggle" aria-label="@(row.Expanded ? AlvaStrings.Tasks_Collapse : AlvaStrings.Tasks_Expand)" @onclick:stopPropagation="true" @onclick="() => Toggle(row.Task)">@(row.Expanded ? "v" : ">")</button> }
                     else { <span class="alva-tree__toggle alva-tree__toggle--empty" aria-hidden="true"></span> }
-                    <span @onclick:stopPropagation="true" @onclick="() => Open(row.Task)" @onclick:preventDefault="true"><FlareLink Href="@($"tasks/{row.Task.Id}")">@row.Task.Title</FlareLink></span>
+                    <span @onclick:stopPropagation="true" @onclick="() => Open(row.Task)" @onclick:preventDefault="true"><FlareLink Href="@($"tasks/{row.Task.Id}")" tabindex="-1">@row.Task.Title</FlareLink></span>
                     <button type="button" class="alva-tree__add" aria-label="@AlvaStrings.Tasks_AddSubtask" title="@AlvaStrings.Tasks_AddSubtask" @onclick:stopPropagation="true" @onclick="() => OpenQuickCreate(row.Task.Id)">+</button>
                     <span @onclick:stopPropagation="true">
                         <FlareMenu Anchor="MenuAnchor.BottomEnd" AriaLabel="@(AlvaStrings.Tasks_RowActions)">
@@ -440,6 +440,25 @@ else
         _focusCard = true;
     }
     private async Task Open(TaskModel? task){ if(task is null) return; _selectedId=task.Id; await SaveListContext(); await SaveTreeState(); }
+    private async Task OnRowKey(KeyboardEventArgs e, TaskModel task)
+    {
+        switch (e.Key)
+        {
+            case "Enter":
+            case " ":
+                await Open(task);
+                break;
+            case "ArrowRight":
+                if (_expanded.Add(task.Id)) await SaveTreeState();
+                break;
+            case "ArrowLeft":
+                if (_expanded.Remove(task.Id)) await SaveTreeState();
+                break;
+            case "Insert":
+                OpenQuickCreate(task.Id);
+                break;
+        }
+    }
     private Task Toggle(TaskModel task) { if (!_expanded.Add(task.Id)) _expanded.Remove(task.Id); return SaveTreeState(); }
     private Task SaveTreeState() => Session.TaskList.SaveTreeState(_expanded, _selectedId);
     private IEnumerable<TaskModel> AllSiblings(TaskModel task) => _tasks.Where(t => t.ParentId == task.ParentId).OrderBy(t => t.Order).ThenBy(t => t.Title);

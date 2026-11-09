@@ -107,6 +107,7 @@ html,body{margin:0;min-height:100%;font-family:var(--alva-font);background:var(-
 .alva-tree__head{position:sticky;top:0;z-index:2;padding:.5rem .75rem;border-bottom:1px solid var(--alva-border);background:var(--flare-color-surface-container-lowest,#fff);font-size:12px;font-weight:600;color:var(--flare-color-on-surface-variant,var(--alva-on-surface-variant))}
 .alva-tree__row{min-height:44px;padding:.375rem .75rem;border-top:1px solid var(--alva-border);cursor:pointer}
 .alva-tree__row:hover{background:var(--flare-color-surface-container-low,#eff4ff)}
+.alva-tree__row:focus-visible{outline:2px solid var(--flare-color-primary,var(--alva-primary));outline-offset:-2px}
 .alva-tree__row--context{opacity:.72}
 .alva-tree__row--new{background:var(--flare-color-surface-container-low,#eff4ff);box-shadow:inset 3px 0 0 var(--flare-color-primary,var(--alva-primary))}
 .alva-tree__cell{min-width:0;display:flex;align-items:center;gap:.35rem;overflow:hidden}
