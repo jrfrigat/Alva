@@ -761,7 +761,7 @@
   <data name="Task_TotalEstimateAndSubtaskAssignees" xml:space="preserve"><value>Total estimate and subtask assignees</value></data>
   <data name="Common_People" xml:space="preserve"><value>people</value></data>
   <data name="Common_RemainingWorkHours" xml:space="preserve"><value>Remaining work, hours</value></data>
-  <data name="Common_ForWorkInProgressLeaveBlankIfRemainingWorkIsUnknown0MeansNoWorkRemains" xml:space="preserve"><value>For work in progress, leave blank if the remaining work is unknown; the forecast will be unavailable. 0 means no work remains.</value></data>
+  <data name="Common_ForWorkInProgressLeaveBlankIfRemainingWorkIsUnknown0MeansNoWorkRemains" xml:space="preserve"><value>Blank - the remaining work is unknown and the forecast is unavailable; 0 - no work remains.</value></data>
   <data name="Common_RemainingWorkIsUnknown" xml:space="preserve"><value>Remaining work is unknown</value></data>
   <data name="Common_ASpecificPersonIsRequiredForTheForecast" xml:space="preserve"><value>A specific person is required for the forecast</value></data>
   <data name="Common_TheQueueIncludesUnknownWork" xml:space="preserve"><value>The queue includes unknown work</value></data>
@@ -1058,6 +1058,9 @@
   <data name="Task_Forecast" xml:space="preserve"><value>Forecast</value></data>
   <data name="Task_ForecastFinish" xml:space="preserve"><value>Forecast finish: {0}</value></data>
   <data name="Task_Plan" xml:space="preserve"><value>Plan</value></data>
+  <data name="Task_PlanContext" xml:space="preserve"><value>Context</value></data>
+  <data name="Task_PlanEffort" xml:space="preserve"><value>Effort</value></data>
+  <data name="Task_PlanDates" xml:space="preserve"><value>Dates</value></data>
   <data name="Task_AssignmentTitle" xml:space="preserve"><value>Assignment</value></data>
   <data name="Task_WhatTheTaskWaitsForAndWhatItHoldsUp" xml:space="preserve"><value>What the task waits for and what it holds up</value></data>
   <data name="Task_Predecessors" xml:space="preserve"><value>Predecessors</value></data>
@@ -1081,8 +1084,8 @@
   <data name="Task_SuccessorWaitsForThisTask" xml:space="preserve"><value>Successor — waits for this task</value></data>
   <data name="Task_TaskUnavailable" xml:space="preserve"><value>Task unavailable</value></data>
   <data name="Task_TheLinkToWillBeRemovedTheForecastAndRiskWillBeRecalculated" xml:space="preserve"><value>The link to “{0}” will be removed; the forecast and risk will be recalculated.</value></data>
-  <data name="Common_NoMoreThanHPerDay" xml:space="preserve"><value>No more than, h per day</value></data>
-  <data name="Common_EmptyMeansNoLimitForExample2HADayForATaskDoneAlongsideOtherWork" xml:space="preserve"><value>Empty means no limit. For example, 2 h a day for a task done alongside other work.</value></data>
+  <data name="Common_NoMoreThanHPerDay" xml:space="preserve"><value>Daily limit, hours</value></data>
+  <data name="Common_EmptyMeansNoLimitForExample2HADayForATaskDoneAlongsideOtherWork" xml:space="preserve"><value>Empty - no limit.</value></data>
   <data name="Common_NoMoreThanHADayOnThisTask" xml:space="preserve"><value>No more than {0} h a day on this task.</value></data>
   <data name="Common_AtHADayItNeedsButTheWindowHasTheWorkWillRunPastTheFinishDate" xml:space="preserve"><value>At {0} h a day it needs {1} {2}, but the window has {3} — the work will run past the finish date.</value></data>
   <data name="Common_NoMoreThanHADayTheTaskNeeds" xml:space="preserve"><value>No more than {0} h a day: the task needs {1} {2}.</value></data>

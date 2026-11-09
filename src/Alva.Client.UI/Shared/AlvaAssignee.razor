@@ -25,7 +25,7 @@ else if (Person is not null)
             {
                 <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@(Target.Kind == "Person" ? AlvaStrings.Common_Person : $"{Labels.Kind(Target.Kind)}: {Target.Name}")</FlareText>
             }
-            <SkillMatch Required="Task.RequiredSkillIds" Person="Person" Skills="SkillDictionary" />
+            @if (ShowSkillMatch) { <SkillMatch Required="Task.RequiredSkillIds" Person="Person" Skills="SkillDictionary" /> }
         </FlareStack>
     </FlareStack>
 }
@@ -47,6 +47,10 @@ else
 
     /// <summary>Assignee load as a percentage for the period, when known.</summary>
     [Parameter] public int? Load { get; set; }
+
+    /// <summary>Shows the skill match under the name. The subtask table hides it because it repeats for every row;
+    /// the assignment section keeps it.</summary>
+    [Parameter] public bool ShowSkillMatch { get; set; } = true;
 
     private ActorModel? Target => Actors.FirstOrDefault(a => a.Id == Task.AssignmentTargetId);
     private ActorModel? Person => Actors.FirstOrDefault(a => a.Id == Task.ResolvedPersonId) ?? (Target?.Kind == "Person" ? Target : null);

@@ -136,20 +136,31 @@
         <ChildContent>
             <FlareStack Gap="FlareSpacing.Medium">
                 @if (_formErrors.Count > 0) { <div tabindex="-1" @ref="_errorSummary"><AlvaValidationSummary Messages="_formErrors" /></div> }
-                <FlareGrid MinColumnWidth="min(100%,12rem)">
-                    <FlareSelect TValue="string" Label="@(AlvaStrings.Common_Status)" Items="Statuses" ItemLabel="Labels.Status" @bind-Value="_model.Status" />
-                    <FlareSelect TValue="string" Label="@(AlvaStrings.Common_Priority)" Items="Labels.Priorities" ItemLabel="Labels.Priority" @bind-Value="_model.Priority" />
-                    <FlareSelect TValue="Guid?" Label="@(AlvaStrings.Common_Project)" Items="Projects.Select(x => (Guid?)x.Id)" ItemLabel="ProjectName" NullOption="@(AlvaStrings.Sprint_Ongoing)" @bind-Value="_model.ProjectId" />
-                    <FlareSelect TValue="Guid?" Label="@(AlvaStrings.Common_SprintByDates)" Items="Sprints.OrderBy(x => x.StartDate).Select(x => (Guid?)x.Id)" ItemLabel="SprintName" NullOption="@(AlvaStrings.Common_BacklogUndated)" Value="SprintDates.First(_model, Sprints)" ValueChanged="id => SprintDates.Place(_model, Sprints.FirstOrDefault(s => s.Id == id))" HelperText="@SprintDates.Hint(_model, Sprints)" Disabled="_model.DatesFixed" />
-                    <FlareSelect TValue="Guid?" Label="@(AlvaStrings.Common_ParentTask)" ErrorText="@_parentError" Items="Tasks.Where(x => x.Id != Item.Id).Select(x => (Guid?)x.Id)" ItemLabel="TaskName" NullOption="@(AlvaStrings.Common_RootTask)" @bind-Value="_model.ParentId" Searchable />
-                    <FlareNumericField TValue="decimal?" Label="@(AlvaStrings.Common_EstimateHours)" ErrorText="@_estimateError" @bind-Value="_model.EstimateHours" Min="0" />
-                    <FlareNumericField TValue="decimal?" Label="@(AlvaStrings.Common_RemainingWorkHours)" ErrorText="@_remainingError" @bind-Value="_model.RemainingHours" Min="0" Max="100000" HelperText="@(AlvaStrings.Common_ForWorkInProgressLeaveBlankIfRemainingWorkIsUnknown0MeansNoWorkRemains)" />
-                    <FlareNumericField TValue="decimal?" Label="@(AlvaStrings.Common_NoMoreThanHPerDay)" ErrorText="@_limitError" @bind-Value="_model.DailyHoursLimit" Min="0" Max="24" HelperText="@DailyLimit.Hint(_model)" />
-                    <FlareDatePicker Label="@(AlvaStrings.Common_Deadline)" @bind-Value="_model.Deadline" />
-                    <FlareDatePicker Label="@(AlvaStrings.Common_Start)" ErrorText="@_startError" @bind-Value="_model.StartDate" Disabled="_model.DatesFixed" />
-                    <FlareDatePicker Label="@(AlvaStrings.Common_End)" ErrorText="@_endError" @bind-Value="_model.EndDate" Disabled="_model.DatesFixed" />
-                </FlareGrid>
                 <FlareStack Gap="FlareSpacing.Small">
+                    <FlareText Typo="TypographyScale.LabelMedium" Color="FlareColor.OnSurfaceVariant">@(AlvaStrings.Task_PlanContext)</FlareText>
+                    <FlareGrid MinColumnWidth="min(100%,12rem)">
+                        <FlareSelect TValue="string" Label="@(AlvaStrings.Common_Status)" Items="Statuses" ItemLabel="Labels.Status" @bind-Value="_model.Status" />
+                        <FlareSelect TValue="string" Label="@(AlvaStrings.Common_Priority)" Items="Labels.Priorities" ItemLabel="Labels.Priority" @bind-Value="_model.Priority" />
+                        <FlareSelect TValue="Guid?" Label="@(AlvaStrings.Common_Project)" Items="Projects.Select(x => (Guid?)x.Id)" ItemLabel="ProjectName" NullOption="@(AlvaStrings.Sprint_Ongoing)" @bind-Value="_model.ProjectId" />
+                        <FlareSelect TValue="Guid?" Label="@(AlvaStrings.Common_SprintByDates)" Items="Sprints.OrderBy(x => x.StartDate).Select(x => (Guid?)x.Id)" ItemLabel="SprintName" NullOption="@(AlvaStrings.Common_BacklogUndated)" Value="SprintDates.First(_model, Sprints)" ValueChanged="id => SprintDates.Place(_model, Sprints.FirstOrDefault(s => s.Id == id))" HelperText="@SprintDates.Hint(_model, Sprints)" Disabled="_model.DatesFixed" />
+                        <FlareSelect TValue="Guid?" Label="@(AlvaStrings.Common_ParentTask)" ErrorText="@_parentError" Items="Tasks.Where(x => x.Id != Item.Id).Select(x => (Guid?)x.Id)" ItemLabel="TaskName" NullOption="@(AlvaStrings.Common_RootTask)" @bind-Value="_model.ParentId" Searchable />
+                    </FlareGrid>
+                </FlareStack>
+                <FlareStack Gap="FlareSpacing.Small">
+                    <FlareText Typo="TypographyScale.LabelMedium" Color="FlareColor.OnSurfaceVariant">@(AlvaStrings.Task_PlanEffort)</FlareText>
+                    <FlareGrid MinColumnWidth="min(100%,12rem)">
+                        <FlareNumericField TValue="decimal?" Label="@(AlvaStrings.Common_EstimateHours)" ErrorText="@_estimateError" @bind-Value="_model.EstimateHours" Min="0" />
+                        <FlareNumericField TValue="decimal?" Label="@(AlvaStrings.Common_RemainingWorkHours)" ErrorText="@_remainingError" @bind-Value="_model.RemainingHours" Min="0" Max="100000" HelperText="@(AlvaStrings.Common_ForWorkInProgressLeaveBlankIfRemainingWorkIsUnknown0MeansNoWorkRemains)" />
+                        <FlareNumericField TValue="decimal?" Label="@(AlvaStrings.Common_NoMoreThanHPerDay)" ErrorText="@_limitError" @bind-Value="_model.DailyHoursLimit" Min="0" Max="24" HelperText="@DailyLimit.Hint(_model)" />
+                    </FlareGrid>
+                </FlareStack>
+                <FlareStack Gap="FlareSpacing.Small">
+                    <FlareText Typo="TypographyScale.LabelMedium" Color="FlareColor.OnSurfaceVariant">@(AlvaStrings.Task_PlanDates)</FlareText>
+                    <FlareGrid MinColumnWidth="min(100%,12rem)">
+                        <FlareDatePicker Label="@(AlvaStrings.Common_Start)" ErrorText="@_startError" @bind-Value="_model.StartDate" Disabled="_model.DatesFixed" />
+                        <FlareDatePicker Label="@(AlvaStrings.Common_End)" ErrorText="@_endError" @bind-Value="_model.EndDate" Disabled="_model.DatesFixed" />
+                        <FlareDatePicker Label="@(AlvaStrings.Common_Deadline)" @bind-Value="_model.Deadline" />
+                    </FlareGrid>
                     <FlareSwitch @bind-Value="_model.DatesFixed" Label="@(AlvaStrings.Common_FixedDatesDoNotMove)"
                                  Disabled="@(_model.StartDate is null || _model.EndDate is null)" />
                     <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@FixedHint</FlareText>
@@ -257,7 +268,7 @@
                             </Template>
                         </FlareColumn>
                         <FlareColumn TItem="TaskModel" Title="@(AlvaStrings.Task_AssigneeSlot)">
-                            <Template Context="child"><AlvaAssignee Task="child!" Actors="Actors" /></Template>
+                            <Template Context="child"><AlvaAssignee Task="child!" Actors="Actors" ShowSkillMatch="false" /></Template>
                         </FlareColumn>
                         <FlareColumn TItem="TaskModel" Title="@(AlvaStrings.Common_Estimate)">
                             <Template Context="child">@(child!.EstimateHours.HasValue ? $"{AlvaFormat.Hours(child.EstimateHours.Value)} {AlvaStrings.Sprint_HoursShort}" : "—")</Template>
@@ -266,7 +277,7 @@
                     <EmptyStateContent><FlareEmptyState Compact Title="@(AlvaStrings.Task_NoSubtasksYet)" Description="@(AlvaStrings.Task_AddTheFirstSubtaskBelow)" /></EmptyStateContent>
                 </FlareDataGrid>
                 <FlareStack Row Wrap Align="FlareAlignItems.End" Gap="FlareSpacing.Small">
-                    <FlareTextField @bind-Value="_quickTitle" Immediate Placeholder="@(AlvaStrings.Task_QuickAddOfANestedTaskEnter)" AriaLabel="@(AlvaStrings.Task_NewSubtaskTitle)" OnKeyDown="QuickKey">
+                    <FlareTextField @bind-Value="_quickTitle" Immediate Placeholder="@(AlvaStrings.Task_QuickAddOfANestedTaskEnter)" AriaLabel="@(AlvaStrings.Task_NewSubtaskTitle)" OnKeyDown="QuickKey" Style="flex:1 1 16rem;min-width:0">
                         <AdornmentStart><FlareIconView Value="@MaterialDesign3Icons.Regular.AddCircle" Size="18px" /></AdornmentStart>
                     </FlareTextField>
                     <FlareButton Variant="ButtonVariant.Tonal" Size="ButtonSize.Sm" Loading="_adding" Disabled="@(_adding || string.IsNullOrWhiteSpace(_quickTitle))" OnClick="QuickAdd">@(AlvaStrings.Task_AddANestedTask)</FlareButton>
@@ -486,7 +497,6 @@
     private string ActorName(Guid? id) => Actors.FirstOrDefault(x => x.Id == id)?.Name ?? AlvaStrings.Common_UnassignedTask;
     private string SkillName(Guid id) => Actors.FirstOrDefault(x => x.Id == id)?.Name ?? "";
     private IEnumerable<ActorModel> SkillActors => Actors.Where(a => a.Kind == "Skill");
-    private string[] SkillNames(ActorModel actor) => actor.SkillIds.Select(id => Actors.FirstOrDefault(a => a.Id == id)?.Name).OfType<string>().ToArray();
     private IEnumerable<ActorModel> AssignablePeople => Actors.Where(a => a.Kind == "Person" && InTargetDepartment(a));
     private void SelectTarget(ActorModel actor) { _assignTarget = actor.Id; _assignPerson = null; }
     private bool InTargetDepartment(ActorModel person) =>
@@ -597,7 +607,6 @@
                                     @if (actor.Id == recommended) { <AlvaStatusChip Tone="AlvaTone.Ok">@(AlvaStrings.Task_Recommended)</AlvaStatusChip> }
                                 </FlareStack>
                                 <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@CandidateMeta(actor)</FlareText>
-                                @if (actor.Kind == "Person" && SkillNames(actor) is { Length: > 0 } actorSkills) { <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@(AlvaStrings.Task_Skills): @string.Join(", ", actorSkills)</FlareText> }
                                 <SkillMatch Required="_model.RequiredSkillIds" Person="actor" Skills="SkillActors" />
                                 @if (percent is not null)
                                 {

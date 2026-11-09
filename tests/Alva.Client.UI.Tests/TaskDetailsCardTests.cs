@@ -136,6 +136,36 @@ public sealed class TaskDetailsCardTests : UiTestBase
     }
 
     [Fact]
+    public void Plan_fields_are_grouped_and_dates_stay_together()
+    {
+        var cut = Page();
+
+        var plan = cut.FindAll("section").Single(s => s.QuerySelector("h2")?.TextContent.Trim() == "План");
+        Assert.Contains("Контекст", plan.TextContent);
+        Assert.Contains("Усилие", plan.TextContent);
+        Assert.Contains("Даты", plan.TextContent);
+        Assert.Same(Field(cut, "Начало").Closest(".flare-grid"), Field(cut, "Окончание").Closest(".flare-grid"));
+        Assert.Contains("flex:1 1 16rem", cut.Markup);
+    }
+
+    [Fact]
+    public void Subtask_rows_do_not_repeat_the_skill_match()
+    {
+        var skill = new ActorModel { Id = Guid.NewGuid(), Name = "Backend", Kind = "Skill" };
+        var person = new ActorModel { Id = Guid.NewGuid(), Name = "Анна", Kind = "Person", SkillIds = [skill.Id] };
+        var parent = new TaskModel { Id = _task.Id, Title = "Родитель", Status = "Planned", Version = 1 };
+        var child = new TaskModel { Id = Guid.NewGuid(), Title = "Дочерняя", ParentId = parent.Id, Status = "Planned", Version = 1, AssignmentTargetId = person.Id, RequiredSkillIds = [skill.Id] };
+        var cut = Render<FlareConfirmDialogProvider>(p => p.AddChildContent<TaskDetails>(d => d
+            .Add(x => x.Item, parent)
+            .Add(x => x.Actors, [skill, person])
+            .Add(x => x.Tasks, [parent, child])));
+
+        var subtasks = cut.FindAll("section").Single(s => s.QuerySelector("h2")?.TextContent.Trim() == "Подзадачи");
+        Assert.Contains("Анна", subtasks.TextContent);
+        Assert.DoesNotContain("Все необходимые навыки есть", subtasks.TextContent);
+    }
+
+    [Fact]
     public void Dependencies_list_predecessors_and_successors_with_type_and_lag()
     {
         Api.Answer($"tasks/{_task.Id}/dependencies", _ => new[]

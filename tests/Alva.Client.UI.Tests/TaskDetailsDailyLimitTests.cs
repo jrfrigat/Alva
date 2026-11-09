@@ -24,7 +24,7 @@ public sealed class TaskDetailsDailyLimitTests : UiTestBase
         var task = new TaskModel { Id = Guid.NewGuid(), Title = "Отчёт", Status = "Planned", Version = 1, EstimateHours = 10, StartDate = Monday, EndDate = Monday.AddDays(2) };
         var cut = Page(task);
 
-        Field(cut, "Не больше, ч в день").Change("2");
+        Field(cut, "Лимит, ч в день").Change("2");
 
         Assert.Contains("нужно 5", cut.Markup);
         Assert.Contains("работа выйдет за окончание", cut.Markup);
@@ -46,7 +46,7 @@ public sealed class TaskDetailsDailyLimitTests : UiTestBase
         var sent = false;
         Api.OnSend = (_, _, _) => { sent = true; return null; };
 
-        Field(cut, "Не больше, ч в день").Change("0");
+        Field(cut, "Лимит, ч в день").Change("0");
         Button(cut, "Сохранить").Click();
 
         cut.WaitForAssertion(() => Assert.Contains("больше 0 и не больше 24 часов", cut.Markup));

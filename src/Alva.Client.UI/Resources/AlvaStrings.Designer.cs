@@ -2304,7 +2304,7 @@ public static class AlvaStrings
     /// <summary>Remaining work, hours</summary>
     public static string Common_RemainingWorkHours => Get("Common_RemainingWorkHours");
 
-    /// <summary>For work in progress, leave blank if the remaining work is unknown; the forecast will be unavailable. 0 means no work remains.</summary>
+    /// <summary>Blank - the remaining work is unknown and the forecast is unavailable; 0 - no work remains.</summary>
     public static string Common_ForWorkInProgressLeaveBlankIfRemainingWorkIsUnknown0MeansNoWorkRemains => Get("Common_ForWorkInProgressLeaveBlankIfRemainingWorkIsUnknown0MeansNoWorkRemains");
 
     /// <summary>Remaining work is unknown</summary>
@@ -2991,6 +2991,15 @@ public static class AlvaStrings
     /// <summary>Plan</summary>
     public static string Task_Plan => Get("Task_Plan");
 
+    /// <summary>Context</summary>
+    public static string Task_PlanContext => Get("Task_PlanContext");
+
+    /// <summary>Effort</summary>
+    public static string Task_PlanEffort => Get("Task_PlanEffort");
+
+    /// <summary>Dates</summary>
+    public static string Task_PlanDates => Get("Task_PlanDates");
+
     /// <summary>Assignment</summary>
     public static string Task_AssignmentTitle => Get("Task_AssignmentTitle");
 
@@ -3060,10 +3069,10 @@ public static class AlvaStrings
     /// <summary>The link to “{0}” will be removed; the forecast and risk will be recalculated.</summary>
     public static string Task_TheLinkToWillBeRemovedTheForecastAndRiskWillBeRecalculated => Get("Task_TheLinkToWillBeRemovedTheForecastAndRiskWillBeRecalculated");
 
-    /// <summary>No more than, h per day</summary>
+    /// <summary>Daily limit, hours</summary>
     public static string Common_NoMoreThanHPerDay => Get("Common_NoMoreThanHPerDay");
 
-    /// <summary>Empty means no limit. For example, 2 h a day for a task done alongside other work.</summary>
+    /// <summary>Empty - no limit.</summary>
     public static string Common_EmptyMeansNoLimitForExample2HADayForATaskDoneAlongsideOtherWork => Get("Common_EmptyMeansNoLimitForExample2HADayForATaskDoneAlongsideOtherWork");
 
     /// <summary>No more than {0} h a day on this task.</summary>

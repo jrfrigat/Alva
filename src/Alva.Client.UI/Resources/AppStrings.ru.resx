@@ -761,7 +761,7 @@
   <data name="Task_TotalEstimateAndSubtaskAssignees" xml:space="preserve"><value>Суммарная оценка и исполнители подзадач</value></data>
   <data name="Common_People" xml:space="preserve"><value>чел.</value></data>
   <data name="Common_RemainingWorkHours" xml:space="preserve"><value>Остаток, часы</value></data>
-  <data name="Common_ForWorkInProgressLeaveBlankIfRemainingWorkIsUnknown0MeansNoWorkRemains" xml:space="preserve"><value>Для начатой задачи пустое поле означает неизвестный остаток; прогноз будет недоступен. 0 - работа закончена.</value></data>
+  <data name="Common_ForWorkInProgressLeaveBlankIfRemainingWorkIsUnknown0MeansNoWorkRemains" xml:space="preserve"><value>Пусто - неизвестный остаток и прогноз недоступен; 0 - работа закончена.</value></data>
   <data name="Common_RemainingWorkIsUnknown" xml:space="preserve"><value>Неизвестен остаток работы</value></data>
   <data name="Common_ASpecificPersonIsRequiredForTheForecast" xml:space="preserve"><value>Для прогноза нужен конкретный исполнитель</value></data>
   <data name="Common_TheQueueIncludesUnknownWork" xml:space="preserve"><value>Очередь исполнителя содержит неопределённую работу</value></data>
@@ -1058,6 +1058,9 @@
   <data name="Task_Forecast" xml:space="preserve"><value>Прогноз</value></data>
   <data name="Task_ForecastFinish" xml:space="preserve"><value>Прогноз завершения: {0}</value></data>
   <data name="Task_Plan" xml:space="preserve"><value>План</value></data>
+  <data name="Task_PlanContext" xml:space="preserve"><value>Контекст</value></data>
+  <data name="Task_PlanEffort" xml:space="preserve"><value>Усилие</value></data>
+  <data name="Task_PlanDates" xml:space="preserve"><value>Даты</value></data>
   <data name="Task_AssignmentTitle" xml:space="preserve"><value>Назначение</value></data>
   <data name="Task_WhatTheTaskWaitsForAndWhatItHoldsUp" xml:space="preserve"><value>Что задача ждёт и кого задерживает</value></data>
   <data name="Task_Predecessors" xml:space="preserve"><value>Предшественники</value></data>
@@ -1081,8 +1084,8 @@
   <data name="Task_SuccessorWaitsForThisTask" xml:space="preserve"><value>Последователь — ждёт эту задачу</value></data>
   <data name="Task_TaskUnavailable" xml:space="preserve"><value>Задача недоступна</value></data>
   <data name="Task_TheLinkToWillBeRemovedTheForecastAndRiskWillBeRecalculated" xml:space="preserve"><value>Связь с задачей «{0}» будет удалена; прогноз и риск пересчитаются.</value></data>
-  <data name="Common_NoMoreThanHPerDay" xml:space="preserve"><value>Не больше, ч в день</value></data>
-  <data name="Common_EmptyMeansNoLimitForExample2HADayForATaskDoneAlongsideOtherWork" xml:space="preserve"><value>Пусто — без ограничения. Например, 2 ч в день для задачи, которую ведут параллельно с другой работой.</value></data>
+  <data name="Common_NoMoreThanHPerDay" xml:space="preserve"><value>Лимит, ч в день</value></data>
+  <data name="Common_EmptyMeansNoLimitForExample2HADayForATaskDoneAlongsideOtherWork" xml:space="preserve"><value>Пусто - без ограничения.</value></data>
   <data name="Common_NoMoreThanHADayOnThisTask" xml:space="preserve"><value>Не больше {0} ч в день на эту задачу.</value></data>
   <data name="Common_AtHADayItNeedsButTheWindowHasTheWorkWillRunPastTheFinishDate" xml:space="preserve"><value>При {0} ч в день нужно {1} {2}, а в окне {3} — работа выйдет за окончание.</value></data>
   <data name="Common_NoMoreThanHADayTheTaskNeeds" xml:space="preserve"><value>Не больше {0} ч в день: задаче нужно {1} {2}.</value></data>
