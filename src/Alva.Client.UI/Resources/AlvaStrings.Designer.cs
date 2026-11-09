@@ -1080,6 +1080,12 @@ public static class AlvaStrings
     /// <summary>Open planning</summary>
     public static string Sprint_OpenPlanning => Get("Sprint_OpenPlanning");
 
+    /// <summary>Advanced</summary>
+    public static string Common_Advanced => Get("Common_Advanced");
+
+    /// <summary>Hide advanced</summary>
+    public static string Common_HideAdvanced => Get("Common_HideAdvanced");
+
     /// <summary>Cancel</summary>
     public static string Common_Cancel => Get("Common_Cancel");
 

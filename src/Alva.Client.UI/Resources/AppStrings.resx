@@ -353,6 +353,8 @@
   <data name="Gantt_OpenTheGantt" xml:space="preserve"><value>Open the Gantt</value></data>
   <data name="Risks_OpenTask" xml:space="preserve"><value>Open task</value></data>
   <data name="Sprint_OpenPlanning" xml:space="preserve"><value>Open planning</value></data>
+  <data name="Common_Advanced" xml:space="preserve"><value>Advanced</value></data>
+  <data name="Common_HideAdvanced" xml:space="preserve"><value>Hide advanced</value></data>
   <data name="Common_Cancel" xml:space="preserve"><value>Cancel</value></data>
   <data name="Common_Cancelled" xml:space="preserve"><value>Cancelled</value></data>
   <data name="Risks_MarkAllAsRead" xml:space="preserve"><value>Mark all as read</value></data>

@@ -213,8 +213,9 @@ public sealed class TaskDetailsCardTests : UiTestBase
     {
         var cut = Page();
 
+        Choose(cut.FindComponents<FlareSelect<Guid?>>().Single(s => s.Instance.Label == "Задача"), $"{AlvaFormat.Code(_next.Id)} {_next.Title}");
+        Button(cut, "Дополнительно").Click();
         Choose(cut.FindComponent<FlareSelect<bool>>(), "Последователь — ждёт эту задачу");
-        Choose(cut.FindComponents<FlareSelect<Guid?>>().Single(s => s.Instance.Label == "Задача"), "Анонс");
         Choose(cut.FindComponents<FlareSelect<string>>().Single(s => s.Instance.Label == "Вид"), "Начало → начало");
         Button(cut, "Добавить связь").Click();
 

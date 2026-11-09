@@ -353,6 +353,8 @@
   <data name="Gantt_OpenTheGantt" xml:space="preserve"><value>Открыть Гантт</value></data>
   <data name="Risks_OpenTask" xml:space="preserve"><value>Открыть задачу</value></data>
   <data name="Sprint_OpenPlanning" xml:space="preserve"><value>Открыть планирование</value></data>
+  <data name="Common_Advanced" xml:space="preserve"><value>Дополнительно</value></data>
+  <data name="Common_HideAdvanced" xml:space="preserve"><value>Скрыть дополнительно</value></data>
   <data name="Common_Cancel" xml:space="preserve"><value>Отмена</value></data>
   <data name="Common_Cancelled" xml:space="preserve"><value>Отменена</value></data>
   <data name="Risks_MarkAllAsRead" xml:space="preserve"><value>Отметить всё прочитанным</value></data>
