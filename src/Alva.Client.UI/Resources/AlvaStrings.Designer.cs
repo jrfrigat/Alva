@@ -3383,4 +3383,25 @@ public static class AlvaStrings
 
     /// <summary>Could not create the task</summary>
     public static string Tasks_CouldNotCreate => Get("Tasks_CouldNotCreate");
+
+    /// <summary>Task actions</summary>
+    public static string Tasks_RowActions => Get("Tasks_RowActions");
+
+    /// <summary>Move up</summary>
+    public static string Tasks_MoveUp => Get("Tasks_MoveUp");
+
+    /// <summary>Move down</summary>
+    public static string Tasks_MoveDown => Get("Tasks_MoveDown");
+
+    /// <summary>Move out a level</summary>
+    public static string Tasks_Outdent => Get("Tasks_Outdent");
+
+    /// <summary>Make a subtask of the previous</summary>
+    public static string Tasks_MakeSubtask => Get("Tasks_MakeSubtask");
+
+    /// <summary>Task moved</summary>
+    public static string Tasks_Moved => Get("Tasks_Moved");
+
+    /// <summary>Could not move the task</summary>
+    public static string Tasks_CouldNotMove => Get("Tasks_CouldNotMove");
 }

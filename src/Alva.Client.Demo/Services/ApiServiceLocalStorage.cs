@@ -367,6 +367,9 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
             case ["api", "teams", _, "tasks", _, "dependencies"]:
                 AddDependency(store, value);
                 break;
+            case ["api", "teams", _, "tasks", var moveId, "move"]:
+                MoveTask(store, Id(moveId), Read<MoveTaskRequest>(value));
+                break;
             case ["api", "teams", _, "tasks", var id]:
                 if (method == HttpMethod.Delete) { store.Tasks.RemoveAll(x => x.Id == Id(id)); store.Dependencies.RemoveAll(d => d.PredecessorId == Id(id) || d.SuccessorId == Id(id)); }
                 else SaveTask(store, Guid.Empty, Id(id), value);
@@ -552,9 +555,34 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
         }
     }
 
-    private static TaskModel SaveTask(DemoStore store, Guid teamId, Guid? id, object value)
+    private static void MoveTask(DemoStore store, Guid id, MoveTaskRequest request)
     {
-        var request = Read<TaskRequest>(value);
+        var task = store.Tasks.FirstOrDefault(t => t.Id == id) ?? throw new InvalidOperationException("Задача не найдена.");
+        if (request.Version != task.Version)
+            throw new ServerRefusalException("Задача изменилась. Обновите данные.", HttpStatusCode.Conflict);
+        if (request.ParentId is { } parentId)
+        {
+            if (parentId == id || IsDescendant(store, parentId, id))
+                throw new InvalidOperationException("Родительская задача не может быть самой задачей или её потомком.");
+            if (store.Tasks.All(t => t.Id != parentId))
+                throw new InvalidOperationException("Родительская задача не найдена.");
+        }
+        task.ParentId = request.ParentId;
+        task.Order = request.Order;
+        task.Version++;
+        AddHistory(store, task.Id, "Перемещена в дереве");
+    }
+
+    private static bool IsDescendant(DemoStore store, Guid candidate, Guid ancestor)
+    {
+        var seen = new HashSet<Guid>();
+        for (var current = store.Tasks.FirstOrDefault(t => t.Id == candidate); current is not null && seen.Add(current.Id); current = current.ParentId is { } parentId ? store.Tasks.FirstOrDefault(t => t.Id == parentId) : null)
+            if (current.Id == ancestor) return true;
+        return false;
+    }
+
+    private static TaskModel SaveTask(DemoStore store, Guid teamId, Guid? id, object value)
+    {        var request = Read<TaskRequest>(value);
         if (request.SetRemainingHours && request.RemainingHours is < 0 or > 100000) throw new InvalidOperationException("Остаток должен быть от 0 до 100000 часов.");
         if (request.SetDailyHoursLimit && request.DailyHoursLimit is <= 0 or > 24) throw new InvalidOperationException("Лимит в день должен быть больше 0 и не больше 24 часов.");
         var requiredSkillIds = SkillMath.Normalize(request.RequiredSkillIds ?? []);

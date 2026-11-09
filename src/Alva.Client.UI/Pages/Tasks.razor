@@ -87,6 +87,17 @@ else
                     else { <span class="alva-tree__toggle alva-tree__toggle--empty" aria-hidden="true"></span> }
                     <span @onclick:stopPropagation="true" @onclick="() => Open(row.Task)" @onclick:preventDefault="true"><FlareLink Href="@($"tasks/{row.Task.Id}")">@row.Task.Title</FlareLink></span>
                     <button type="button" class="alva-tree__add" aria-label="@AlvaStrings.Tasks_AddSubtask" title="@AlvaStrings.Tasks_AddSubtask" @onclick:stopPropagation="true" @onclick="() => OpenQuickCreate(row.Task.Id)">+</button>
+                    <span @onclick:stopPropagation="true">
+                        <FlareMenu Anchor="MenuAnchor.BottomEnd" AriaLabel="@(AlvaStrings.Tasks_RowActions)">
+                            <Activator><FlareIconButton Icon="@MaterialDesign3Icons.Regular.MoreVert" Size="ButtonSize.Sm" Tooltip="@(AlvaStrings.Tasks_RowActions)" AriaLabel="@(AlvaStrings.Tasks_RowActions)" /></Activator>
+                            <ChildContent>
+                                <FlareMenuItem OnClick="() => MoveUp(row.Task)">@(AlvaStrings.Tasks_MoveUp)</FlareMenuItem>
+                                <FlareMenuItem OnClick="() => MoveDown(row.Task)">@(AlvaStrings.Tasks_MoveDown)</FlareMenuItem>
+                                <FlareMenuItem OnClick="() => Outdent(row.Task)">@(AlvaStrings.Tasks_Outdent)</FlareMenuItem>
+                                <FlareMenuItem OnClick="() => MakeSubtask(row.Task)">@(AlvaStrings.Tasks_MakeSubtask)</FlareMenuItem>
+                            </ChildContent>
+                        </FlareMenu>
+                    </span>
                     <div class="alva-tree__meta">
                         <AlvaStatusChip Tone="AlvaTones.Status(row.Task.Status)">@Labels.Status(row.Task.Status)</AlvaStatusChip>
                         @if (row.Task.Priority is not "Normal") { <AlvaStatusChip Tone="AlvaTones.Priority(row.Task.Priority)">@Labels.Priority(row.Task.Priority)</AlvaStatusChip> }
@@ -431,6 +442,64 @@ else
     private async Task Open(TaskModel? task){ if(task is null) return; _selectedId=task.Id; await SaveListContext(); await SaveTreeState(); }
     private Task Toggle(TaskModel task) { if (!_expanded.Add(task.Id)) _expanded.Remove(task.Id); return SaveTreeState(); }
     private Task SaveTreeState() => Session.TaskList.SaveTreeState(_expanded, _selectedId);
+    private IEnumerable<TaskModel> AllSiblings(TaskModel task) => _tasks.Where(t => t.ParentId == task.ParentId).OrderBy(t => t.Order).ThenBy(t => t.Title);
+    private Task MoveUp(TaskModel task) => SwapWithNeighbor(task, -1);
+    private Task MoveDown(TaskModel task) => SwapWithNeighbor(task, 1);
+    private async Task SwapWithNeighbor(TaskModel task, int delta)
+    {
+        var siblings = AllSiblings(task).ToList();
+        var index = siblings.FindIndex(t => t.Id == task.Id);
+        var target = index + delta;
+        if (index < 0 || target < 0 || target >= siblings.Count) return;
+        (siblings[index], siblings[target]) = (siblings[target], siblings[index]);
+        await ApplyOrder(task.ParentId, siblings);
+    }
+    private async Task ApplyOrder(Guid? parentId, IReadOnlyList<TaskModel> ordered)
+    {
+        try
+        {
+            for (var i = 0; i < ordered.Count; i++)
+                if (ordered[i].Order != i) await MoveTask(ordered[i], parentId, i);
+            await Load();
+            Snackbar.Show(AlvaStrings.Tasks_Moved, SnackbarSeverity.Success);
+        }
+        catch (Exception e) when (e is HttpRequestException or InvalidOperationException)
+        {
+            _error = PageFeedback.Describe(e);
+        }
+    }
+    private async Task Outdent(TaskModel task)
+    {
+        if (task.ParentId is not { } parentId || _tasks.FirstOrDefault(t => t.Id == parentId) is not { } parent) return;
+        var newParentId = parent.ParentId;
+        var order = _tasks.Where(t => t.ParentId == newParentId).Select(t => t.Order).DefaultIfEmpty(-1).Max() + 1;
+        await MoveOne(task, newParentId, order);
+    }
+    private async Task MakeSubtask(TaskModel task)
+    {
+        var siblings = AllSiblings(task).ToList();
+        var index = siblings.FindIndex(t => t.Id == task.Id);
+        if (index <= 0) return;
+        var target = siblings[index - 1];
+        var order = _tasks.Where(t => t.ParentId == target.Id).Select(t => t.Order).DefaultIfEmpty(-1).Max() + 1;
+        await MoveOne(task, target.Id, order);
+    }
+    private async Task MoveOne(TaskModel task, Guid? parentId, int order)
+    {
+        try
+        {
+            await MoveTask(task, parentId, order);
+            _highlightId = task.Id;
+            await Load();
+            Snackbar.Show(AlvaStrings.Tasks_Moved, SnackbarSeverity.Success);
+        }
+        catch (Exception e) when (e is HttpRequestException or InvalidOperationException)
+        {
+            _error = PageFeedback.Describe(e);
+        }
+    }
+    private Task MoveTask(TaskModel task, Guid? parentId, int order) =>
+        Session.Send(HttpMethod.Put, Session.TeamPath($"tasks/{task.Id}/move"), new MoveTaskRequest(parentId, order, task.Version));
     private async Task OnDrawerOpen(bool open) { if (open) return; _selectedId=null; await SaveTreeState(); }
     private TaskModel? Selected => _selectedId is { } id ? _tasks.FirstOrDefault(t => t.Id == id) : null;
     private string QuickContext
