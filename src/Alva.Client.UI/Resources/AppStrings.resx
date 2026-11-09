@@ -1201,4 +1201,9 @@
   <data name="Tasks_MakeSubtask" xml:space="preserve"><value>Make a subtask of the previous</value></data>
   <data name="Tasks_Moved" xml:space="preserve"><value>Task moved</value></data>
   <data name="Tasks_CouldNotMove" xml:space="preserve"><value>Could not move the task</value></data>
+  <data name="Task_TabSummary" xml:space="preserve"><value>Summary</value></data>
+  <data name="Task_TabPlan" xml:space="preserve"><value>Plan</value></data>
+  <data name="Task_TabLinks" xml:space="preserve"><value>Links</value></data>
+  <data name="Task_TabSubtasks" xml:space="preserve"><value>Subtasks</value></data>
+  <data name="Task_TabHistory" xml:space="preserve"><value>History</value></data>
 </root>

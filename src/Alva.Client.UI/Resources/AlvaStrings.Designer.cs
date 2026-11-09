@@ -3404,4 +3404,19 @@ public static class AlvaStrings
 
     /// <summary>Could not move the task</summary>
     public static string Tasks_CouldNotMove => Get("Tasks_CouldNotMove");
+
+    /// <summary>Summary</summary>
+    public static string Task_TabSummary => Get("Task_TabSummary");
+
+    /// <summary>Plan</summary>
+    public static string Task_TabPlan => Get("Task_TabPlan");
+
+    /// <summary>Links</summary>
+    public static string Task_TabLinks => Get("Task_TabLinks");
+
+    /// <summary>Subtasks</summary>
+    public static string Task_TabSubtasks => Get("Task_TabSubtasks");
+
+    /// <summary>History</summary>
+    public static string Task_TabHistory => Get("Task_TabHistory");
 }

@@ -1201,4 +1201,9 @@
   <data name="Tasks_MakeSubtask" xml:space="preserve"><value>Сделать подзадачей предыдущей</value></data>
   <data name="Tasks_Moved" xml:space="preserve"><value>Задача перемещена</value></data>
   <data name="Tasks_CouldNotMove" xml:space="preserve"><value>Не удалось переместить задачу</value></data>
+  <data name="Task_TabSummary" xml:space="preserve"><value>Сводка</value></data>
+  <data name="Task_TabPlan" xml:space="preserve"><value>План</value></data>
+  <data name="Task_TabLinks" xml:space="preserve"><value>Связи</value></data>
+  <data name="Task_TabSubtasks" xml:space="preserve"><value>Подзадачи</value></data>
+  <data name="Task_TabHistory" xml:space="preserve"><value>История</value></data>
 </root>

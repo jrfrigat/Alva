@@ -187,6 +187,21 @@ public sealed class TaskDetailsCardTests : UiTestBase
     }
 
     [Fact]
+    public void Compact_card_has_tabs_and_switches_the_section()
+    {
+        var cut = Render<FlareConfirmDialogProvider>(p => p.AddChildContent<TaskDetails>(d => d
+            .Add(x => x.Item, _task)
+            .Add(x => x.Compact, true)
+            .Add(x => x.Tasks, [_task])));
+
+        var root = cut.Find(".alva-task--compact");
+        Assert.Equal("summary", root.GetAttribute("data-tab"));
+        cut.FindAll(".flare-chip").Single(c => c.TextContent.Trim() == "План").QuerySelector("button")!.Click();
+        Assert.Equal("plan", cut.Find(".alva-task--compact").GetAttribute("data-tab"));
+        Assert.Empty(Page().FindAll(".alva-task__tabs"));
+    }
+
+    [Fact]
     public void Header_summary_shows_planning_facts_and_changes_status()
     {
         var actor = new ActorModel { Id = Guid.NewGuid(), Name = "Анна", Kind = "Person" };

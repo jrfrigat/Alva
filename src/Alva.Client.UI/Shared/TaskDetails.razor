@@ -5,7 +5,7 @@
 @inject NavigationManager Navigation
 @inject DraftGuard Drafts
 <NavigationLock OnBeforeInternalNavigation="ConfirmLeave" ConfirmExternalNavigation="Dirty" />
-<FlareStack Gap="FlareSpacing.Large">
+<FlareStack Gap="FlareSpacing.Large" Class="@(Compact ? "alva-task--compact" : null)" data-tab="@_tab">
     <div @ref="_heading" tabindex="-1">
     <FlarePageHeader Title="@_model.Title" HeadingLevel="@HeadingLevel">
         <EyebrowContent>
@@ -87,7 +87,17 @@
     </div>
     <PageFeedback Error="@_error" />
 
-    <FlareSection Class="alva-task__risk">
+    @if (Compact)
+    {
+        <FlareStack Row Wrap Gap="FlareSpacing.Small" Class="alva-task__tabs">
+            @foreach (var (key, label) in Tabs)
+            {
+                <FlareChip Selected="@(_tab == key)" OnClick="() => _tab = key">@label</FlareChip>
+            }
+        </FlareStack>
+    }
+
+    <FlareSection Class="alva-task__risk alva-task__section--summary">
         <HeadingContent>
             <FlareStack Row Align="FlareAlignItems.Center" Gap="FlareSpacing.Small">
                 <FlareIconView Value="@(_risk is { HasRisk: true } ? MaterialDesign3Icons.Regular.Warning : MaterialDesign3Icons.Regular.CheckCircle)" Size="20px" />
@@ -145,7 +155,7 @@
         </ChildContent>
     </FlareSection>
 
-    <FlareSection>
+    <FlareSection Class="alva-task__section--summary">
         <HeadingContent>
             <FlareStack Row Align="FlareAlignItems.Center" Gap="FlareSpacing.Small">
                 <FlareIconView Value="@MaterialDesign3Icons.Regular.Description" Size="20px" />
@@ -157,7 +167,7 @@
         </ChildContent>
     </FlareSection>
 
-    <FlareSection>
+    <FlareSection Class="alva-task__section--plan">
         <HeadingContent>
             <FlareStack Row Align="FlareAlignItems.Center" Gap="FlareSpacing.Small">
                 <FlareIconView Value="@MaterialDesign3Icons.Regular.Badge" Size="20px" />
@@ -174,7 +184,7 @@
         </ChildContent>
     </FlareSection>
 
-    <FlareSection>
+    <FlareSection Class="alva-task__section--plan">
         <HeadingContent>
             <FlareStack Row Align="FlareAlignItems.Center" Gap="FlareSpacing.Small">
                 <FlareIconView Value="@MaterialDesign3Icons.Regular.Tune" Size="20px" />
@@ -191,7 +201,7 @@
         </ChildContent>
     </FlareSection>
 
-    <FlareSection>
+    <FlareSection Class="alva-task__section--summary">
         <HeadingContent>
             <FlareStack Row Align="FlareAlignItems.Center" Gap="FlareSpacing.Small">
                 <FlareIconView Value="@MaterialDesign3Icons.Regular.Assignment" Size="20px" />
@@ -206,7 +216,7 @@
         </ChildContent>
     </FlareSection>
 
-    <FlareSection Class="alva-task__deps">
+    <FlareSection Class="alva-task__deps alva-task__section--links">
         <HeadingContent>
             <FlareStack Row Align="FlareAlignItems.Center" Gap="FlareSpacing.Small">
                 <FlareIconView Value="@MaterialDesign3Icons.Regular.Hub" Size="20px" />
@@ -268,7 +278,7 @@
         </ChildContent>
     </FlareSection>
 
-    <FlareSection>
+    <FlareSection Class="alva-task__section--subtasks">
         <HeadingContent>
             <FlareStack Row Align="FlareAlignItems.Center" Gap="FlareSpacing.Small">
                 <FlareIconView Value="@MaterialDesign3Icons.Regular.Layers" Size="20px" />
@@ -316,7 +326,7 @@
         </ChildContent>
     </FlareSection>
 
-    <FlareSection>
+    <FlareSection Class="alva-task__section--history">
         <HeadingContent>
             <FlareStack Row Align="FlareAlignItems.Center" Gap="FlareSpacing.Small">
                 <FlareIconView Value="@MaterialDesign3Icons.Regular.History" Size="20px" />
@@ -424,6 +434,15 @@
     private DependencyDto[] _dependencies = [];
     private (Guid Id, long Version) _linksFor;
     private string? _linksError;
+    private string _tab = "summary";
+    private static readonly (string Key, string Label)[] Tabs =
+    [
+        ("summary", AlvaStrings.Task_TabSummary),
+        ("plan", AlvaStrings.Task_TabPlan),
+        ("links", AlvaStrings.Task_TabLinks),
+        ("subtasks", AlvaStrings.Task_TabSubtasks),
+        ("history", AlvaStrings.Task_TabHistory)
+    ];
     private static readonly bool[] Directions = [true, false];
     private static readonly string[] DependencyKinds = ["FS", "SS", "FF", "SF"];
     private bool _linkIncoming = true;
