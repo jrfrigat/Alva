@@ -54,6 +54,13 @@ public sealed class TaskListState(IJSRuntime js)
         await Save(next);
     }
 
+    /// <summary>Remembers the expanded nodes and the selected task.</summary>
+    public async Task SaveTreeState(IReadOnlyCollection<Guid> expanded, Guid? selected)
+    {
+        var next = (await Load()) with { Expanded = expanded.ToArray(), Selected = selected };
+        await Save(next);
+    }
+
     /// <summary>The list scroll position in pixels (0 if the container is not on screen yet).</summary>
     public async Task<double> Scroll()
     {
@@ -102,5 +109,7 @@ public sealed class TaskListState(IJSRuntime js)
         public string? Deadline { get; init; }
         /// <summary>with or without.</summary>
         public string? Risk { get; init; }
+        public Guid[] Expanded { get; init; } = [];
+        public Guid? Selected { get; init; }
     }
 }

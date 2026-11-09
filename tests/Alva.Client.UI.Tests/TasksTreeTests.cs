@@ -2,6 +2,7 @@ using Alva.Client.Models;
 using Alva.Client.Pages;
 using Bunit;
 using Bunit.TestDoubles;
+using Flare.Components;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
@@ -45,11 +46,14 @@ public sealed class TasksTreeTests : UiTestBase
     }
 
     [Fact]
-    public void Clicking_the_row_outside_the_link_still_opens_the_task()
+    public void Clicking_the_row_outside_the_link_opens_the_inspector_without_leaving_the_tree()
     {
         var cut = Render<Tasks>();
         cut.WaitForAssertion(() => Assert.NotEmpty(cut.FindAll(".alva-tree__row")));
+        var before = Navigation.Uri;
         cut.FindAll(".alva-tree__row").First(n => n.TextContent.Contains("Вёрстка")).Click();
-        Assert.EndsWith($"/tasks/{_leaf.Id}", Navigation.Uri);
+        cut.WaitForAssertion(() => Assert.True(cut.FindComponent<FlareDrawer>().Instance.Open));
+        Assert.Contains("Вёрстка", cut.Find(".flare-drawer").TextContent);
+        Assert.Equal(before, Navigation.Uri);
     }
 }

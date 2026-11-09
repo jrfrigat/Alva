@@ -29,16 +29,24 @@ public sealed class TaskListKeysTests : UiTestBase
     }
 
     [Fact]
-    public void A_row_goes_to_the_task_and_remembers_the_filters()
+    public void A_row_opens_the_inspector_and_remembers_the_filters()
     {
         var cut = List();
         Field(cut, "Поиск задач").Change("релиз");
+        var before = Navigation.Uri;
 
         Row(cut).Click();
 
-        // The link in the row leads to the task URL, so Enter on it follows the same path as a click: the page
-        // first saves the filters and then navigates to the task.
-        Assert.EndsWith($"tasks/{_task.Id}", Navigation.Uri);
+        // The row keeps the tree in place and opens the card in the inspector; the filters and selection are saved.
+        cut.WaitForAssertion(() => Assert.True(cut.FindComponent<FlareDrawer>().Instance.Open));
+        Assert.Contains("Релиз", cut.Find(".flare-drawer").TextContent);
+        Assert.Equal(before, Navigation.Uri);
+
+        Navigation.NavigateTo("/tasks");
+        var back = Render<Tasks>();
+        back.WaitForAssertion(() => Assert.Single(back.FindAll(".alva-tree a[href^='tasks/']")));
+        Assert.Equal("релиз", Field(back, "Поиск задач").GetAttribute("value"));
+        back.WaitForAssertion(() => Assert.True(back.FindComponent<FlareDrawer>().Instance.Open));
     }
 
     [Fact]

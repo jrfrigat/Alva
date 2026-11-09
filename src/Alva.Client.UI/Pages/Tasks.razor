@@ -11,6 +11,7 @@
 @if (Current is not null)
 {
     <PageFeedback Error="@_error" Loading="_busy" OnRetry="Load" />
+    <FlareButton Href="tasks" Variant="ButtonVariant.Text" Size="ButtonSize.Sm">@(AlvaStrings.Tasks_BackToTree)</FlareButton>
     @* Esc closes the card and returns to the list with the previous filters; unsaved edits are not
        discarded - the card itself holds them, and then Esc does nothing. The wrapper takes focus when
        the task opens, including via Enter from the list, so focus does not fall to body. *@
@@ -126,6 +127,12 @@ else
     @if(_history.Length>0) { <FlareText Element="h3" Typo="TypographyScale.TitleMedium">@(AlvaStrings.Tasks_History)</FlareText>@foreach(var entry in _history) { <FlareText Typo="TypographyScale.BodySmall">@entry.At.ToLocalTime().ToString("g") · @entry.Summary</FlareText> } }
 </FlareStack></FlareCardContent></FlareCard>
 }
+@if (Selected is { } selected)
+{
+    <FlareDrawer Anchor="DrawerAnchor.Right" Open="_selectedId.HasValue" OpenChanged="OnDrawerOpen" Width="34rem" ContentPadding="FlareSpacing.Large" AriaLabel="@(AlvaStrings.Common_Task)">
+        <TaskDetails Item="selected" Tasks="_tasks" Projects="_projects" Sprints="_sprints" Actors="_actors" Changed="Load" HeadingLevel="2" Compact="true" />
+    </FlareDrawer>
+}
 }
 }
 @code {
@@ -138,6 +145,7 @@ else
     private Guid? _assigneeFilter; private string? _priorityFilter,_deadlineFilter,_riskFilter;
     private string _sortKey="order"; private bool _sortDescending;
     private readonly HashSet<Guid> _expanded=[];
+    private Guid? _selectedId;
     private string? _titleError,_parentError,_startError,_endError,_estimateError,_remainingError,_limitError;
     private readonly List<string> _formErrors=[]; private ElementReference _errorSummary;
     [CascadingParameter] public FlareConfirmDialogProvider? Confirm { get; set; }
@@ -175,7 +183,6 @@ else
         }
     }
     private IEnumerable<TaskModel> ChildrenOf(TaskModel task) => Sorted(Filtered.Where(t => t.ParentId == task.Id));
-    private void Toggle(TaskModel task) { if (!_expanded.Add(task.Id)) _expanded.Remove(task.Id); }
     private sealed record TaskRow(TaskModel Task, int Depth, bool HasChildren, bool Expanded);
     private IEnumerable<TaskModel> Sorted(IEnumerable<TaskModel> tasks)
     {
@@ -267,6 +274,8 @@ else
         _priorityFilter = context.Priority;
         _deadlineFilter = context.Deadline;
         _riskFilter = context.Risk;
+        _expanded.UnionWith(context.Expanded);
+        _selectedId = context.Selected;
         _pendingScroll = context.Scroll;
     }
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -338,7 +347,11 @@ else
         _opened = Current.Id;
         _focusCard = true;
     }
-    private async Task Open(TaskModel? task){ if(task is null) return; await SaveListContext(); await Session.TaskList.SaveScroll(await Session.TaskList.Scroll()); Navigation.NavigateTo($"tasks/{task.Id}"); }
+    private async Task Open(TaskModel? task){ if(task is null) return; _selectedId=task.Id; await SaveListContext(); await SaveTreeState(); }
+    private Task Toggle(TaskModel task) { if (!_expanded.Add(task.Id)) _expanded.Remove(task.Id); return SaveTreeState(); }
+    private Task SaveTreeState() => Session.TaskList.SaveTreeState(_expanded, _selectedId);
+    private async Task OnDrawerOpen(bool open) { if (open) return; _selectedId=null; await SaveTreeState(); }
+    private TaskModel? Selected => _selectedId is { } id ? _tasks.FirstOrDefault(t => t.Id == id) : null;
     private async Task Run(Func<Task> action) { _busy=true; _error=null;try{await action();}catch(Exception e) when(e is HttpRequestException or InvalidOperationException){_error=PageFeedback.Describe(e);}finally{_busy=false;_loaded=true;} }
     private Task Load()=>Run(async()=>{await Session.Initialize();if(Session.TeamId is null)return;_tasks=await Session.Get<TaskModel[]>(Session.TeamPath("tasks"));_projects=await Session.Get<ProjectModel[]>(Session.TeamPath("projects"));_actors=await Session.Get<ActorModel[]>(Session.TeamPath("actors"));_sprints=await Session.Get<SprintModel[]>(Session.TeamPath("sprints"));_risks=(await Session.Get<RiskDto[]>(Session.TeamPath("risks"))).Where(r=>r.HasRisk).ToArray();_loaded=true;});
     private void NewTask(){_editing=new TaskModel { TeamId=Session.TeamId!.Value };_history=[];_editingSnapshot=DraftSnapshot.Of(_editing);}

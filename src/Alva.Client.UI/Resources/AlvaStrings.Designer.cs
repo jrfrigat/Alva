@@ -3353,4 +3353,7 @@ public static class AlvaStrings
 
     /// <summary>Add subtask</summary>
     public static string Tasks_AddSubtask => Get("Tasks_AddSubtask");
+
+    /// <summary>Back to the tree</summary>
+    public static string Tasks_BackToTree => Get("Tasks_BackToTree");
 }

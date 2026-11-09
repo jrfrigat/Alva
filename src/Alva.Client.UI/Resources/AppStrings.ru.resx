@@ -1184,4 +1184,5 @@
   <data name="Tasks_Expand" xml:space="preserve"><value>Развернуть</value></data>
   <data name="Tasks_Collapse" xml:space="preserve"><value>Свернуть</value></data>
   <data name="Tasks_AddSubtask" xml:space="preserve"><value>Добавить подзадачу</value></data>
+  <data name="Tasks_BackToTree" xml:space="preserve"><value>Назад к дереву</value></data>
 </root>
