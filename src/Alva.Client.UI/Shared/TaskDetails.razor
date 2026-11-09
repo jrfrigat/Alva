@@ -8,7 +8,10 @@
 <FlareStack Gap="FlareSpacing.Large">
     <div @ref="_heading" tabindex="-1">
     <FlarePageHeader Title="@_model.Title" HeadingLevel="@HeadingLevel">
-        <EyebrowContent><FlareBreadcrumb Items="Crumbs" Separator="›" AriaLabel="@(AlvaStrings.Task_PathToTheTask)" /></EyebrowContent>
+        <EyebrowContent>
+            @if (Compact) { <FlareLink Href="@($"tasks/{Item.Id}")">@(AlvaStrings.Task_OpenTaskPage)</FlareLink> }
+            else { <FlareBreadcrumb Items="Crumbs" Separator="›" AriaLabel="@(AlvaStrings.Task_PathToTheTask)" /> }
+        </EyebrowContent>
         <DescriptionContent>
             <FlareStack Row Wrap Align="FlareAlignItems.Center" Gap="FlareSpacing.Small">
                 <FlareMenu Anchor="MenuAnchor.BottomStart" AriaLabel="@(AlvaStrings.Common_Status)">
@@ -409,6 +412,9 @@
 
     /// <summary>Card heading level: 1 on the page, 2 in a panel over the list.</summary>
     [Parameter] public int HeadingLevel { get; set; } = 1;
+
+    /// <summary>Compact panel presentation: no breadcrumbs, a link to the full task page instead.</summary>
+    [Parameter] public bool Compact { get; set; }
 
     /// <summary>All team tasks: subtasks and the parent are taken from them.</summary>
     [Parameter] public TaskModel[] Tasks { get; set; } = [];

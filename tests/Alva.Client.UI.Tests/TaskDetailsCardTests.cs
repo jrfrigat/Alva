@@ -136,6 +136,18 @@ public sealed class TaskDetailsCardTests : UiTestBase
     }
 
     [Fact]
+    public void Compact_card_hides_breadcrumbs_and_links_to_the_full_page()
+    {
+        var cut = Render<FlareConfirmDialogProvider>(p => p.AddChildContent<TaskDetails>(d => d
+            .Add(x => x.Item, _task)
+            .Add(x => x.Compact, true)
+            .Add(x => x.Tasks, [_task])));
+
+        Assert.Empty(cut.FindAll(".flare-breadcrumb"));
+        Assert.Contains(cut.FindAll("a"), a => a.GetAttribute("href") == $"tasks/{_task.Id}");
+    }
+
+    [Fact]
     public void Header_summary_shows_planning_facts_and_changes_status()
     {
         var actor = new ActorModel { Id = Guid.NewGuid(), Name = "Анна", Kind = "Person" };

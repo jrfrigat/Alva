@@ -2994,6 +2994,9 @@ public static class AlvaStrings
     /// <summary>No forecast</summary>
     public static string Task_NoForecast => Get("Task_NoForecast");
 
+    /// <summary>Open task page</summary>
+    public static string Task_OpenTaskPage => Get("Task_OpenTaskPage");
+
     /// <summary>Forecast</summary>
     public static string Task_Forecast => Get("Task_Forecast");
 

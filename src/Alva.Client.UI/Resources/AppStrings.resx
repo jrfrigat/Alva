@@ -1059,6 +1059,7 @@
   <data name="Task_NoRisksTheDeadlineAssigneeAndDependenciesAreFine" xml:space="preserve"><value>No risks: the deadline, assignee and dependencies are fine.</value></data>
   <data name="Task_NoRisk" xml:space="preserve"><value>No risk</value></data>
   <data name="Task_NoForecast" xml:space="preserve"><value>No forecast</value></data>
+  <data name="Task_OpenTaskPage" xml:space="preserve"><value>Open task page</value></data>
   <data name="Task_Forecast" xml:space="preserve"><value>Forecast</value></data>
   <data name="Task_ForecastFinish" xml:space="preserve"><value>Forecast finish: {0}</value></data>
   <data name="Task_Plan" xml:space="preserve"><value>Plan</value></data>

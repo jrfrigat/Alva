@@ -55,7 +55,7 @@ else if (_data is not null)
         <FlareDrawer Anchor="DrawerAnchor.Right" Open="_panelOpen" OpenChanged="OnPanelOpen" Width="34rem" ContentPadding="FlareSpacing.Large" AriaLabel="@(AlvaStrings.Common_Task)">
             @if (_open is not null)
             {
-                <TaskDetails @ref="_details" Item="_open" Tasks="_data.Tasks" Projects="_projects" Sprints="_data.Sprints" Actors="_data.Actors" Changed="Reload" HeadingLevel="2" />
+                <TaskDetails @ref="_details" Item="_open" Tasks="_data.Tasks" Projects="_projects" Sprints="_data.Sprints" Actors="_data.Actors" Changed="Reload" HeadingLevel="2" Compact="true" />
             }
         </FlareDrawer>
     }
