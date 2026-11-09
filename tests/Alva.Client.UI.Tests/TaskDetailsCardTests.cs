@@ -39,7 +39,7 @@ public sealed class TaskDetailsCardTests : UiTestBase
 
         Assert.Contains("Сохранить", toolbar.TextContent);
         Assert.Contains("Назначить исполнителя", toolbar.TextContent);
-        Assert.NotNull(toolbar.QuerySelector("[aria-label='Архивировать задачу']"));
+        Assert.NotNull(toolbar.QuerySelector("[aria-label='Ещё']"));
     }
 
     [Fact]
@@ -136,6 +136,23 @@ public sealed class TaskDetailsCardTests : UiTestBase
     }
 
     [Fact]
+    public void Long_history_shows_the_latest_ten_and_can_expand()
+    {
+        var history = Enumerable.Range(1, 12).Reverse()
+            .Select(i => new HistoryDto(Guid.NewGuid(), DateTimeOffset.Now.AddMinutes(-i), Guid.NewGuid(), $"История {i:00}"))
+            .ToArray();
+        Api.Answer($"tasks/{_task.Id}/history", _ => history);
+        var cut = Page();
+
+        Assert.Contains("История 12", cut.Markup);
+        Assert.DoesNotContain("История 02", cut.Markup);
+        Assert.DoesNotContain("История 01", cut.Markup);
+
+        Button(cut, "Показать все").Click();
+        cut.WaitForAssertion(() => Assert.Contains("История 01", cut.Markup));
+    }
+
+    [Fact]
     public void Compact_card_hides_breadcrumbs_and_links_to_the_full_page()
     {
         var cut = Render<FlareConfirmDialogProvider>(p => p.AddChildContent<TaskDetails>(d => d
@@ -212,8 +229,8 @@ public sealed class TaskDetailsCardTests : UiTestBase
 
         Assert.Contains("Предшественники (1)", deps.TextContent);
         Assert.Contains("Последователи (1)", deps.TextContent);
-        Assert.Contains("Окончание → начало · лаг 2 дн.", deps.TextContent);
-        Assert.Contains("Начало → начало", deps.TextContent);
+        Assert.Contains("Окончание -> начало | лаг 2 дн.", deps.TextContent);
+        Assert.Contains("Начало -> начало", deps.TextContent);
         Assert.Contains(deps.QuerySelectorAll("a"), a => a.GetAttribute("href") == $"tasks/{_next.Id}");
     }
 
@@ -224,7 +241,7 @@ public sealed class TaskDetailsCardTests : UiTestBase
         Api.Answer($"tasks/{_task.Id}/dependencies", _ => new[] { link });
         var cut = Page();
 
-        cut.Find("[aria-label='Удалить связь с «Миграция»']").Click();
+        cut.Find("[aria-label='Удалить связь с \"Миграция\"']").Click();
         ConfirmDialog(cut, "Удалить");
 
         cut.WaitForAssertion(() => Assert.Contains(Api.Sent, s => s.Method == HttpMethod.Delete && s.Path.EndsWith($"tasks/dependencies/{link.Id}")));
@@ -236,7 +253,7 @@ public sealed class TaskDetailsCardTests : UiTestBase
         Api.Answer($"tasks/{_task.Id}/dependencies", _ => new[] { new DependencyDto(Guid.NewGuid(), _blocker.Id, _task.Id, "FS", 0) });
         var cut = Page();
 
-        cut.Find("[aria-label='Удалить связь с «Миграция»']").Click();
+        cut.Find("[aria-label='Удалить связь с \"Миграция\"']").Click();
         ConfirmDialog(cut, "Отмена");
 
         Assert.DoesNotContain(Api.Sent, s => s.Method == HttpMethod.Delete);
@@ -249,8 +266,8 @@ public sealed class TaskDetailsCardTests : UiTestBase
 
         Choose(cut.FindComponents<FlareSelect<Guid?>>().Single(s => s.Instance.Label == "Задача"), $"{AlvaFormat.Code(_next.Id)} {_next.Title}");
         Button(cut, "Дополнительно").Click();
-        Choose(cut.FindComponent<FlareSelect<bool>>(), "Последователь — ждёт эту задачу");
-        Choose(cut.FindComponents<FlareSelect<string>>().Single(s => s.Instance.Label == "Вид"), "Начало → начало");
+        Choose(cut.FindComponent<FlareSelect<bool>>(), "Последователь - ждёт эту задачу");
+        Choose(cut.FindComponents<FlareSelect<string>>().Single(s => s.Instance.Label == "Вид"), "Начало -> начало");
         Button(cut, "Добавить связь").Click();
 
         cut.WaitForAssertion(() =>
@@ -345,7 +362,9 @@ public sealed class TaskDetailsCardTests : UiTestBase
     {
         var cut = Page();
 
-        cut.Find("[aria-label='Архивировать задачу']").Click();
+        cut.Find("[aria-label='Ещё']").Click();
+        cut.WaitForAssertion(() => Assert.Contains("Архивировать задачу", cut.Markup));
+        Button(cut, "Архивировать задачу").Click();
 
         cut.WaitForAssertion(() => Assert.NotNull(cut.Find("[role='alertdialog']")));
         var text = cut.Find("[role='alertdialog']").TextContent;

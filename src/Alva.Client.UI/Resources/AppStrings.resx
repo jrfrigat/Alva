@@ -48,7 +48,7 @@
   <data name="Risks_NearestSlippage" xml:space="preserve"><value>Nearest slippage</value></data>
   <data name="Settings_TheBrowserBlockedNotificationsForAlvaAllowThemInTheSiteSettings" xml:space="preserve"><value>The browser blocked notifications for Alva — allow them in the site settings.</value></data>
   <data name="Gantt_DropATaskOntoADayItJoinsThatDaySSprintAndGetsADueDateOntoAPersonSRowItAl_c6e380" xml:space="preserve"><value>Drop a task onto a day — it joins that day's sprint and gets a due date; onto a person's row — it also gets an assignee. A person — onto a bar.</value></data>
-  <data name="Task_QuickAddOfANestedTaskEnter" xml:space="preserve"><value>Quick add of a nested task (Enter)…</value></data>
+  <data name="Task_QuickAddOfANestedTaskEnter" xml:space="preserve"><value>Quick add of a nested task (Enter)...</value></data>
   <data name="Sprint_QuickFilter" xml:space="preserve"><value>Quick filter</value></data>
   <data name="Common_QuickFilter" xml:space="preserve"><value>Quick filter:</value></data>
   <data name="Common_BacklogUndated" xml:space="preserve"><value>Backlog — undated</value></data>
@@ -355,6 +355,7 @@
   <data name="Sprint_OpenPlanning" xml:space="preserve"><value>Open planning</value></data>
   <data name="Common_Advanced" xml:space="preserve"><value>Advanced</value></data>
   <data name="Common_HideAdvanced" xml:space="preserve"><value>Hide advanced</value></data>
+  <data name="Common_MoreActions" xml:space="preserve"><value>More actions</value></data>
   <data name="Common_Cancel" xml:space="preserve"><value>Cancel</value></data>
   <data name="Common_Cancelled" xml:space="preserve"><value>Cancelled</value></data>
   <data name="Risks_MarkAllAsRead" xml:space="preserve"><value>Mark all as read</value></data>
@@ -915,6 +916,7 @@
   <data name="Common_TheRequestFailed" xml:space="preserve"><value>The request failed ({0}).</value></data>
   <data name="Common_RunsInSprints" xml:space="preserve"><value>Runs in sprints: </value></data>
   <data name="Task_ChangeHistory" xml:space="preserve"><value>Change history</value></data>
+  <data name="Task_ShowAllHistory" xml:space="preserve"><value>Show all</value></data>
   <data name="Task_TeamCandidates" xml:space="preserve"><value>Team candidates</value></data>
   <data name="Common_Candidates" xml:space="preserve"><value>Candidates: {0}</value></data>
   <data name="Sprint_People" xml:space="preserve"><value>People:</value></data>
@@ -1073,7 +1075,7 @@
   <data name="Task_TheTaskWaitsForNothing" xml:space="preserve"><value>The task waits for nothing.</value></data>
   <data name="Task_NothingWaitsForThisTask" xml:space="preserve"><value>Nothing waits for this task.</value></data>
   <data name="Task_LagDaysShort" xml:space="preserve"><value>lag {0} d</value></data>
-  <data name="Task_RemoveTheLinkTo" xml:space="preserve"><value>Remove the link to “{0}”</value></data>
+  <data name="Task_RemoveTheLinkTo" xml:space="preserve"><value>Remove the link to "{0}"</value></data>
   <data name="Task_RemoveLink" xml:space="preserve"><value>Remove link</value></data>
   <data name="Task_Link" xml:space="preserve"><value>Link</value></data>
   <data name="Common_ChooseATask" xml:space="preserve"><value>Choose a task</value></data>
@@ -1081,12 +1083,12 @@
   <data name="Task_LagDays" xml:space="preserve"><value>Lag, days</value></data>
   <data name="Task_AddLink" xml:space="preserve"><value>Add link</value></data>
   <data name="Task_Unassign" xml:space="preserve"><value>Unassign</value></data>
-  <data name="Task_StartStart" xml:space="preserve"><value>Start → start</value></data>
-  <data name="Task_FinishFinish" xml:space="preserve"><value>Finish → finish</value></data>
-  <data name="Task_StartFinish" xml:space="preserve"><value>Start → finish</value></data>
-  <data name="Task_FinishStart" xml:space="preserve"><value>Finish → start</value></data>
-  <data name="Task_PredecessorThisTaskWaitsForIt" xml:space="preserve"><value>Predecessor — this task waits for it</value></data>
-  <data name="Task_SuccessorWaitsForThisTask" xml:space="preserve"><value>Successor — waits for this task</value></data>
+  <data name="Task_StartStart" xml:space="preserve"><value>Start -> start</value></data>
+  <data name="Task_FinishFinish" xml:space="preserve"><value>Finish -> finish</value></data>
+  <data name="Task_StartFinish" xml:space="preserve"><value>Start -> finish</value></data>
+  <data name="Task_FinishStart" xml:space="preserve"><value>Finish -> start</value></data>
+  <data name="Task_PredecessorThisTaskWaitsForIt" xml:space="preserve"><value>Predecessor - this task waits for it</value></data>
+  <data name="Task_SuccessorWaitsForThisTask" xml:space="preserve"><value>Successor - waits for this task</value></data>
   <data name="Task_TaskUnavailable" xml:space="preserve"><value>Task unavailable</value></data>
   <data name="Task_TheLinkToWillBeRemovedTheForecastAndRiskWillBeRecalculated" xml:space="preserve"><value>The link to “{0}” will be removed; the forecast and risk will be recalculated.</value></data>
   <data name="Common_NoMoreThanHPerDay" xml:space="preserve"><value>Daily limit, hours</value></data>

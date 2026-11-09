@@ -10,7 +10,7 @@
     <FlarePageHeader Title="@_model.Title" HeadingLevel="@HeadingLevel">
         <EyebrowContent>
             @if (Compact) { <FlareLink Href="@($"tasks/{Item.Id}")">@(AlvaStrings.Task_OpenTaskPage)</FlareLink> }
-            else { <FlareBreadcrumb Items="Crumbs" Separator="›" AriaLabel="@(AlvaStrings.Task_PathToTheTask)" /> }
+            else { <FlareBreadcrumb Items="Crumbs" Separator=">" AriaLabel="@(AlvaStrings.Task_PathToTheTask)" /> }
         </EyebrowContent>
         <DescriptionContent>
             <FlareStack Row Wrap Align="FlareAlignItems.Center" Gap="FlareSpacing.Small">
@@ -56,7 +56,7 @@
                 {
                     @if (Item.ExternalUrl is { Length: > 0 } externalUrl)
                     {
-                        <FlareLink Class="alva-task__external" Href="@externalUrl" target="_blank" rel="noopener noreferrer" title="@(AlvaStrings.Task_OpenInTheExternalTracker)">@externalKey ↗</FlareLink>
+                        <FlareLink Class="alva-task__external" Href="@externalUrl" target="_blank" rel="noopener noreferrer" title="@(AlvaStrings.Task_OpenInTheExternalTracker)">@externalKey -></FlareLink>
                     }
                     else { <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@externalKey</FlareText> }
                 }
@@ -74,7 +74,14 @@
             <LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.PersonAdd" Size="18px" /></LeadingIcon>
             <ChildContent>@(AlvaStrings.Common_AssignAnAssignee)</ChildContent>
         </FlareButton>
-        <FlareIconButton Icon="@MaterialDesign3Icons.Regular.Delete" Color="FlareColor.Error" Size="ButtonSize.Sm" Tooltip="@(AlvaStrings.Task_ArchiveTask)" AriaLabel="@(AlvaStrings.Task_ArchiveTask)" OnClick="Archive" />
+        <FlareMenu Anchor="MenuAnchor.BottomEnd" AriaLabel="@(AlvaStrings.Common_MoreActions)">
+            <Activator>
+                <FlareIconButton Icon="@MaterialDesign3Icons.Regular.MoreVert" Size="ButtonSize.Sm" Tooltip="@(AlvaStrings.Common_MoreActions)" AriaLabel="@(AlvaStrings.Common_MoreActions)" />
+            </Activator>
+            <ChildContent>
+                <FlareMenuItem Icon="@MaterialDesign3Icons.Regular.Archive" OnClick="Archive">@(AlvaStrings.Task_ArchiveTask)</FlareMenuItem>
+            </ChildContent>
+        </FlareMenu>
         <FlareSpacer />
         <EditorStatus Dirty="Dirty" Saving="_busy" Saved="_saved" />
     </div>
@@ -83,7 +90,7 @@
     <FlareSection Class="alva-task__risk">
         <HeadingContent>
             <FlareStack Row Align="FlareAlignItems.Center" Gap="FlareSpacing.Small">
-                <FlareIconView Value="@MaterialDesign3Icons.Regular.Warning" Size="20px" />
+                <FlareIconView Value="@(_risk is { HasRisk: true } ? MaterialDesign3Icons.Regular.Warning : MaterialDesign3Icons.Regular.CheckCircle)" Size="20px" />
                 <FlareText Element="h2" Typo="TypographyScale.TitleLarge">@(AlvaStrings.Common_Risk)</FlareText>
                 @if (_risk is { HasRisk: true }) { <AlvaStatusChip Tone="AlvaTones.Severity(_risk.Severity)">@(_risk.Severity == "High" ? AlvaStrings.Common_High : AlvaStrings.Risks_Medium)</AlvaStatusChip> }
             </FlareStack>
@@ -98,28 +105,30 @@
                 }
                 else
                 {
-                    <FlareStack Gap="FlareSpacing.XSmall">
+                    <ul class="alva-task__reasons">
                         @foreach (var reason in _risk.Reasons)
                         {
-                            <FlareStack Row Wrap Align="FlareAlignItems.Center" Gap="FlareSpacing.Small">
-                                @if (reason.Code is ReasonCodes.RiskNoAssignee or ReasonCodes.RiskRequiredPerson)
-                                {
-                                    @* A link would lead to this same card: the action is to open the assignment right away. *@
-                                    <FlareText Typo="TypographyScale.BodySmall">@ReasonText.Describe(reason)</FlareText>
-                                    <FlareButton Variant="ButtonVariant.Text" Size="ButtonSize.Sm" OnClick="OpenAssign">@(AlvaStrings.Common_AssignAnAssignee)</FlareButton>
-                                }
-                                else if (reason.Code is ReasonCodes.RiskOverdue or ReasonCodes.RiskForecastLate or ReasonCodes.RiskDailyLimit)
-                                {
-                                    @* These reasons lead to the same card: show them as text, not as a link to itself. *@
-                                    <FlareText Typo="TypographyScale.BodySmall">@ReasonText.Describe(reason)</FlareText>
-                                }
-                                else
-                                {
-                                    <FlareLink Href="@RiskActions.Href(reason, Item.Id, Item.ResolvedPersonId)" title="@RiskActions.Label(reason, Item.ResolvedPersonId)">@ReasonText.Describe(reason)</FlareLink>
-                                }
-                            </FlareStack>
+                            <li>
+                                <FlareStack Row Wrap Align="FlareAlignItems.Center" Gap="FlareSpacing.Small">
+                                    @if (reason.Code is ReasonCodes.RiskNoAssignee or ReasonCodes.RiskRequiredPerson)
+                                    {
+                                        @* A link would lead to this same card: the action is to open the assignment right away. *@
+                                        <FlareText Typo="TypographyScale.BodySmall">@ReasonText.Describe(reason)</FlareText>
+                                        <FlareButton Variant="ButtonVariant.Text" Size="ButtonSize.Sm" OnClick="OpenAssign">@(AlvaStrings.Common_AssignAnAssignee)</FlareButton>
+                                    }
+                                    else if (reason.Code is ReasonCodes.RiskOverdue or ReasonCodes.RiskForecastLate or ReasonCodes.RiskDailyLimit)
+                                    {
+                                        @* These reasons lead to the same card: show them as text, not as a link to itself. *@
+                                        <FlareText Typo="TypographyScale.BodySmall">@ReasonText.Describe(reason)</FlareText>
+                                    }
+                                    else
+                                    {
+                                        <FlareLink Href="@RiskActions.Href(reason, Item.Id, Item.ResolvedPersonId)" title="@RiskActions.Label(reason, Item.ResolvedPersonId)">@ReasonText.Describe(reason)</FlareLink>
+                                    }
+                                </FlareStack>
+                            </li>
                         }
-                    </FlareStack>
+                    </ul>
                 }
                 @if (_risk is not null && (_risk.ForecastDate is not null || (_risk.ForecastNotes?.Length ?? 0) > 0))
                 {
@@ -254,7 +263,7 @@
                                     <ChildContent>
                                         <FlareStack Gap="FlareSpacing.None">
                                             <FlareLink Href="@($"tasks/{other}")" title="@LinkTitle(other)">@LinkTitle(other)</FlareLink>
-                                            <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@KindLabel(link.Kind)@(link.LagDays != 0 ? " · " + string.Format(AlvaStrings.Task_LagDaysShort, link.LagDays) : "")</FlareText>
+                                            <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@KindLabel(link.Kind)@(link.LagDays != 0 ? " | " + string.Format(AlvaStrings.Task_LagDaysShort, link.LagDays) : "")</FlareText>
                                         </FlareStack>
                                     </ChildContent>
                                     <Trailing>
@@ -318,7 +327,7 @@
                             <Template Context="child"><AlvaAssignee Task="child!" Actors="Actors" ShowSkillMatch="false" /></Template>
                         </FlareColumn>
                         <FlareColumn TItem="TaskModel" Title="@(AlvaStrings.Common_Estimate)">
-                            <Template Context="child">@(child!.EstimateHours.HasValue ? $"{AlvaFormat.Hours(child.EstimateHours.Value)} {AlvaStrings.Sprint_HoursShort}" : "—")</Template>
+                            <Template Context="child">@(child!.EstimateHours.HasValue ? $"{AlvaFormat.Hours(child.EstimateHours.Value)} {AlvaStrings.Sprint_HoursShort}" : "-")</Template>
                         </FlareColumn>
                     </Columns>
                     <EmptyStateContent><FlareEmptyState Compact Title="@(AlvaStrings.Task_NoSubtasksYet)" Description="@(AlvaStrings.Task_AddTheFirstSubtaskBelow)" /></EmptyStateContent>
@@ -347,12 +356,18 @@
             }
             else
             {
-                <FlareTimeline>
-                    @foreach (var entry in _history)
+                <FlareStack Gap="FlareSpacing.Small">
+                    <FlareTimeline>
+                        @foreach (var entry in HistoryShown)
+                        {
+                            <FlareTimelineItem Time="@entry.At.ToLocalTime().ToString("g")" Title="@entry.Summary" Icon="@MaterialDesign3Icons.Regular.History" />
+                        }
+                    </FlareTimeline>
+                    @if (_history.Length > 10 && !_showAllHistory)
                     {
-                        <FlareTimelineItem Time="@entry.At.ToLocalTime().ToString("g")" Title="@entry.Summary" Icon="@MaterialDesign3Icons.Regular.History" />
+                        <FlareButton Variant="ButtonVariant.Text" Size="ButtonSize.Sm" OnClick="() => _showAllHistory = true">@(AlvaStrings.Task_ShowAllHistory)</FlareButton>
                     }
-                </FlareTimeline>
+                </FlareStack>
             }
         </ChildContent>
     </FlareSection>
@@ -446,7 +461,7 @@
     private string? _error, _quickTitle, _assignSearch;
     private string? _parentError,_startError,_endError,_estimateError,_remainingError,_limitError;
     private readonly List<string> _formErrors=[]; private ElementReference _errorSummary;
-    private bool _busy, _saved, _assignOpen, _adding, _titleEditing;
+    private bool _busy, _saved, _assignOpen, _adding, _titleEditing, _showAllHistory;
     private string? _titleDraft;
     private int _assignTab;
     private Guid? _assignTarget, _assignPerson;
@@ -463,15 +478,6 @@
             yield return new(Code(Item));
         }
     }
-
-    /// <summary>Bar next to the heading: risk level from the server, and without it - overdue crimson, no assignee amber,
-    /// otherwise sapphire.</summary>
-    private AlvaTone RiskTone =>
-        Item.Status is "Done" or "Cancelled" ? AlvaTone.Ok
-        : _risk is not null ? AlvaTones.Severity(_risk.Severity)
-        : Item.Deadline < DateOnly.FromDateTime(DateTime.Today) ? AlvaTone.Critical
-        : Item.AssignmentTargetId is null ? AlvaTone.Warning
-        : AlvaTone.Info;
 
     /// <summary>Confirmation of losing edits; comes from FlareConfirmDialogProvider in MainLayout.</summary>
     [CascadingParameter] public FlareConfirmDialogProvider? Confirm { get; set; }
@@ -540,9 +546,10 @@
     private string SummaryAssignee => Actors.FirstOrDefault(a => a.Id == (Item.ResolvedPersonId ?? Item.AssignmentTargetId)) is { } actor
         ? actor.Kind == "Person" ? actor.Name : $"{Labels.Kind(actor.Kind)}: {actor.Name}"
         : AlvaStrings.Common_UnassignedTask;
-    private string SummaryDeadline => _model.Deadline?.ToString("d MMM") ?? "—";
+    private IEnumerable<HistoryDto> HistoryShown => _showAllHistory ? _history : _history.Take(10);
+    private string SummaryDeadline => _model.Deadline?.ToString("d MMM") ?? "-";
     private string SummaryEffort => _model.EstimateHours is null && _model.RemainingHours is null
-        ? "—"
+        ? "-"
         : $"{AlvaFormat.Hours(_model.EstimateHours ?? 0)} / {AlvaFormat.Hours(_model.RemainingHours ?? 0)} {AlvaStrings.Sprint_HoursShort}";
     private bool IsOverdue => _model.Deadline is { } deadline && deadline < DateOnly.FromDateTime(DateTime.Today);
     private void SetStatus(string status) => _model.Status = status;

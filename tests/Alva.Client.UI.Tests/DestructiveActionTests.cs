@@ -18,6 +18,8 @@ public sealed class DestructiveActionTests : UiTestBase
         Api.Answer($"tasks/{task.Id}/history", _ => Array.Empty<HistoryDto>());
         var cut = Render<FlareConfirmDialogProvider>(p => p.AddChildContent<TaskDetails>(d => d.Add(x => x.Item, task)));
 
+        cut.Find("[aria-label='Ещё']").Click();
+        cut.WaitForAssertion(() => Assert.Contains("Архивировать задачу", cut.Markup));
         Button(cut, "Архивировать задачу").Click();
 
         cut.WaitForAssertion(() => Assert.NotNull(cut.Find("[role='alertdialog']")));

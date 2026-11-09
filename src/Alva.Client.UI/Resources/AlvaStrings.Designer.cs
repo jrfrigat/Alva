@@ -165,7 +165,7 @@ public static class AlvaStrings
     /// <summary>Drop a task onto a day — it joins that day's sprint and gets a due date; onto a person's row — it also gets an assignee. A person — onto a bar.</summary>
     public static string Gantt_DropATaskOntoADayItJoinsThatDaySSprintAndGetsADueDateOntoAPersonSRowItAl_c6e380 => Get("Gantt_DropATaskOntoADayItJoinsThatDaySSprintAndGetsADueDateOntoAPersonSRowItAl_c6e380");
 
-    /// <summary>Quick add of a nested task (Enter)…</summary>
+    /// <summary>Quick add of a nested task (Enter)...</summary>
     public static string Task_QuickAddOfANestedTaskEnter => Get("Task_QuickAddOfANestedTaskEnter");
 
     /// <summary>Quick filter</summary>
@@ -1085,6 +1085,9 @@ public static class AlvaStrings
 
     /// <summary>Hide advanced</summary>
     public static string Common_HideAdvanced => Get("Common_HideAdvanced");
+
+    /// <summary>More actions</summary>
+    public static string Common_MoreActions => Get("Common_MoreActions");
 
     /// <summary>Cancel</summary>
     public static string Common_Cancel => Get("Common_Cancel");
@@ -2562,6 +2565,9 @@ public static class AlvaStrings
     /// <summary>Change history</summary>
     public static string Task_ChangeHistory => Get("Task_ChangeHistory");
 
+    /// <summary>Show all</summary>
+    public static string Task_ShowAllHistory => Get("Task_ShowAllHistory");
+
     /// <summary>Team candidates</summary>
     public static string Task_TeamCandidates => Get("Task_TeamCandidates");
 
@@ -3036,7 +3042,7 @@ public static class AlvaStrings
     /// <summary>lag {0} d</summary>
     public static string Task_LagDaysShort => Get("Task_LagDaysShort");
 
-    /// <summary>Remove the link to “{0}”</summary>
+    /// <summary>Remove the link to "{0}"</summary>
     public static string Task_RemoveTheLinkTo => Get("Task_RemoveTheLinkTo");
 
     /// <summary>Remove link</summary>
@@ -3060,22 +3066,22 @@ public static class AlvaStrings
     /// <summary>Unassign</summary>
     public static string Task_Unassign => Get("Task_Unassign");
 
-    /// <summary>Start → start</summary>
+    /// <summary>Start -&gt; start</summary>
     public static string Task_StartStart => Get("Task_StartStart");
 
-    /// <summary>Finish → finish</summary>
+    /// <summary>Finish -&gt; finish</summary>
     public static string Task_FinishFinish => Get("Task_FinishFinish");
 
-    /// <summary>Start → finish</summary>
+    /// <summary>Start -&gt; finish</summary>
     public static string Task_StartFinish => Get("Task_StartFinish");
 
-    /// <summary>Finish → start</summary>
+    /// <summary>Finish -&gt; start</summary>
     public static string Task_FinishStart => Get("Task_FinishStart");
 
-    /// <summary>Predecessor — this task waits for it</summary>
+    /// <summary>Predecessor - this task waits for it</summary>
     public static string Task_PredecessorThisTaskWaitsForIt => Get("Task_PredecessorThisTaskWaitsForIt");
 
-    /// <summary>Successor — waits for this task</summary>
+    /// <summary>Successor - waits for this task</summary>
     public static string Task_SuccessorWaitsForThisTask => Get("Task_SuccessorWaitsForThisTask");
 
     /// <summary>Task unavailable</summary>
