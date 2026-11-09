@@ -102,6 +102,7 @@ html,body{margin:0;min-height:100%;font-family:var(--alva-font);background:var(-
 .alva-assign__task{font-size:12px;font-weight:700;color:var(--flare-color-primary,var(--alva-primary))}
 .alva-assign__footer{display:flex;justify-content:space-between;gap:.5rem;padding-top:.75rem;border-top:1px solid var(--alva-border)}
 .alva-task-filters{min-width:0}
+.alva-task-view[aria-current="page"]{font-weight:600;color:var(--flare-color-primary,var(--alva-primary));text-decoration:underline;text-underline-offset:.2em}
 .alva-tree{display:flex;flex-direction:column;width:100%;min-width:0}
 .alva-tree__head,.alva-tree__row{display:grid;grid-template-columns:minmax(14rem,2fr) 6rem 5.5rem 9rem 6.5rem 7rem 5.5rem 7rem;gap:.5rem;align-items:center}
 .alva-tree__head{position:sticky;top:0;z-index:2;padding:.5rem .75rem;border-bottom:1px solid var(--alva-border);background:var(--flare-color-surface-container-lowest,#fff);font-size:12px;font-weight:600;color:var(--flare-color-on-surface-variant,var(--alva-on-surface-variant))}

@@ -46,6 +46,17 @@ public sealed class TasksTreeTests : UiTestBase
     }
 
     [Fact]
+    public void A_load_error_offers_a_retry_in_the_tree()
+    {
+        Api.Answer("tasks", _ => throw new HttpRequestException("boom"));
+
+        var cut = Render<Tasks>();
+
+        cut.WaitForAssertion(() => Assert.Contains("Повторить", cut.Markup));
+        Assert.NotEmpty(cut.FindAll(".flare-alert"));
+    }
+
+    [Fact]
     public void Clicking_the_row_outside_the_link_opens_the_inspector_without_leaving_the_tree()
     {
         var cut = Render<Tasks>();

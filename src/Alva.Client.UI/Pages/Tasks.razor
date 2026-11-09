@@ -7,7 +7,7 @@
 @inject NavigationManager Navigation
 @inject DraftGuard Drafts
 @inject ISnackbarService Snackbar
-<PageTitle>@(Current is null ? AlvaStrings.Common_Tasks : Current.Title) · Alva</PageTitle>
+<PageTitle>@(Current is null ? AlvaStrings.Common_Tasks : Current.Title) - Alva</PageTitle>
 <NavigationLock OnBeforeInternalNavigation="ConfirmLeave" ConfirmExternalNavigation="IsDirty" />
 @if (Current is not null)
 {
@@ -64,7 +64,7 @@ else
 <FlareStack Row Wrap Gap="FlareSpacing.Small"><FlareLink Href="tasks" Class="alva-task-view" aria-current="@(Route == "tasks" ? "page" : null)">@(AlvaStrings.Gantt_AllTasks)</FlareLink><FlareLink Href="unassigned" Class="alva-task-view" aria-current="@(Route == "unassigned" ? "page" : null)">@(AlvaStrings.Common_Unassigned)</FlareLink><FlareLink Href="my-work" Class="alva-task-view" aria-current="@(Route == "my-work" ? "page" : null)">@(AlvaStrings.Tasks_MyWork)</FlareLink><FlareButton OnClick="Load" Variant="ButtonVariant.Text" Size="ButtonSize.Sm">@(AlvaStrings.Tasks_Refresh)</FlareButton></FlareStack>
 <FlareCard Variant="CardVariant.Outlined"><FlareCardContent>
     @if (!_loaded) { <LoadingSkeleton Height="24rem" /> }
-    else if (_error is not null) { }
+    else if (_error is not null) { <FlareAlert Severity="AlertSeverity.Error">@_error</FlareAlert><FlareButton Variant="ButtonVariant.Text" Size="ButtonSize.Sm" OnClick="Load">@(AlvaStrings.Common_TryAgain)</FlareButton> }
     else if (_tasks.Length == 0) { <FlareEmptyState Compact Title="@(AlvaStrings.Common_NoTasksYet)" Description="@(AlvaStrings.Tasks_AddTheFirstTaskOrChangeTheFilters)" /> }
     else if (!Matched.Any()) { <FlareEmptyState Compact Title="@(AlvaStrings.Tasks_NoTasksByFilters)" Description="@(AlvaStrings.Tasks_ClearFilters)" /><FlareButton Variant="ButtonVariant.Text" Size="ButtonSize.Sm" OnClick="ClearFilters">@(AlvaStrings.Tasks_ClearFilters)</FlareButton> }
     else {
@@ -99,7 +99,7 @@ else
                         </FlareMenu>
                     </span>
                     <div class="alva-tree__meta">
-                        <AlvaStatusChip Tone="AlvaTones.Status(row.Task.Status)">@Labels.Status(row.Task.Status)</AlvaStatusChip>
+                        <AlvaStatusChip Tone="TaskStatusTone(row.Task.Status)">@Labels.Status(row.Task.Status)</AlvaStatusChip>
                         @if (row.Task.Priority is not "Normal") { <AlvaStatusChip Tone="AlvaTones.Priority(row.Task.Priority)">@Labels.Priority(row.Task.Priority)</AlvaStatusChip> }
                         @if (ProjectOf(row.Task) is { } mobileProject) { <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant" title="@(AlvaStrings.Common_Project)">@mobileProject</FlareText> }
                         <FlareText Typo="TypographyScale.BodySmall" Color="@(AssigneeActor(row.Task) is null ? FlareColor.Warning : FlareColor.OnSurfaceVariant)" title="@(AlvaStrings.Tasks_FilterAssignee)">@AssigneeLabel(row.Task)</FlareText>
@@ -108,7 +108,7 @@ else
                         @if (RiskOf(row.Task) is { } mobileRisk) { <AlvaStatusChip Tone="AlvaTones.Severity(mobileRisk.Severity)" Title="@RiskReason(mobileRisk)">@(mobileRisk.Severity == "High" ? AlvaStrings.Common_High : AlvaStrings.Risks_Medium)</AlvaStatusChip> }
                     </div>
                 </div>
-                <div class="alva-tree__cell alva-tree__cell--optional" role="gridcell"><AlvaStatusChip Tone="AlvaTones.Status(row.Task.Status)">@Labels.Status(row.Task.Status)</AlvaStatusChip></div>
+                <div class="alva-tree__cell alva-tree__cell--optional" role="gridcell"><AlvaStatusChip Tone="TaskStatusTone(row.Task.Status)">@Labels.Status(row.Task.Status)</AlvaStatusChip></div>
                 <div class="alva-tree__cell alva-tree__cell--optional" role="gridcell">@if (row.Task.Priority is not "Normal") { <AlvaStatusChip Tone="AlvaTones.Priority(row.Task.Priority)">@Labels.Priority(row.Task.Priority)</AlvaStatusChip> } else { <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@Labels.Priority(row.Task.Priority)</FlareText> }</div>
                 <div class="alva-tree__cell alva-tree__cell--optional" role="gridcell"><FlareText Typo="TypographyScale.BodySmall" Color="@(AssigneeActor(row.Task) is null ? FlareColor.Warning : FlareColor.OnSurfaceVariant)">@AssigneeLabel(row.Task)</FlareText></div>
                 <div class="alva-tree__cell alva-tree__cell--optional" role="gridcell">@if (DeadlineOf(row.Task) is { } desktopDeadline) { <FlareText Typo="TypographyScale.BodySmall" Color="@DeadlineTone(row.Task)" title="@DeadlineTitle(row.Task)">@desktopDeadline.ToString("d MMM")</FlareText> } else { <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">-</FlareText> }</div>
@@ -197,30 +197,65 @@ else
     private string SortEstimate => SortAria("estimate");
     private string SortProject => SortAria("project");
     private string SortAria(string key) => _sortKey == key ? (_sortDescending ? "descending" : "ascending") : "none";
+    private static AlvaTone TaskStatusTone(string? status) => status == "Planned" ? AlvaTone.Neutral : AlvaTones.Status(status);
     private static string DeadlineFilterLabel(string key) => key == "with" ? AlvaStrings.Tasks_WithDeadline : AlvaStrings.Tasks_WithoutDeadline;
     private static string RiskFilterLabel(string key) => key == "with" ? AlvaStrings.Tasks_WithRisk : AlvaStrings.Tasks_WithoutRisk;
     private string Route => AppRoutes.Current(Navigation);
     private string PageHeading => Route == "my-work" ? AlvaStrings.Tasks_MyWork : Route == "unassigned" ? AlvaStrings.Common_Unassigned : AlvaStrings.Tasks_TeamTasks;
     private bool Matches(TaskModel t) => (string.IsNullOrWhiteSpace(_search) || t.Title.Contains(_search,StringComparison.OrdinalIgnoreCase)) && (!_projectFilter.HasValue || t.ProjectId==_projectFilter) && (_statusFilter is null || t.Status==_statusFilter) && (Route != "unassigned" || Assignees.Person(t,_actors) is null) && (Route != "my-work" || Assignees.Person(t,_actors) is { } person && Assignees.Me(_actors,Session.User).Contains(person)) && (!_assigneeFilter.HasValue || AssigneeMatches(t,_assigneeFilter.Value)) && (_priorityFilter is null || t.Priority==_priorityFilter) && (_deadlineFilter is null || (_deadlineFilter=="with" ? DeadlineOf(t) is not null : DeadlineOf(t) is null)) && (_riskFilter is null || (_riskFilter=="with" ? RiskOf(t) is not null : RiskOf(t) is null));
-    private IEnumerable<TaskModel> Matched => _tasks.Where(Matches);
     private bool HasFilters => !string.IsNullOrWhiteSpace(_search) || _projectFilter.HasValue || _statusFilter is not null || _assigneeFilter.HasValue || _priorityFilter is not null || _deadlineFilter is not null || _riskFilter is not null;
+    private TaskModel[]? _indexedTasks;
+    private Dictionary<Guid, TaskModel> _byId = [];
+    private Dictionary<Guid, List<TaskModel>> _childrenById = [];
+    private List<TaskModel>? _matchedCache;
+    private string? _matchedKey;
+    private HashSet<Guid>? _includedCache;
+    private string? _includedKey;
+    private string FilterKey => $"{_search}|{_projectFilter}|{_statusFilter}|{_assigneeFilter}|{_priorityFilter}|{_deadlineFilter}|{_riskFilter}|{Route}|{_tasks.GetHashCode()}";
+    private void EnsureIndex()
+    {
+        if (ReferenceEquals(_indexedTasks, _tasks)) return;
+        _indexedTasks = _tasks;
+        _byId = _tasks.ToDictionary(t => t.Id);
+        _childrenById = _tasks.Where(t => t.ParentId is not null).GroupBy(t => t.ParentId!.Value).ToDictionary(g => g.Key, g => g.ToList());
+        _matchedCache = null;
+        _includedCache = null;
+    }
+    private IEnumerable<TaskModel> Matched
+    {
+        get
+        {
+            EnsureIndex();
+            var key = FilterKey;
+            if (_matchedCache is null || key != _matchedKey)
+            {
+                _matchedCache = _tasks.Where(Matches).ToList();
+                _matchedKey = key;
+            }
+            return _matchedCache;
+        }
+    }
     private HashSet<Guid> IncludedIds
     {
         get
         {
-            var byId = _tasks.ToDictionary(t => t.Id);
+            EnsureIndex();
+            var key = FilterKey;
+            if (_includedCache is not null && key == _includedKey) return _includedCache;
             var included = new HashSet<Guid>();
             foreach (var match in Matched)
             {
                 TaskModel? current = match;
                 while (current is not null && included.Add(current.Id))
-                    current = current.ParentId is { } parentId && byId.TryGetValue(parentId, out var parent) ? parent : null;
+                    current = current.ParentId is { } parentId && _byId.TryGetValue(parentId, out var parent) ? parent : null;
             }
+            _includedKey = key;
+            _includedCache = included;
             return included;
         }
     }
     private IEnumerable<TaskModel> Filtered => _tasks.Where(t => IncludedIds.Contains(t.Id));
-    private IEnumerable<TaskModel> Roots => Sorted(Filtered.Where(t=>t.ParentId is null || !Filtered.Any(p=>p.Id==t.ParentId)));
+    private IEnumerable<TaskModel> Roots => Sorted(Filtered.Where(t => t.ParentId is null || !IncludedIds.Contains(t.ParentId.Value)));
     private IEnumerable<TaskRow> Rows => Flatten(Roots, 0, HasFilters ? IncludedIds : new HashSet<Guid>());
     private IEnumerable<TaskRow> Flatten(IEnumerable<TaskModel> tasks, int depth, HashSet<Guid> autoExpand)
     {
@@ -234,7 +269,7 @@ else
                     yield return child;
         }
     }
-    private IEnumerable<TaskModel> ChildrenOf(TaskModel task) => Sorted(Filtered.Where(t => t.ParentId == task.Id));
+    private IEnumerable<TaskModel> ChildrenOf(TaskModel task) => Sorted((_childrenById.TryGetValue(task.Id, out var children) ? children : []).Where(t => IncludedIds.Contains(t.Id)));
     private sealed record TaskRow(TaskModel Task, int Depth, bool HasChildren, bool Expanded);
     private string RowClass(TaskModel task) => string.Join(" ", new[]
     {
