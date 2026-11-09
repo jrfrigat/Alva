@@ -219,7 +219,7 @@ else
         {
             await Session.Initialize();
             if (Session.TeamId is null) return;
-            _risks = await Session.Get<RiskDto[]>(Session.TeamPath("risks"));
+            _risks = (await Session.Get<RiskDto[]>(Session.TeamPath("risks"))).Where(r => r.HasRisk).ToArray();
             _tasks = await Session.Get<TaskModel[]>(Session.TeamPath("tasks"));
             _actors = await Session.Get<ActorModel[]>(Session.TeamPath("actors"));
         }

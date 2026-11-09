@@ -52,7 +52,7 @@ public sealed class RiskNotifications(AlvaSession session, IJSRuntime js) : IAsy
         {
             var key = $"alva-risk-notify:{session.User.Id}:{session.TeamId}";
             if (key != _storageKey) { _storageKey = key; _state = await Load(key); }
-            _risks = await session.Get<RiskDto[]>(session.TeamPath("risks"));
+            _risks = (await session.Get<RiskDto[]>(session.TeamPath("risks"))).Where(r => r.HasRisk).ToArray();
             var tasks = await session.Get<TaskModel[]>(session.TeamPath("tasks"));
             var actors = await session.Get<ActorModel[]>(session.TeamPath("actors"));
             var me = actors.Where(a => a.Kind == "Person" && a.UserId == session.User.Id).Select(a => a.Id).ToHashSet();

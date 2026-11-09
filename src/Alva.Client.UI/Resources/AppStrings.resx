@@ -761,7 +761,7 @@
   <data name="Task_TotalEstimateAndSubtaskAssignees" xml:space="preserve"><value>Total estimate and subtask assignees</value></data>
   <data name="Common_People" xml:space="preserve"><value>people</value></data>
   <data name="Common_RemainingWorkHours" xml:space="preserve"><value>Remaining work, hours</value></data>
-  <data name="Common_ForWorkInProgressLeaveBlankIfRemainingWorkIsUnknown0MeansNoWorkRemains" xml:space="preserve"><value>For work in progress, leave blank if remaining work is unknown; 0 means no work remains.</value></data>
+  <data name="Common_ForWorkInProgressLeaveBlankIfRemainingWorkIsUnknown0MeansNoWorkRemains" xml:space="preserve"><value>For work in progress, leave blank if the remaining work is unknown; the forecast will be unavailable. 0 means no work remains.</value></data>
   <data name="Common_RemainingWorkIsUnknown" xml:space="preserve"><value>Remaining work is unknown</value></data>
   <data name="Common_ASpecificPersonIsRequiredForTheForecast" xml:space="preserve"><value>A specific person is required for the forecast</value></data>
   <data name="Common_TheQueueIncludesUnknownWork" xml:space="preserve"><value>The queue includes unknown work</value></data>
@@ -1055,6 +1055,7 @@
   <data name="Workspace_WorkspaceAlva" xml:space="preserve"><value>Workspace · Alva</value></data>
   <data name="Common_TaskActions" xml:space="preserve"><value>Task actions</value></data>
   <data name="Task_NoRisksTheDeadlineAssigneeAndDependenciesAreFine" xml:space="preserve"><value>No risks: the deadline, assignee and dependencies are fine.</value></data>
+  <data name="Task_Forecast" xml:space="preserve"><value>Forecast</value></data>
   <data name="Task_ForecastFinish" xml:space="preserve"><value>Forecast finish: {0}</value></data>
   <data name="Task_Plan" xml:space="preserve"><value>Plan</value></data>
   <data name="Task_AssignmentTitle" xml:space="preserve"><value>Assignment</value></data>

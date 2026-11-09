@@ -100,6 +100,7 @@ public sealed class TaskDetailsCardTests : UiTestBase
         Assert.Contains("Высокий", block.TextContent);
         Assert.Contains("Срок прошёл", block.TextContent);
         Assert.Contains(block.QuerySelectorAll("a"), a => a.GetAttribute("href") == $"tasks/{_blocker.Id}");
+        Assert.DoesNotContain(block.QuerySelectorAll("a"), a => a.GetAttribute("href") == $"tasks/{_task.Id}");
     }
 
     [Fact]
@@ -117,6 +118,21 @@ public sealed class TaskDetailsCardTests : UiTestBase
     public void Task_without_risk_says_so()
     {
         Assert.Contains("Рисков нет", Page().Find(".alva-task__risk").TextContent);
+    }
+
+    [Fact]
+    public void Forecast_note_is_shown_without_a_risk_level()
+    {
+        Api.Answer("risks", _ => new[]
+        {
+            new RiskDto(_task.Id, _task.Title, "Info", [], null, [new ReasonDto(ReasonCodes.ForecastUnknownRemaining)])
+        });
+
+        var block = Page().Find(".alva-task__risk");
+
+        Assert.Contains("Рисков нет", block.TextContent);
+        Assert.Contains("Неизвестен остаток работы", block.TextContent);
+        Assert.DoesNotContain("Средний", block.TextContent);
     }
 
     [Fact]

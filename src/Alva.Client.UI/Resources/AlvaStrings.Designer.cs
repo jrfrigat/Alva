@@ -2304,7 +2304,7 @@ public static class AlvaStrings
     /// <summary>Remaining work, hours</summary>
     public static string Common_RemainingWorkHours => Get("Common_RemainingWorkHours");
 
-    /// <summary>For work in progress, leave blank if remaining work is unknown; 0 means no work remains.</summary>
+    /// <summary>For work in progress, leave blank if the remaining work is unknown; the forecast will be unavailable. 0 means no work remains.</summary>
     public static string Common_ForWorkInProgressLeaveBlankIfRemainingWorkIsUnknown0MeansNoWorkRemains => Get("Common_ForWorkInProgressLeaveBlankIfRemainingWorkIsUnknown0MeansNoWorkRemains");
 
     /// <summary>Remaining work is unknown</summary>
@@ -2981,6 +2981,9 @@ public static class AlvaStrings
 
     /// <summary>No risks: the deadline, assignee and dependencies are fine.</summary>
     public static string Task_NoRisksTheDeadlineAssigneeAndDependenciesAreFine => Get("Task_NoRisksTheDeadlineAssigneeAndDependenciesAreFine");
+
+    /// <summary>Forecast</summary>
+    public static string Task_Forecast => Get("Task_Forecast");
 
     /// <summary>Forecast finish: {0}</summary>
     public static string Task_ForecastFinish => Get("Task_ForecastFinish");

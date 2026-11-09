@@ -116,7 +116,11 @@ public static class ReasonCodes
     ];
 }
 
-public record RiskDto(Guid TaskId, string Title, string Severity, ReasonDto[] Reasons, DateOnly? ForecastDate, ReasonDto[]? ForecastNotes = null);
+public record RiskDto(Guid TaskId, string Title, string Severity, ReasonDto[] Reasons, DateOnly? ForecastDate, ReasonDto[]? ForecastNotes = null)
+{
+    /// <summary>Whether this entry is a real risk. A forecast-only entry has no risk reasons and explains why the forecast is unavailable.</summary>
+    public bool HasRisk => Reasons.Length > 0;
+}
 public record DashboardDto(int TotalTasks, int DoneTasks, int ActiveSprints, decimal EstimateHours, RiskDto[] Risks);
 /// <summary>Sprint close: a decision for each unfinished task and the sprint the remaining work moves to.</summary>
 public record SprintCloseRequest(SprintCarryDto[] Tasks, Guid? NextSprintId = null);

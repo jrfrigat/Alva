@@ -761,7 +761,7 @@
   <data name="Task_TotalEstimateAndSubtaskAssignees" xml:space="preserve"><value>Суммарная оценка и исполнители подзадач</value></data>
   <data name="Common_People" xml:space="preserve"><value>чел.</value></data>
   <data name="Common_RemainingWorkHours" xml:space="preserve"><value>Остаток, часы</value></data>
-  <data name="Common_ForWorkInProgressLeaveBlankIfRemainingWorkIsUnknown0MeansNoWorkRemains" xml:space="preserve"><value>Для начатой задачи пустое поле означает неизвестный остаток; 0 — работа закончена.</value></data>
+  <data name="Common_ForWorkInProgressLeaveBlankIfRemainingWorkIsUnknown0MeansNoWorkRemains" xml:space="preserve"><value>Для начатой задачи пустое поле означает неизвестный остаток; прогноз будет недоступен. 0 - работа закончена.</value></data>
   <data name="Common_RemainingWorkIsUnknown" xml:space="preserve"><value>Неизвестен остаток работы</value></data>
   <data name="Common_ASpecificPersonIsRequiredForTheForecast" xml:space="preserve"><value>Для прогноза нужен конкретный исполнитель</value></data>
   <data name="Common_TheQueueIncludesUnknownWork" xml:space="preserve"><value>Очередь исполнителя содержит неопределённую работу</value></data>
@@ -1055,6 +1055,7 @@
   <data name="Workspace_WorkspaceAlva" xml:space="preserve"><value>Рабочее пространство · Alva</value></data>
   <data name="Common_TaskActions" xml:space="preserve"><value>Действия с задачей</value></data>
   <data name="Task_NoRisksTheDeadlineAssigneeAndDependenciesAreFine" xml:space="preserve"><value>Рисков нет: срок, исполнитель и зависимости в порядке.</value></data>
+  <data name="Task_Forecast" xml:space="preserve"><value>Прогноз</value></data>
   <data name="Task_ForecastFinish" xml:space="preserve"><value>Прогноз завершения: {0}</value></data>
   <data name="Task_Plan" xml:space="preserve"><value>План</value></data>
   <data name="Task_AssignmentTitle" xml:space="preserve"><value>Назначение</value></data>

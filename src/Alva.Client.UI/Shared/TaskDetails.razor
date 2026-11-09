@@ -46,32 +46,53 @@
             <FlareStack Row Align="FlareAlignItems.Center" Gap="FlareSpacing.Small">
                 <FlareIconView Value="@MaterialDesign3Icons.Regular.Warning" Size="20px" />
                 <FlareText Element="h2" Typo="TypographyScale.TitleLarge">@(AlvaStrings.Common_Risk)</FlareText>
-                @if (_risk is not null) { <AlvaStatusChip Tone="AlvaTones.Severity(_risk.Severity)">@(_risk.Severity == "High" ? AlvaStrings.Common_High : AlvaStrings.Risks_Medium)</AlvaStatusChip> }
+                @if (_risk is { HasRisk: true }) { <AlvaStatusChip Tone="AlvaTones.Severity(_risk.Severity)">@(_risk.Severity == "High" ? AlvaStrings.Common_High : AlvaStrings.Risks_Medium)</AlvaStatusChip> }
             </FlareStack>
         </HeadingContent>
         <ChildContent>
             @if (_linksError is not null) { <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.Error">@_linksError</FlareText> }
-            else if (_risk is null) { <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@(AlvaStrings.Task_NoRisksTheDeadlineAssigneeAndDependenciesAreFine)</FlareText> }
             else
             {
-                @if (_risk.ForecastDate is { } forecast) { <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@string.Format(AlvaStrings.Task_ForecastFinish, forecast.ToString("d MMM yyyy"))</FlareText> }
-                <FlareStack Gap="FlareSpacing.XSmall">
-                    @foreach (var reason in _risk.Reasons)
-                    {
-                        <FlareStack Row Wrap Align="FlareAlignItems.Center" Gap="FlareSpacing.Small">
-                            @if (reason.Code is ReasonCodes.RiskNoAssignee or ReasonCodes.RiskRequiredPerson)
-                            {
-                                @* A link would lead to this same card: the action is to open the assignment right away. *@
-                                <FlareText Typo="TypographyScale.BodySmall">@ReasonText.Describe(reason)</FlareText>
-                                <FlareButton Variant="ButtonVariant.Text" Size="ButtonSize.Sm" OnClick="OpenAssign">@(AlvaStrings.Common_AssignAnAssignee)</FlareButton>
-                            }
-                            else
-                            {
-                                <FlareLink Href="@RiskActions.Href(reason, Item.Id, Item.ResolvedPersonId)" title="@RiskActions.Label(reason, Item.ResolvedPersonId)">@ReasonText.Describe(reason)</FlareLink>
-                            }
-                        </FlareStack>
-                    }
-                </FlareStack>
+                @if (_risk is null || !_risk.HasRisk)
+                {
+                    <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@(AlvaStrings.Task_NoRisksTheDeadlineAssigneeAndDependenciesAreFine)</FlareText>
+                }
+                else
+                {
+                    <FlareStack Gap="FlareSpacing.XSmall">
+                        @foreach (var reason in _risk.Reasons)
+                        {
+                            <FlareStack Row Wrap Align="FlareAlignItems.Center" Gap="FlareSpacing.Small">
+                                @if (reason.Code is ReasonCodes.RiskNoAssignee or ReasonCodes.RiskRequiredPerson)
+                                {
+                                    @* A link would lead to this same card: the action is to open the assignment right away. *@
+                                    <FlareText Typo="TypographyScale.BodySmall">@ReasonText.Describe(reason)</FlareText>
+                                    <FlareButton Variant="ButtonVariant.Text" Size="ButtonSize.Sm" OnClick="OpenAssign">@(AlvaStrings.Common_AssignAnAssignee)</FlareButton>
+                                }
+                                else if (reason.Code is ReasonCodes.RiskOverdue or ReasonCodes.RiskForecastLate or ReasonCodes.RiskDailyLimit)
+                                {
+                                    @* These reasons lead to the same card: show them as text, not as a link to itself. *@
+                                    <FlareText Typo="TypographyScale.BodySmall">@ReasonText.Describe(reason)</FlareText>
+                                }
+                                else
+                                {
+                                    <FlareLink Href="@RiskActions.Href(reason, Item.Id, Item.ResolvedPersonId)" title="@RiskActions.Label(reason, Item.ResolvedPersonId)">@ReasonText.Describe(reason)</FlareLink>
+                                }
+                            </FlareStack>
+                        }
+                    </FlareStack>
+                }
+                @if (_risk is not null && (_risk.ForecastDate is not null || (_risk.ForecastNotes?.Length ?? 0) > 0))
+                {
+                    <FlareStack Gap="FlareSpacing.XSmall">
+                        <FlareText Typo="TypographyScale.LabelMedium" Color="FlareColor.OnSurfaceVariant">@(AlvaStrings.Task_Forecast)</FlareText>
+                        @if (_risk.ForecastDate is { } forecast) { <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@string.Format(AlvaStrings.Task_ForecastFinish, forecast.ToString("d MMM yyyy"))</FlareText> }
+                        @foreach (var note in _risk.ForecastNotes ?? [])
+                        {
+                            <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@ReasonText.Describe(note)</FlareText>
+                        }
+                    </FlareStack>
+                }
             }
         </ChildContent>
     </FlareSection>

@@ -61,7 +61,6 @@ public static class RiskMath
             var deadline = Deadline(task);
             var prediction = forecasts[task.Id];
             var forecast = prediction.Finish;
-            if (forecast is null) reasons.AddRange(prediction.Reasons);
             if (deadline is { } passed && passed < today) reasons.Add(new ReasonDto(ReasonCodes.RiskOverdue));
             else if (deadline is { } due && forecast > due) reasons.Add(new ReasonDto(ReasonCodes.RiskForecastLate));
 
@@ -93,10 +92,14 @@ public static class RiskMath
             if (waiting[task.Id].Any())
                 reasons.Add(new ReasonDto(ReasonCodes.RiskDependencyOpen,
                     waiting[task.Id].Distinct().Select(id => id.ToString()).ToArray()));
-            if (reasons.Count == 0) continue;
+            // Forecast notes explain a missing forecast; they are not risk reasons. Keep a forecast-only entry only
+            // when there is no forecast at all, so a valid forecast with its assumptions does not look like a task to watch.
+            var forecastNotes = prediction.Reasons;
+            if (reasons.Count == 0 && (forecast is not null || forecastNotes.Length == 0)) continue;
 
             var severe = deadline is { } limit && (limit < today || forecast is { } date && date.DayNumber - limit.DayNumber > 3);
-            result.Add(new RiskDto(task.Id, task.Title, severe ? "High" : "Medium", [.. reasons], forecast, prediction.Reasons));
+            var severity = reasons.Count == 0 ? "Info" : severe ? "High" : "Medium";
+            result.Add(new RiskDto(task.Id, task.Title, severity, [.. reasons], forecast, forecastNotes));
         }
         return [.. result.OrderBy(x => x.Severity == "High" ? 0 : 1).ThenBy(x => x.ForecastDate).ThenBy(x => x.Title)];
     }

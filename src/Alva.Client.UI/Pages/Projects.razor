@@ -313,7 +313,7 @@ else
         _tasks = await Session.Get<TaskModel[]>(Session.TeamPath("tasks"));
         _sprints = await Session.Get<SprintModel[]>(Session.TeamPath("sprints"));
         _actors = await Session.Get<ActorModel[]>(Session.TeamPath("actors"));
-        _risks = await Session.Get<RiskDto[]>(Session.TeamPath("risks"));
+        _risks = (await Session.Get<RiskDto[]>(Session.TeamPath("risks"))).Where(r => r.HasRisk).ToArray();
         _teamTasks.Clear();
         _closedTeams.Clear();
         foreach (var teamId in _projects.SelectMany(p => p.TeamIds).Distinct().Where(id => id != Session.TeamId))

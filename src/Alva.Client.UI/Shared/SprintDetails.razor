@@ -360,7 +360,7 @@ else
         if (_loadedFor == Sprint.Id) { _loaded = true; return; }
         try
         {
-            _risks = await Session.Get<RiskDto[]>(Session.TeamPath("risks"));
+            _risks = (await Session.Get<RiskDto[]>(Session.TeamPath("risks"))).Where(r => r.HasRisk).ToArray();
             _actors = await Session.Get<ActorModel[]>(Session.TeamPath("actors"));
             _projects = await Session.Get<ProjectModel[]>(Session.TeamPath("projects"));
             var rows = await Session.Get<CapacityDto[]>(Session.TeamPath($"capacity?from={Sprint.StartDate:yyyy-MM-dd}&to={Sprint.EndDate:yyyy-MM-dd}"));

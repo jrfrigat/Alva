@@ -365,7 +365,7 @@ else
         if (open.SequenceEqual(_loadedFor) && _actors.Length > 0) { _loaded = true; return; }
         try
         {
-            _risks = await Session.Get<RiskDto[]>(Session.TeamPath("risks"));
+            _risks = (await Session.Get<RiskDto[]>(Session.TeamPath("risks"))).Where(r => r.HasRisk).ToArray();
             _actors = await Session.Get<ActorModel[]>(Session.TeamPath("actors"));
             _projects = await Session.Get<ProjectModel[]>(Session.TeamPath("projects"));
             foreach (var sprint in Sprints.Where(s => s.Status != "Completed"))

@@ -36,7 +36,7 @@ public sealed class GanttData
         var dependencies = session.Get<DependencyDto[]>(session.TeamPath("tasks/dependencies"));
         var data = new GanttData
         {
-            Tasks = await tasks, Sprints = await sprints, Actors = await actors, Risks = await risks, Dependencies = await dependencies
+            Tasks = await tasks, Sprints = await sprints, Actors = await actors, Risks = (await risks).Where(r => r.HasRisk).ToArray(), Dependencies = await dependencies
         };
         data._risks = data.Risks.GroupBy(r => r.TaskId).ToDictionary(g => g.Key, g => g.First());
         data._sprints = data.Sprints.ToDictionary(s => s.Id);

@@ -75,7 +75,7 @@ else
             _sprints = await Session.Get<SprintModel[]>(Session.TeamPath("sprints"));
             _projects = await Session.Get<ProjectModel[]>(Session.TeamPath("projects"));
             _actors = await Session.Get<ActorModel[]>(Session.TeamPath("actors"));
-            _risks = await Session.Get<RiskDto[]>(Session.TeamPath("risks"));
+            _risks = (await Session.Get<RiskDto[]>(Session.TeamPath("risks"))).Where(r => r.HasRisk).ToArray();
         }
         catch (Exception e) when (e is HttpRequestException or InvalidOperationException) { _error = PageFeedback.Describe(e); }
         finally { _busy = false; _loaded = true; }

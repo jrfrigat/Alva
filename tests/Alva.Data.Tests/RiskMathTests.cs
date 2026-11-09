@@ -86,7 +86,7 @@ public sealed class RiskMathTests
         var second = Task("Потом", 4m, Monday.AddDays(1), Monday.AddDays(1), null);
         var risks = RiskMath.Assess([first, second], [new RiskDependency(first.Id, second.Id), new RiskDependency(Guid.NewGuid(), first.Id)], _ => Week(), Friday);
 
-        Assert.Contains(risks.Single(r => r.TaskId == first.Id).Reasons, r => r.Code == ForecastMath.MissingDependency);
+        Assert.Contains(risks.Single(r => r.TaskId == first.Id).ForecastNotes!, r => r.Code == ForecastMath.MissingDependency);
         Assert.Contains(risks.Single(r => r.TaskId == second.Id).Reasons, r => r.Code == ReasonCodes.RiskDependencyOpen);
         Assert.All(risks, r => Assert.Null(r.ForecastDate));
     }
@@ -109,6 +109,19 @@ public sealed class RiskMathTests
         var risks = Assess(Week(), Task("Б средний", 4m, Monday, Monday, null, assigned: false), Task("А высокий", 4m, null, null, Friday.AddDays(-2)));
 
         Assert.Equal(["А высокий", "Б средний"], risks.Select(x => x.Title));
+    }
+
+    [Fact]
+    public void Unknown_remaining_is_a_forecast_note_not_a_risk()
+    {
+        var task = Task("Без остатка", 8m, Friday, Friday, Friday.AddDays(3)) with { Status = "InProgress", RemainingHours = null };
+
+        var risk = Assert.Single(Assess(Week(), task));
+
+        Assert.False(risk.HasRisk);
+        Assert.Equal("Info", risk.Severity);
+        Assert.Empty(risk.Reasons);
+        Assert.Contains(risk.ForecastNotes!, r => r.Code == ReasonCodes.ForecastUnknownRemaining);
     }
 
     [Fact]
