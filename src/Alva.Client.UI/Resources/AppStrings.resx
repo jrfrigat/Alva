@@ -1181,4 +1181,7 @@
   <data name="Tasks_WithoutRisk" xml:space="preserve"><value>Without risk</value></data>
   <data name="Tasks_Overdue" xml:space="preserve"><value>overdue</value></data>
   <data name="Tasks_RemainingShort" xml:space="preserve"><value>remaining</value></data>
+  <data name="Tasks_Expand" xml:space="preserve"><value>Expand</value></data>
+  <data name="Tasks_Collapse" xml:space="preserve"><value>Collapse</value></data>
+  <data name="Tasks_AddSubtask" xml:space="preserve"><value>Add subtask</value></data>
 </root>

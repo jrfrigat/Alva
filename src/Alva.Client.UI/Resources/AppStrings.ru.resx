@@ -1181,4 +1181,7 @@
   <data name="Tasks_WithoutRisk" xml:space="preserve"><value>Без риска</value></data>
   <data name="Tasks_Overdue" xml:space="preserve"><value>просрочен</value></data>
   <data name="Tasks_RemainingShort" xml:space="preserve"><value>остаток</value></data>
+  <data name="Tasks_Expand" xml:space="preserve"><value>Развернуть</value></data>
+  <data name="Tasks_Collapse" xml:space="preserve"><value>Свернуть</value></data>
+  <data name="Tasks_AddSubtask" xml:space="preserve"><value>Добавить подзадачу</value></data>
 </root>

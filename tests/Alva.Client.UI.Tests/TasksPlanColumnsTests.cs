@@ -47,14 +47,14 @@ public sealed class TasksPlanColumnsTests : UiTestBase
     private IRenderedComponent<Tasks> Page(int expected = 3)
     {
         var cut = Render<Tasks>();
-        cut.WaitForAssertion(() => Assert.Equal(expected, cut.FindAll("[role='treeitem']").Count));
+        cut.WaitForAssertion(() => Assert.Equal(expected, cut.FindAll(".alva-tree__row").Count));
         return cut;
     }
 
     [Fact]
     public void A_row_shows_the_plan_without_opening_the_task()
     {
-        var row = Page().FindAll("[role='treeitem']").Single(n => n.TextContent.Contains("Релиз"));
+        var row = Page().FindAll(".alva-tree__row").Single(n => n.TextContent.Contains("Релиз"));
 
         Assert.Contains("Портал", row.TextContent);
         Assert.Contains("Анна", row.TextContent);
@@ -71,8 +71,8 @@ public sealed class TasksPlanColumnsTests : UiTestBase
         var cut = Page();
 
         Choose(cut.FindComponents<FlareSelect<Guid?>>().Single(s => s.Instance.Label == "Исполнитель"), "Анна - Человек");
-        cut.WaitForAssertion(() => Assert.Single(cut.FindAll("[role='treeitem']")));
-        Assert.Contains("Релиз", cut.Find("[role='treeitem']").TextContent);
+        cut.WaitForAssertion(() => Assert.Single(cut.FindAll(".alva-tree__row")));
+        Assert.Contains("Релиз", cut.Find(".alva-tree__row").TextContent);
     }
 
     [Fact]
@@ -81,8 +81,8 @@ public sealed class TasksPlanColumnsTests : UiTestBase
         var cut = Page();
 
         Choose(cut.FindComponents<FlareSelect<string>>().Single(s => s.Instance.Label == "Приоритет"), "Высокий");
-        cut.WaitForAssertion(() => Assert.Single(cut.FindAll("[role='treeitem']")));
-        Assert.Contains("Релиз", cut.Find("[role='treeitem']").TextContent);
+        cut.WaitForAssertion(() => Assert.Single(cut.FindAll(".alva-tree__row")));
+        Assert.Contains("Релиз", cut.Find(".alva-tree__row").TextContent);
     }
 
     [Fact]
@@ -91,8 +91,8 @@ public sealed class TasksPlanColumnsTests : UiTestBase
         var cut = Page();
 
         Choose(cut.FindComponents<FlareSelect<string>>().Single(s => s.Instance.Label == "Срок"), "Без срока");
-        cut.WaitForAssertion(() => Assert.Single(cut.FindAll("[role='treeitem']")));
-        Assert.Contains("Идея", cut.Find("[role='treeitem']").TextContent);
+        cut.WaitForAssertion(() => Assert.Single(cut.FindAll(".alva-tree__row")));
+        Assert.Contains("Идея", cut.Find(".alva-tree__row").TextContent);
     }
 
     [Fact]
@@ -101,8 +101,8 @@ public sealed class TasksPlanColumnsTests : UiTestBase
         var cut = Page();
 
         Choose(cut.FindComponents<FlareSelect<string>>().Single(s => s.Instance.Label == "Риск"), "С риском");
-        cut.WaitForAssertion(() => Assert.Single(cut.FindAll("[role='treeitem']")));
-        Assert.Contains("Релиз", cut.Find("[role='treeitem']").TextContent);
+        cut.WaitForAssertion(() => Assert.Single(cut.FindAll(".alva-tree__row")));
+        Assert.Contains("Релиз", cut.Find(".alva-tree__row").TextContent);
     }
 
     [Fact]
@@ -110,12 +110,14 @@ public sealed class TasksPlanColumnsTests : UiTestBase
     {
         var cut = Page();
 
-        Assert.Contains("Бэклог", cut.FindAll("[role='treeitem']").First().TextContent);
-        Choose(cut.FindComponents<FlareSelect<string>>().Single(s => s.Instance.Label == "Сортировка"), "По сроку");
-        cut.WaitForAssertion(() => Assert.Contains("Релиз", cut.FindAll("[role='treeitem']").First().TextContent));
+        Assert.Contains("Бэклог", cut.FindAll(".alva-tree__row").First().TextContent);
+        Header(cut, "Дедлайн").QuerySelector("button")!.Click();
+        cut.WaitForAssertion(() => Assert.Contains("Релиз", cut.FindAll(".alva-tree__row").First().TextContent));
+        Assert.Equal("ascending", Header(cut, "Дедлайн").GetAttribute("aria-sort"));
 
-        Button(cut, "По возрастанию").Click();
-        cut.WaitForAssertion(() => Assert.Contains("Бэклог", cut.FindAll("[role='treeitem']").First().TextContent));
+        Header(cut, "Дедлайн").QuerySelector("button")!.Click();
+        cut.WaitForAssertion(() => Assert.Contains("Бэклог", cut.FindAll(".alva-tree__row").First().TextContent));
+        Assert.Equal("descending", Header(cut, "Дедлайн").GetAttribute("aria-sort"));
     }
 
     [Fact]
@@ -123,17 +125,20 @@ public sealed class TasksPlanColumnsTests : UiTestBase
     {
         Navigation.NavigateTo("/tasks");
         var cut = Page();
-        Choose(cut.FindComponents<FlareSelect<string>>().Single(s => s.Instance.Label == "Сортировка"), "По сроку");
+        Header(cut, "Дедлайн").QuerySelector("button")!.Click();
         Choose(cut.FindComponents<FlareSelect<string>>().Single(s => s.Instance.Label == "Срок"), "Со сроком");
-        Button(cut, "По возрастанию").Click();
-        cut.WaitForAssertion(() => Assert.Equal("По убыванию", Button(cut, "По убыванию").TextContent.Trim()));
+        Header(cut, "Дедлайн").QuerySelector("button")!.Click();
+        cut.WaitForAssertion(() => Assert.Equal("descending", Header(cut, "Дедлайн").GetAttribute("aria-sort")));
 
         Navigation.NavigateTo("/tasks");
         var back = Page(2);
-        back.WaitForAssertion(() => Assert.Equal(2, back.FindAll("[role='treeitem']").Count));
-        Assert.Equal("По убыванию", Button(back, "По убыванию").TextContent.Trim());
-        Assert.Contains("Бэклог", back.FindAll("[role='treeitem']").First().TextContent);
+        back.WaitForAssertion(() => Assert.Equal(2, back.FindAll(".alva-tree__row").Count));
+        Assert.Equal("descending", Header(back, "Дедлайн").GetAttribute("aria-sort"));
+        Assert.Contains("Бэклог", back.FindAll(".alva-tree__row").First().TextContent);
     }
+
+    private static AngleSharp.Dom.IElement Header<T>(IRenderedComponent<T> cut, string title) where T : IComponent =>
+        cut.FindAll(".alva-tree__head [role='columnheader']").Single(h => h.TextContent.Contains(title, StringComparison.Ordinal));
 
     private static void Choose<T>(IRenderedComponent<FlareSelect<T>> select, string option)
     {

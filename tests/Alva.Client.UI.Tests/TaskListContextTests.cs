@@ -28,20 +28,20 @@ public sealed class TaskListContextTests : UiTestBase
     {
         Navigation.NavigateTo("/tasks");
         var cut = Render<Tasks>();
-        cut.WaitForAssertion(() => Assert.Equal(2, cut.FindAll(".flare-vtree a[href^='tasks/']").Count));
+        cut.WaitForAssertion(() => Assert.Equal(2, cut.FindAll(".alva-tree a[href^='tasks/']").Count));
 
         // The search narrows the list to one task.
         Field(cut, "Поиск задач").Input("Релиз");
-        cut.WaitForAssertion(() => Assert.Single(cut.FindAll(".flare-vtree a[href^='tasks/']")));
+        cut.WaitForAssertion(() => Assert.Single(cut.FindAll(".alva-tree a[href^='tasks/']")));
 
         // Opening a task navigates to its route.
-        cut.FindAll("[role='treeitem']").First(n => n.TextContent.Contains("Релиз")).Click();
+        cut.FindAll(".alva-tree__row").First(n => n.TextContent.Contains("Релиз")).Click();
         cut.WaitForAssertion(() => Assert.Contains($"/tasks/{_release.Id}", Navigation.Uri));
 
         // Back: the list page is created anew, but the context returns from the list state.
         Navigation.NavigateTo("/tasks");
         var back = Render<Tasks>();
-        back.WaitForAssertion(() => Assert.Single(back.FindAll(".flare-vtree a[href^='tasks/']")));
+        back.WaitForAssertion(() => Assert.Single(back.FindAll(".alva-tree a[href^='tasks/']")));
         Assert.Equal("Релиз", Field(back, "Поиск задач").GetAttribute("value"));
     }
 }

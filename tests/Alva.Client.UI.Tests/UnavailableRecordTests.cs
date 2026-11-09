@@ -32,7 +32,7 @@ public sealed class UnavailableRecordTests : UiTestBase
         var cut = Render<Tasks>(p => p.Add(x => x.TaskId, missing));
 
         cut.WaitForAssertion(() => Assert.Contains("Задача не найдена или недоступна", cut.Markup));
-        Assert.Empty(cut.FindAll(".flare-vtree"));
+        Assert.Empty(cut.FindAll(".alva-tree"));
         Assert.NotNull(cut.Find("a[href='tasks']"));
     }
 

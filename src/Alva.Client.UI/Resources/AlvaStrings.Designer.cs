@@ -3344,4 +3344,13 @@ public static class AlvaStrings
 
     /// <summary>remaining</summary>
     public static string Tasks_RemainingShort => Get("Tasks_RemainingShort");
+
+    /// <summary>Expand</summary>
+    public static string Tasks_Expand => Get("Tasks_Expand");
+
+    /// <summary>Collapse</summary>
+    public static string Tasks_Collapse => Get("Tasks_Collapse");
+
+    /// <summary>Add subtask</summary>
+    public static string Tasks_AddSubtask => Get("Tasks_AddSubtask");
 }
