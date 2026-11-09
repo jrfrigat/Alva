@@ -3356,4 +3356,16 @@ public static class AlvaStrings
 
     /// <summary>Back to the tree</summary>
     public static string Tasks_BackToTree => Get("Tasks_BackToTree");
+
+    /// <summary>No tasks match the filters</summary>
+    public static string Tasks_NoTasksByFilters => Get("Tasks_NoTasksByFilters");
+
+    /// <summary>Clear filters</summary>
+    public static string Tasks_ClearFilters => Get("Tasks_ClearFilters");
+
+    /// <summary>Search</summary>
+    public static string Tasks_FilterSearch => Get("Tasks_FilterSearch");
+
+    /// <summary>Found: {0}</summary>
+    public static string Tasks_FoundCount => Get("Tasks_FoundCount");
 }

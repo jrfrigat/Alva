@@ -46,11 +46,26 @@ else
     <FlareSelect TValue="string" Label="@(AlvaStrings.Tasks_FilterDeadline)" Items="DeadlineFilters" ItemLabel="DeadlineFilterLabel" NullOption="@(AlvaStrings.Tasks_AnyDeadline)" @bind-Value="_deadlineFilter" @bind-Value:after="SaveExtraFilters" Style="flex:1;min-width:10rem" />
     <FlareSelect TValue="string" Label="@(AlvaStrings.Tasks_FilterRisk)" Items="RiskFilters" ItemLabel="RiskFilterLabel" NullOption="@(AlvaStrings.Tasks_AnyRisk)" @bind-Value="_riskFilter" @bind-Value:after="SaveExtraFilters" Style="flex:1;min-width:10rem" />
 </FlareStack>
+@if (HasFilters)
+{
+<FlareStack Row Wrap Gap="FlareSpacing.Small" Class="alva-task-active-filters">
+    @if (!string.IsNullOrWhiteSpace(_search)) { <FlareChip Closable="true" OnClose="ClearSearch">@(AlvaStrings.Tasks_FilterSearch): @_search</FlareChip> }
+    @if (_projectFilter is { } projectId) { <FlareChip Closable="true" OnClose="ClearProject">@(AlvaStrings.Common_Project): @ProjectName(projectId)</FlareChip> }
+    @if (_statusFilter is { } status) { <FlareChip Closable="true" OnClose="ClearStatus">@(AlvaStrings.Common_Status): @Labels.Status(status)</FlareChip> }
+    @if (_assigneeFilter is { } assigneeId) { <FlareChip Closable="true" OnClose="ClearAssignee">@(AlvaStrings.Tasks_FilterAssignee): @ActorName(assigneeId)</FlareChip> }
+    @if (_priorityFilter is { } priority) { <FlareChip Closable="true" OnClose="ClearPriority">@(AlvaStrings.Common_Priority): @Labels.Priority(priority)</FlareChip> }
+    @if (_deadlineFilter is { } deadline) { <FlareChip Closable="true" OnClose="ClearDeadline">@(AlvaStrings.Tasks_FilterDeadline): @DeadlineFilterLabel(deadline)</FlareChip> }
+    @if (_riskFilter is { } riskFilter) { <FlareChip Closable="true" OnClose="ClearRisk">@(AlvaStrings.Tasks_FilterRisk): @RiskFilterLabel(riskFilter)</FlareChip> }
+    <FlareButton Variant="ButtonVariant.Text" Size="ButtonSize.Sm" OnClick="ClearFilters">@(AlvaStrings.Tasks_ClearFilters)</FlareButton>
+</FlareStack>
+<FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@string.Format(AlvaStrings.Tasks_FoundCount, Matched.Count())</FlareText>
+}
 <FlareStack Row Wrap Gap="FlareSpacing.Small"><FlareButton Href="tasks" Variant="ButtonVariant.Text" Size="ButtonSize.Sm">@(AlvaStrings.Gantt_AllTasks)</FlareButton><FlareButton Href="unassigned" Variant="ButtonVariant.Text" Size="ButtonSize.Sm">@(AlvaStrings.Common_Unassigned)</FlareButton><FlareButton Href="my-work" Variant="ButtonVariant.Text" Size="ButtonSize.Sm">@(AlvaStrings.Tasks_MyWork)</FlareButton><FlareButton OnClick="Load" Variant="ButtonVariant.Text" Size="ButtonSize.Sm">@(AlvaStrings.Tasks_Refresh)</FlareButton></FlareStack>
 <FlareCard Variant="CardVariant.Outlined"><FlareCardContent>
     @if (!_loaded) { <LoadingSkeleton Height="24rem" /> }
     else if (_error is not null) { }
-    else if (!Filtered.Any()) { <FlareEmptyState Compact Title="@(AlvaStrings.Common_NoTasksYet)" Description="@(AlvaStrings.Tasks_AddTheFirstTaskOrChangeTheFilters)" /> }
+    else if (_tasks.Length == 0) { <FlareEmptyState Compact Title="@(AlvaStrings.Common_NoTasksYet)" Description="@(AlvaStrings.Tasks_AddTheFirstTaskOrChangeTheFilters)" /> }
+    else if (!Matched.Any()) { <FlareEmptyState Compact Title="@(AlvaStrings.Tasks_NoTasksByFilters)" Description="@(AlvaStrings.Tasks_ClearFilters)" /><FlareButton Variant="ButtonVariant.Text" Size="ButtonSize.Sm" OnClick="ClearFilters">@(AlvaStrings.Tasks_ClearFilters)</FlareButton> }
     else {
     <div class="alva-tree" role="treegrid" aria-label="@(AlvaStrings.Tasks_TeamTasks)" id="@TaskListState.TreeElementId">
         <div class="alva-tree__head" role="row">
@@ -65,7 +80,7 @@ else
         </div>
         @foreach (var row in Rows)
         {
-            <div class="alva-tree__row" role="row" aria-level="@(row.Depth + 1)" aria-expanded="@(row.HasChildren ? (row.Expanded ? "true" : "false") : null)" @key="row.Task.Id" @onclick="() => Open(row.Task)">
+            <div class="alva-tree__row @RowClass(row.Task)" role="row" aria-level="@(row.Depth + 1)" aria-expanded="@(row.HasChildren ? (row.Expanded ? "true" : "false") : null)" @key="row.Task.Id" @onclick="() => Open(row.Task)">
                 <div class="alva-tree__cell alva-tree__cell--task" role="gridcell" style="--alva-depth:@row.Depth">
                     @if (row.HasChildren) { <button type="button" class="alva-tree__toggle" aria-label="@(row.Expanded ? AlvaStrings.Tasks_Collapse : AlvaStrings.Tasks_Expand)" @onclick:stopPropagation="true" @onclick="() => Toggle(row.Task)">@(row.Expanded ? "v" : ">")</button> }
                     else { <span class="alva-tree__toggle alva-tree__toggle--empty" aria-hidden="true"></span> }
@@ -167,23 +182,42 @@ else
     private static string RiskFilterLabel(string key) => key == "with" ? AlvaStrings.Tasks_WithRisk : AlvaStrings.Tasks_WithoutRisk;
     private string Route => AppRoutes.Current(Navigation);
     private string PageHeading => Route == "my-work" ? AlvaStrings.Tasks_MyWork : Route == "unassigned" ? AlvaStrings.Common_Unassigned : AlvaStrings.Tasks_TeamTasks;
-    private IEnumerable<TaskModel> Filtered => _tasks.Where(t => (string.IsNullOrWhiteSpace(_search) || t.Title.Contains(_search,StringComparison.OrdinalIgnoreCase)) && (!_projectFilter.HasValue || t.ProjectId==_projectFilter) && (_statusFilter is null || t.Status==_statusFilter) && (Route != "unassigned" || Assignees.Person(t,_actors) is null) && (Route != "my-work" || Assignees.Person(t,_actors) is { } person && Assignees.Me(_actors,Session.User).Contains(person)) && (!_assigneeFilter.HasValue || AssigneeMatches(t,_assigneeFilter.Value)) && (_priorityFilter is null || t.Priority==_priorityFilter) && (_deadlineFilter is null || (_deadlineFilter=="with" ? DeadlineOf(t) is not null : DeadlineOf(t) is null)) && (_riskFilter is null || (_riskFilter=="with" ? RiskOf(t) is not null : RiskOf(t) is null)));
+    private bool Matches(TaskModel t) => (string.IsNullOrWhiteSpace(_search) || t.Title.Contains(_search,StringComparison.OrdinalIgnoreCase)) && (!_projectFilter.HasValue || t.ProjectId==_projectFilter) && (_statusFilter is null || t.Status==_statusFilter) && (Route != "unassigned" || Assignees.Person(t,_actors) is null) && (Route != "my-work" || Assignees.Person(t,_actors) is { } person && Assignees.Me(_actors,Session.User).Contains(person)) && (!_assigneeFilter.HasValue || AssigneeMatches(t,_assigneeFilter.Value)) && (_priorityFilter is null || t.Priority==_priorityFilter) && (_deadlineFilter is null || (_deadlineFilter=="with" ? DeadlineOf(t) is not null : DeadlineOf(t) is null)) && (_riskFilter is null || (_riskFilter=="with" ? RiskOf(t) is not null : RiskOf(t) is null));
+    private IEnumerable<TaskModel> Matched => _tasks.Where(Matches);
+    private bool HasFilters => !string.IsNullOrWhiteSpace(_search) || _projectFilter.HasValue || _statusFilter is not null || _assigneeFilter.HasValue || _priorityFilter is not null || _deadlineFilter is not null || _riskFilter is not null;
+    private HashSet<Guid> IncludedIds
+    {
+        get
+        {
+            var byId = _tasks.ToDictionary(t => t.Id);
+            var included = new HashSet<Guid>();
+            foreach (var match in Matched)
+            {
+                TaskModel? current = match;
+                while (current is not null && included.Add(current.Id))
+                    current = current.ParentId is { } parentId && byId.TryGetValue(parentId, out var parent) ? parent : null;
+            }
+            return included;
+        }
+    }
+    private IEnumerable<TaskModel> Filtered => _tasks.Where(t => IncludedIds.Contains(t.Id));
     private IEnumerable<TaskModel> Roots => Sorted(Filtered.Where(t=>t.ParentId is null || !Filtered.Any(p=>p.Id==t.ParentId)));
-    private IEnumerable<TaskRow> Rows => Flatten(Roots, 0);
-    private IEnumerable<TaskRow> Flatten(IEnumerable<TaskModel> tasks, int depth)
+    private IEnumerable<TaskRow> Rows => Flatten(Roots, 0, HasFilters ? IncludedIds : new HashSet<Guid>());
+    private IEnumerable<TaskRow> Flatten(IEnumerable<TaskModel> tasks, int depth, HashSet<Guid> autoExpand)
     {
         foreach (var task in tasks)
         {
             var children = ChildrenOf(task).ToList();
-            var expanded = _expanded.Contains(task.Id);
+            var expanded = _expanded.Contains(task.Id) || autoExpand.Contains(task.Id);
             yield return new TaskRow(task, depth, children.Count > 0, expanded);
             if (expanded)
-                foreach (var child in Flatten(children, depth + 1))
+                foreach (var child in Flatten(children, depth + 1, autoExpand))
                     yield return child;
         }
     }
     private IEnumerable<TaskModel> ChildrenOf(TaskModel task) => Sorted(Filtered.Where(t => t.ParentId == task.Id));
     private sealed record TaskRow(TaskModel Task, int Depth, bool HasChildren, bool Expanded);
+    private string RowClass(TaskModel task) => HasFilters && !Matches(task) ? "alva-tree__row--context" : "";
     private IEnumerable<TaskModel> Sorted(IEnumerable<TaskModel> tasks)
     {
         var result = tasks.ToList();
@@ -312,9 +346,35 @@ else
         await Session.TaskList.SaveFilters(_search, _projectFilter, _statusFilter);
         await Session.TaskList.SaveSort(_sortKey, _sortDescending);
         await Session.TaskList.SaveExtraFilters(_assigneeFilter, _priorityFilter, _deadlineFilter, _riskFilter);
+        if (_selectedId is { } selected && !Filtered.Any(t => t.Id == selected))
+        {
+            _selectedId = null;
+            await SaveTreeState();
+        }
     }
-    private Task SaveExtraFilters() => Session.TaskList.SaveExtraFilters(_assigneeFilter, _priorityFilter, _deadlineFilter, _riskFilter);
+    private async Task SaveExtraFilters()
+    {
+        await Session.TaskList.SaveExtraFilters(_assigneeFilter, _priorityFilter, _deadlineFilter, _riskFilter);
+        if (_selectedId is { } selected && !Filtered.Any(t => t.Id == selected))
+        {
+            _selectedId = null;
+            await SaveTreeState();
+        }
+    }
     private Task SaveSort() => Session.TaskList.SaveSort(_sortKey, _sortDescending);
+    private async Task ClearSearch() { _search = null; await SaveListContext(); }
+    private async Task ClearProject() { _projectFilter = null; await SaveListContext(); }
+    private async Task ClearStatus() { _statusFilter = null; await SaveListContext(); }
+    private async Task ClearAssignee() { _assigneeFilter = null; await SaveListContext(); }
+    private async Task ClearPriority() { _priorityFilter = null; await SaveListContext(); }
+    private async Task ClearDeadline() { _deadlineFilter = null; await SaveListContext(); }
+    private async Task ClearRisk() { _riskFilter = null; await SaveListContext(); }
+    private async Task ClearFilters()
+    {
+        _search = null; _projectFilter = null; _statusFilter = null;
+        _assigneeFilter = null; _priorityFilter = null; _deadlineFilter = null; _riskFilter = null;
+        await SaveListContext();
+    }
     private Task ByOrder() => SortBy("order");
     private Task ByStatus() => SortBy("status");
     private Task ByPriority() => SortBy("priority");

@@ -1185,4 +1185,8 @@
   <data name="Tasks_Collapse" xml:space="preserve"><value>Свернуть</value></data>
   <data name="Tasks_AddSubtask" xml:space="preserve"><value>Добавить подзадачу</value></data>
   <data name="Tasks_BackToTree" xml:space="preserve"><value>Назад к дереву</value></data>
+  <data name="Tasks_NoTasksByFilters" xml:space="preserve"><value>Нет задач по условиям</value></data>
+  <data name="Tasks_ClearFilters" xml:space="preserve"><value>Сбросить фильтры</value></data>
+  <data name="Tasks_FilterSearch" xml:space="preserve"><value>Поиск</value></data>
+  <data name="Tasks_FoundCount" xml:space="preserve"><value>Найдено: {0}</value></data>
 </root>

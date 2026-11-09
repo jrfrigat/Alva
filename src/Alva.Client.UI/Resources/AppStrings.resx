@@ -1185,4 +1185,8 @@
   <data name="Tasks_Collapse" xml:space="preserve"><value>Collapse</value></data>
   <data name="Tasks_AddSubtask" xml:space="preserve"><value>Add subtask</value></data>
   <data name="Tasks_BackToTree" xml:space="preserve"><value>Back to the tree</value></data>
+  <data name="Tasks_NoTasksByFilters" xml:space="preserve"><value>No tasks match the filters</value></data>
+  <data name="Tasks_ClearFilters" xml:space="preserve"><value>Clear filters</value></data>
+  <data name="Tasks_FilterSearch" xml:space="preserve"><value>Search</value></data>
+  <data name="Tasks_FoundCount" xml:space="preserve"><value>Found: {0}</value></data>
 </root>
