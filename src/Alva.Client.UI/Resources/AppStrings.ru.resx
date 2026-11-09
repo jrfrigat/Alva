@@ -1057,6 +1057,8 @@
   <data name="Workspace_WorkspaceAlva" xml:space="preserve"><value>Рабочее пространство · Alva</value></data>
   <data name="Common_TaskActions" xml:space="preserve"><value>Действия с задачей</value></data>
   <data name="Task_NoRisksTheDeadlineAssigneeAndDependenciesAreFine" xml:space="preserve"><value>Рисков нет: срок, исполнитель и зависимости в порядке.</value></data>
+  <data name="Task_NoRisk" xml:space="preserve"><value>Без риска</value></data>
+  <data name="Task_NoForecast" xml:space="preserve"><value>Нет прогноза</value></data>
   <data name="Task_Forecast" xml:space="preserve"><value>Прогноз</value></data>
   <data name="Task_ForecastFinish" xml:space="preserve"><value>Прогноз завершения: {0}</value></data>
   <data name="Task_Plan" xml:space="preserve"><value>План</value></data>

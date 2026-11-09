@@ -136,6 +136,28 @@ public sealed class TaskDetailsCardTests : UiTestBase
     }
 
     [Fact]
+    public void Header_summary_shows_planning_facts_and_changes_status()
+    {
+        var actor = new ActorModel { Id = Guid.NewGuid(), Name = "Анна", Kind = "Person" };
+        var item = new TaskModel
+        {
+            Id = _task.Id, Title = _task.Title, Status = "Planned", Version = 1, AssignmentTargetId = actor.Id,
+            Deadline = new DateOnly(2026, 12, 1), EstimateHours = 8, RemainingHours = 4
+        };
+        var cut = Page(item, [actor]);
+
+        var header = cut.Find(".flare-page-header");
+        Assert.Contains("Анна", header.TextContent);
+        Assert.Contains("8 / 4", header.TextContent);
+
+        cut.Find(".alva-task__status-activator").Click();
+        cut.WaitForAssertion(() => Assert.Contains("Готова", cut.Markup));
+        Button(cut, "Готова").Click();
+        cut.WaitForAssertion(() => Assert.Contains("Готова", cut.Find(".alva-task__status-activator").TextContent));
+        Assert.False(Button(cut, "Сохранить").HasAttribute("disabled"));
+    }
+
+    [Fact]
     public void Plan_fields_are_grouped_and_dates_stay_together()
     {
         var cut = Page();

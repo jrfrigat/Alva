@@ -1057,6 +1057,8 @@
   <data name="Workspace_WorkspaceAlva" xml:space="preserve"><value>Workspace · Alva</value></data>
   <data name="Common_TaskActions" xml:space="preserve"><value>Task actions</value></data>
   <data name="Task_NoRisksTheDeadlineAssigneeAndDependenciesAreFine" xml:space="preserve"><value>No risks: the deadline, assignee and dependencies are fine.</value></data>
+  <data name="Task_NoRisk" xml:space="preserve"><value>No risk</value></data>
+  <data name="Task_NoForecast" xml:space="preserve"><value>No forecast</value></data>
   <data name="Task_Forecast" xml:space="preserve"><value>Forecast</value></data>
   <data name="Task_ForecastFinish" xml:space="preserve"><value>Forecast finish: {0}</value></data>
   <data name="Task_Plan" xml:space="preserve"><value>Plan</value></data>

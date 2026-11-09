@@ -2988,6 +2988,12 @@ public static class AlvaStrings
     /// <summary>No risks: the deadline, assignee and dependencies are fine.</summary>
     public static string Task_NoRisksTheDeadlineAssigneeAndDependenciesAreFine => Get("Task_NoRisksTheDeadlineAssigneeAndDependenciesAreFine");
 
+    /// <summary>No risk</summary>
+    public static string Task_NoRisk => Get("Task_NoRisk");
+
+    /// <summary>No forecast</summary>
+    public static string Task_NoForecast => Get("Task_NoForecast");
+
     /// <summary>Forecast</summary>
     public static string Task_Forecast => Get("Task_Forecast");
 

@@ -11,7 +11,43 @@
         <EyebrowContent><FlareBreadcrumb Items="Crumbs" Separator="›" AriaLabel="@(AlvaStrings.Task_PathToTheTask)" /></EyebrowContent>
         <DescriptionContent>
             <FlareStack Row Wrap Align="FlareAlignItems.Center" Gap="FlareSpacing.Small">
-                <AlvaStatusChip Tone="AlvaTones.Status(Item.Status)">@Labels.Status(Item.Status)</AlvaStatusChip>
+                <FlareMenu Anchor="MenuAnchor.BottomStart" AriaLabel="@(AlvaStrings.Common_Status)">
+                    <Activator>
+                        <button type="button" class="alva-task__status-activator" aria-label="@(AlvaStrings.Common_Status)" title="@(AlvaStrings.Common_Status)">
+                            <AlvaStatusChip Tone="AlvaTones.Status(_model.Status)">@Labels.Status(_model.Status)</AlvaStatusChip>
+                        </button>
+                    </Activator>
+                    <ChildContent>
+                        @foreach (var status in Statuses)
+                        {
+                            <FlareMenuItem OnClick="() => SetStatus(status)">@Labels.Status(status)</FlareMenuItem>
+                        }
+                    </ChildContent>
+                </FlareMenu>
+                <FlareButton Variant="ButtonVariant.Text" Size="ButtonSize.Sm" OnClick="OpenAssign" title="@(AlvaStrings.Task_AssignmentTitle)">
+                    <LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.Person" Size="16px" /></LeadingIcon>
+                    <ChildContent>@SummaryAssignee</ChildContent>
+                </FlareButton>
+                <span class="alva-task__summary-item @(IsOverdue ? "alva-task__summary-item--critical" : null)" title="@(AlvaStrings.Common_Deadline)">
+                    <FlareIconView Value="@MaterialDesign3Icons.Regular.Event" Size="16px" />
+                    <FlareText Typo="TypographyScale.BodySmall">@SummaryDeadline</FlareText>
+                </span>
+                <span class="alva-task__summary-item" title="@(AlvaStrings.Common_EstimateHours)">
+                    <FlareIconView Value="@MaterialDesign3Icons.Regular.Schedule" Size="16px" />
+                    <FlareText Typo="TypographyScale.BodySmall">@SummaryEffort</FlareText>
+                </span>
+                @if (_risk is { HasRisk: true })
+                {
+                    <AlvaStatusChip Tone="AlvaTones.Severity(_risk.Severity)">@(_risk.Severity == "High" ? AlvaStrings.Common_High : AlvaStrings.Risks_Medium)</AlvaStatusChip>
+                }
+                else if (_risk is not null)
+                {
+                    <AlvaStatusChip Tone="AlvaTone.Neutral">@(AlvaStrings.Task_NoForecast)</AlvaStatusChip>
+                }
+                else
+                {
+                    <AlvaStatusChip Tone="AlvaTone.Ok">@(AlvaStrings.Task_NoRisk)</AlvaStatusChip>
+                }
                 @* The task came from an external tracker: the key leads to where it is managed, and synchronization updates it here. *@
                 @if (Item.ExternalKey is { } externalKey)
                 {
@@ -494,6 +530,16 @@
         : _model.DatesFixed
             ? AlvaStrings.Task_DatesAreFixedTheTaskCannotBeMovedManuallyOrByAutoBalance
             : AlvaStrings.Task_TurnOnToForbidMovingTheTaskOrChangingItsDates;
+
+    private string SummaryAssignee => Actors.FirstOrDefault(a => a.Id == (Item.ResolvedPersonId ?? Item.AssignmentTargetId)) is { } actor
+        ? actor.Kind == "Person" ? actor.Name : $"{Labels.Kind(actor.Kind)}: {actor.Name}"
+        : AlvaStrings.Common_UnassignedTask;
+    private string SummaryDeadline => _model.Deadline?.ToString("d MMM") ?? "—";
+    private string SummaryEffort => _model.EstimateHours is null && _model.RemainingHours is null
+        ? "—"
+        : $"{AlvaFormat.Hours(_model.EstimateHours ?? 0)} / {AlvaFormat.Hours(_model.RemainingHours ?? 0)} {AlvaStrings.Sprint_HoursShort}";
+    private bool IsOverdue => _model.Deadline is { } deadline && deadline < DateOnly.FromDateTime(DateTime.Today);
+    private void SetStatus(string status) => _model.Status = status;
 
     /// <summary>Copy of the task from the parameter: the card draft is a separate object, so edits do not touch
     /// the page data until they are saved.</summary>
