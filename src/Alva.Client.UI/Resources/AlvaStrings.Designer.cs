@@ -3272,4 +3272,76 @@ public static class AlvaStrings
 
     /// <summary>planned</summary>
     public static string Sprint_PlannedCount => Get("Sprint_PlannedCount");
+
+    /// <summary>Sort by</summary>
+    public static string Tasks_SortBy => Get("Tasks_SortBy");
+
+    /// <summary>List order</summary>
+    public static string Tasks_ListOrder => Get("Tasks_ListOrder");
+
+    /// <summary>Deadline</summary>
+    public static string Tasks_SortDeadline => Get("Tasks_SortDeadline");
+
+    /// <summary>Priority</summary>
+    public static string Tasks_SortPriority => Get("Tasks_SortPriority");
+
+    /// <summary>Project</summary>
+    public static string Tasks_SortProject => Get("Tasks_SortProject");
+
+    /// <summary>Assignee</summary>
+    public static string Tasks_SortAssignee => Get("Tasks_SortAssignee");
+
+    /// <summary>Status</summary>
+    public static string Tasks_SortStatus => Get("Tasks_SortStatus");
+
+    /// <summary>Estimate</summary>
+    public static string Tasks_SortEstimate => Get("Tasks_SortEstimate");
+
+    /// <summary>Ascending</summary>
+    public static string Tasks_SortAscending => Get("Tasks_SortAscending");
+
+    /// <summary>Descending</summary>
+    public static string Tasks_SortDescending => Get("Tasks_SortDescending");
+
+    /// <summary>Assignee</summary>
+    public static string Tasks_FilterAssignee => Get("Tasks_FilterAssignee");
+
+    /// <summary>Priority</summary>
+    public static string Tasks_FilterPriority => Get("Tasks_FilterPriority");
+
+    /// <summary>Deadline</summary>
+    public static string Tasks_FilterDeadline => Get("Tasks_FilterDeadline");
+
+    /// <summary>Risk</summary>
+    public static string Tasks_FilterRisk => Get("Tasks_FilterRisk");
+
+    /// <summary>All assignees</summary>
+    public static string Tasks_AnyAssignee => Get("Tasks_AnyAssignee");
+
+    /// <summary>All priorities</summary>
+    public static string Tasks_AnyPriority => Get("Tasks_AnyPriority");
+
+    /// <summary>Any deadline</summary>
+    public static string Tasks_AnyDeadline => Get("Tasks_AnyDeadline");
+
+    /// <summary>With deadline</summary>
+    public static string Tasks_WithDeadline => Get("Tasks_WithDeadline");
+
+    /// <summary>Without deadline</summary>
+    public static string Tasks_WithoutDeadline => Get("Tasks_WithoutDeadline");
+
+    /// <summary>Any risk</summary>
+    public static string Tasks_AnyRisk => Get("Tasks_AnyRisk");
+
+    /// <summary>With risk</summary>
+    public static string Tasks_WithRisk => Get("Tasks_WithRisk");
+
+    /// <summary>Without risk</summary>
+    public static string Tasks_WithoutRisk => Get("Tasks_WithoutRisk");
+
+    /// <summary>overdue</summary>
+    public static string Tasks_Overdue => Get("Tasks_Overdue");
+
+    /// <summary>remaining</summary>
+    public static string Tasks_RemainingShort => Get("Tasks_RemainingShort");
 }

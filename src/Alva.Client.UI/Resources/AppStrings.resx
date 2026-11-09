@@ -1157,4 +1157,28 @@
   <data name="Common_BusyLower" xml:space="preserve"><value>busy</value></data>
   <data name="Capacity_FreePerson" xml:space="preserve"><value>Free</value></data>
   <data name="Sprint_PlannedCount" xml:space="preserve"><value>planned</value></data>
+  <data name="Tasks_SortBy" xml:space="preserve"><value>Sort by</value></data>
+  <data name="Tasks_ListOrder" xml:space="preserve"><value>List order</value></data>
+  <data name="Tasks_SortDeadline" xml:space="preserve"><value>Deadline</value></data>
+  <data name="Tasks_SortPriority" xml:space="preserve"><value>Priority</value></data>
+  <data name="Tasks_SortProject" xml:space="preserve"><value>Project</value></data>
+  <data name="Tasks_SortAssignee" xml:space="preserve"><value>Assignee</value></data>
+  <data name="Tasks_SortStatus" xml:space="preserve"><value>Status</value></data>
+  <data name="Tasks_SortEstimate" xml:space="preserve"><value>Estimate</value></data>
+  <data name="Tasks_SortAscending" xml:space="preserve"><value>Ascending</value></data>
+  <data name="Tasks_SortDescending" xml:space="preserve"><value>Descending</value></data>
+  <data name="Tasks_FilterAssignee" xml:space="preserve"><value>Assignee</value></data>
+  <data name="Tasks_FilterPriority" xml:space="preserve"><value>Priority</value></data>
+  <data name="Tasks_FilterDeadline" xml:space="preserve"><value>Deadline</value></data>
+  <data name="Tasks_FilterRisk" xml:space="preserve"><value>Risk</value></data>
+  <data name="Tasks_AnyAssignee" xml:space="preserve"><value>All assignees</value></data>
+  <data name="Tasks_AnyPriority" xml:space="preserve"><value>All priorities</value></data>
+  <data name="Tasks_AnyDeadline" xml:space="preserve"><value>Any deadline</value></data>
+  <data name="Tasks_WithDeadline" xml:space="preserve"><value>With deadline</value></data>
+  <data name="Tasks_WithoutDeadline" xml:space="preserve"><value>Without deadline</value></data>
+  <data name="Tasks_AnyRisk" xml:space="preserve"><value>Any risk</value></data>
+  <data name="Tasks_WithRisk" xml:space="preserve"><value>With risk</value></data>
+  <data name="Tasks_WithoutRisk" xml:space="preserve"><value>Without risk</value></data>
+  <data name="Tasks_Overdue" xml:space="preserve"><value>overdue</value></data>
+  <data name="Tasks_RemainingShort" xml:space="preserve"><value>remaining</value></data>
 </root>

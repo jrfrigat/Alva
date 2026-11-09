@@ -39,6 +39,14 @@ else
     <FlareSelect TValue="Guid?" Label="@(AlvaStrings.Common_Project)" Items="_projects.Select(x => (Guid?)x.Id)" ItemLabel="ProjectName" NullOption="@(AlvaStrings.Projects_AllProjects)" @bind-Value="_projectFilter" @bind-Value:after="SaveListContext" Style="flex:1;min-width:12rem" />
     <FlareSelect TValue="string" Label="@(AlvaStrings.Common_Status)" Items="_statuses" ItemLabel="Labels.Status" NullOption="@(AlvaStrings.Tasks_AllStatuses)" @bind-Value="_statusFilter" @bind-Value:after="SaveListContext" Style="flex:1;min-width:12rem" />
 </FlareStack>
+<FlareStack Row Wrap Gap="FlareSpacing.Small" Class="alva-task-filters">
+    <FlareSelect TValue="Guid?" Label="@(AlvaStrings.Tasks_FilterAssignee)" Items="FilterAssignees.Select(a => (Guid?)a.Id)" ItemLabel="ActorName" NullOption="@(AlvaStrings.Tasks_AnyAssignee)" @bind-Value="_assigneeFilter" @bind-Value:after="SaveExtraFilters" Searchable Style="flex:1;min-width:12rem" />
+    <FlareSelect TValue="string" Label="@(AlvaStrings.Tasks_FilterPriority)" Items="Labels.Priorities" ItemLabel="Labels.Priority" NullOption="@(AlvaStrings.Tasks_AnyPriority)" @bind-Value="_priorityFilter" @bind-Value:after="SaveExtraFilters" Style="flex:1;min-width:10rem" />
+    <FlareSelect TValue="string" Label="@(AlvaStrings.Tasks_FilterDeadline)" Items="DeadlineFilters" ItemLabel="DeadlineFilterLabel" NullOption="@(AlvaStrings.Tasks_AnyDeadline)" @bind-Value="_deadlineFilter" @bind-Value:after="SaveExtraFilters" Style="flex:1;min-width:10rem" />
+    <FlareSelect TValue="string" Label="@(AlvaStrings.Tasks_FilterRisk)" Items="RiskFilters" ItemLabel="RiskFilterLabel" NullOption="@(AlvaStrings.Tasks_AnyRisk)" @bind-Value="_riskFilter" @bind-Value:after="SaveExtraFilters" Style="flex:1;min-width:10rem" />
+    <FlareSelect TValue="string" Label="@(AlvaStrings.Tasks_SortBy)" Items="SortKeys" ItemLabel="SortLabel" @bind-Value="_sortKey" @bind-Value:after="SaveSort" Style="flex:1;min-width:12rem" />
+    <FlareButton OnClick="ToggleSortDirection" Variant="ButtonVariant.Text" Size="ButtonSize.Sm" AriaLabel="@SortDirectionLabel">@SortDirectionLabel</FlareButton>
+</FlareStack>
 <FlareStack Row Wrap Gap="FlareSpacing.Small"><FlareButton Href="tasks" Variant="ButtonVariant.Text" Size="ButtonSize.Sm">@(AlvaStrings.Gantt_AllTasks)</FlareButton><FlareButton Href="unassigned" Variant="ButtonVariant.Text" Size="ButtonSize.Sm">@(AlvaStrings.Common_Unassigned)</FlareButton><FlareButton Href="my-work" Variant="ButtonVariant.Text" Size="ButtonSize.Sm">@(AlvaStrings.Tasks_MyWork)</FlareButton><FlareButton OnClick="Load" Variant="ButtonVariant.Text" Size="ButtonSize.Sm">@(AlvaStrings.Tasks_Refresh)</FlareButton></FlareStack>
 <FlareGrid MinColumnWidth="min(100%, 26rem)" Gap="FlareSpacing.Large">
 <FlareCard Variant="CardVariant.Outlined"><FlareCardContent>
@@ -47,13 +55,21 @@ else
     else if (!Filtered.Any()) { <FlareEmptyState Compact Title="@(AlvaStrings.Common_NoTasksYet)" Description="@(AlvaStrings.Tasks_AddTheFirstTaskOrChangeTheFilters)" /> }
     else {
     <FlareDataTree TItem="TaskModel" Items="Roots" KeySelector="t => t!.Id" ChildrenProvider="Children" HasChildren="HasChildren" ItemClick="Open" Height="34rem" id="@TaskListState.TreeElementId">
-        <ItemTemplate Context="task"><FlareStack Row Align="FlareAlignItems.Center" Gap="FlareSpacing.Small" Wrap>
+        <ItemTemplate Context="task"><FlareStack Gap="FlareSpacing.XSmall" Class="alva-task-row">
+            <FlareStack Row Align="FlareAlignItems.Center" Gap="FlareSpacing.Small" Wrap Class="alva-task-row__main">
             @* The link makes the task keyboard-accessible (Tab, Enter), and a click on it goes through the same Open
                path as the row: that way the filters and list position are saved before navigation. The wrapper stops
                propagation and cancels the link's own navigation so there is no second one. *@
             <span @onclick:stopPropagation="true" @onclick="() => Open(task)" @onclick:preventDefault="true"><FlareLink Href="@($"tasks/{task!.Id}")">@task.Title</FlareLink></span><AlvaStatusChip Tone="AlvaTones.Status(task.Status)">@Labels.Status(task.Status)</AlvaStatusChip>
-            @if(task.Priority is "High" or "Critical") { <AlvaStatusChip Tone="AlvaTones.Priority(task.Priority)">@Labels.Priority(task.Priority)</AlvaStatusChip> }
-            @if(task.EstimateHours.HasValue) { <FlareText Typo="TypographyScale.LabelSmall">@task.EstimateHours @(AlvaStrings.Sprint_HoursShort)</FlareText> }
+            @if(task.Priority is not "Normal") { <AlvaStatusChip Tone="AlvaTones.Priority(task.Priority)">@Labels.Priority(task.Priority)</AlvaStatusChip> }
+            </FlareStack>
+            <FlareStack Row Align="FlareAlignItems.Center" Gap="FlareSpacing.Small" Wrap Class="alva-task-row__meta">
+                @if(ProjectOf(task) is { } project) { <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant" title="@(AlvaStrings.Common_Project)">@project</FlareText> }
+                <FlareText Typo="TypographyScale.BodySmall" Color="@(AssigneeActor(task) is null ? FlareColor.Warning : FlareColor.OnSurfaceVariant)" title="@(AlvaStrings.Tasks_FilterAssignee)">@AssigneeLabel(task)</FlareText>
+                @if(DeadlineOf(task) is { } deadline) { <FlareText Typo="TypographyScale.BodySmall" Color="@DeadlineTone(task)" title="@DeadlineTitle(task)">@deadline.ToString("d MMM")</FlareText> }
+                <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant" title="@(AlvaStrings.Tasks_RemainingShort)">@EffortLabel(task)</FlareText>
+                @if(RiskOf(task) is { } risk) { <AlvaStatusChip Tone="AlvaTones.Severity(risk.Severity)" Title="@RiskReason(risk)">@(risk.Severity == "High" ? AlvaStrings.Common_High : AlvaStrings.Risks_Medium)</AlvaStatusChip> }
+            </FlareStack>
         </FlareStack></ItemTemplate>
     </FlareDataTree>
     }
@@ -97,27 +113,115 @@ else
 }
 @code {
     [Parameter] public Guid? TaskId { get; set; }
-    private TaskModel[] _tasks=[]; private ProjectModel[] _projects=[]; private SprintModel[] _sprints=[]; private ActorModel[] _actors=[]; private HistoryDto[] _history=[];
+    private TaskModel[] _tasks=[]; private ProjectModel[] _projects=[]; private SprintModel[] _sprints=[]; private ActorModel[] _actors=[]; private HistoryDto[] _history=[]; private RiskDto[] _risks=[];
     private IEnumerable<ActorModel> SkillActors => _actors.Where(a => a.Kind == "Skill");
     private IEnumerable<Guid?> AssignableActorIds => _actors.Where(a => a.Kind is "Person" or "Department").Select(a => (Guid?)a.Id);
     private TaskModel? _editing; private string? _editingSnapshot; private IDisposable? _draft;
     private string? _error,_search,_statusFilter; private Guid? _projectFilter; private bool _busy,_loaded;
+    private Guid? _assigneeFilter; private string? _priorityFilter,_deadlineFilter,_riskFilter;
+    private string _sortKey="order"; private bool _sortDescending;
     private string? _titleError,_parentError,_startError,_endError,_estimateError,_remainingError,_limitError;
     private readonly List<string> _formErrors=[]; private ElementReference _errorSummary;
     [CascadingParameter] public FlareConfirmDialogProvider? Confirm { get; set; }
     internal bool IsDirty => _editing is not null && DraftSnapshot.Of(_editing) != _editingSnapshot;
     private double _pendingScroll;
     private readonly string[] _statuses=["Backlog","Planned","InProgress","Done","Cancelled"];
+    private static readonly string[] SortKeys=["order","deadline","priority","project","assignee","status","estimate"];
+    private static readonly string[] DeadlineFilters=["with","without"];
+    private static readonly string[] RiskFilters=["with","without"];
+    private IEnumerable<ActorModel> FilterAssignees => _actors.Where(a => a.Kind is "Person" or "Department");
+    private string SortDirectionLabel => _sortDescending ? AlvaStrings.Tasks_SortDescending : AlvaStrings.Tasks_SortAscending;
+    private static string SortLabel(string key) => key switch
+    {
+        "deadline" => AlvaStrings.Tasks_SortDeadline,
+        "priority" => AlvaStrings.Tasks_SortPriority,
+        "project" => AlvaStrings.Tasks_SortProject,
+        "assignee" => AlvaStrings.Tasks_SortAssignee,
+        "status" => AlvaStrings.Tasks_SortStatus,
+        "estimate" => AlvaStrings.Tasks_SortEstimate,
+        _ => AlvaStrings.Tasks_ListOrder
+    };
+    private static string DeadlineFilterLabel(string key) => key == "with" ? AlvaStrings.Tasks_WithDeadline : AlvaStrings.Tasks_WithoutDeadline;
+    private static string RiskFilterLabel(string key) => key == "with" ? AlvaStrings.Tasks_WithRisk : AlvaStrings.Tasks_WithoutRisk;
     private string Route => AppRoutes.Current(Navigation);
     private string PageHeading => Route == "my-work" ? AlvaStrings.Tasks_MyWork : Route == "unassigned" ? AlvaStrings.Common_Unassigned : AlvaStrings.Tasks_TeamTasks;
-    private IEnumerable<TaskModel> Filtered => _tasks.Where(t => (string.IsNullOrWhiteSpace(_search) || t.Title.Contains(_search,StringComparison.OrdinalIgnoreCase)) && (!_projectFilter.HasValue || t.ProjectId==_projectFilter) && (_statusFilter is null || t.Status==_statusFilter) && (Route != "unassigned" || Assignees.Person(t,_actors) is null) && (Route != "my-work" || Assignees.Person(t,_actors) is { } person && Assignees.Me(_actors,Session.User).Contains(person)));
-    private IEnumerable<TaskModel> Roots => Filtered.Where(t=>t.ParentId is null || !Filtered.Any(p=>p.Id==t.ParentId)).OrderBy(t=>t.Order);
-    private Task<IEnumerable<TaskModel?>> Children(TaskModel? task) => Task.FromResult(Filtered.Where(t=>t.ParentId==task!.Id).OrderBy(t=>t.Order).Cast<TaskModel?>());
+    private IEnumerable<TaskModel> Filtered => _tasks.Where(t => (string.IsNullOrWhiteSpace(_search) || t.Title.Contains(_search,StringComparison.OrdinalIgnoreCase)) && (!_projectFilter.HasValue || t.ProjectId==_projectFilter) && (_statusFilter is null || t.Status==_statusFilter) && (Route != "unassigned" || Assignees.Person(t,_actors) is null) && (Route != "my-work" || Assignees.Person(t,_actors) is { } person && Assignees.Me(_actors,Session.User).Contains(person)) && (!_assigneeFilter.HasValue || AssigneeMatches(t,_assigneeFilter.Value)) && (_priorityFilter is null || t.Priority==_priorityFilter) && (_deadlineFilter is null || (_deadlineFilter=="with" ? DeadlineOf(t) is not null : DeadlineOf(t) is null)) && (_riskFilter is null || (_riskFilter=="with" ? RiskOf(t) is not null : RiskOf(t) is null)));
+    private IEnumerable<TaskModel> Roots => Sorted(Filtered.Where(t=>t.ParentId is null || !Filtered.Any(p=>p.Id==t.ParentId)));
+    private Task<IEnumerable<TaskModel?>> Children(TaskModel? task) => Task.FromResult(Sorted(Filtered.Where(t=>t.ParentId==task!.Id)).Cast<TaskModel?>());
     private bool HasChildren(TaskModel? task) => Filtered.Any(t=>t.ParentId==task!.Id);
+    private IEnumerable<TaskModel> Sorted(IEnumerable<TaskModel> tasks)
+    {
+        var result = tasks.ToList();
+        result.Sort(CompareTasks);
+        return result;
+    }
+    private int CompareTasks(TaskModel a, TaskModel b)
+    {
+        var direction = _sortDescending ? -1 : 1;
+        var compared = _sortKey switch
+        {
+            "deadline" => CompareNullableDate(DeadlineOf(a), DeadlineOf(b), direction),
+            "priority" => direction * PriorityRank(a.Priority).CompareTo(PriorityRank(b.Priority)),
+            "project" => CompareText(ProjectOf(a), ProjectOf(b), direction),
+            "assignee" => CompareText(AssigneeSortName(a), AssigneeSortName(b), direction),
+            "status" => direction * StatusRank(a.Status).CompareTo(StatusRank(b.Status)),
+            "estimate" => CompareNullableDecimal(a.EstimateHours, b.EstimateHours, direction),
+            _ => direction * a.Order.CompareTo(b.Order)
+        };
+        if (compared == 0) compared = a.Order.CompareTo(b.Order);
+        if (compared == 0) compared = string.Compare(a.Title, b.Title, StringComparison.CurrentCultureIgnoreCase);
+        return compared;
+    }
+    private static int CompareNullableDate(DateOnly? a, DateOnly? b, int direction)
+    {
+        if (a is null && b is null) return 0;
+        if (a is null) return 1;
+        if (b is null) return -1;
+        return direction * a.Value.CompareTo(b.Value);
+    }
+    private static int CompareNullableDecimal(decimal? a, decimal? b, int direction)
+    {
+        if (a is null && b is null) return 0;
+        if (a is null) return 1;
+        if (b is null) return -1;
+        return direction * a.Value.CompareTo(b.Value);
+    }
+    private static int CompareText(string? a, string? b, int direction)
+    {
+        var aEmpty = string.IsNullOrWhiteSpace(a);
+        var bEmpty = string.IsNullOrWhiteSpace(b);
+        if (aEmpty && bEmpty) return 0;
+        if (aEmpty) return 1;
+        if (bEmpty) return -1;
+        return direction * string.Compare(a, b, StringComparison.CurrentCultureIgnoreCase);
+    }
+    private static int PriorityRank(string? priority) => priority switch { "Critical" => 3, "High" => 2, "Low" => 0, _ => 1 };
+    private static int StatusRank(string? status) => status switch { "Planned" => 1, "InProgress" => 2, "Done" => 3, "Cancelled" => 4, "Backlog" => 0, _ => 5 };
+    private static DateOnly? DeadlineOf(TaskModel task) => task.EffectiveDeadline ?? task.Deadline;
+    private RiskDto? RiskOf(TaskModel task) => _risks.FirstOrDefault(r => r.TaskId == task.Id && r.HasRisk);
+    private static string RiskReason(RiskDto risk) => ReasonText.Join(risk.Reasons);
+    private string? ProjectOf(TaskModel task) => _projects.FirstOrDefault(p => p.Id == task.ProjectId)?.Name;
+    private ActorModel? AssigneeActor(TaskModel task) => _actors.FirstOrDefault(a => a.Id == (task.ResolvedPersonId ?? task.AssignmentTargetId));
+    private string? AssigneeSortName(TaskModel task) => AssigneeActor(task)?.Name;
+    private string AssigneeLabel(TaskModel task) => AssigneeActor(task) is { } actor
+        ? (actor.Kind == "Person" ? actor.Name : $"{actor.Name} - {Labels.Kind(actor.Kind)}")
+        : AlvaStrings.Common_UnassignedTask;
+    private bool AssigneeMatches(TaskModel task, Guid id) => task.AssignmentTargetId == id || Assignees.Person(task, _actors) == id;
+    private static bool IsOverdue(TaskModel task) => task.Status is not ("Done" or "Cancelled") && DeadlineOf(task) is { } deadline && deadline < DateOnly.FromDateTime(DateTime.Today);
+    private static FlareColor DeadlineTone(TaskModel task) => IsOverdue(task) ? FlareColor.Error : FlareColor.OnSurfaceVariant;
+    private static string DeadlineTitle(TaskModel task)
+    {
+        var deadline = DeadlineOf(task);
+        if (deadline is null) return "";
+        var text = $"{AlvaStrings.Common_Deadline}: {deadline.Value:d MMM}";
+        return IsOverdue(task) ? $"{text} ({AlvaStrings.Tasks_Overdue})" : text;
+    }
+    private static string EffortLabel(TaskModel task) => $"{Hours(task.EstimateHours)} / {Hours(task.RemainingHours)} {AlvaStrings.Sprint_HoursShort}";
+    private static string Hours(decimal? value) => value is { } hours ? AlvaFormat.Hours(hours) : "-";
     private string ProjectName(Guid? id)=>_projects.FirstOrDefault(x=>x.Id==id)?.Name??AlvaStrings.Sprint_Ongoing;
     private string SprintName(Guid? id)=>_sprints.FirstOrDefault(x=>x.Id==id)?.Name??AlvaStrings.Common_NoSprint;
     private string TaskName(Guid? id)=>_tasks.FirstOrDefault(x=>x.Id==id)?.Title??AlvaStrings.Common_RootTask;
-    private string ActorName(Guid? id) { var actor=_actors.FirstOrDefault(x=>x.Id==id);return actor is null?AlvaStrings.Common_UnassignedTask:$"{actor.Name} · {Labels.Kind(actor.Kind)}"; }
+    private string ActorName(Guid? id) { var actor=_actors.FirstOrDefault(x=>x.Id==id);return actor is null?AlvaStrings.Common_UnassignedTask:$"{actor.Name} - {Labels.Kind(actor.Kind)}"; }
     private string SkillName(Guid id) => _actors.FirstOrDefault(x => x.Id == id)?.Name ?? "";
     private TaskModel? Current => TaskId.HasValue ? _tasks.FirstOrDefault(t=>t.Id==TaskId) : null;
     protected override async Task OnInitializedAsync()
@@ -129,6 +233,12 @@ else
         _search = context.Search;
         _projectFilter = context.Project;
         _statusFilter = context.Status;
+        _sortKey = context.SortKey ?? "order";
+        _sortDescending = context.SortDescending;
+        _assigneeFilter = context.Assignee;
+        _priorityFilter = context.Priority;
+        _deadlineFilter = context.Deadline;
+        _riskFilter = context.Risk;
         _pendingScroll = context.Scroll;
     }
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -160,7 +270,15 @@ else
         Navigation.NavigateTo("tasks");
     }
     // Filters are saved on every change (@bind-Value:after), so the context is ready for navigation.
-    private Task SaveListContext() => Session.TaskList.SaveFilters(_search, _projectFilter, _statusFilter);
+    private async Task SaveListContext()
+    {
+        await Session.TaskList.SaveFilters(_search, _projectFilter, _statusFilter);
+        await Session.TaskList.SaveSort(_sortKey, _sortDescending);
+        await Session.TaskList.SaveExtraFilters(_assigneeFilter, _priorityFilter, _deadlineFilter, _riskFilter);
+    }
+    private Task SaveExtraFilters() => Session.TaskList.SaveExtraFilters(_assigneeFilter, _priorityFilter, _deadlineFilter, _riskFilter);
+    private Task SaveSort() => Session.TaskList.SaveSort(_sortKey, _sortDescending);
+    private async Task ToggleSortDirection() { _sortDescending = !_sortDescending; await SaveSort(); }
     // Creation from another screen (project): the form opens immediately with that context, and saving returns there.
     [SupplyParameterFromQuery(Name = "new")] public int? NewFlag { get; set; }
     [SupplyParameterFromQuery(Name = "project")] public Guid? NewProject { get; set; }
@@ -180,9 +298,9 @@ else
         _opened = Current.Id;
         _focusCard = true;
     }
-    private async Task Open(TaskModel? task){ if(task is null) return; await Session.TaskList.SaveFilters(_search, _projectFilter, _statusFilter); await Session.TaskList.SaveScroll(await Session.TaskList.Scroll()); Navigation.NavigateTo($"tasks/{task.Id}"); }
+    private async Task Open(TaskModel? task){ if(task is null) return; await SaveListContext(); await Session.TaskList.SaveScroll(await Session.TaskList.Scroll()); Navigation.NavigateTo($"tasks/{task.Id}"); }
     private async Task Run(Func<Task> action) { _busy=true; _error=null;try{await action();}catch(Exception e) when(e is HttpRequestException or InvalidOperationException){_error=PageFeedback.Describe(e);}finally{_busy=false;_loaded=true;} }
-    private Task Load()=>Run(async()=>{await Session.Initialize();if(Session.TeamId is null)return;_tasks=await Session.Get<TaskModel[]>(Session.TeamPath("tasks"));_projects=await Session.Get<ProjectModel[]>(Session.TeamPath("projects"));_actors=await Session.Get<ActorModel[]>(Session.TeamPath("actors"));_sprints=await Session.Get<SprintModel[]>(Session.TeamPath("sprints"));_loaded=true;});
+    private Task Load()=>Run(async()=>{await Session.Initialize();if(Session.TeamId is null)return;_tasks=await Session.Get<TaskModel[]>(Session.TeamPath("tasks"));_projects=await Session.Get<ProjectModel[]>(Session.TeamPath("projects"));_actors=await Session.Get<ActorModel[]>(Session.TeamPath("actors"));_sprints=await Session.Get<SprintModel[]>(Session.TeamPath("sprints"));_risks=(await Session.Get<RiskDto[]>(Session.TeamPath("risks"))).Where(r=>r.HasRisk).ToArray();_loaded=true;});
     private void NewTask(){_editing=new TaskModel { TeamId=Session.TeamId!.Value };_history=[];_editingSnapshot=DraftSnapshot.Of(_editing);}
     private void NewChild(Guid id){NewTask();_editing!.ParentId=id;_editingSnapshot=DraftSnapshot.Of(_editing);}
     private FlareButton? _newButton;

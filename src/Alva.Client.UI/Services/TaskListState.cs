@@ -5,7 +5,7 @@ using Microsoft.JSInterop;
 namespace Alva.Client.Services;
 
 /// <summary>
-/// Task list context: search, project filter, status filter and scroll position. This is a device setting,
+/// Task list context: filters, sort order and scroll position. This is a device setting,
 /// not team data, so it lives in localStorage; the list page is recreated by route key in
 /// MainLayout, so the context must survive navigating into a task card and back, as well as a reload.
 /// </summary>
@@ -37,6 +37,20 @@ public sealed class TaskListState(IJSRuntime js)
     public async Task SaveFilters(string? search, Guid? project, string? status)
     {
         var next = (await Load()) with { Search = search, Project = project, Status = status };
+        await Save(next);
+    }
+
+    /// <summary>Remembers the sort key and direction.</summary>
+    public async Task SaveSort(string? key, bool descending)
+    {
+        var next = (await Load()) with { SortKey = key, SortDescending = descending };
+        await Save(next);
+    }
+
+    /// <summary>Remembers the assignee, priority, deadline and risk filters.</summary>
+    public async Task SaveExtraFilters(Guid? assignee, string? priority, string? deadline, string? risk)
+    {
+        var next = (await Load()) with { Assignee = assignee, Priority = priority, Deadline = deadline, Risk = risk };
         await Save(next);
     }
 
@@ -79,5 +93,14 @@ public sealed class TaskListState(IJSRuntime js)
         public Guid? Project { get; init; }
         public string? Status { get; init; }
         public double Scroll { get; init; }
+        /// <summary>order, deadline, priority, project, assignee, status or estimate.</summary>
+        public string? SortKey { get; init; }
+        public bool SortDescending { get; init; }
+        public Guid? Assignee { get; init; }
+        public string? Priority { get; init; }
+        /// <summary>with or without.</summary>
+        public string? Deadline { get; init; }
+        /// <summary>with or without.</summary>
+        public string? Risk { get; init; }
     }
 }

@@ -1157,4 +1157,28 @@
   <data name="Common_BusyLower" xml:space="preserve"><value>занято</value></data>
   <data name="Capacity_FreePerson" xml:space="preserve"><value>Свободен</value></data>
   <data name="Sprint_PlannedCount" xml:space="preserve"><value>набрано</value></data>
+  <data name="Tasks_SortBy" xml:space="preserve"><value>Сортировка</value></data>
+  <data name="Tasks_ListOrder" xml:space="preserve"><value>По порядку</value></data>
+  <data name="Tasks_SortDeadline" xml:space="preserve"><value>По сроку</value></data>
+  <data name="Tasks_SortPriority" xml:space="preserve"><value>По приоритету</value></data>
+  <data name="Tasks_SortProject" xml:space="preserve"><value>По проекту</value></data>
+  <data name="Tasks_SortAssignee" xml:space="preserve"><value>По исполнителю</value></data>
+  <data name="Tasks_SortStatus" xml:space="preserve"><value>По статусу</value></data>
+  <data name="Tasks_SortEstimate" xml:space="preserve"><value>По оценке</value></data>
+  <data name="Tasks_SortAscending" xml:space="preserve"><value>По возрастанию</value></data>
+  <data name="Tasks_SortDescending" xml:space="preserve"><value>По убыванию</value></data>
+  <data name="Tasks_FilterAssignee" xml:space="preserve"><value>Исполнитель</value></data>
+  <data name="Tasks_FilterPriority" xml:space="preserve"><value>Приоритет</value></data>
+  <data name="Tasks_FilterDeadline" xml:space="preserve"><value>Срок</value></data>
+  <data name="Tasks_FilterRisk" xml:space="preserve"><value>Риск</value></data>
+  <data name="Tasks_AnyAssignee" xml:space="preserve"><value>Все исполнители</value></data>
+  <data name="Tasks_AnyPriority" xml:space="preserve"><value>Любой приоритет</value></data>
+  <data name="Tasks_AnyDeadline" xml:space="preserve"><value>Любой срок</value></data>
+  <data name="Tasks_WithDeadline" xml:space="preserve"><value>Со сроком</value></data>
+  <data name="Tasks_WithoutDeadline" xml:space="preserve"><value>Без срока</value></data>
+  <data name="Tasks_AnyRisk" xml:space="preserve"><value>Любой риск</value></data>
+  <data name="Tasks_WithRisk" xml:space="preserve"><value>С риском</value></data>
+  <data name="Tasks_WithoutRisk" xml:space="preserve"><value>Без риска</value></data>
+  <data name="Tasks_Overdue" xml:space="preserve"><value>просрочен</value></data>
+  <data name="Tasks_RemainingShort" xml:space="preserve"><value>остаток</value></data>
 </root>

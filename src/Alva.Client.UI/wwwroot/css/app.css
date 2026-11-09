@@ -81,6 +81,11 @@ html,body{margin:0;min-height:100%;font-family:var(--alva-font);background:var(-
 .alva-assign__task{font-size:12px;font-weight:700;color:var(--flare-color-primary,var(--alva-primary))}
 .alva-assign__footer{display:flex;justify-content:space-between;gap:.5rem;padding-top:.75rem;border-top:1px solid var(--alva-border)}
 .alva-task-filters{min-width:0}
+.alva-task-row{min-width:0}
+.alva-task-row__main,.alva-task-row__meta{min-width:0}
+.alva-task-row__meta{font-size:12px;line-height:16px;color:var(--flare-color-on-surface-variant,var(--alva-on-surface-variant))}
+.alva-task-row__meta .flare-text{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media(max-width:600px){.alva-task-row__meta{gap:.125rem .5rem}.alva-task-row__meta .flare-text{font-size:12px}}
 
 /* 5. Sprint planning */
 .alva-plan-board{display:grid;grid-template-columns:minmax(15rem,18rem) minmax(0,1fr) minmax(15rem,18rem);gap:1rem;align-items:start}
