@@ -24,19 +24,20 @@
                 <FlareIconButton Icon="@MaterialDesign3Icons.Regular.Edit" Size="ButtonSize.Sm" Tooltip="@(AlvaStrings.Task_EditTitle)" AriaLabel="@(AlvaStrings.Task_EditTitle)" OnClick="OpenTitleEdit" />
             </FlareStack>
         </DescriptionContent>
-        <ActionsContent>
-            <FlareButton Loading="_busy" Disabled="@(string.IsNullOrWhiteSpace(_model.Title) || !Dirty)" OnClick="Save" Size="ButtonSize.Sm">
-                <LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.Save" Size="18px" /></LeadingIcon>
-                <ChildContent>@(AlvaStrings.Common_Save)</ChildContent>
-            </FlareButton>
-            <FlareButton @ref="_assignButton" Variant="ButtonVariant.Tonal" OnClick="OpenAssign" Size="ButtonSize.Sm">
-                <LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.PersonAdd" Size="18px" /></LeadingIcon>
-                <ChildContent>@(AlvaStrings.Common_AssignAnAssignee)</ChildContent>
-            </FlareButton>
-            <FlareIconButton Icon="@MaterialDesign3Icons.Regular.Delete" Color="FlareColor.Error" Size="ButtonSize.Sm" Tooltip="@(AlvaStrings.Task_ArchiveTask)" AriaLabel="@(AlvaStrings.Task_ArchiveTask)" OnClick="Archive" />
-            <EditorStatus Dirty="Dirty" Saving="_busy" Saved="_saved" />
-        </ActionsContent>
     </FlarePageHeader>
+    </div>
+    <div class="alva-task__actions" role="toolbar" aria-label="@(AlvaStrings.Common_TaskActions)">
+        <FlareButton Loading="_busy" Disabled="@(string.IsNullOrWhiteSpace(_model.Title) || !Dirty)" OnClick="Save" Size="ButtonSize.Sm">
+            <LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.Save" Size="18px" /></LeadingIcon>
+            <ChildContent>@(AlvaStrings.Common_Save)</ChildContent>
+        </FlareButton>
+        <FlareButton @ref="_assignButton" Variant="ButtonVariant.Tonal" OnClick="OpenAssign" Size="ButtonSize.Sm">
+            <LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.PersonAdd" Size="18px" /></LeadingIcon>
+            <ChildContent>@(AlvaStrings.Common_AssignAnAssignee)</ChildContent>
+        </FlareButton>
+        <FlareIconButton Icon="@MaterialDesign3Icons.Regular.Delete" Color="FlareColor.Error" Size="ButtonSize.Sm" Tooltip="@(AlvaStrings.Task_ArchiveTask)" AriaLabel="@(AlvaStrings.Task_ArchiveTask)" OnClick="Archive" />
+        <FlareSpacer />
+        <EditorStatus Dirty="Dirty" Saving="_busy" Saved="_saved" />
     </div>
     <PageFeedback Error="@_error" />
 

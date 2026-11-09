@@ -69,6 +69,7 @@ html,body{margin:0;min-height:100%;font-family:var(--alva-font);background:var(-
 
 /* 4. Task and assignee assignment */
 .alva-task__external{font-size:.875rem;font-variant-numeric:tabular-nums;color:var(--flare-color-primary,var(--alva-primary));white-space:nowrap}
+.alva-task__actions{position:sticky;top:0;z-index:6;display:flex;flex-wrap:wrap;align-items:center;gap:.5rem;padding:.5rem .75rem;border:1px solid var(--alva-border);border-radius:6px;background:var(--flare-color-surface-container-lowest,#fff);box-shadow:0 2px 6px rgba(0,0,0,.08)}
 .alva-integration__runs{display:flex;flex-direction:column;gap:.25rem;padding-top:.5rem;border-top:1px solid var(--alva-border)}
 .alva-assign{display:flex;flex-direction:column;gap:.75rem;padding:1rem}
 .alva-assign__header{display:flex;align-items:flex-start;gap:.5rem}
