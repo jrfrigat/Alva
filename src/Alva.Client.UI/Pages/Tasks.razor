@@ -6,6 +6,7 @@
 @inject AlvaSession Session
 @inject NavigationManager Navigation
 @inject DraftGuard Drafts
+@inject ISnackbarService Snackbar
 <PageTitle>@(Current is null ? AlvaStrings.Common_Tasks : Current.Title) · Alva</PageTitle>
 <NavigationLock OnBeforeInternalNavigation="ConfirmLeave" ConfirmExternalNavigation="IsDirty" />
 @if (Current is not null)
@@ -29,7 +30,7 @@ else if (TaskId.HasValue)
 else
 {
 <AlvaPageHeader Category="@(AlvaStrings.Tasks_PlanningTasks)" Title="@PageHeading" Description="@(AlvaStrings.Tasks_TheTeamSTaskPoolTreeStatusesAndAssignments)">
-    <Actions><FlareButton @ref="_newButton" OnClick="NewTask" Disabled="@(Session.TeamId is null)" Size="ButtonSize.Sm">@(AlvaStrings.Tasks_NewTask)</FlareButton></Actions>
+    <Actions><FlareButton @ref="_newButton" OnClick="() => OpenQuickCreate(null)" Disabled="@(Session.TeamId is null)" Size="ButtonSize.Sm">@(AlvaStrings.Tasks_NewTask)</FlareButton></Actions>
 </AlvaPageHeader>
 <PageFeedback Error="@_error" Loading="_busy" OnRetry="Load" />
 @if(Session.TeamId is null) { <TeamRequired /> }
@@ -85,7 +86,7 @@ else
                     @if (row.HasChildren) { <button type="button" class="alva-tree__toggle" aria-label="@(row.Expanded ? AlvaStrings.Tasks_Collapse : AlvaStrings.Tasks_Expand)" @onclick:stopPropagation="true" @onclick="() => Toggle(row.Task)">@(row.Expanded ? "v" : ">")</button> }
                     else { <span class="alva-tree__toggle alva-tree__toggle--empty" aria-hidden="true"></span> }
                     <span @onclick:stopPropagation="true" @onclick="() => Open(row.Task)" @onclick:preventDefault="true"><FlareLink Href="@($"tasks/{row.Task.Id}")">@row.Task.Title</FlareLink></span>
-                    <button type="button" class="alva-tree__add" aria-label="@AlvaStrings.Tasks_AddSubtask" title="@AlvaStrings.Tasks_AddSubtask" @onclick:stopPropagation="true" @onclick="() => NewChild(row.Task.Id)">+</button>
+                    <button type="button" class="alva-tree__add" aria-label="@AlvaStrings.Tasks_AddSubtask" title="@AlvaStrings.Tasks_AddSubtask" @onclick:stopPropagation="true" @onclick="() => OpenQuickCreate(row.Task.Id)">+</button>
                     <div class="alva-tree__meta">
                         <AlvaStatusChip Tone="AlvaTones.Status(row.Task.Status)">@Labels.Status(row.Task.Status)</AlvaStatusChip>
                         @if (row.Task.Priority is not "Normal") { <AlvaStatusChip Tone="AlvaTones.Priority(row.Task.Priority)">@Labels.Priority(row.Task.Priority)</AlvaStatusChip> }
@@ -148,6 +149,20 @@ else
         <TaskDetails Item="selected" Tasks="_tasks" Projects="_projects" Sprints="_sprints" Actors="_actors" Changed="Load" HeadingLevel="2" Compact="true" />
     </FlareDrawer>
 }
+<FlareDrawer Anchor="DrawerAnchor.Bottom" Open="_quickOpen" OpenChanged="OnQuickOpen" Height="auto" ContentPadding="FlareSpacing.Large" AriaLabel="@(AlvaStrings.Tasks_NewTask)">
+    <FlareStack Gap="FlareSpacing.Medium">
+        <FlareText Element="h2" Typo="TypographyScale.TitleLarge">@(AlvaStrings.Tasks_NewTask)</FlareText>
+        <FlareTextField @ref="_quickTitleField" Label="@(AlvaStrings.Common_Title)" @bind-Value="_quickTitle" Required MaxLength="500" />
+        @if (QuickContext is { Length: > 0 } quickContext) { <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@quickContext</FlareText> }
+        @if (_quickError is not null) { <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.Error">@_quickError</FlareText> }
+        <FlareStack Row Wrap Gap="FlareSpacing.Small">
+            <FlareButton Loading="_quickBusy" Disabled="@(string.IsNullOrWhiteSpace(_quickTitle))" OnClick="() => CreateQuick(false)">@(AlvaStrings.Tasks_Create)</FlareButton>
+            <FlareButton Variant="ButtonVariant.Text" Disabled="_quickBusy" OnClick="() => CreateQuick(true)">@(AlvaStrings.Tasks_CreateAnother)</FlareButton>
+            <FlareButton Variant="ButtonVariant.Text" OnClick="OpenFullForm">@(AlvaStrings.Common_MoreFields)</FlareButton>
+            <FlareButton Variant="ButtonVariant.Text" OnClick="CloseQuick">@(AlvaStrings.Common_Cancel)</FlareButton>
+        </FlareStack>
+    </FlareStack>
+</FlareDrawer>
 }
 }
 @code {
@@ -161,6 +176,13 @@ else
     private string _sortKey="order"; private bool _sortDescending;
     private readonly HashSet<Guid> _expanded=[];
     private Guid? _selectedId;
+    private bool _quickOpen, _quickBusy;
+    private string? _quickTitle, _quickError;
+    private Guid? _quickParentId, _quickProjectId, _quickSprintId;
+    private string _quickStatus = "Backlog";
+    private Guid? _highlightId;
+    private FlareTextField? _quickTitleField;
+    private bool _focusQuick;
     private string? _titleError,_parentError,_startError,_endError,_estimateError,_remainingError,_limitError;
     private readonly List<string> _formErrors=[]; private ElementReference _errorSummary;
     [CascadingParameter] public FlareConfirmDialogProvider? Confirm { get; set; }
@@ -217,7 +239,11 @@ else
     }
     private IEnumerable<TaskModel> ChildrenOf(TaskModel task) => Sorted(Filtered.Where(t => t.ParentId == task.Id));
     private sealed record TaskRow(TaskModel Task, int Depth, bool HasChildren, bool Expanded);
-    private string RowClass(TaskModel task) => HasFilters && !Matches(task) ? "alva-tree__row--context" : "";
+    private string RowClass(TaskModel task) => string.Join(" ", new[]
+    {
+        HasFilters && !Matches(task) ? "alva-tree__row--context" : null,
+        task.Id == _highlightId ? "alva-tree__row--new" : null
+    }.Where(value => value is not null));
     private IEnumerable<TaskModel> Sorted(IEnumerable<TaskModel> tasks)
     {
         var result = tasks.ToList();
@@ -327,6 +353,15 @@ else
             _returnFocus = false;
             if (_newButton is not null) await _newButton.FocusAsync();
         }
+        if (_focusQuick)
+        {
+            _focusQuick = false;
+            if (_quickTitleField is not null)
+            {
+                try { await _quickTitleField.FocusAsync(); }
+                catch (JSDisconnectedException) { }
+            }
+        }
         if (!firstRender || _pendingScroll <= 0) return;
         var scroll = _pendingScroll;
         _pendingScroll = 0;
@@ -412,6 +447,75 @@ else
     private Task SaveTreeState() => Session.TaskList.SaveTreeState(_expanded, _selectedId);
     private async Task OnDrawerOpen(bool open) { if (open) return; _selectedId=null; await SaveTreeState(); }
     private TaskModel? Selected => _selectedId is { } id ? _tasks.FirstOrDefault(t => t.Id == id) : null;
+    private string QuickContext
+    {
+        get
+        {
+            var parts = new List<string>();
+            if (_quickParentId is { } parentId) parts.Add($"{AlvaStrings.Common_ParentTask}: {TaskName(parentId)}");
+            if (_quickProjectId is { } projectId) parts.Add($"{AlvaStrings.Common_Project}: {ProjectName(projectId)}");
+            if (_quickSprintId is { } sprintId) parts.Add($"{AlvaStrings.Common_SprintByDates}: {SprintName(sprintId)}");
+            parts.Add($"{AlvaStrings.Common_Status}: {Labels.Status(_quickStatus)}");
+            return string.Join(" - ", parts);
+        }
+    }
+    private void OpenQuickCreate(Guid? parentId)
+    {
+        var selected = Selected;
+        var parent = parentId is { } pid ? _tasks.FirstOrDefault(t => t.Id == pid) : null;
+        _quickParentId = parentId;
+        _quickProjectId = parent?.ProjectId ?? selected?.ProjectId ?? _projectFilter;
+        _quickSprintId = FirstSprint(parent) ?? FirstSprint(selected);
+        _quickStatus = "Backlog";
+        _quickTitle = "";
+        _quickError = null;
+        _quickOpen = true;
+        _focusQuick = true;
+    }
+    private static Guid? FirstSprint(TaskModel? task) => task?.SprintIds is { Length: > 0 } sprintIds ? sprintIds[0] : null;
+    private void OnQuickOpen(bool open) { _quickOpen = open; if (!open) { _quickError = null; _returnFocus = true; } }
+    private void CloseQuick() { _quickOpen = false; _returnFocus = true; }
+    private void OpenFullForm()
+    {
+        var project = _quickProjectId;
+        var parent = _quickParentId;
+        var status = _quickStatus;
+        _quickOpen = false;
+        NewTask();
+        _editing!.ProjectId = project;
+        _editing.ParentId = parent;
+        _editing.Status = status;
+    }
+    private async Task CreateQuick(bool another)
+    {
+        if (string.IsNullOrWhiteSpace(_quickTitle) || _quickBusy) return;
+        _quickBusy = true;
+        _quickError = null;
+        try
+        {
+            var request = new TaskRequest(_quickTitle.Trim(), Status: _quickStatus, ProjectId: _quickProjectId, ParentId: _quickParentId);
+            var saved = await Session.Save<TaskModel>(HttpMethod.Post, Session.TeamPath("tasks"), request);
+            if (saved is null) { _quickError = AlvaStrings.Tasks_CouldNotCreate; return; }
+            _tasks = _tasks.Append(saved).ToArray();
+            var parentId = saved.ParentId;
+            while (parentId is { } id && _tasks.FirstOrDefault(t => t.Id == id) is { } parent)
+            {
+                _expanded.Add(id);
+                parentId = parent.ParentId;
+            }
+            _highlightId = saved.Id;
+            Snackbar.Show(AlvaStrings.Tasks_Created, SnackbarSeverity.Success);
+            if (another) _quickTitle = "";
+            else { _quickOpen = false; _returnFocus = true; }
+            await SaveTreeState();
+            StateHasChanged();
+        }
+        catch (Exception e) when (e is HttpRequestException or InvalidOperationException)
+        {
+            _quickError = PageFeedback.Describe(e);
+        }
+        finally { _quickBusy = false; }
+    }
     private async Task Run(Func<Task> action) { _busy=true; _error=null;try{await action();}catch(Exception e) when(e is HttpRequestException or InvalidOperationException){_error=PageFeedback.Describe(e);}finally{_busy=false;_loaded=true;} }
     private Task Load()=>Run(async()=>{await Session.Initialize();if(Session.TeamId is null)return;_tasks=await Session.Get<TaskModel[]>(Session.TeamPath("tasks"));_projects=await Session.Get<ProjectModel[]>(Session.TeamPath("projects"));_actors=await Session.Get<ActorModel[]>(Session.TeamPath("actors"));_sprints=await Session.Get<SprintModel[]>(Session.TeamPath("sprints"));_risks=(await Session.Get<RiskDto[]>(Session.TeamPath("risks"))).Where(r=>r.HasRisk).ToArray();_loaded=true;});
     private void NewTask(){_editing=new TaskModel { TeamId=Session.TeamId!.Value };_history=[];_editingSnapshot=DraftSnapshot.Of(_editing);}
@@ -452,6 +556,7 @@ else
         await Run(async()=>{
             var model=_editing!;var request=new TaskRequest(model.Title,model.Description,model.Status,model.ProjectId,model.ParentId,model.EstimateHours,model.Deadline,model.StartDate,model.EndDate,model.Order,model.Id==Guid.Empty?null:model.Version,RequiredSkillIds:model.RequiredSkillIds,Priority:model.Priority, RemainingHours:model.RemainingHours, SetRemainingHours:true, DatesFixed:model.DatesFixed, DailyHoursLimit:model.DailyHoursLimit, SetDailyHoursLimit:true);
             var saved=await Session.Save<TaskModel>(model.Id==Guid.Empty?HttpMethod.Post:HttpMethod.Put,Session.TeamPath("tasks"+(model.Id==Guid.Empty?"":$"/{model.Id}")),request);
+            model.Id=saved.Id; model.Version=saved.Version;
             if(model.AssignmentTargetId.HasValue)await Session.Send(HttpMethod.Put,Session.TeamPath($"tasks/{saved.Id}/assignment"),new AssignmentRequest(model.AssignmentTargetId.Value,model.ResolvedPersonId));
             else if(model.Id!=Guid.Empty && _tasks.Any(t=>t.Id==model.Id && t.AssignmentTargetId.HasValue))await Session.Send(HttpMethod.Delete,Session.TeamPath($"tasks/{saved.Id}/assignment"),new{});
             Hide();Navigation.NavigateTo(BackToProject ? $"projects?project={NewProject}" : $"tasks/{saved.Id}");

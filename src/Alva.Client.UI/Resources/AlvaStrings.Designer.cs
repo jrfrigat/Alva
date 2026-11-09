@@ -3368,4 +3368,19 @@ public static class AlvaStrings
 
     /// <summary>Found: {0}</summary>
     public static string Tasks_FoundCount => Get("Tasks_FoundCount");
+
+    /// <summary>Create</summary>
+    public static string Tasks_Create => Get("Tasks_Create");
+
+    /// <summary>Create another</summary>
+    public static string Tasks_CreateAnother => Get("Tasks_CreateAnother");
+
+    /// <summary>More fields</summary>
+    public static string Common_MoreFields => Get("Common_MoreFields");
+
+    /// <summary>Task created</summary>
+    public static string Tasks_Created => Get("Tasks_Created");
+
+    /// <summary>Could not create the task</summary>
+    public static string Tasks_CouldNotCreate => Get("Tasks_CouldNotCreate");
 }

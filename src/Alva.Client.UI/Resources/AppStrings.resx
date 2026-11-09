@@ -1189,4 +1189,9 @@
   <data name="Tasks_ClearFilters" xml:space="preserve"><value>Clear filters</value></data>
   <data name="Tasks_FilterSearch" xml:space="preserve"><value>Search</value></data>
   <data name="Tasks_FoundCount" xml:space="preserve"><value>Found: {0}</value></data>
+  <data name="Tasks_Create" xml:space="preserve"><value>Create</value></data>
+  <data name="Tasks_CreateAnother" xml:space="preserve"><value>Create another</value></data>
+  <data name="Common_MoreFields" xml:space="preserve"><value>More fields</value></data>
+  <data name="Tasks_Created" xml:space="preserve"><value>Task created</value></data>
+  <data name="Tasks_CouldNotCreate" xml:space="preserve"><value>Could not create the task</value></data>
 </root>

@@ -18,6 +18,7 @@ public sealed class DraftEditorsTests : UiTestBase
         var cut = Provider<Tasks>();
 
         Button(cut, "Новая задача").Click();
+        Button(cut, "Больше полей").Click();
         Field(cut, "Название").Change("Черновик");
         Button(cut, "Закрыть").Click();
         cut.WaitForAssertion(() => Assert.NotNull(cut.Find("[role='alertdialog']")));

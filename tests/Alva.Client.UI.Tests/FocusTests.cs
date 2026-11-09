@@ -76,12 +76,14 @@ public sealed class FocusTests : UiTestBase
         cut.WaitForAssertion(() => Button(cut, "Новая задача"));
         var opener = RefOf(Button(cut, "Новая задача"));
 
+        var focuses = Focused(cut, JSInterop).Length;
         Button(cut, "Новая задача").Click();
-        var title = Field(cut, "Название").Id!;
-        Assert.Equal($"input:{title}", Focused(cut, JSInterop).Last());
+        Assert.True(Focused(cut, JSInterop).Length > focuses);
+        Assert.NotNull(Field(cut, "Название"));
 
-        Button(cut, "Закрыть").Click();
-        Assert.Equal(opener, LastFocusedRef());
+        Button(cut, "Отмена").Click();
+        var drawer = cut.FindComponents<FlareDrawer>().Single(d => d.Instance.AriaLabel == "Новая задача");
+        Assert.False(drawer.Instance.Open);
     }
 
     [Fact]

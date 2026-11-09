@@ -1189,4 +1189,9 @@
   <data name="Tasks_ClearFilters" xml:space="preserve"><value>Сбросить фильтры</value></data>
   <data name="Tasks_FilterSearch" xml:space="preserve"><value>Поиск</value></data>
   <data name="Tasks_FoundCount" xml:space="preserve"><value>Найдено: {0}</value></data>
+  <data name="Tasks_Create" xml:space="preserve"><value>Создать</value></data>
+  <data name="Tasks_CreateAnother" xml:space="preserve"><value>Создать ещё</value></data>
+  <data name="Common_MoreFields" xml:space="preserve"><value>Больше полей</value></data>
+  <data name="Tasks_Created" xml:space="preserve"><value>Задача создана</value></data>
+  <data name="Tasks_CouldNotCreate" xml:space="preserve"><value>Не удалось создать задачу</value></data>
 </root>

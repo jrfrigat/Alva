@@ -21,6 +21,7 @@ public sealed class SkillsUiTests : UiTestBase
         var cut = Render<Alva.Client.Pages.Tasks>();
         cut.WaitForAssertion(() => Button(cut, "Новая задача"));
         Button(cut, "Новая задача").Click();
+        Button(cut, "Больше полей").Click();
         Field(cut, "Название").Change("New task");
         await cut.InvokeAsync(() => cut.FindComponent<FlareMultiSelect<Guid>>().Instance.ValuesChanged.InvokeAsync([skill.Id]));
         Button(cut, "Сохранить задачу").Click();
