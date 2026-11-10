@@ -1,7 +1,7 @@
 using Flare.Abstractions;
 using Flare.Abstractions.Tokens;
 using Flare.Abstractions.Tokens.Components;
-using Flare.Theme.MaterialDesign3Expressive;
+using Flare.Theme.FluentUI2;
 using Flare.Theming;
 
 namespace Alva.Theme.Alva;
@@ -10,20 +10,21 @@ namespace Alva.Theme.Alva;
 /// The Alva theme: the Stitch design expressed in Flare tokens.
 /// </summary>
 /// <remarks>
-/// The theme is derived from Material 3 Expressive rather than written from scratch: the design source itself says it is
-/// "grounded in the tenets of Material Design 3 Expressive". Only what differs from Material is overridden:
+/// The theme is derived from Fluent UI 2 rather than written from scratch: its minimal geometry and
+/// state language fit the Stitch design, and Alva overrides what differs. Only what differs from Fluent
+/// is overridden:
 /// <list type="bullet">
 /// <item><description><b>Color</b> - with its own palette (<see cref="AlvaPalettes"/>), because the stock
-/// MD3E palette made the screen look like MD3E.</description></item>
+/// Fluent palette made the screen read as Office rather than Alva.</description></item>
 /// <item><description><b>Typography</b> - Inter and the design scale: tight line heights, 10-11px
 /// micro labels with letter spacing.</description></item>
-/// <item><description><b>Shape</b> - a single 6px radius for data elements instead of Material's
-/// generous rounding.</description></item>
+/// <item><description><b>Shape</b> - a single 6px radius for data elements instead of Fluent's
+/// size-dependent corners.</description></item>
 /// <item><description><b>Depth</b> - planes are separated by borders rather than tonal elevation: shadows
 /// are kept only for overlays (levels 2-3).</description></item>
 /// </list>
 /// The base theme's assets are not disabled (<c>inheritStyleAssets</c> is not passed): Alva stays in the
-/// Material style family, and Alva's rules are only added after its stylesheets.
+/// Fluent style family, and Alva's rules are only added after its stylesheets.
 /// </remarks>
 public static class AlvaTheme
 {
@@ -34,7 +35,7 @@ public static class AlvaTheme
     public const string UiFont = "Inter";
 
     /// <summary>Builds the theme. Registered once, selected by <see cref="ThemeId"/>.</summary>
-    public static ITheme Create() => new MaterialDesign3ExpressiveTheme().Derive(
+    public static ITheme Create() => new FluentUI2Theme().Derive(
         id: ThemeId,
         displayName: "Alva Sapphire",
         design: Apply,
@@ -149,6 +150,8 @@ public static class AlvaTheme
             ActiveIndicator = "#1D4ED8",
             ActiveColor = "#FFFFFF",
             ActiveWeight = "700",
+            // Fluent draws a left accent bar; Stitch fills the whole active item, so the bar would double it.
+            ActiveLeftBar = "none",
             IconSize = "18px",
         },
 

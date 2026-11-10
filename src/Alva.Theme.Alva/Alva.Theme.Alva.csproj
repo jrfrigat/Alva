@@ -12,11 +12,11 @@
 
   <ItemGroup>
     <!--
-      The theme depends on the design language, not on the application: base values come from Material 3
-      Expressive, and everything Alva actually overrides is stated in AlvaTheme. The theme package is needed
-      only for the base tokens; the theme's own values are defined in AlvaTheme.cs.
+      The theme depends on the design language, not on the application: base values come from Fluent UI 2,
+      and everything Alva actually overrides is stated in AlvaTheme. The theme package is needed only for
+      the base tokens; the theme's own values are defined in AlvaTheme.cs.
     -->
-    <PackageReference Include="Flare.Theme.MaterialDesign3Expressive" Version="0.55.0" />
+    <PackageReference Include="Flare.Theme.FluentUI2" Version="0.55.0" />
   </ItemGroup>
 
 </Project>

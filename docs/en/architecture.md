@@ -30,7 +30,7 @@ Browser (Blazor WASM)                 Server (ASP.NET Core)
 | `Alva.Client.Demo` | Demo shell: an `IApiService` implementation on `localStorage` |
 | `Alva.Integrations.Abstractions` | Contracts for external task sources |
 | `Alva.Integrations.YandexTracker` | Yandex Tracker task-source integration |
-| `Alva.Theme.Alva` | The Alva Stitch theme derived from Material 3 Expressive |
+| `Alva.Theme.Alva` | The Alva Stitch theme derived from Fluent UI 2 |
 | `Flare.Components.Gantt` | External Flare NuGet package used by Alva.Client.UI |
 
 ## Data flow

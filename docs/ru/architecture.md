@@ -30,7 +30,7 @@ Alva — PWA на Blazor WebAssembly с серверной частью на ASP
 | `Alva.Client.Demo` | Демо-оболочка: реализация `IApiService` на `localStorage` |
 | `Alva.Integrations.Abstractions` | Контракты внешних источников задач |
 | `Alva.Integrations.YandexTracker` | Интеграция с Яндекс Трекером как источником задач |
-| `Alva.Theme.Alva` | Тема Alva Stitch на базе Material 3 Expressive |
+| `Alva.Theme.Alva` | Тема Alva Stitch на базе Fluent UI 2 |
 | `Flare.Components.Gantt` | Внешний NuGet-пакет Flare, используемый Alva.Client.UI |
 
 ## Поток данных

@@ -35,7 +35,7 @@ participants.
 - **Authentication** — sign in, sign up and sign out; workspaces and teams, members and owners, an opt-in
   permission matrix.
 - **Data** — export and import of a team snapshot in JSON/CSV/XLSX, atomic and with fresh identifiers.
-- **Interface** — a PWA built on Flare (Alva Stitch theme derived from Material 3 Expressive, Sapphire palette), with an
+- **Interface** — a PWA built on Flare (Alva Stitch theme derived from Fluent UI 2, Sapphire palette), with an
   adaptive shell and desktop accessibility. English and Russian, chosen per browser and switchable.
 
 ## Quick start
