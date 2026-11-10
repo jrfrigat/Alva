@@ -371,6 +371,7 @@
   <data name="Capacity_NoVacationsOrHolidaysSet" xml:space="preserve"><value>No vacations or holidays set.</value></data>
   <data name="Capacity_NoVacationsPlanned" xml:space="preserve"><value>No vacations planned.</value></data>
   <data name="Gantt_Absence" xml:space="preserve"><value>Absence</value></data>
+  <data name="Gantt_NoEstimate" xml:space="preserve"><value>No estimate</value></data>
   <data name="Gantt_NoEstimateTaskTakesNoHours" xml:space="preserve"><value>No estimate: the task takes no hours</value></data>
   <data name="Gantt_NoDatesTaskIsNotPlanned" xml:space="preserve"><value>No dates: the task is not planned</value></data>
   <data name="Gantt_NoEstimateOrDatesTaskTakesNoHours" xml:space="preserve"><value>No estimate or dates: the task takes no hours</value></data>
@@ -539,6 +540,7 @@
   <data name="People_PeriodEndBeforeStart" xml:space="preserve"><value>The end date is before the start date.</value></data>
   <data name="Sprint_SubTeamBalance" xml:space="preserve"><value>Balance</value></data>
   <data name="Sprint_MissingSkills" xml:space="preserve"><value>Missing skills in the sprint</value></data>
+  <data name="Sprint_Problems" xml:space="preserve"><value>Problems</value></data>
   <data name="Sprint_SubTeamBalanceSubtitle" xml:space="preserve"><value>By sub-teams and tasks assigned to them</value></data>
   <data name="Sprint_GivePeopleSubTeamsToSeeTheBalance" xml:space="preserve"><value>Give people sub-teams to see the balance.</value></data>
   <data name="Sprint_SubTeamBalanceAria" xml:space="preserve"><value>Balance of {0}</value></data>

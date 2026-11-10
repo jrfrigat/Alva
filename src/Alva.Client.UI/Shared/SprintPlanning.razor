@@ -246,11 +246,11 @@
             </FlareCard>
 
             <SprintPeople Sprint="Sprint" Actors="_actors" Capacity="_capacity" Tasks="Tasks" Shift="Shift" @bind-Focus="_focus" OnAssign="AssignPerson" />
+            @if (_gantt is not null) { <PlanIssues Data="_gantt" Tasks="InSprint" Actors="_actors" /> }
             </FlareStack>
         </FlareCol>
     </FlareGrid>
 </FlareDragContext>
-<SkillIssues Tasks="InSprint" Actors="_actors" />
 
 <FlareDrawer Anchor="DrawerAnchor.Right" Open="_taskPanelOpen" OpenChanged="OnTaskPanelOpen" Width="34rem" ContentPadding="FlareSpacing.Large" AriaLabel="@(AlvaStrings.Common_Task)">
     @if (_openTask is not null)

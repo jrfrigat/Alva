@@ -1,0 +1,61 @@
+@* Tasks that cannot be planned as they are: no estimate, no dates, or the assignee lacks a required skill. *@
+@if (Issues.Length > 0)
+{
+    <FlareCard Variant="CardVariant.Outlined">
+        <FlareCardHeader Title="@(AlvaStrings.Sprint_Problems)">
+            <AvatarContent><FlareIconView Value="@MaterialDesign3Icons.Regular.Warning" Size="20px" /></AvatarContent>
+            <ActionContent><FlareChip Variant="ChipVariant.Filled" Color="FlareColor.Warning" Size="ChipSize.Sm">@Issues.Length</FlareChip></ActionContent>
+        </FlareCardHeader>
+        <FlareCardContent>
+            <FlareList TItem="Issue" Dense="true">
+                @foreach (var issue in Issues)
+                {
+                    <FlareListItem @key="issue.Task.Id">
+                        <ChildContent>
+                            <FlareStack Gap="FlareSpacing.XXSmall">
+                                <FlareLink Href="@($"tasks/{issue.Task.Id}")">@issue.Task.Title</FlareLink>
+                                <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@issue.Reason</FlareText>
+                            </FlareStack>
+                        </ChildContent>
+                    </FlareListItem>
+                }
+            </FlareList>
+        </FlareCardContent>
+    </FlareCard>
+}
+
+@code {
+    private sealed record Issue(TaskModel Task, string Reason);
+
+    [Parameter, EditorRequired] public GanttData Data { get; set; } = null!;
+    [Parameter] public IEnumerable<TaskModel> Tasks { get; set; } = [];
+    [Parameter] public IEnumerable<ActorModel> Actors { get; set; } = [];
+
+    private Issue[] Issues
+    {
+        get
+        {
+            var actors = Actors.ToArray();
+            var skills = actors.Where(x => x.Kind == "Skill").ToDictionary(x => x.Id, x => x.Name);
+            return [.. Tasks
+                .Where(t => !GanttData.IsClosed(t))
+                .Select(t => (Task: t, Reason: ReasonFor(t, actors, skills)))
+                .Where(x => x.Reason is not null)
+                .Select(x => new Issue(x.Task, x.Reason!))];
+        }
+    }
+
+    private string? ReasonFor(TaskModel task, ActorModel[] actors, IReadOnlyDictionary<Guid, string> skills)
+    {
+        var reasons = new List<string>(2);
+        if (task.EffectiveEstimateHours <= 0) reasons.Add(AlvaStrings.Gantt_NoEstimate);
+        if (Data.Span(task) is null) reasons.Add(AlvaStrings.Gantt_NoDatesTaskIsNotPlanned);
+        if (actors.FirstOrDefault(a => a.Kind == "Person" && a.Id == (task.ResolvedPersonId ?? task.AssignmentTargetId)) is { } person)
+        {
+            var missing = SkillMath.Missing(task.RequiredSkillIds, person.SkillIds)
+                .Select(id => skills.GetValueOrDefault(id)).OfType<string>().ToArray();
+            if (missing.Length > 0) reasons.Add($"{AlvaStrings.Common_MissingSkills} {string.Join(", ", missing)}");
+        }
+        return reasons.Count == 0 ? null : string.Join("; ", reasons);
+    }
+}

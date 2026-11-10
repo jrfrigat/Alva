@@ -162,13 +162,27 @@ public sealed class GanttData
 
     public static bool IsClosed(TaskModel task) => task.Status is "Done" or "Cancelled";
 
-    /// <summary>The bar kind: closed, high or medium risk, ordinary work.</summary>
-    public string Kind(TaskModel task) => IsClosed(task) ? "done" : RiskOf(task)?.Severity switch
+    /// <summary>
+    /// The bar kind: a closed task, a task without an estimate (hatched), a task whose assignee lacks a skill
+    /// (warning), high or medium risk, or ordinary work.
+    /// </summary>
+    public string Kind(TaskModel task)
     {
-        "High" => "risk-high",
-        "Medium" => "risk-medium",
-        _ => "work"
-    };
+        if (IsClosed(task)) return "done";
+        if (task.EffectiveEstimateHours <= 0) return "no-estimate";
+        if (HasMissingSkills(task)) return "warning";
+        return RiskOf(task)?.Severity switch
+        {
+            "High" => "risk-high",
+            "Medium" => "risk-medium",
+            _ => "work"
+        };
+    }
+
+    private bool HasMissingSkills(TaskModel task) =>
+        task.RequiredSkillIds.Length > 0
+        && Actor(task.ResolvedPersonId ?? task.AssignmentTargetId) is { Kind: "Person" } person
+        && SkillMath.Missing(task.RequiredSkillIds, person.SkillIds).Any();
 
     /// <summary>
     /// Bar segments: the waiting-for-subtasks part of a parent. Waiting means days when at least one

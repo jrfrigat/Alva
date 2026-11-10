@@ -115,7 +115,7 @@ public sealed class FlareMigrationTests : UiTestBase
         Assert.Contains("--flare-gantt-legend-gap: 8px", theme);
         Assert.Contains("--flare-gantt-legend-sample-width: 0.75rem", theme);
         Assert.Contains("--flare-gantt-legend-sample-height: 0.75rem", theme);
-        foreach (var kind in new[] { "work", "risk-medium", "risk-high", "waiting", "done", "load", "overload", "demand", "today", "deadline" })
+        foreach (var kind in new[] { "work", "risk-medium", "risk-high", "no-estimate", "warning", "waiting", "done", "load", "overload", "demand", "today", "deadline" })
             Assert.Contains($".flare-gantt--kind-{kind}", theme);
     }
 

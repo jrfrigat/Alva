@@ -79,14 +79,36 @@ public sealed class SkillsUiTests : UiTestBase
     {
         var skill = new ActorModel { Id = Guid.NewGuid(), Name = "SQL", Kind = "Skill" };
         var person = new ActorModel { Id = Guid.NewGuid(), Name = "Анна", Kind = "Person" };
-        var task = new TaskModel { Id = Guid.NewGuid(), Title = "База", AssignmentTargetId = person.Id, RequiredSkillIds = [skill.Id] };
-        var cut = Render<SkillIssues>(p => p.Add(x => x.Tasks, new[] { task }).Add(x => x.Actors, new[] { person, skill }));
+        var task = new TaskModel
+        {
+            Id = Guid.NewGuid(), Title = "База", AssignmentTargetId = person.Id, RequiredSkillIds = [skill.Id],
+            EstimateHours = 8, EffectiveEstimateHours = 8, StartDate = new DateOnly(2026, 11, 9), EndDate = new DateOnly(2026, 11, 10)
+        };
+        var actors = new[] { person, skill };
+        var data = GanttData.Create([task], [], actors, [], []);
+        var cut = Render<PlanIssues>(p => p.Add(x => x.Data, data).Add(x => x.Tasks, new[] { task }).Add(x => x.Actors, actors));
 
         Assert.Contains("База", cut.Markup);
         Assert.Contains("SQL", cut.Markup);
 
         person.SkillIds = [skill.Id];
-        cut.Render(p => p.Add(x => x.Tasks, new[] { task }).Add(x => x.Actors, new[] { person, skill }));
+        cut.Render(p => p.Add(x => x.Data, data).Add(x => x.Tasks, new[] { task }).Add(x => x.Actors, actors));
         Assert.DoesNotContain("База", cut.Markup);
+    }
+
+    [Fact]
+    public void The_sprint_issues_panel_lists_a_task_without_an_estimate()
+    {
+        var person = new ActorModel { Id = Guid.NewGuid(), Name = "Анна", Kind = "Person" };
+        var task = new TaskModel
+        {
+            Id = Guid.NewGuid(), Title = "База", AssignmentTargetId = person.Id, EffectiveEstimateHours = 0,
+            StartDate = new DateOnly(2026, 11, 9), EndDate = new DateOnly(2026, 11, 10)
+        };
+        var data = GanttData.Create([task], [], [person], [], []);
+        var cut = Render<PlanIssues>(p => p.Add(x => x.Data, data).Add(x => x.Tasks, new[] { task }).Add(x => x.Actors, new[] { person }));
+
+        Assert.Contains("База", cut.Markup);
+        Assert.Contains("Нет оценки", cut.Markup);
     }
 }

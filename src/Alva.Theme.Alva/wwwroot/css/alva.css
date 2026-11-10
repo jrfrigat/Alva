@@ -140,6 +140,20 @@
   --flare-gantt-bar-border: var(--flare-color-outline-variant);
 }
 
+/* A task without hours is hatched, so it reads as "not filled in" rather than as ordinary work. */
+.flare-theme-alva .flare-gantt--kind-no-estimate {
+  --flare-gantt-bar-bg: repeating-linear-gradient(135deg, var(--alva-warning-bg) 0 5px, var(--flare-color-surface-container-lowest) 5px 10px);
+  --flare-gantt-bar-fg: var(--alva-warning-text);
+  --flare-gantt-bar-border: var(--alva-warning-border);
+}
+
+/* The assignee lacks a required skill: the bar itself is the warning. */
+.flare-theme-alva .flare-gantt--kind-warning {
+  --flare-gantt-bar-bg: var(--alva-warning-bg);
+  --flare-gantt-bar-fg: var(--alva-warning-text);
+  --flare-gantt-bar-border: var(--alva-warning-border);
+}
+
 .flare-theme-alva .flare-gantt--kind-waiting {
   --flare-gantt-segment-bg: var(--flare-color-secondary-container);
   --flare-gantt-segment-fg: var(--flare-color-on-secondary-container);

@@ -1134,6 +1134,9 @@ public static class AlvaStrings
     /// <summary>Absence</summary>
     public static string Gantt_Absence => Get("Gantt_Absence");
 
+    /// <summary>No estimate</summary>
+    public static string Gantt_NoEstimate => Get("Gantt_NoEstimate");
+
     /// <summary>No estimate: the task takes no hours</summary>
     public static string Gantt_NoEstimateTaskTakesNoHours => Get("Gantt_NoEstimateTaskTakesNoHours");
 
@@ -1637,6 +1640,9 @@ public static class AlvaStrings
 
     /// <summary>Missing skills in the sprint</summary>
     public static string Sprint_MissingSkills => Get("Sprint_MissingSkills");
+
+    /// <summary>Problems</summary>
+    public static string Sprint_Problems => Get("Sprint_Problems");
 
     /// <summary>By sub-teams and tasks assigned to them</summary>
     public static string Sprint_SubTeamBalanceSubtitle => Get("Sprint_SubTeamBalanceSubtitle");

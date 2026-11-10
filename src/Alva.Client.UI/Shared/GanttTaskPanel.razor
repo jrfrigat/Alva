@@ -73,20 +73,8 @@
                     <FlareProgressCircular Value="@progress.Percent" Size="TrackSize.Xs" Diameter="18px"
                                            aria-label="@string.Format(AlvaStrings.Gantt_SubtasksDoneOfTotal, progress.Done, progress.Total)" />
                 }
-                @if (MissingSkills(task) is { Length: > 0 } missing)
-                {
-                    var hint = $"{AlvaStrings.Common_MissingSkills} {string.Join(", ", missing)}";
-                    <FlareIconView Value="@MaterialDesign3Icons.Regular.Warning" Size="14px" Class="alva-gantt-row__skill" title="@hint" aria-label="@hint" />
-                }
             </FlareStack>
             <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant" Class="alva-gantt-row__meta">@Data.Assignee(task) · @AlvaFormat.Hours(task.EffectiveEstimateHours) @(AlvaStrings.Sprint_HoursShort)</FlareText>
-            @if (NoHoursReason(task) is { } reason)
-            {
-                <FlareStack Row Align="FlareAlignItems.Center" Gap="FlareSpacing.XXSmall">
-                    <FlareIconView Value="@MaterialDesign3Icons.Regular.Warning" Size="14px" />
-                    <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.Warning">@reason</FlareText>
-                </FlareStack>
-            }
         </FlareStack>
         @if (RowActions is not null) { @RowActions(task) }
     };
@@ -107,38 +95,13 @@
 
     private static string FixedLabel => AlvaStrings.Gantt_DatesAreFixedTheTaskCannotBeMoved;
 
-    /// <summary>Why an assigned task takes no capacity hours - no estimate, no dates, or both.</summary>
-    private string? NoHoursReason(TaskModel task)
-    {
-        if (GanttData.IsClosed(task) || (task.ResolvedPersonId ?? task.AssignmentTargetId) is null) return null;
-        var noEstimate = task.EffectiveEstimateHours <= 0;
-        var noDates = Data.Span(task) is null;
-        return (noEstimate, noDates) switch
-        {
-            (true, true) => AlvaStrings.Gantt_NoEstimateOrDatesTaskTakesNoHours,
-            (true, false) => AlvaStrings.Gantt_NoEstimateTaskTakesNoHours,
-            (false, true) => AlvaStrings.Gantt_NoDatesTaskIsNotPlanned,
-            _ => null
-        };
-    }
-
     private string? RowClass(TaskModel task)
     {
-        var classes = new List<string>(4);
+        var classes = new List<string>(3);
         if (GanttData.IsClosed(task)) classes.Add("alva-gantt-row--closed");
         if (task.DatesFixed) classes.Add("alva-gantt-row--fixed");
-        if (MissingSkills(task).Length > 0) classes.Add("alva-gantt-row--skill");
         if (SelectedKey == GanttData.Key(task.Id)) classes.Add("alva-gantt-row--selected");
         return classes.Count == 0 ? null : string.Join(' ', classes);
-    }
-
-    /// <summary>The required skills the assignee does not have, by name; empty when the match is complete.</summary>
-    private string[] MissingSkills(TaskModel task)
-    {
-        if (task.RequiredSkillIds.Length == 0 || Data.Actor(task.ResolvedPersonId ?? task.AssignmentTargetId) is not { Kind: "Person" } person)
-            return [];
-        var names = Data.SkillDictionary.ToDictionary(s => s.Id, s => s.Name);
-        return [.. SkillMath.Missing(task.RequiredSkillIds, person.SkillIds).Select(id => names.GetValueOrDefault(id)).OfType<string>()];
     }
 
     // The deadline is a red line; its caption only repeated the word on every row.

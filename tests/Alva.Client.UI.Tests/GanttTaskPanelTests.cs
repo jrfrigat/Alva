@@ -17,7 +17,7 @@ public sealed class GanttTaskPanelTests : UiTestBase
     private readonly TaskModel _task = new()
     {
         Id = Guid.NewGuid(), Title = "Релиз", Status = "Planned",
-        StartDate = new DateOnly(2026, 10, 12), EndDate = new DateOnly(2026, 10, 16), EstimateHours = 8
+        StartDate = new DateOnly(2026, 10, 12), EndDate = new DateOnly(2026, 10, 16), EstimateHours = 8, EffectiveEstimateHours = 8
     };
 
     public GanttTaskPanelTests()
@@ -76,18 +76,29 @@ public sealed class GanttTaskPanelTests : UiTestBase
     }
 
     [Fact]
-    public void A_task_with_missing_skills_is_marked_in_the_gantt()
+    public void A_task_with_missing_skills_uses_the_warning_kind()
     {
         var skill = new ActorModel { Id = Guid.NewGuid(), Name = "SQL", Kind = "Skill" };
         var person = new ActorModel { Id = Guid.NewGuid(), Name = "Анна", Kind = "Person" };
         _task.AssignmentTargetId = person.Id;
         _task.RequiredSkillIds = [skill.Id];
+        _task.EffectiveEstimateHours = 8;
         Api.Answer("actors", _ => new[] { person, skill });
 
         var cut = Chart();
 
-        Assert.Contains("alva-gantt-row--skill", cut.Markup);
-        Assert.Contains("SQL", cut.Markup);
+        Assert.Contains("flare-gantt--kind-warning", cut.Markup);
+    }
+
+    [Fact]
+    public void A_task_without_an_estimate_uses_the_hatched_kind()
+    {
+        _task.EstimateHours = null;
+        _task.EffectiveEstimateHours = 0;
+
+        var cut = Chart();
+
+        Assert.Contains("flare-gantt--kind-no-estimate", cut.Markup);
     }
 
     [Fact]
