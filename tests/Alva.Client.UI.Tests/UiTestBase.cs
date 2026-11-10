@@ -3,6 +3,7 @@ using Alva.Client.Services;
 using Bunit;
 using Flare.Extensions;
 using Flare.Components.Gantt;
+using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
@@ -39,6 +40,10 @@ public abstract class UiTestBase : BunitContext, IAsyncLifetime
     /// <summary>Button by text or aria-label.</summary>
     protected static AngleSharp.Dom.IElement Button<T>(IRenderedComponent<T> cut, string text) where T : Microsoft.AspNetCore.Components.IComponent =>
         cut.FindAll("button").First(b => b.TextContent.Contains(text, StringComparison.Ordinal) || b.GetAttribute("aria-label") == text);
+
+    /// <summary>The task card's own tabs; the assignment panel has a second FlareTabs later in the markup.</summary>
+    protected static AngleSharp.Dom.IElement TaskTabs<T>(IRenderedComponent<T> cut) where T : IComponent =>
+        cut.FindAll(".flare-tabs").First();
 
     // Flare services are disposed only asynchronously.
     Task IAsyncLifetime.InitializeAsync() => Task.CompletedTask;

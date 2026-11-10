@@ -74,27 +74,6 @@ html,body{margin:0;min-height:100%;font-family:var(--alva-font);background:var(-
 .alva-task__status-activator:focus-visible{outline:2px solid var(--flare-color-primary,var(--alva-primary));outline-offset:2px}
 .alva-task__summary-item{display:inline-flex;align-items:center;gap:.25rem;font-size:12px;line-height:16px;color:var(--flare-color-on-surface-variant,var(--alva-on-surface-variant));white-space:nowrap}
 .alva-task__reasons{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:.25rem}
-.alva-task__tabs{padding-bottom:.25rem;border-bottom:1px solid var(--alva-border)}
-.alva-task--compact[data-tab="summary"] .alva-task__section--plan,
-.alva-task--compact[data-tab="summary"] .alva-task__section--links,
-.alva-task--compact[data-tab="summary"] .alva-task__section--subtasks,
-.alva-task--compact[data-tab="summary"] .alva-task__section--history,
-.alva-task--compact[data-tab="plan"] .alva-task__section--summary,
-.alva-task--compact[data-tab="plan"] .alva-task__section--links,
-.alva-task--compact[data-tab="plan"] .alva-task__section--subtasks,
-.alva-task--compact[data-tab="plan"] .alva-task__section--history,
-.alva-task--compact[data-tab="links"] .alva-task__section--summary,
-.alva-task--compact[data-tab="links"] .alva-task__section--plan,
-.alva-task--compact[data-tab="links"] .alva-task__section--subtasks,
-.alva-task--compact[data-tab="links"] .alva-task__section--history,
-.alva-task--compact[data-tab="subtasks"] .alva-task__section--summary,
-.alva-task--compact[data-tab="subtasks"] .alva-task__section--plan,
-.alva-task--compact[data-tab="subtasks"] .alva-task__section--links,
-.alva-task--compact[data-tab="subtasks"] .alva-task__section--history,
-.alva-task--compact[data-tab="history"] .alva-task__section--summary,
-.alva-task--compact[data-tab="history"] .alva-task__section--plan,
-.alva-task--compact[data-tab="history"] .alva-task__section--links,
-.alva-task--compact[data-tab="history"] .alva-task__section--subtasks{display:none}
 .alva-integration__runs{display:flex;flex-direction:column;gap:.25rem;padding-top:.5rem;border-top:1px solid var(--alva-border)}
 .alva-assign{display:flex;flex-direction:column;gap:.75rem;padding:1rem}
 .alva-assign__header{display:flex;align-items:flex-start;gap:.5rem}

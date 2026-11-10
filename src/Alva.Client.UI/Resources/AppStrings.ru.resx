@@ -1203,7 +1203,10 @@
   <data name="Tasks_CouldNotMove" xml:space="preserve"><value>Не удалось переместить задачу</value></data>
   <data name="Task_TabSummary" xml:space="preserve"><value>Сводка</value></data>
   <data name="Task_TabPlan" xml:space="preserve"><value>План</value></data>
+  <data name="Task_TabSprints" xml:space="preserve"><value>Спринты</value></data>
   <data name="Task_TabLinks" xml:space="preserve"><value>Связи</value></data>
   <data name="Task_TabSubtasks" xml:space="preserve"><value>Подзадачи</value></data>
   <data name="Task_TabHistory" xml:space="preserve"><value>История</value></data>
+  <data name="Task_NoSprintsYet" xml:space="preserve"><value>Задача пока не входит ни в один спринт</value></data>
+  <data name="Task_SprintMembershipFollowsTheTaskDates" xml:space="preserve"><value>Вхождение в спринт определяется датами задачи.</value></data>
 </root>

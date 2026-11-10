@@ -5,11 +5,11 @@
 @inject NavigationManager Navigation
 @inject DraftGuard Drafts
 <NavigationLock OnBeforeInternalNavigation="ConfirmLeave" ConfirmExternalNavigation="Dirty" />
-<FlareStack Gap="FlareSpacing.Large" Class="@(Compact ? "alva-task--compact" : null)" data-tab="@_tab">
+<FlareStack Gap="FlareSpacing.Large" Class="@(Compact ? "alva-task--compact" : null)">
     <div @ref="_heading" tabindex="-1">
     <FlarePageHeader Title="@_model.Title" HeadingLevel="@HeadingLevel">
         <EyebrowContent>
-            @if (Compact) { <FlareLink Href="@($"tasks/{Item.Id}")">@(AlvaStrings.Task_OpenTaskPage)</FlareLink> }
+            @if (Compact) { <FlareLink Href="@($"tasks/{Item.Id}?tab={_tab}")">@(AlvaStrings.Task_OpenTaskPage)</FlareLink> }
             else { <FlareBreadcrumb Items="Crumbs" Separator=">" AriaLabel="@(AlvaStrings.Task_PathToTheTask)" /> }
         </EyebrowContent>
         <DescriptionContent>
@@ -87,17 +87,10 @@
     </div>
     <PageFeedback Error="@_error" />
 
-    @if (Compact)
-    {
-        <FlareStack Row Wrap Gap="FlareSpacing.Small" Class="alva-task__tabs">
-            @foreach (var (key, label) in Tabs)
-            {
-                <FlareChip Selected="@(_tab == key)" OnClick="() => _tab = key">@label</FlareChip>
-            }
-        </FlareStack>
-    }
-
-    <FlareSection Class="alva-task__risk alva-task__section--summary">
+    <FlareTabs ActiveIndex="_tabIndex" ActiveIndexChanged="OnTabChanged">
+        <FlareTab Label="@TabLabel("summary")">
+            <FlareStack Gap="FlareSpacing.Large">
+    <FlareSection Class="alva-task__risk">
         <HeadingContent>
             <FlareStack Row Align="FlareAlignItems.Center" Gap="FlareSpacing.Small">
                 <FlareIconView Value="@(_risk is { HasRisk: true } ? MaterialDesign3Icons.Regular.Warning : MaterialDesign3Icons.Regular.CheckCircle)" Size="20px" />
@@ -155,7 +148,7 @@
         </ChildContent>
     </FlareSection>
 
-    <FlareSection Class="alva-task__section--summary">
+    <FlareSection>
         <HeadingContent>
             <FlareStack Row Align="FlareAlignItems.Center" Gap="FlareSpacing.Small">
                 <FlareIconView Value="@MaterialDesign3Icons.Regular.Description" Size="20px" />
@@ -167,7 +160,26 @@
         </ChildContent>
     </FlareSection>
 
-    <FlareSection Class="alva-task__section--plan">
+    <FlareSection>
+        <HeadingContent>
+            <FlareStack Row Align="FlareAlignItems.Center" Gap="FlareSpacing.Small">
+                <FlareIconView Value="@MaterialDesign3Icons.Regular.Assignment" Size="20px" />
+                <FlareText Element="h2" Typo="TypographyScale.TitleLarge">@(AlvaStrings.Task_AssignmentTitle)</FlareText>
+            </FlareStack>
+        </HeadingContent>
+        <ChildContent>
+            <FlareStack Gap="FlareSpacing.XSmall">
+                <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@(AlvaStrings.Risks_Assignee)</FlareText>
+                <AlvaAssignee Task="Item" Actors="Actors" />
+            </FlareStack>
+        </ChildContent>
+    </FlareSection>
+            </FlareStack>
+        </FlareTab>
+
+        <FlareTab Label="@TabLabel("plan")">
+            <FlareStack Gap="FlareSpacing.Large">
+    <FlareSection>
         <HeadingContent>
             <FlareStack Row Align="FlareAlignItems.Center" Gap="FlareSpacing.Small">
                 <FlareIconView Value="@MaterialDesign3Icons.Regular.Badge" Size="20px" />
@@ -184,7 +196,7 @@
         </ChildContent>
     </FlareSection>
 
-    <FlareSection Class="alva-task__section--plan">
+    <FlareSection>
         <HeadingContent>
             <FlareStack Row Align="FlareAlignItems.Center" Gap="FlareSpacing.Small">
                 <FlareIconView Value="@MaterialDesign3Icons.Regular.Tune" Size="20px" />
@@ -200,23 +212,49 @@
             </FlareStack>
         </ChildContent>
     </FlareSection>
+            </FlareStack>
+        </FlareTab>
 
-    <FlareSection Class="alva-task__section--summary">
+        <FlareTab Label="@TabLabel("sprints")">
+            <FlareStack Gap="FlareSpacing.Large">
+    <FlareSection>
         <HeadingContent>
             <FlareStack Row Align="FlareAlignItems.Center" Gap="FlareSpacing.Small">
-                <FlareIconView Value="@MaterialDesign3Icons.Regular.Assignment" Size="20px" />
-                <FlareText Element="h2" Typo="TypographyScale.TitleLarge">@(AlvaStrings.Task_AssignmentTitle)</FlareText>
+                <FlareIconView Value="@MaterialDesign3Icons.Regular.Event" Size="20px" />
+                <FlareStack Gap="FlareSpacing.None">
+                    <FlareText Element="h2" Typo="TypographyScale.TitleLarge">@(AlvaStrings.Task_TabSprints)</FlareText>
+                    <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@(AlvaStrings.Task_SprintMembershipFollowsTheTaskDates)</FlareText>
+                </FlareStack>
             </FlareStack>
         </HeadingContent>
         <ChildContent>
-            <FlareStack Gap="FlareSpacing.XSmall">
-                <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@(AlvaStrings.Risks_Assignee)</FlareText>
-                <AlvaAssignee Task="Item" Actors="Actors" />
-            </FlareStack>
+            @if (TaskSprints.Length == 0)
+            {
+                <FlareEmptyState Compact Title="@(AlvaStrings.Task_NoSprintsYet)" Description="@(AlvaStrings.Task_SprintMembershipFollowsTheTaskDates)" />
+            }
+            else
+            {
+                <FlareList TItem="SprintModel" Dense="true">
+                    @foreach (var sprint in TaskSprints)
+                    {
+                        <FlareListItem @key="sprint.Id">
+                            <Leading><FlareLink Href="@($"sprints/{sprint.Id}")">@sprint.Name</FlareLink></Leading>
+                            <ChildContent>
+                                <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@sprint.StartDate.ToString("d MMM") - @sprint.EndDate.ToString("d MMM")</FlareText>
+                            </ChildContent>
+                            <Trailing><AlvaStatusChip Tone="AlvaTones.Status(sprint.Status)">@Labels.Status(sprint.Status)</AlvaStatusChip></Trailing>
+                        </FlareListItem>
+                    }
+                </FlareList>
+            }
         </ChildContent>
     </FlareSection>
+            </FlareStack>
+        </FlareTab>
 
-    <FlareSection Class="alva-task__deps alva-task__section--links">
+        <FlareTab Label="@TabLabel("links")">
+            <FlareStack Gap="FlareSpacing.Large">
+    <FlareSection Class="alva-task__deps">
         <HeadingContent>
             <FlareStack Row Align="FlareAlignItems.Center" Gap="FlareSpacing.Small">
                 <FlareIconView Value="@MaterialDesign3Icons.Regular.Hub" Size="20px" />
@@ -277,8 +315,12 @@
             </FlareStack>
         </ChildContent>
     </FlareSection>
+            </FlareStack>
+        </FlareTab>
 
-    <FlareSection Class="alva-task__section--subtasks">
+        <FlareTab Label="@TabLabel("subtasks")">
+            <FlareStack Gap="FlareSpacing.Large">
+    <FlareSection>
         <HeadingContent>
             <FlareStack Row Align="FlareAlignItems.Center" Gap="FlareSpacing.Small">
                 <FlareIconView Value="@MaterialDesign3Icons.Regular.Layers" Size="20px" />
@@ -325,8 +367,12 @@
             </FlareStack>
         </ChildContent>
     </FlareSection>
+            </FlareStack>
+        </FlareTab>
 
-    <FlareSection Class="alva-task__section--history">
+        <FlareTab Label="@TabLabel("history")">
+            <FlareStack Gap="FlareSpacing.Large">
+    <FlareSection>
         <HeadingContent>
             <FlareStack Row Align="FlareAlignItems.Center" Gap="FlareSpacing.Small">
                 <FlareIconView Value="@MaterialDesign3Icons.Regular.History" Size="20px" />
@@ -355,6 +401,9 @@
             }
         </ChildContent>
     </FlareSection>
+            </FlareStack>
+        </FlareTab>
+    </FlareTabs>
 </FlareStack>
 
 <FlareDrawer Anchor="DrawerAnchor.Right" @bind-Open="_assignOpen" @bind-Open:after="AssignToggled" Width="26rem" AriaLabel="@(AlvaStrings.Task_Assignment)">
@@ -415,6 +464,9 @@
     /// <summary>Compact panel presentation: no breadcrumbs, a link to the full task page instead.</summary>
     [Parameter] public bool Compact { get; set; }
 
+    /// <summary>Tab key to open first, for a deep link such as tasks/{id}?tab=plan.</summary>
+    [Parameter] public string? InitialTab { get; set; }
+
     /// <summary>All team tasks: subtasks and the parent are taken from them.</summary>
     [Parameter] public TaskModel[] Tasks { get; set; } = [];
     [Parameter] public ProjectModel[] Projects { get; set; } = [];
@@ -435,10 +487,13 @@
     private (Guid Id, long Version) _linksFor;
     private string? _linksError;
     private string _tab = "summary";
+    private int _tabIndex;
+    private string? _appliedInitialTab;
     private static readonly (string Key, string Label)[] Tabs =
     [
         ("summary", AlvaStrings.Task_TabSummary),
         ("plan", AlvaStrings.Task_TabPlan),
+        ("sprints", AlvaStrings.Task_TabSprints),
         ("links", AlvaStrings.Task_TabLinks),
         ("subtasks", AlvaStrings.Task_TabSubtasks),
         ("history", AlvaStrings.Task_TabHistory)
@@ -477,8 +532,36 @@
 
     private bool _leaving;
     private IDisposable? _draft;
-    protected override void OnInitialized() => _draft = Drafts.Track(() => Dirty);
+    protected override void OnInitialized()
+    {
+        _draft = Drafts.Track(() => Dirty);
+        ApplyInitialTab();
+    }
     public void Dispose() => _draft?.Dispose();
+
+    // A deep link sets the starting tab; a later re-render with the same parameter must not pull the
+    // person back to it after they have switched tabs.
+    private void ApplyInitialTab()
+    {
+        if (InitialTab == _appliedInitialTab) return;
+        _appliedInitialTab = InitialTab;
+        var index = Array.FindIndex(Tabs, tab => tab.Key == InitialTab);
+        _tabIndex = index >= 0 ? index : 0;
+        _tab = Tabs[_tabIndex].Key;
+    }
+
+    private static string TabLabel(string key) => Tabs.First(tab => tab.Key == key).Label;
+
+    private Task OnTabChanged(int index)
+    {
+        if (index < 0 || index >= Tabs.Length) return Task.CompletedTask;
+        _tabIndex = index;
+        _tab = Tabs[index].Key;
+        return Task.CompletedTask;
+    }
+
+    private SprintModel[] TaskSprints => Sprints.Where(sprint => Item.SprintIds.Contains(sprint.Id))
+        .OrderBy(sprint => sprint.StartDate).ToArray();
 
     // The card itself takes focus on its first appearance: after following a link the person is not left on body.
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -511,6 +594,7 @@
 
     protected override async Task OnParametersSetAsync()
     {
+        ApplyInitialTab();
         if (_model.Id != Item.Id) _saved = false;
         if (_model.Id == Item.Id && _model.Version == Item.Version) return;
         // Risk and links are read for every new task version, even when the draft below remains untouched.

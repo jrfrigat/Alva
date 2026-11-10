@@ -3411,6 +3411,9 @@ public static class AlvaStrings
     /// <summary>Plan</summary>
     public static string Task_TabPlan => Get("Task_TabPlan");
 
+    /// <summary>Sprints</summary>
+    public static string Task_TabSprints => Get("Task_TabSprints");
+
     /// <summary>Links</summary>
     public static string Task_TabLinks => Get("Task_TabLinks");
 
@@ -3419,4 +3422,10 @@ public static class AlvaStrings
 
     /// <summary>History</summary>
     public static string Task_TabHistory => Get("Task_TabHistory");
+
+    /// <summary>The task is not in any sprint yet</summary>
+    public static string Task_NoSprintsYet => Get("Task_NoSprintsYet");
+
+    /// <summary>Sprint membership follows the task dates.</summary>
+    public static string Task_SprintMembershipFollowsTheTaskDates => Get("Task_SprintMembershipFollowsTheTaskDates");
 }

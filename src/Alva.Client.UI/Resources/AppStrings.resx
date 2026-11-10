@@ -1203,7 +1203,10 @@
   <data name="Tasks_CouldNotMove" xml:space="preserve"><value>Could not move the task</value></data>
   <data name="Task_TabSummary" xml:space="preserve"><value>Summary</value></data>
   <data name="Task_TabPlan" xml:space="preserve"><value>Plan</value></data>
+  <data name="Task_TabSprints" xml:space="preserve"><value>Sprints</value></data>
   <data name="Task_TabLinks" xml:space="preserve"><value>Links</value></data>
   <data name="Task_TabSubtasks" xml:space="preserve"><value>Subtasks</value></data>
   <data name="Task_TabHistory" xml:space="preserve"><value>History</value></data>
+  <data name="Task_NoSprintsYet" xml:space="preserve"><value>The task is not in any sprint yet</value></data>
+  <data name="Task_SprintMembershipFollowsTheTaskDates" xml:space="preserve"><value>Sprint membership follows the task dates.</value></data>
 </root>

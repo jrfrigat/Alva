@@ -20,10 +20,11 @@ public sealed class TaskDetailsCardTests : UiTestBase
            .Answer("capacity", _ => Array.Empty<CapacityDto>());
     }
 
-    private IRenderedComponent<FlareConfirmDialogProvider> Page(TaskModel? item = null, ActorModel[]? actors = null) =>
+    private IRenderedComponent<FlareConfirmDialogProvider> Page(TaskModel? item = null, ActorModel[]? actors = null, SprintModel[]? sprints = null) =>
         Render<FlareConfirmDialogProvider>(p => p.AddChildContent<TaskDetails>(d => d
             .Add(x => x.Item, item ?? _task)
             .Add(x => x.Actors, actors ?? [])
+            .Add(x => x.Sprints, sprints ?? [])
             .Add(x => x.Tasks, [item ?? _task, _blocker, _next])));
 
     private static void ConfirmDialog(IRenderedComponent<FlareConfirmDialogProvider> cut, string action)
@@ -183,7 +184,7 @@ public sealed class TaskDetailsCardTests : UiTestBase
             .Add(x => x.Tasks, [_task])));
 
         Assert.Empty(cut.FindAll(".flare-breadcrumb"));
-        Assert.Contains(cut.FindAll("a"), a => a.GetAttribute("href") == $"tasks/{_task.Id}");
+        Assert.Contains(cut.FindAll("a"), a => a.GetAttribute("href") == $"tasks/{_task.Id}?tab=summary");
     }
 
     [Fact]
@@ -194,11 +195,28 @@ public sealed class TaskDetailsCardTests : UiTestBase
             .Add(x => x.Compact, true)
             .Add(x => x.Tasks, [_task])));
 
-        var root = cut.Find(".alva-task--compact");
-        Assert.Equal("summary", root.GetAttribute("data-tab"));
-        cut.FindAll(".flare-chip").Single(c => c.TextContent.Trim() == "План").QuerySelector("button")!.Click();
-        Assert.Equal("plan", cut.Find(".alva-task--compact").GetAttribute("data-tab"));
-        Assert.Empty(Page().FindAll(".alva-task__tabs"));
+        var tabs = TaskTabs(cut).QuerySelectorAll("[role=tab]");
+        Assert.Equal(["Сводка", "План", "Спринты", "Связи", "Подзадачи", "История"], tabs.Select(t => t.TextContent.Trim()));
+        Assert.Equal("Сводка", TaskTabs(cut).QuerySelector("[role=tab][aria-selected='true']")!.TextContent.Trim());
+        TaskTabs(cut).QuerySelectorAll("[role=tab]").Single(t => t.TextContent.Trim() == "План").Click();
+        cut.WaitForAssertion(() => Assert.Equal("План", TaskTabs(cut).QuerySelector("[role=tab][aria-selected='true']")!.TextContent.Trim()));
+        Assert.Single(TaskTabs(cut).QuerySelectorAll(".flare-tabs__panel:not(.flare-tab-panel--hidden)"));
+        Assert.Contains(cut.FindAll("a"), a => a.GetAttribute("href") == $"tasks/{_task.Id}?tab=plan");
+        Assert.NotEmpty(TaskTabs(Page()).QuerySelectorAll("[role=tab]"));
+    }
+
+    [Fact]
+    public void Sprints_tab_lists_the_sprints_that_include_the_task()
+    {
+        var sprint = new SprintModel { Id = Guid.NewGuid(), Name = "Спринт 7", Status = "Active", StartDate = new DateOnly(2026, 10, 5), EndDate = new DateOnly(2026, 10, 16) };
+        var item = new TaskModel { Id = _task.Id, Title = _task.Title, Status = "Planned", Version = 1, SprintIds = [sprint.Id] };
+        var cut = Page(item, sprints: [sprint]);
+
+        TaskTabs(cut).QuerySelectorAll("[role=tab]").Single(t => t.TextContent.Trim() == "Спринты").Click();
+
+        var panel = TaskTabs(cut).QuerySelector(".flare-tabs__panel:not(.flare-tab-panel--hidden)")!;
+        Assert.Contains("Спринт 7", panel.TextContent);
+        Assert.Contains(panel.QuerySelectorAll("a"), a => a.GetAttribute("href") == $"sprints/{sprint.Id}");
     }
 
     [Fact]

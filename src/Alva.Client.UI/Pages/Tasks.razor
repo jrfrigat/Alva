@@ -17,7 +17,7 @@
        discarded - the card itself holds them, and then Esc does nothing. The wrapper takes focus when
        the task opens, including via Enter from the list, so focus does not fall to body. *@
     <div class="alva-task-card" @ref="_card" tabindex="-1" aria-label="@Current.Title" @onkeydown="OnCardKey">
-        <TaskDetails @ref="_details" Item="Current" Tasks="_tasks" Projects="_projects" Sprints="_sprints" Actors="_actors" Changed="Load" />
+        <TaskDetails @ref="_details" Item="Current" Tasks="_tasks" Projects="_projects" Sprints="_sprints" Actors="_actors" Changed="Load" InitialTab="@Tab" />
     </div>
 }
 else if (TaskId.HasValue)
@@ -459,6 +459,7 @@ else
     [SupplyParameterFromQuery(Name = "new")] public int? NewFlag { get; set; }
     [SupplyParameterFromQuery(Name = "project")] public Guid? NewProject { get; set; }
     [SupplyParameterFromQuery(Name = "back")] public string? Back { get; set; }
+    [SupplyParameterFromQuery(Name = "tab")] public string? Tab { get; set; }
     private bool BackToProject => Back == "project" && NewProject.HasValue;
     protected override async Task OnParametersSetAsync()
     {
