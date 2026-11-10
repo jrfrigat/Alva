@@ -1077,6 +1077,9 @@ public static class AlvaStrings
     /// <summary>Open the Gantt</summary>
     public static string Gantt_OpenTheGantt => Get("Gantt_OpenTheGantt");
 
+    /// <summary>Open</summary>
+    public static string Gantt_Open => Get("Gantt_Open");
+
     /// <summary>Open task</summary>
     public static string Risks_OpenTask => Get("Risks_OpenTask");
 

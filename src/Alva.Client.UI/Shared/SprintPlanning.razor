@@ -4,39 +4,15 @@
 @using Flare.Components.Gantt
 @inject AlvaSession Session
 @inject NavigationManager Navigation
-<FlareGrid Columns="12" AlignItems="FlareAlignItems.Start" Gap="FlareSpacing.Large">
+<FlareGrid Columns="12" AlignItems="FlareAlignItems.Stretch" Gap="FlareSpacing.Large">
     <FlareCol Span="12" Md="8" Lg="8">
-<FlareCard Variant="CardVariant.Outlined">
+<FlareCard Variant="CardVariant.Outlined" Height="100%">
     <FlareCardContent>
     <FlareStack Gap="FlareSpacing.Medium">
-    <FlareStack Row Wrap Align="FlareAlignItems.Center" Justify="FlareJustifyContent.SpaceBetween" Gap="FlareSpacing.Medium">
-        <FlareStack Row Wrap Align="FlareAlignItems.Center" Gap="FlareSpacing.Small">
-            <FlareIconView Value="@MaterialDesign3Icons.Regular.CalendarMonth" Size="22px" />
-            <FlareSelect TValue="Guid" Label="@(AlvaStrings.Gantt_Sprint)" Items="Choices.Select(s => s.Id)" ItemLabel="SprintLabel" Value="Sprint.Id" ValueChanged="Pick" />
-            <FlareText Typo="TypographyScale.LabelSmall" Color="FlareColor.OnSurfaceVariant">@(AlvaStrings.Sprint_PlanningHorizon) @AlvaFormat.WorkDays(Sprint.StartDate, Sprint.EndDate) @(AlvaStrings.Sprint_WorkShifts), @AlvaFormat.Period(Sprint.StartDate, Sprint.EndDate)</FlareText>
-        </FlareStack>
+    <FlareStack Row Wrap Align="FlareAlignItems.Center" Gap="FlareSpacing.Small">
+        <FlareSelect TValue="Guid" Items="Choices.Select(s => s.Id)" ItemLabel="SprintLabel" Value="Sprint.Id" ValueChanged="Pick"
+                     InputAttributes="@(new Dictionary<string, object> { ["aria-label"] = AlvaStrings.Gantt_Sprint })" />
         <AlvaStatusChip Tone="@(Sprint.Status == "Planned" ? AlvaTone.Info : AlvaTones.Status(Sprint.Status))">@(Sprint.Status == "Planned" ? AlvaStrings.Sprint_PlanningDraft : Labels.Status(Sprint.Status))</AlvaStatusChip>
-    </FlareStack>
-    <FlareStack Row Wrap Gap="FlareSpacing.Small">
-        <FlareMenu Anchor="MenuAnchor.BottomLeft" AriaLabel="@(AlvaStrings.Sprint_AutoBalanceMode)">
-            <Activator>
-                <FlareButton Variant="ButtonVariant.Tonal" Size="ButtonSize.Sm" Loading="_balancing" Disabled="_busy">
-                    <LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.Balance" Size="18px" /></LeadingIcon>
-                    <ChildContent>@(AlvaStrings.Sprint_AutoBalance)</ChildContent>
-                </FlareButton>
-            </Activator>
-            <ChildContent>
-                @foreach (var (mode, label, hint) in BalanceModesMenu)
-                {
-                    <FlareMenuItem OnClick="() => Balance(mode)">
-                        <FlareStack Gap="FlareSpacing.None">
-                            <FlareText Typo="TypographyScale.LabelMedium">@label</FlareText>
-                            <FlareText Typo="TypographyScale.LabelSmall" Color="FlareColor.OnSurfaceVariant">@hint</FlareText>
-                        </FlareStack>
-                    </FlareMenuItem>
-                }
-            </ChildContent>
-        </FlareMenu>
         <FlareButton @ref="_paramsButton" Variant="ButtonVariant.Tonal" Size="ButtonSize.Sm" OnClick="() => OnParams.InvokeAsync()">
             <LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.Tune" Size="18px" /></LeadingIcon>
             <ChildContent>@(AlvaStrings.Sprint_SprintSettings)</ChildContent>
@@ -52,13 +28,9 @@
     </FlareStack>
     <FlareGrid MinColumnWidth="min(100%,12rem)">
         <FlareStat Label="@(AlvaStrings.Sprint_TeamCapacity)" Value="@($"{AlvaFormat.Hours(Capacity)} {AlvaStrings.Sprint_HoursShort}")" Icon="@MaterialDesign3Icons.Regular.Groups" />
-        <FlareStat Label="@(AlvaStrings.Sprint_PlannedIntoTheSprint)" Value="@($"{AlvaFormat.Hours(Planned)} {AlvaStrings.Sprint_HoursShort}")" Icon="@MaterialDesign3Icons.Regular.FactCheck">
-            <CaptionContent><AlvaStatusChip Tone="@(Planned > Capacity ? AlvaTone.Critical : AlvaTone.Info)">@Pct(Planned, Capacity)%</AlvaStatusChip></CaptionContent>
-        </FlareStat>
+        <FlareStat Label="@(AlvaStrings.Sprint_PlannedIntoTheSprint)" Value="@($"{AlvaFormat.Hours(Planned)} {AlvaStrings.Sprint_HoursShort}")" Caption="@($"{Pct(Planned, Capacity)}%")" Icon="@MaterialDesign3Icons.Regular.FactCheck" />
         <FlareStat Label="@(Capacity >= Planned ? AlvaStrings.Sprint_CapacityReserve : AlvaStrings.Sprint_CapacityShortage)" Value="@($"{AlvaFormat.Hours(Math.Abs(Capacity - Planned))} {AlvaStrings.Sprint_HoursShort}")" Caption="@(Capacity >= Planned ? AlvaStrings.Sprint_Reserve : AlvaStrings.Sprint_OverCapacity)" Icon="@MaterialDesign3Icons.Regular.HourglassEmpty" />
-        <FlareStat Label="@(AlvaStrings.Sprint_Overtime)" Value="@($"{AlvaFormat.Hours(Overtime)} {AlvaStrings.Sprint_HoursShort}")" Icon="@MaterialDesign3Icons.Regular.Warning">
-            <CaptionContent>@if (OvertimePeople > 0) { <AlvaStatusChip Tone="AlvaTone.Critical">@OvertimePeople @(AlvaStrings.Common_People)</AlvaStatusChip> }</CaptionContent>
-        </FlareStat>
+        <FlareStat Label="@(AlvaStrings.Sprint_Overtime)" Value="@($"{AlvaFormat.Hours(Overtime)} {AlvaStrings.Sprint_HoursShort}")" Caption="@(OvertimePeople > 0 ? $"{OvertimePeople} {AlvaStrings.Common_People}" : null)" Icon="@MaterialDesign3Icons.Regular.Warning" />
     </FlareGrid>
     </FlareStack>
     </FlareCardContent>
@@ -66,11 +38,33 @@
     </FlareCol>
 
     <FlareCol Span="12" Md="4" Lg="4">
-<FlareCard Variant="CardVariant.Outlined">
-    <FlareCardHeader Title="@(AlvaStrings.Sprint_SubTeamBalance)" Subtitle="@(AlvaStrings.Sprint_SubTeamBalanceSubtitle)">
+<FlareCard Variant="CardVariant.Outlined" Height="100%">
+    <FlareCardHeader Title="@(AlvaStrings.Sprint_SubTeamBalance)">
         <AvatarContent><FlareIconView Value="@MaterialDesign3Icons.Regular.Balance" Size="20px" /></AvatarContent>
     </FlareCardHeader>
     <FlareCardContent>
+        <FlareStack Gap="FlareSpacing.Small">
+        <FlareStack Row Justify="FlareJustifyContent.End">
+            <FlareMenu Anchor="MenuAnchor.BottomRight" AriaLabel="@(AlvaStrings.Sprint_AutoBalanceMode)">
+                <Activator>
+                    <FlareButton Variant="ButtonVariant.Tonal" Size="ButtonSize.Sm" Loading="_balancing" Disabled="_busy">
+                        <LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.Balance" Size="18px" /></LeadingIcon>
+                        <ChildContent>@(AlvaStrings.Sprint_AutoBalance)</ChildContent>
+                    </FlareButton>
+                </Activator>
+                <ChildContent>
+                    @foreach (var (mode, label, hint) in BalanceModesMenu)
+                    {
+                        <FlareMenuItem OnClick="() => Balance(mode)">
+                            <FlareStack Gap="FlareSpacing.None">
+                                <FlareText Typo="TypographyScale.LabelMedium">@label</FlareText>
+                                <FlareText Typo="TypographyScale.LabelSmall" Color="FlareColor.OnSurfaceVariant">@hint</FlareText>
+                            </FlareStack>
+                        </FlareMenuItem>
+                    }
+                </ChildContent>
+            </FlareMenu>
+        </FlareStack>
         <FlareGrid MinColumnWidth="min(100%,12rem)" Gap="FlareSpacing.Small">
             @foreach (var (team, plan, avail) in SubTeams)
             {
@@ -91,7 +85,7 @@
                 </FlarePaper>
             }
         </FlareGrid>
-        @if (!SubTeams.Any()) { <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@(AlvaStrings.Sprint_GivePeopleSubTeamsToSeeTheBalance)</FlareText> }
+        </FlareStack>
     </FlareCardContent>
 </FlareCard>
     </FlareCol>
@@ -182,7 +176,7 @@
     </FlareCard>
 }
 
-<FlareDragContext TPayload="PlanDrag" Group="plan" OnDrop="Drop">
+<FlareDragContext TPayload="PlanDrag" Group="plan" OnDrop="Drop" OnDragStart="SuppressTaskOpen" OnDragEnd="EndDrag">
     <FlareGrid Columns="12" AlignItems="FlareAlignItems.Start" Gap="FlareSpacing.Large">
         @* The chart is the working surface: it takes the width, while the pool and the people
            blocks share one narrow rail. *@
@@ -215,10 +209,11 @@
                                 {
                                     <FlareDropZone Target="@($"task:{task.Id}")" Accepts="AcceptsOnCard" @key="task.Id">
                                         <FlareDraggable Payload="@(new TaskDrag(task.Id))">
-                                            <FlarePaper Outlined="true" Padding="FlareSpacing.Small">
+                                            <FlareCard Variant="CardVariant.Outlined" OnClick="() => OpenTask(task)">
+                                            <FlareCardContent>
                                                 <FlareStack Gap="FlareSpacing.XSmall">
                                                     <FlareStack Row Wrap Align="FlareAlignItems.Center" Gap="FlareSpacing.Small">
-                                                        <FlareLink Href="@($"tasks/{task.Id}")">@AlvaFormat.Code(task.Id)</FlareLink>
+                                                        <FlareText Typo="TypographyScale.LabelMedium" Color="FlareColor.Primary">@AlvaFormat.Code(task.Id)</FlareText>
                                                         <FlareChip Size="ChipSize.Xs">@ProjectName(task.ProjectId)</FlareChip>
                                                         @if (task.Priority != "Normal") { <AlvaStatusChip Tone="AlvaTones.Priority(task.Priority)">@Labels.Priority(task.Priority)</AlvaStatusChip> }
                                                         <FlareSpacer />
@@ -237,7 +232,8 @@
                                                         <FlareButton Size="ButtonSize.Sm" Variant="ButtonVariant.Tonal" Disabled="_busy" OnClick="() => Move(task, true)">@(AlvaStrings.Sprint_IntoSprint)</FlareButton>
                                                     </FlareStack>
                                                 </FlareStack>
-                                            </FlarePaper>
+                                            </FlareCardContent>
+                                            </FlareCard>
                                         </FlareDraggable>
                                     </FlareDropZone>
                                 }
@@ -253,6 +249,13 @@
         </FlareCol>
     </FlareGrid>
 </FlareDragContext>
+
+<FlareDrawer Anchor="DrawerAnchor.Right" Open="_taskPanelOpen" OpenChanged="OnTaskPanelOpen" Width="34rem" ContentPadding="FlareSpacing.Large" AriaLabel="@(AlvaStrings.Common_Task)">
+    @if (_openTask is not null)
+    {
+        <TaskDetails @ref="_taskDetails" Item="_openTask" Tasks="Tasks" Projects="_projects" Sprints="Sprints" Actors="_actors" Changed="OnTaskChanged" HeadingLevel="2" Compact="true" />
+    }
+</FlareDrawer>
 
 @code {
     [Parameter, EditorRequired] public SprintModel Sprint { get; set; } = default!;
@@ -282,6 +285,10 @@
     private bool _busy, _balancing;
     private BalanceProposalDto? _proposal;
     private HashSet<Guid> _chosen = [];
+    private TaskModel? _openTask;
+    private TaskDetails? _taskDetails;
+    private bool _taskPanelOpen;
+    private DateTime _suppressTaskOpenUntil;
 
     private static readonly (string Mode, string Label, string Hint)[] BalanceModesMenu =
     [
@@ -359,18 +366,12 @@
     private string ProjectName(Guid? id) => _projects.FirstOrDefault(p => p.Id == id)?.Name ?? AlvaStrings.Sprint_Ongoing;
 
     private IEnumerable<(string Key, string Label)> PoolFilters =>
-        new[] { ("all", AlvaStrings.Sprint_All) }
-        .Concat(_projects.Where(p => Pool.Any(t => t.ProjectId == p.Id)).Select(p => (p.Id.ToString(), p.Name)))
-        .Concat(new[] { ("ready", AlvaStrings.Sprint_ReadyToPlan), ("routine", AlvaStrings.Sprint_Ongoing), ("unassigned", AlvaStrings.Common_Unassigned), ("group", AlvaStrings.Sprint_WithASubTeam) });
+        [("all", AlvaStrings.Sprint_All), ("ready", AlvaStrings.Sprint_ReadyToPlan)];
 
-    private bool Matches(TaskModel t, string key) => key switch
+    private static bool Matches(TaskModel t, string key) => key switch
     {
-        "all" => true,
         "ready" => Ready(t),
-        "routine" => t.ProjectId is null,
-        "unassigned" => Assignees.Person(t, _actors) is null,
-        "group" => t.ResolvedPersonId is null && _actors.FirstOrDefault(a => a.Id == t.AssignmentTargetId)?.Kind is "Department",
-        _ => t.ProjectId?.ToString() == key
+        _ => true
     };
 
     private bool Found(TaskModel t) => string.IsNullOrWhiteSpace(_search)
@@ -530,6 +531,34 @@
         await _people.Reassign(Session, task, GanttPeopleData.PersonKey(assignment.PersonId));
         await Refresh();
     });
+
+    /// <summary>A click on a pool card opens the task without leaving the board; a drag that just ended does not.</summary>
+    private void OpenTask(TaskModel task)
+    {
+        if (DateTime.UtcNow < _suppressTaskOpenUntil) return;
+        _openTask = task;
+        _taskPanelOpen = true;
+    }
+
+    private void SuppressTaskOpen(PlanDrag _) => _suppressTaskOpenUntil = DateTime.MaxValue;
+
+    private void EndDrag() => _suppressTaskOpenUntil = DateTime.UtcNow.AddMilliseconds(300);
+
+    private async Task OnTaskPanelOpen(bool open)
+    {
+        if (!open && _taskDetails?.Dirty == true && !await DraftPrompt.CanDiscardAsync(Confirm, true))
+        {
+            _taskPanelOpen = true;
+            StateHasChanged();
+            return;
+        }
+        _taskPanelOpen = open;
+        if (open) return;
+        _openTask = null;
+        _taskDetails = null;
+    }
+
+    private Task OnTaskChanged() => Run(() => Refresh());
 
     private Task Move(TaskModel t, bool plan) => Run(async () =>
     {

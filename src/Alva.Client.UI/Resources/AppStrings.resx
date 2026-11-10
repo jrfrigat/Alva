@@ -352,6 +352,7 @@
   <data name="Sprint_Reject" xml:space="preserve"><value>Reject</value></data>
   <data name="Common_NoOpenRisks" xml:space="preserve"><value>No open risks</value></data>
   <data name="Gantt_OpenTheGantt" xml:space="preserve"><value>Open the Gantt</value></data>
+  <data name="Gantt_Open" xml:space="preserve"><value>Open</value></data>
   <data name="Risks_OpenTask" xml:space="preserve"><value>Open task</value></data>
   <data name="Sprint_OpenPlanning" xml:space="preserve"><value>Open planning</value></data>
   <data name="Common_Advanced" xml:space="preserve"><value>Advanced</value></data>

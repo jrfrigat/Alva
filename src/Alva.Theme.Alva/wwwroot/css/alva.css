@@ -112,6 +112,9 @@
   --flare-gantt-nonworking-bg: var(--flare-color-surface-container);
   --flare-gantt-panel-gap-color: var(--alva-border-strong);
   --flare-gantt-legend-sample-border: var(--alva-border-strong);
+  --flare-gantt-legend-gap: 4px;
+  --flare-gantt-legend-font-size: 0.625rem;
+  --flare-gantt-legend-sample-width: 0.5rem;
 }
 
 .flare-theme-alva .flare-gantt--kind-work {
