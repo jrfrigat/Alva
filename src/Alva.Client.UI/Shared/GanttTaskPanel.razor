@@ -7,8 +7,7 @@
                  Links="@Data.Links().ToArray()" LinkTypes="@Types" ShowCriticalPath="Critical" RollupParents="true"
                  Markers="@DeadlineMarkers" Editable="Editable" AllowRowChange="false" OnChange="OnChange" OnLinkCreate="OnLinkCreate"
                  OnLinkRejected="OnLinkRejected" OnItemClick="OnItemClick" Header="Header" DropGroup="@DropGroup" DropAccepts="DropAccepts"
-                 ItemDropGroup="@ItemDropGroup" ItemDropAccepts="ItemDropAccepts" Suggested="Suggested" AriaLabel="@(AlvaStrings.Gantt_TasksOverTime)"
-                 ItemClass="ItemClass" RegionClass="RegionClass" MarkerClass="MarkerClass">
+                 ItemDropGroup="@ItemDropGroup" ItemDropAccepts="ItemDropAccepts" Suggested="Suggested" AriaLabel="@(AlvaStrings.Gantt_TasksOverTime)">
     <RowHeader Context="task">
         @if (DragRows)
         {
@@ -88,12 +87,6 @@
     }
 
     private static string FixedLabel => AlvaStrings.Gantt_DatesAreFixedTheTaskCannotBeMoved;
-
-    private string ItemClass(TaskModel task) => $"alva-gantt-item--{Data.Kind(task)}";
-
-    private static string RegionClass(GanttRegion region) => $"alva-gantt-region--{region.Kind}";
-
-    private static string MarkerClass(GanttMarker marker) => $"alva-gantt-marker--{marker.Kind}";
 
     private static string? RowClass(TaskModel task)
     {

@@ -7,8 +7,7 @@
                  Links="@People.Data.Links().ToArray()" Cells="@People.Cells(Scale, Range)" Editable="true"
                  OnChange="OnChange" OnLinkCreate="OnLinkCreate" OnLinkRejected="OnLinkRejected" OnItemClick="OnItemClick" Header="Header"
                  DropGroup="@DropGroup" DropAccepts="DropAccepts" ItemDropGroup="@ItemDropGroup" ItemDropAccepts="ItemDropAccepts" Suggested="Suggested"
-                 AriaLabel="@(AlvaStrings.Gantt_PeopleAndRolesOverTime)"
-                 ItemClass="ItemClass" CellClass="CellClass" RegionClass="RegionClass" MarkerClass="MarkerClass">
+                 AriaLabel="@(AlvaStrings.Gantt_PeopleAndRolesOverTime)">
     <RowHeader Context="row">
         <FlareStack Gap="FlareSpacing.XXSmall" Class="alva-gantt-row">
             @if (row.Kind == "person")
@@ -46,14 +45,6 @@
 
     /// <summary>Suggested task dates and rows - ghost bars over the plan.</summary>
     [Parameter] public IEnumerable<GanttChange>? Suggested { get; set; }
-
-    private string ItemClass(TaskModel task) => $"alva-gantt-item--{People.Data.Kind(task)}";
-
-    private static string CellClass(GanttCell cell) => $"alva-gantt-cell--{cell.Kind}";
-
-    private static string RegionClass(GanttRegion region) => $"alva-gantt-region--{region.Kind}";
-
-    private static string MarkerClass(GanttMarker marker) => $"alva-gantt-marker--{marker.Kind}";
 
     private string RowClass(PeopleRow row) =>
         $"alva-gantt-row--{row.Kind}" + (Focus is { } id && row.Actor?.Id == id ? " alva-gantt-row--focus" : "");

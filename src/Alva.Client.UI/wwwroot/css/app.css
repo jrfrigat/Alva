@@ -89,9 +89,9 @@ html,body{margin:0;min-height:100%;font-family:var(--alva-font);background:var(-
 .alva-calendar-day--today{outline:2px solid var(--flare-color-primary,var(--alva-primary));outline-offset:-2px}
 /* 9. Analytics and risk bell: FlareCard, FlareAccordion and FlarePopover own the surfaces. */
 
-/* 10. Gantt: FlareGantt owns the chart. Only documented hooks - ItemClass, CellClass,
-   RowClass, RegionClass and MarkerClass - and --flare-gantt-* variables are styled here.
-   Internal Flare structure is not selected. */
+/* 10. Gantt: FlareGantt owns the chart. Colors of bars, regions, cells and markers are theme
+   tokens in Alva.Theme.Alva (--flare-gantt-* and flare-gantt--kind-*); only the row header
+   composition, the focus row and the chart height are application rules. */
 .alva-gantt{--flare-gantt-max-height:70vh}
 .alva-gantt-row{display:flex;flex-direction:column;min-width:0;line-height:1.2}
 .alva-gantt-row__title{overflow:hidden;white-space:nowrap;text-overflow:ellipsis;color:var(--flare-color-on-surface);font-weight:600;text-decoration:none}
@@ -106,21 +106,9 @@ html,body{margin:0;min-height:100%;font-family:var(--alva-font);background:var(-
 .alva-gantt-row__body{display:flex;flex-direction:column;min-width:0;flex:1}
 .alva-gantt-row--focus .alva-gantt-row__title{color:var(--flare-color-primary)}
 .alva-gantt .alva-gantt-row--focus{background:color-mix(in srgb,var(--flare-color-primary) 8%,transparent)}
-.alva-gantt .alva-gantt-item--risk-medium{--flare-gantt-bar-bg:var(--alva-warning,#b45309)}
-.alva-gantt .alva-gantt-item--risk-high{--flare-gantt-bar-bg:var(--flare-color-error);--flare-gantt-bar-fg:var(--flare-color-on-error)}
-.alva-gantt .alva-gantt-item--done{--flare-gantt-bar-bg:var(--flare-color-surface-container-high,var(--flare-color-outline-variant));--flare-gantt-bar-fg:var(--flare-color-on-surface-variant)}
-.alva-gantt .alva-gantt-marker--today{--flare-gantt-marker:var(--flare-color-primary);--flare-gantt-marker-fg:var(--flare-color-on-primary)}
-.alva-gantt .alva-gantt-marker--deadline{--flare-gantt-marker-style:dashed}
-.alva-gantt .alva-gantt-region--sprint{--flare-gantt-region-bg:color-mix(in srgb,var(--flare-color-primary) 5%,transparent);--flare-gantt-region-border:var(--flare-color-primary)}
-.alva-gantt .alva-gantt-cell--load{--flare-gantt-cell-bg:var(--flare-color-primary-container);--flare-gantt-cell-fg:var(--flare-color-on-primary-container)}
-.alva-gantt .alva-gantt-cell--overload{--flare-gantt-cell-bg:var(--flare-color-error);--flare-gantt-cell-fg:var(--flare-color-on-error)}
-.alva-gantt .alva-gantt-cell--free{--flare-gantt-cell-bg:var(--flare-color-surface-container-lowest,var(--flare-color-surface));--flare-gantt-cell-fg:var(--flare-color-on-surface-variant);font-weight:400}
-.alva-gantt .alva-gantt-cell--absence{--flare-gantt-cell-bg:var(--flare-color-surface-container-highest,var(--flare-color-outline-variant));--flare-gantt-cell-fg:var(--flare-color-on-surface-variant);font-weight:400}
-.alva-gantt .alva-gantt-cell--demand{--flare-gantt-cell-bg:var(--flare-color-error-container);--flare-gantt-cell-fg:var(--flare-color-on-error-container);outline:1px dashed var(--flare-color-error);outline-offset:-1px}
 .alva-gantt-row--group .alva-gantt-row__title{text-transform:uppercase;font-size:11px;letter-spacing:.04em;color:var(--flare-color-primary)}
 .alva-gantt-row--role .alva-gantt-row__title{color:var(--flare-color-error)}
 .alva-gantt-row--pool .alva-gantt-row__title{color:var(--flare-color-on-surface-variant)}
-.alva-gantt .alva-gantt-region--sprint-other{--flare-gantt-region-bg:color-mix(in srgb,var(--flare-color-outline) 6%,transparent);--flare-gantt-region-border:var(--flare-color-outline);--flare-gantt-region-fg:var(--flare-color-on-surface-variant)}
 
 /* 11. Flare overrides, touch and mobile rules */
 /* Point overrides for Flare that the theme has no token for. alva.css holds only theme variables;

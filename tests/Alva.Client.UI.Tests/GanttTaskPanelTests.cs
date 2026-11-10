@@ -46,13 +46,13 @@ public sealed class GanttTaskPanelTests : UiTestBase
     }
 
     [Fact]
-    public void A_task_bar_carries_the_alva_item_kind_class()
+    public void A_task_bar_carries_the_flare_kind_class()
     {
         var cut = Chart();
 
         var bar = cut.Find("[role='button']");
 
-        Assert.Contains("alva-gantt-item--work", bar.ClassList);
+        Assert.Contains("flare-gantt--kind-work", bar.ClassList);
     }
 
     [Fact]

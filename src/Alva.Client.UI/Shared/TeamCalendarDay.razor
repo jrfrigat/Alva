@@ -1,6 +1,8 @@
 @* One day inside FlareCalendar. The calendar grid, headers and keyboard live in Flare; this component
-   only carries the team-specific state and numbers. *@
-<FlareStack Gap="FlareSpacing.XXSmall" Class="@CellClass" Style="min-height:100%">
+   carries the team-specific state and numbers, and a FlarePaper gives each day the card edge the
+   calendar cell itself does not draw. *@
+<FlarePaper Outlined="true" Padding="FlareSpacing.XXSmall" Class="@CellClass">
+<FlareStack Gap="FlareSpacing.XXSmall" Style="min-height:100%">
     <FlareStack Row Wrap Align="FlareAlignItems.Center" StretchFirst Gap="FlareSpacing.XXSmall">
         <FlareText Typo="TypographyScale.LabelMedium">@Date.Day</FlareText>
         @if (SprintStart is not null) { <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.Primary">@AlvaStrings.Capacity_Start</FlareText> }
@@ -18,6 +20,7 @@
         <FlareText Typo="TypographyScale.BodySmall">@Summary</FlareText>
     }
 </FlareStack>
+</FlarePaper>
 
 @code {
     [Parameter, EditorRequired] public DateOnly Date { get; set; }

@@ -96,3 +96,95 @@
   --alva-chart-planned: #93C5FD;
   --alva-chart-deficit: #FECACA;
 }
+
+/* Gantt: the chart and its legend draw the same kind elements, so one token set colours both.
+   Kinds come from the data: work, risk-medium, risk-high, waiting and done for bars, plus the
+   region, cell and marker kinds of the people projection. Surfaces and lines are tokens of the
+   Gantt package itself, so no application rule restyles its internals. */
+.flare-theme-alva {
+  --flare-gantt-surface: var(--flare-color-surface-container-lowest);
+  --flare-gantt-side-bg: var(--flare-color-surface-container-low);
+  --flare-gantt-header-bg: var(--flare-color-surface-container-low);
+  --flare-gantt-line: var(--alva-border-strong);
+  --flare-gantt-row-line: var(--alva-border);
+  --flare-gantt-grid-line: var(--alva-border);
+  --flare-gantt-grid-opacity: 1;
+  --flare-gantt-nonworking-bg: var(--flare-color-surface-container);
+  --flare-gantt-panel-gap-color: var(--alva-border-strong);
+  --flare-gantt-legend-sample-border: var(--alva-border-strong);
+}
+
+.flare-theme-alva .flare-gantt--kind-work {
+  --flare-gantt-bar-bg: var(--flare-color-primary);
+  --flare-gantt-bar-fg: var(--flare-color-on-primary);
+}
+
+.flare-theme-alva .flare-gantt--kind-risk-medium {
+  --flare-gantt-bar-bg: var(--alva-warning-bg);
+  --flare-gantt-bar-fg: var(--alva-warning-text);
+  --flare-gantt-bar-border: var(--alva-warning-border);
+}
+
+.flare-theme-alva .flare-gantt--kind-risk-high {
+  --flare-gantt-bar-bg: var(--flare-color-error);
+  --flare-gantt-bar-fg: var(--flare-color-on-error);
+}
+
+.flare-theme-alva .flare-gantt--kind-done {
+  --flare-gantt-bar-bg: var(--flare-color-surface-container-high);
+  --flare-gantt-bar-fg: var(--flare-color-on-surface-variant);
+  --flare-gantt-bar-border: var(--flare-color-outline-variant);
+}
+
+.flare-theme-alva .flare-gantt--kind-waiting {
+  --flare-gantt-segment-bg: var(--flare-color-secondary-container);
+  --flare-gantt-segment-fg: var(--flare-color-on-secondary-container);
+  --flare-gantt-segment-border: var(--flare-color-secondary);
+  --flare-gantt-segment-border-style: dashed;
+}
+
+.flare-theme-alva .flare-gantt--kind-sprint {
+  --flare-gantt-region-bg: color-mix(in srgb, var(--flare-color-primary) 6%, transparent);
+  --flare-gantt-region-border: var(--flare-color-primary);
+  --flare-gantt-region-fg: var(--flare-color-primary);
+}
+
+.flare-theme-alva .flare-gantt--kind-sprint-other {
+  --flare-gantt-region-bg: color-mix(in srgb, var(--flare-color-outline) 6%, transparent);
+  --flare-gantt-region-border: var(--flare-color-outline);
+  --flare-gantt-region-fg: var(--flare-color-on-surface-variant);
+}
+
+.flare-theme-alva .flare-gantt--kind-load {
+  --flare-gantt-cell-bg: var(--flare-color-primary-container);
+  --flare-gantt-cell-fg: var(--flare-color-on-primary-container);
+}
+
+.flare-theme-alva .flare-gantt--kind-overload {
+  --flare-gantt-cell-bg: var(--flare-color-error);
+  --flare-gantt-cell-fg: var(--flare-color-on-error);
+}
+
+.flare-theme-alva .flare-gantt--kind-free {
+  --flare-gantt-cell-bg: var(--flare-color-surface-container-lowest);
+  --flare-gantt-cell-fg: var(--flare-color-on-surface-variant);
+}
+
+.flare-theme-alva .flare-gantt--kind-absence {
+  --flare-gantt-cell-bg: var(--flare-color-surface-container-highest);
+  --flare-gantt-cell-fg: var(--flare-color-on-surface-variant);
+}
+
+.flare-theme-alva .flare-gantt--kind-demand {
+  --flare-gantt-cell-bg: var(--flare-color-error-container);
+  --flare-gantt-cell-fg: var(--flare-color-on-error-container);
+}
+
+.flare-theme-alva .flare-gantt--kind-today {
+  --flare-gantt-marker: var(--flare-color-primary);
+  --flare-gantt-marker-fg: var(--flare-color-on-primary);
+}
+
+.flare-theme-alva .flare-gantt--kind-deadline {
+  --flare-gantt-marker-style: dashed;
+}

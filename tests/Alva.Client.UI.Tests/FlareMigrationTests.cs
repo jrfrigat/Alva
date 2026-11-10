@@ -45,7 +45,7 @@ public sealed class FlareMigrationTests : UiTestBase
         Assert.Contains("WBS is a FlareDataGrid tree", css);
         Assert.Contains("TeamCalendar is a FlareCalendar", css);
         Assert.Contains("FlareDataGrid wrapper", css);
-        Assert.Contains("RowClass, RegionClass", css);
+        Assert.Contains("Colors of bars, regions, cells and markers", css);
     }
 
     [Fact]
@@ -62,11 +62,29 @@ public sealed class FlareMigrationTests : UiTestBase
             Assert.DoesNotContain(removed, css);
 
         // Only the declared domain exceptions remain: the task treegrid until TASK-243, heat cells,
-        // calendar day states and documented Gantt hooks.
+        // calendar day states and the Gantt row header. Chart colors and surfaces live in the theme.
         Assert.Contains(".alva-tree", css);
         Assert.Contains(".alva-heat-cell", css);
         Assert.Contains(".alva-calendar-day", css);
-        Assert.Contains(".alva-gantt-item--risk-high", css);
+        Assert.Contains(".alva-gantt-row", css);
+        Assert.DoesNotContain(".alva-gantt-item--", css);
+        Assert.DoesNotContain(".alva-gantt-cell--", css);
+        Assert.DoesNotContain(".alva-gantt-region--", css);
+        Assert.DoesNotContain(".alva-gantt-marker--", css);
+    }
+
+    [Fact]
+    public void Gantt_colors_and_surfaces_come_from_the_theme()
+    {
+        var theme = File.ReadAllText(Path.Combine(Root(), "src", "Alva.Theme.Alva", "wwwroot", "css", "alva.css"));
+
+        Assert.Contains("--flare-gantt-surface", theme);
+        Assert.Contains("--flare-gantt-grid-line", theme);
+        Assert.Contains("--flare-gantt-grid-opacity: 1", theme);
+        Assert.Contains("--flare-gantt-row-line", theme);
+        Assert.Contains("--flare-gantt-nonworking-bg", theme);
+        foreach (var kind in new[] { "work", "risk-medium", "risk-high", "waiting", "done", "load", "overload", "demand", "today", "deadline" })
+            Assert.Contains($".flare-gantt--kind-{kind}", theme);
     }
 
     [Fact]
@@ -122,6 +140,7 @@ public sealed class FlareMigrationTests : UiTestBase
         cut.WaitForAssertion(() => Assert.NotEmpty(cut.FindComponents<FlareCalendar>()));
 
         Assert.NotEmpty(cut.FindComponents<TeamCalendarDay>());
+        Assert.NotEmpty(cut.FindComponents<FlarePaper>());
         Assert.DoesNotContain("alva-month-grid", cut.Markup);
         Assert.DoesNotContain("alva-day", cut.Markup);
     }
