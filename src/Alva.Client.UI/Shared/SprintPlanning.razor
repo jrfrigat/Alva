@@ -4,6 +4,8 @@
 @using Flare.Components.Gantt
 @inject AlvaSession Session
 @inject NavigationManager Navigation
+<FlareGrid Columns="12" AlignItems="FlareAlignItems.Start" Gap="FlareSpacing.Large">
+    <FlareCol Span="12" Md="8" Lg="8">
 <FlareCard Variant="CardVariant.Outlined">
     <FlareCardContent>
     <FlareStack Gap="FlareSpacing.Medium">
@@ -61,6 +63,39 @@
     </FlareStack>
     </FlareCardContent>
 </FlareCard>
+    </FlareCol>
+
+    <FlareCol Span="12" Md="4" Lg="4">
+<FlareCard Variant="CardVariant.Outlined">
+    <FlareCardHeader Title="@(AlvaStrings.Sprint_SubTeamBalance)" Subtitle="@(AlvaStrings.Sprint_SubTeamBalanceSubtitle)">
+        <AvatarContent><FlareIconView Value="@MaterialDesign3Icons.Regular.Balance" Size="20px" /></AvatarContent>
+    </FlareCardHeader>
+    <FlareCardContent>
+        <FlareGrid MinColumnWidth="min(100%,12rem)" Gap="FlareSpacing.Small">
+            @foreach (var (team, plan, avail) in SubTeams)
+            {
+                var pct = Pct(plan, avail);
+                var tone = avail <= 0 && plan > 0 ? AlvaTone.Critical : pct > 100 ? AlvaTone.Critical : pct > 85 ? AlvaTone.Info : AlvaTone.Ok;
+                <FlarePaper Outlined="true" Padding="FlareSpacing.Small">
+                    <FlareStack Gap="FlareSpacing.XSmall">
+                        <FlareStack Row Wrap Align="FlareAlignItems.Start" Justify="FlareJustifyContent.SpaceBetween" Gap="FlareSpacing.XSmall">
+                            <FlareText Typo="TypographyScale.LabelMedium">@team.Name</FlareText>
+                            <AlvaStatusChip Tone="tone">@(avail > 0 ? $"{pct}%" : AlvaStrings.Sprint_NoPeople) @(tone == AlvaTone.Critical ? AlvaStrings.Common_OverloadShort : tone == AlvaTone.Info ? AlvaStrings.Common_Optimal : AlvaStrings.Sprint_Buffer)</AlvaStatusChip>
+                        </FlareStack>
+                        <FlareProgressLinear Value="@Math.Min(100, pct)" Size="TrackSize.Xs" Color="@ToneColor(tone)" aria-label="@string.Format(AlvaStrings.Sprint_SubTeamBalanceAria, team.Name)" />
+                        <FlareStack Row Wrap Justify="FlareJustifyContent.SpaceBetween" Gap="FlareSpacing.XSmall">
+                            <FlareText Typo="TypographyScale.LabelSmall" Color="FlareColor.OnSurfaceVariant">@(AlvaStrings.Sprint_Plan) @AlvaFormat.Hours(plan) @(AlvaStrings.Sprint_HoursShort)</FlareText>
+                            <FlareText Typo="TypographyScale.LabelSmall" Color="@(plan > avail ? FlareColor.Error : FlareColor.Primary)">@(plan > avail ? string.Format(AlvaStrings.Common_DeficitH, AlvaFormat.Hours(plan - avail)) : string.Format(AlvaStrings.Sprint_ReserveH, AlvaFormat.Hours(avail - plan))) (@(AlvaStrings.Sprint_Avail) @AlvaFormat.Hours(avail) @(AlvaStrings.Sprint_HoursShort))</FlareText>
+                        </FlareStack>
+                    </FlareStack>
+                </FlarePaper>
+            }
+        </FlareGrid>
+        @if (!SubTeams.Any()) { <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@(AlvaStrings.Sprint_GivePeopleSubTeamsToSeeTheBalance)</FlareText> }
+    </FlareCardContent>
+</FlareCard>
+    </FlareCol>
+</FlareGrid>
 <PageFeedback Error="@_error" />
 
 @if (_proposal is { } proposal)
@@ -209,42 +244,7 @@
                                 @if (!Pool.Any(t => Matches(t, _poolFilter) && Found(t))) { <FlareEmptyState Compact Title="@(AlvaStrings.Sprint_ThePoolIsEmpty)" Description="@(AlvaStrings.Sprint_NoTaskMatchesThisFilter)" /> }
                             </FlareStack>
                         </FlareDropZone>
-                        <FlarePaper Padding="FlareSpacing.XSmall">
-                            <FlareStack Row Align="FlareAlignItems.Center" Justify="FlareJustifyContent.Center" Gap="FlareSpacing.XSmall">
-                                <FlareIconView Value="@MaterialDesign3Icons.Regular.DragIndicator" Size="16px" />
-                                <FlareText Typo="TypographyScale.LabelSmall">@(AlvaStrings.Sprint_DragATaskOntoTheGanttOntoADayOrOntoAPersonSRowHereToReturnItToTheBacklog)</FlareText>
-                            </FlareStack>
-                        </FlarePaper>
                     </FlareStack>
-                </FlareCardContent>
-            </FlareCard>
-
-            <FlareCard Variant="CardVariant.Outlined">
-                <FlareCardHeader Title="@(AlvaStrings.Sprint_SubTeamBalance)" Subtitle="@(AlvaStrings.Sprint_SubTeamBalanceSubtitle)">
-                    <AvatarContent><FlareIconView Value="@MaterialDesign3Icons.Regular.Balance" Size="20px" /></AvatarContent>
-                </FlareCardHeader>
-                <FlareCardContent>
-                    <FlareGrid MinColumnWidth="min(100%,12rem)" Gap="FlareSpacing.Small">
-                        @foreach (var (team, plan, avail) in SubTeams)
-                        {
-                            var pct = Pct(plan, avail);
-                            var tone = avail <= 0 && plan > 0 ? AlvaTone.Critical : pct > 100 ? AlvaTone.Critical : pct > 85 ? AlvaTone.Info : AlvaTone.Ok;
-                            <FlarePaper Outlined="true" Padding="FlareSpacing.Small">
-                                <FlareStack Gap="FlareSpacing.XSmall">
-                                    <FlareStack Row Wrap Align="FlareAlignItems.Start" Justify="FlareJustifyContent.SpaceBetween" Gap="FlareSpacing.XSmall">
-                                        <FlareText Typo="TypographyScale.LabelMedium">@team.Name</FlareText>
-                                        <AlvaStatusChip Tone="tone">@(avail > 0 ? $"{pct}%" : AlvaStrings.Sprint_NoPeople) @(tone == AlvaTone.Critical ? AlvaStrings.Common_OverloadShort : tone == AlvaTone.Info ? AlvaStrings.Common_Optimal : AlvaStrings.Sprint_Buffer)</AlvaStatusChip>
-                                    </FlareStack>
-                                    <FlareProgressLinear Value="@Math.Min(100, pct)" Size="TrackSize.Xs" Color="@ToneColor(tone)" aria-label="@string.Format(AlvaStrings.Sprint_SubTeamBalanceAria, team.Name)" />
-                                    <FlareStack Row Wrap Justify="FlareJustifyContent.SpaceBetween" Gap="FlareSpacing.XSmall">
-                                        <FlareText Typo="TypographyScale.LabelSmall" Color="FlareColor.OnSurfaceVariant">@(AlvaStrings.Sprint_Plan) @AlvaFormat.Hours(plan) @(AlvaStrings.Sprint_HoursShort)</FlareText>
-                                        <FlareText Typo="TypographyScale.LabelSmall" Color="@(plan > avail ? FlareColor.Error : FlareColor.Primary)">@(plan > avail ? string.Format(AlvaStrings.Common_DeficitH, AlvaFormat.Hours(plan - avail)) : string.Format(AlvaStrings.Sprint_ReserveH, AlvaFormat.Hours(avail - plan))) (@(AlvaStrings.Sprint_Avail) @AlvaFormat.Hours(avail) @(AlvaStrings.Sprint_HoursShort))</FlareText>
-                                    </FlareStack>
-                                </FlareStack>
-                            </FlarePaper>
-                        }
-                    </FlareGrid>
-                    @if (!SubTeams.Any()) { <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@(AlvaStrings.Sprint_GivePeopleSubTeamsToSeeTheBalance)</FlareText> }
                 </FlareCardContent>
             </FlareCard>
 

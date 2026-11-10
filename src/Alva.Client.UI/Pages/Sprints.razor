@@ -33,11 +33,21 @@ else
 }
 @if(Planning)
 {
-    <AlvaPageHeader Category="@(AlvaStrings.Sprint_PlanningSprints)" Title="@PlanningTitle" Description="@(AlvaStrings.Common_PlanSprintsDistributeTheWorkAndSpotOverloadsEarly)" />
-    if(SprintId.HasValue && Current is null){if(_loaded){<UnavailableState Title="@(AlvaStrings.Sprint_SprintNotFoundOrUnavailable)" BackHref="sprints" BackLabel="@(AlvaStrings.Sprint_ToSprints)" />}}
-    else if(PlanSprint is not null){
-        <SprintPlanning @ref="_planning" Sprint="PlanSprint" Sprints="_sprints" Tasks="_tasks" Changed="Reload" OnParams="()=>Edit(PlanSprint)" />}
-    else if(_loaded){<FlareEmptyState Title="@(AlvaStrings.Sprint_NothingToPlan)" Description="@(AlvaStrings.Sprint_CreateASprintToGatherTasksFromThePool)"><ActionContent><FlareButton @ref="_emptyNewButton" Size="ButtonSize.Sm" OnClick="New">@(AlvaStrings.Sprint_NewSprint)</FlareButton></ActionContent></FlareEmptyState>}
+    <FlareStack Gap="FlareSpacing.Medium">
+    <FlareText Element="h1" Typo="TypographyScale.HeadlineSmall">@PlanningTitle</FlareText>
+    @if (SprintId.HasValue && Current is null)
+    {
+        if (_loaded) { <UnavailableState Title="@(AlvaStrings.Sprint_SprintNotFoundOrUnavailable)" BackHref="sprints" BackLabel="@(AlvaStrings.Sprint_ToSprints)" /> }
+    }
+    else if (PlanSprint is not null)
+    {
+        <SprintPlanning @ref="_planning" Sprint="PlanSprint" Sprints="_sprints" Tasks="_tasks" Changed="Reload" OnParams="() => Edit(PlanSprint!)" />
+    }
+    else if (_loaded)
+    {
+        <FlareEmptyState Title="@(AlvaStrings.Sprint_NothingToPlan)" Description="@(AlvaStrings.Sprint_CreateASprintToGatherTasksFromThePool)"><ActionContent><FlareButton @ref="_emptyNewButton" Size="ButtonSize.Sm" OnClick="New">@(AlvaStrings.Sprint_NewSprint)</FlareButton></ActionContent></FlareEmptyState>
+    }
+    </FlareStack>
 }
 else if(SprintId is null){<SprintRegistry Sprints="_sprints" Tasks="_tasks" />}
 else if(Current is not null){<SprintDetails Sprint="Current" Tasks="_tasks" Sprints="_sprints" OnEdit="@(()=>Navigation.NavigateTo($"sprints/{Current.Id}/plan"))" Changed="Load" />}

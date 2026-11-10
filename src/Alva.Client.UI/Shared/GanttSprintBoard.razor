@@ -4,19 +4,19 @@
    each sprint is labelled and the selected one is highlighted. Bars are edited as on the Gantt pages; the day a task
    is dropped on or a bar is moved to decides which sprint it lands in. *@
 <FlareCard Variant="CardVariant.Outlined">
-    <FlareCardHeader Title="@string.Format(AlvaStrings.Gantt_Synchronous2dGanttOnTheAxis, $"{SprintCount} {AlvaFormat.Plural(SprintCount, "sprint")}")"
-                     Subtitle="@(AlvaStrings.Gantt_DropATaskOntoADayItJoinsThatDaySSprintAndGetsADueDateOntoAPersonSRowItAl_c6e380)">
+    <FlareCardHeader Title="@string.Format(AlvaStrings.Gantt_Synchronous2dGanttOnTheAxis, $"{SprintCount} {AlvaFormat.Plural(SprintCount, "sprint")}")">
         <AvatarContent><FlareIconView Value="@MaterialDesign3Icons.Regular.AlignHorizontalLeft" Size="20px" /></AvatarContent>
     </FlareCardHeader>
     <FlareCardContent>
         <FlareStack Gap="FlareSpacing.Medium">
+            <FlareStack Row Wrap Align="FlareAlignItems.Center" Justify="FlareJustifyContent.End" Gap="FlareSpacing.Small">
+                <GanttZoom View="@View" Default="DefaultUnit" @bind-Value="_unit" />
+                <FlareButton Size="ButtonSize.Sm" Variant="ButtonVariant.Text" OnClick="ToToday" Tooltip="@(AlvaStrings.Gantt_ToTodayAltWheelScrollThroughTime)">@(AlvaStrings.Gantt_Today)</FlareButton>
+            </FlareStack>
             <FlareStack Row Wrap Align="FlareAlignItems.Center" Gap="FlareSpacing.Small">
                 <GanttLegend Items="BoardKey">
                     <Trailing><FlareLink Href="gantt/2d">@(AlvaStrings.Gantt_OpenTheGantt)</FlareLink></Trailing>
                 </GanttLegend>
-                <FlareSpacer />
-                <GanttZoom View="@View" Default="DefaultUnit" @bind-Value="_unit" />
-                <FlareButton Size="ButtonSize.Sm" Variant="ButtonVariant.Text" OnClick="ToToday" Tooltip="@(AlvaStrings.Gantt_ToTodayAltWheelScrollThroughTime)">@(AlvaStrings.Gantt_Today)</FlareButton>
             </FlareStack>
             @if (Data is null || People is null)
             {
