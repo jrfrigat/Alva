@@ -537,7 +537,7 @@
   <data name="People_AddPeriod" xml:space="preserve"><value>Add a period</value></data>
   <data name="People_OverlappingPeriods" xml:space="preserve"><value>Membership periods must not overlap.</value></data>
   <data name="People_PeriodEndBeforeStart" xml:space="preserve"><value>The end date is before the start date.</value></data>
-  <data name="Sprint_SubTeamBalance" xml:space="preserve"><value>Sub-team balance: plan vs availability</value></data>
+  <data name="Sprint_SubTeamBalance" xml:space="preserve"><value>Balance</value></data>
   <data name="Sprint_SubTeamBalanceSubtitle" xml:space="preserve"><value>By sub-teams and tasks assigned to them</value></data>
   <data name="Sprint_GivePeopleSubTeamsToSeeTheBalance" xml:space="preserve"><value>Give people sub-teams to see the balance.</value></data>
   <data name="Sprint_SubTeamBalanceAria" xml:space="preserve"><value>Balance of {0}</value></data>
@@ -563,8 +563,9 @@
   <data name="Gantt_LinkAdded" xml:space="preserve"><value>Link added</value></data>
   <data name="Sprint_ShiftDatesToMeetTheDeadlineAndRespectTheDependencies" xml:space="preserve"><value>Shift dates to meet the deadline and respect the dependencies</value></data>
   <data name="Gantt_Today" xml:space="preserve"><value>Today</value></data>
+  <data name="Gantt_SubtasksDoneOfTotal" xml:space="preserve"><value>Subtasks: {0} of {1}</value></data>
   <data name="Gantt_SynchronisedWithTasks2d" xml:space="preserve"><value>Synchronised with tasks (2D)</value></data>
-  <data name="Gantt_SynchronisedGantt2d" xml:space="preserve"><value>Synchronised Gantt 2D</value></data>
+  <data name="Gantt_SynchronisedGantt2d" xml:space="preserve"><value>Timeline</value></data>
   <data name="Data_DownloadTheDataForABackupOrToWorkInSpreadsheets" xml:space="preserve"><value>Download the data for a backup or to work in spreadsheets.</value></data>
   <data name="Sprint_SpeedPace" xml:space="preserve"><value>Speed &amp; pace</value></data>
   <data name="Capacity_NextWeek" xml:space="preserve"><value>Next week</value></data>

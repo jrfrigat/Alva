@@ -29,8 +29,8 @@
     </FlareStack>
     <FlareGrid MinColumnWidth="min(100%,12rem)">
         <FlareStat Label="@(AlvaStrings.Sprint_TeamCapacity)" Value="@($"{AlvaFormat.Hours(Capacity)} {AlvaStrings.Sprint_HoursShort}")" Icon="@MaterialDesign3Icons.Regular.Groups" />
-        <FlareStat Label="@(AlvaStrings.Sprint_PlannedIntoTheSprint)" Value="@($"{AlvaFormat.Hours(Planned)} {AlvaStrings.Sprint_HoursShort}")" Caption="@($"{Pct(Planned, Capacity)}%")" Icon="@MaterialDesign3Icons.Regular.FactCheck" />
-        <FlareStat Label="@(Capacity >= Planned ? AlvaStrings.Sprint_CapacityReserve : AlvaStrings.Sprint_CapacityShortage)" Value="@($"{AlvaFormat.Hours(Math.Abs(Capacity - Planned))} {AlvaStrings.Sprint_HoursShort}")" Caption="@(Capacity >= Planned ? AlvaStrings.Sprint_Reserve : AlvaStrings.Sprint_OverCapacity)" Icon="@MaterialDesign3Icons.Regular.HourglassEmpty" />
+        <FlareStat Label="@(AlvaStrings.Sprint_PlannedIntoTheSprint)" Value="@($"{AlvaFormat.Hours(Planned)} {AlvaStrings.Sprint_HoursShort} / {Pct(Planned, Capacity)}%")" Icon="@MaterialDesign3Icons.Regular.FactCheck" />
+        <FlareStat Label="@(Capacity >= Planned ? AlvaStrings.Sprint_CapacityReserve : AlvaStrings.Sprint_CapacityShortage)" Value="@($"{AlvaFormat.Hours(Math.Abs(Capacity - Planned))} {AlvaStrings.Sprint_HoursShort}")" Icon="@MaterialDesign3Icons.Regular.HourglassEmpty" />
         <FlareStat Label="@(AlvaStrings.Sprint_Overtime)" Value="@($"{AlvaFormat.Hours(Overtime)} {AlvaStrings.Sprint_HoursShort}")" Caption="@(OvertimePeople > 0 ? $"{OvertimePeople} {AlvaStrings.Common_People}" : null)" Icon="@MaterialDesign3Icons.Regular.Warning" />
     </FlareGrid>
     </FlareStack>
@@ -42,10 +42,7 @@
 <FlareCard Variant="CardVariant.Outlined" Height="100%">
     <FlareCardHeader Title="@(AlvaStrings.Sprint_SubTeamBalance)">
         <AvatarContent><FlareIconView Value="@MaterialDesign3Icons.Regular.Balance" Size="20px" /></AvatarContent>
-    </FlareCardHeader>
-    <FlareCardContent>
-        <FlareStack Gap="FlareSpacing.Small">
-        <FlareStack Row Justify="FlareJustifyContent.End">
+        <ActionContent>
             <FlareMenu Anchor="MenuAnchor.BottomRight" AriaLabel="@(AlvaStrings.Sprint_AutoBalanceMode)">
                 <Activator>
                     <FlareButton Variant="ButtonVariant.Tonal" Size="ButtonSize.Sm" Loading="_balancing" Disabled="_busy">
@@ -65,7 +62,10 @@
                     }
                 </ChildContent>
             </FlareMenu>
-        </FlareStack>
+        </ActionContent>
+    </FlareCardHeader>
+    <FlareCardContent>
+        <FlareStack Gap="FlareSpacing.Small">
         <FlareGrid MinColumnWidth="min(100%,12rem)" Gap="FlareSpacing.Small">
             @foreach (var (team, plan, avail) in SubTeams)
             {

@@ -56,6 +56,16 @@ public sealed class GanttTaskPanelTests : UiTestBase
     }
 
     [Fact]
+    public void A_parent_row_shows_the_done_share_of_its_works()
+    {
+        var child = new TaskModel { Id = Guid.NewGuid(), ParentId = _task.Id, Title = "Работа", Status = "Done" };
+        Api.Answer("tasks", _ => new[] { _task, child });
+        var cut = Chart();
+
+        Assert.NotEmpty(cut.FindAll(".flare-progress--circular"));
+    }
+
+    [Fact]
     public void Enter_on_the_selected_bar_opens_the_same_panel()
     {
         var cut = Chart();

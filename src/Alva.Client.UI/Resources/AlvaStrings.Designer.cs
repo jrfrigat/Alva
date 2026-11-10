@@ -1632,7 +1632,7 @@ public static class AlvaStrings
     /// <summary>The end date is before the start date.</summary>
     public static string People_PeriodEndBeforeStart => Get("People_PeriodEndBeforeStart");
 
-    /// <summary>Sub-team balance: plan vs availability</summary>
+    /// <summary>Balance</summary>
     public static string Sprint_SubTeamBalance => Get("Sprint_SubTeamBalance");
 
     /// <summary>By sub-teams and tasks assigned to them</summary>
@@ -1710,10 +1710,13 @@ public static class AlvaStrings
     /// <summary>Today</summary>
     public static string Gantt_Today => Get("Gantt_Today");
 
+    /// <summary>Subtasks: {0} of {1}</summary>
+    public static string Gantt_SubtasksDoneOfTotal => Get("Gantt_SubtasksDoneOfTotal");
+
     /// <summary>Synchronised with tasks (2D)</summary>
     public static string Gantt_SynchronisedWithTasks2d => Get("Gantt_SynchronisedWithTasks2d");
 
-    /// <summary>Synchronised Gantt 2D</summary>
+    /// <summary>Timeline</summary>
     public static string Gantt_SynchronisedGantt2d => Get("Gantt_SynchronisedGantt2d");
 
     /// <summary>Download the data for a backup or to work in spreadsheets.</summary>

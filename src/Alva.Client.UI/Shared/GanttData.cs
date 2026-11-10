@@ -420,7 +420,13 @@ public sealed class GanttData
 
     public static bool IsWeekend(DateOnly day) => day.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday;
 
-    public static GanttMarker[] TodayMarkers => [new GanttMarker("today", DateTime.Today.AddHours(12), Label: AlvaStrings.Gantt_Today)];
+    /// <summary>The today line without a caption: every projection gets the line.</summary>
+    public static GanttMarker[] TodayMarkers => [TodayMarker(null)];
+
+    /// <summary>The today line with one caption: only the first panel adds it, so the word appears once.</summary>
+    public static GanttMarker[] TodayLabels => [TodayMarker(AlvaStrings.Gantt_Today)];
+
+    private static GanttMarker TodayMarker(string? label) => new("today", DateTime.Today.AddHours(12), Label: label);
 
     public SprintModel? Sprint(Guid? id) => id is { } value ? _sprints.GetValueOrDefault(value) : null;
 

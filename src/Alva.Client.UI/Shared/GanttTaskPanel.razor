@@ -5,7 +5,7 @@
                  RowClass="RowClass" Items="@Data.Tasks" ItemKey="t => GanttData.Key(t.Id)" ItemRow="t => GanttData.Key(t.Id)"
                  ItemSpan="Data.Span" ItemCover="Data.Cover" ItemKind="Data.Kind" ItemSegments="Data.Segments" ItemLabel="t => t.Title" ItemTitle="Data.Title"
                  Links="@Data.Links().ToArray()" LinkTypes="@Types" ShowCriticalPath="Critical" RollupParents="true"
-                 Markers="@DeadlineMarkers" Editable="Editable" AllowRowChange="false" OnChange="OnChange" OnLinkCreate="OnLinkCreate"
+                 Markers="@PanelMarkers" Editable="Editable" AllowRowChange="false" OnChange="OnChange" OnLinkCreate="OnLinkCreate"
                  OnLinkRejected="OnLinkRejected" OnItemClick="OnItemClick" Header="Header" DropGroup="@DropGroup" DropAccepts="DropAccepts"
                  ItemDropGroup="@ItemDropGroup" ItemDropAccepts="ItemDropAccepts" Suggested="Suggested" AriaLabel="@(AlvaStrings.Gantt_TasksOverTime)">
     <RowHeader Context="task">
@@ -65,6 +65,11 @@
                 {
                     <FlareIconView Value="@MaterialDesign3Icons.Regular.Lock" Size="14px" Class="alva-gantt-row__fixed" title="@FixedLabel" aria-label="@FixedLabel" />
                 }
+                @if (SubtaskProgress(task) is { } progress)
+                {
+                    <FlareProgressCircular Value="@progress.Percent" Size="TrackSize.Xs" Diameter="18px"
+                                           aria-label="@string.Format(AlvaStrings.Gantt_SubtasksDoneOfTotal, progress.Done, progress.Total)" />
+                }
             </FlareStack>
             <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant" Class="alva-gantt-row__meta">@Data.Assignee(task) · @AlvaFormat.Hours(task.EffectiveEstimateHours) @(AlvaStrings.Sprint_HoursShort)</FlareText>
             @if (NoHoursReason(task) is { } reason)
@@ -118,8 +123,21 @@
         return classes.Count == 0 ? null : string.Join(' ', classes);
     }
 
+    // The deadline is a red line; its caption only repeated the word on every row.
     private IEnumerable<GanttMarker> DeadlineMarkers => Data.Tasks
         .Where(t => !GanttData.IsClosed(t) && (t.EffectiveDeadline ?? t.Deadline) is not null)
         .Select(t => new GanttMarker("deadline", (t.EffectiveDeadline ?? t.Deadline)!.Value.AddDays(1).ToDateTime(TimeOnly.MinValue),
-            GanttData.Key(t.Id), AlvaStrings.Gantt_DueDate, GanttData.Key(t.Id)));
+            GanttData.Key(t.Id), null, GanttData.Key(t.Id)));
+
+    // The labeled today marker belongs to the first panel only; every panel still gets the unlabeled line.
+    private IEnumerable<GanttMarker> PanelMarkers => DeadlineMarkers.Concat(GanttData.TodayLabels);
+
+    /// <summary>The share of direct works that are done; null when the task has no works.</summary>
+    private (double Percent, int Done, int Total)? SubtaskProgress(TaskModel task)
+    {
+        var children = Data.ChildrenOf(task).ToArray();
+        if (children.Length == 0) return null;
+        var done = children.Count(c => c.Status == "Done");
+        return (100.0 * done / children.Length, done, children.Length);
+    }
 }

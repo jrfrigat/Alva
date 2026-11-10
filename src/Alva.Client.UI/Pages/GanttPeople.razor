@@ -44,7 +44,7 @@ else if (_data is not null && _people is not null)
                 </GanttTaskPanel>
             }
             <GanttPeoplePanel People="_people" Scale="_scale" Range="_range" Header="@(_twoD ? PeopleHeader : null)"
-                              OnChange="Change" OnLinkCreate="Link" OnLinkRejected="Rejected" OnItemClick="OpenTask" />
+                              Markers="@(_twoD ? null : GanttData.TodayLabels)" OnChange="Change" OnLinkCreate="Link" OnLinkRejected="Rejected" OnItemClick="OpenTask" />
         </ChildContent>
     </FlareGantt>
     </div>

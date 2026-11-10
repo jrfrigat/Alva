@@ -537,7 +537,7 @@
   <data name="People_AddPeriod" xml:space="preserve"><value>Добавить период</value></data>
   <data name="People_OverlappingPeriods" xml:space="preserve"><value>Периоды членства не должны пересекаться.</value></data>
   <data name="People_PeriodEndBeforeStart" xml:space="preserve"><value>Дата окончания раньше начала.</value></data>
-  <data name="Sprint_SubTeamBalance" xml:space="preserve"><value>Баланс подкоманд: план и доступность</value></data>
+  <data name="Sprint_SubTeamBalance" xml:space="preserve"><value>Баланс</value></data>
   <data name="Sprint_SubTeamBalanceSubtitle" xml:space="preserve"><value>По подкомандам и задачам, назначенным на них</value></data>
   <data name="Sprint_GivePeopleSubTeamsToSeeTheBalance" xml:space="preserve"><value>Назначьте людям подкоманды, чтобы увидеть баланс.</value></data>
   <data name="Sprint_SubTeamBalanceAria" xml:space="preserve"><value>Баланс подкоманды {0}</value></data>
@@ -563,8 +563,9 @@
   <data name="Gantt_LinkAdded" xml:space="preserve"><value>Связь добавлена</value></data>
   <data name="Sprint_ShiftDatesToMeetTheDeadlineAndRespectTheDependencies" xml:space="preserve"><value>Сдвигать даты, чтобы успеть к сроку и соблюсти связи</value></data>
   <data name="Gantt_Today" xml:space="preserve"><value>Сегодня</value></data>
+  <data name="Gantt_SubtasksDoneOfTotal" xml:space="preserve"><value>Подзадачи: {0} из {1}</value></data>
   <data name="Gantt_SynchronisedWithTasks2d" xml:space="preserve"><value>Синхронно с задачами (2D)</value></data>
-  <data name="Gantt_SynchronisedGantt2d" xml:space="preserve"><value>Синхронный Гантт 2D</value></data>
+  <data name="Gantt_SynchronisedGantt2d" xml:space="preserve"><value>Timeline</value></data>
   <data name="Data_DownloadTheDataForABackupOrToWorkInSpreadsheets" xml:space="preserve"><value>Скачайте данные для резервной копии или работы в таблицах.</value></data>
   <data name="Sprint_SpeedPace" xml:space="preserve"><value>Скорость &amp; темп</value></data>
   <data name="Capacity_NextWeek" xml:space="preserve"><value>Следующая неделя</value></data>
