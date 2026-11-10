@@ -32,7 +32,7 @@
 @if (_applyOpen && !IsDepartment)
 {
     <FlareCard Variant="CardVariant.Outlined">
-        <FlareCardHeader Title="@(AlvaStrings.Capacity_ApplyTheWeeklyHoursToTheEmployees)" Subtitle="@(AlvaStrings.Capacity_TheTimeZoneAndDailyHoursAreCopiedVacationsAndDeductionsStayIndividual)" />
+        <FlareCardHeader Title="@(AlvaStrings.Capacity_ApplyTheWeeklyHoursToTheEmployees)" />
         <FlareCardContent>
             <FlareStack Gap="FlareSpacing.Medium">
                 <FlareGrid MinColumnWidth="min(100%,12rem)">
@@ -55,7 +55,7 @@
         @if (!IsDepartment)
         {
         <FlareCard Variant="CardVariant.Outlined">
-            <FlareCardHeader Title="@($"{AlvaStrings.Capacity_WorkWeek} {Person?.Name}")" Subtitle="@(AlvaStrings.Capacity_BaseWorkingWeekAndTimeZone)" />
+            <FlareCardHeader Title="@($"{AlvaStrings.Capacity_WorkWeek} {Person?.Name}")" />
             <FlareCardContent>
             <FlareStack Gap="FlareSpacing.Small">
                 <FlareStack Row Wrap Align="FlareAlignItems.End" Gap="FlareSpacing.Small">
@@ -110,7 +110,7 @@
         }
 
         <FlareCard Variant="CardVariant.Outlined">
-            <FlareCardHeader Title="@(AlvaStrings.Capacity_RecurringDeductions)" Subtitle="@(AlvaStrings.Capacity_RecurringMeetingsAndCeremoniesExcludedFromFocusTime)">
+            <FlareCardHeader Title="@(AlvaStrings.Capacity_RecurringDeductions)">
                 <ActionContent><FlareChip Size="ChipSize.Sm" Variant="ChipVariant.Filled" Color="FlareColor.Primary" Label="@($"{AlvaStrings.Capacity_Deduction} −{AlvaFormat.Hours(_calendar.RecurringBlocks.Sum(b => b.Hours))} {AlvaStrings.Sprint_HoursPerWeek}")" /></ActionContent>
             </FlareCardHeader>
             <FlareCardContent>
@@ -146,7 +146,7 @@
         </FlareCard>
 
         <FlareCard Variant="CardVariant.Outlined">
-            <FlareCardHeader Title="@(AlvaStrings.Capacity_VacationsAbsencesAndHolidays)" Subtitle="@(AlvaStrings.Capacity_PeriodsWithTheirOwnAvailabilityReplaceTheUsualHoursOfTheDay)" />
+            <FlareCardHeader Title="@(AlvaStrings.Capacity_VacationsAbsencesAndHolidays)" />
             <FlareCardContent>
             <FlareStack Gap="FlareSpacing.Medium">
                 <FlareList TItem="CalendarExceptionDto" Dense>
@@ -183,7 +183,7 @@
         @if (IsDepartment)
         {
         <FlareCard Variant="CardVariant.Outlined">
-            <FlareCardHeader Title="@(AlvaStrings.Capacity_Members)" Subtitle="@(AlvaStrings.Capacity_TheseAreCoveredByThisSchedule)" />
+            <FlareCardHeader Title="@(AlvaStrings.Capacity_Members)" />
             <FlareCardContent>
                 <FlareList TItem="ActorModel" Dense>
                     @foreach (var person in MemberList)

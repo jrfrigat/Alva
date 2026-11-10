@@ -7,7 +7,7 @@
 @using Flare.Components.Gantt
 <PageTitle>@(AlvaStrings.Projects_ProjectsAlva)</PageTitle>
 <NavigationLock OnBeforeInternalNavigation="ConfirmLeave" ConfirmExternalNavigation="IsDirty" />
-<AlvaPageHeader Category="@(AlvaStrings.Projects_ProjectsOfSeveralTeams)" Title="@(AlvaStrings.Common_Projects)" Description="@(AlvaStrings.Projects_ProjectRegistryAndTeamInvolvementProjectsUniteTasksDeliveredBySprintsOfD_6fd9fb)">
+<AlvaPageHeader Category="@(AlvaStrings.Projects_ProjectsOfSeveralTeams)" Title="@(AlvaStrings.Common_Projects)">
     <Actions><FlareButton Size="ButtonSize.Sm" OnClick="New" Disabled="@(Session.TeamId is null)"><LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.AddCircle" Size="18px" /></LeadingIcon><ChildContent>@(AlvaStrings.Projects_NewProject)</ChildContent></FlareButton></Actions>
 </AlvaPageHeader>
 <PageFeedback Loading="_busy" Error="@_error" OnRetry="Load" />
@@ -144,7 +144,7 @@ else
             </FlareCard>
 
             <FlareCard Variant="CardVariant.Outlined">
-                <FlareCardHeader Title="@(AlvaStrings.Projects_ProjectGantt)" Subtitle="@(AlvaStrings.Projects_ProjectGanttDescription)">
+                <FlareCardHeader Title="@(AlvaStrings.Projects_ProjectGantt)">
                     <AvatarContent><FlareIconView Value="@MaterialDesign3Icons.Regular.ViewTimeline" Size="20px" /></AvatarContent>
                     <ActionContent>
                         <FlareStack Row Wrap Align="FlareAlignItems.Center" Gap="FlareSpacing.Small">
@@ -224,7 +224,7 @@ else
             </FlareGrid>
 
             <FlareCard Variant="CardVariant.Outlined" aria-label="@(AlvaStrings.Projects_ProjectTaskTree)">
-                <FlareCardHeader Title="@(AlvaStrings.Projects_ProjectTaskTree)" Subtitle="@(AlvaStrings.Projects_TaskHierarchyProjectedOntoSprintsAndAssignees)">
+                <FlareCardHeader Title="@(AlvaStrings.Projects_ProjectTaskTree)">
                     <AvatarContent><FlareIconView Value="@MaterialDesign3Icons.Regular.AccountTree" Size="20px" /></AvatarContent>
                     <ActionContent><FlareTextField @bind-Value="_wbsSearch" Immediate Clearable Placeholder="@(AlvaStrings.Projects_SearchTheTree)" AriaLabel="@(AlvaStrings.Projects_SearchTheTaskTree)"><AdornmentStart><FlareIconView Value="@MaterialDesign3Icons.Regular.Search" Size="18px" /></AdornmentStart></FlareTextField></ActionContent>
                 </FlareCardHeader>

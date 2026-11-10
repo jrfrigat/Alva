@@ -74,6 +74,21 @@ public sealed class FlareMigrationTests : UiTestBase
     }
 
     [Fact]
+    public void Page_headers_do_not_carry_explanatory_descriptions()
+    {
+        var root = Path.Combine(Root(), "src", "Alva.Client.UI");
+        var offenders = Directory.GetFiles(root, "*.razor", SearchOption.AllDirectories)
+            .Where(f => !f.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}")
+                        && !f.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}"))
+            .SelectMany(f => File.ReadAllLines(f)
+                .Where(line => line.Contains("<AlvaPageHeader", StringComparison.Ordinal) && line.Contains("Description=", StringComparison.Ordinal))
+                .Select(line => $"{f}: {line.Trim()}"))
+            .ToArray();
+
+        Assert.Empty(offenders);
+    }
+
+    [Fact]
     public void People_and_group_rows_are_separated_in_the_gantt()
     {
         var css = File.ReadAllText(Path.Combine(Root(), "src", "Alva.Client.UI", "wwwroot", "css", "app.css"));

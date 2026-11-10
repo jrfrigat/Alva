@@ -7,7 +7,7 @@
 @* Task Gantt (projection 1): work tree, task windows, deadlines, sprint and links.
    Alva builds the projection from Flare.Components.Gantt primitives; the library itself knows nothing about tasks. *@
 <PageTitle>@(AlvaStrings.Gantt_TaskGanttAlva)</PageTitle>
-<AlvaPageHeader Category="@(AlvaStrings.Gantt_ChartsGantt)" Title="@(AlvaStrings.Gantt_TaskGantt)" Description="@(AlvaStrings.Gantt_WorkHierarchyOverTimeTaskAndSprintWindowsDeadlinesDependenciesAndRiskDra_692d07)" />
+<AlvaPageHeader Category="@(AlvaStrings.Gantt_ChartsGantt)" Title="@(AlvaStrings.Gantt_TaskGantt)" />
 <PageFeedback Loading="_busy" Error="@_error" OnRetry="Reload" />
 @if (Session.TeamId is null) { <TeamRequired /> }
 else if (_data is not null)

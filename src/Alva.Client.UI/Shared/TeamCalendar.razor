@@ -2,7 +2,7 @@
    employee, vacations, meetings and overload days. *@
 @inject AlvaSession Session
 @inject NavigationManager Navigation
-<AlvaPageHeader Category="@(AlvaStrings.Capacity_CapacityPeopleSchedules)" Title="@(AlvaStrings.Capacity_PeopleSchedulesAndTeamAvailability)" Description="@(AlvaStrings.Capacity_EveryPersonSWorkingHoursVacationsAndRecurringMeetingsAndHowMuchCleanTime_c5193e)">
+<AlvaPageHeader Category="@(AlvaStrings.Capacity_CapacityPeopleSchedules)" Title="@(AlvaStrings.Capacity_PeopleSchedulesAndTeamAvailability)">
     <Actions>
         <FlareIconButton Icon="@MaterialDesign3Icons.Regular.ChevronLeft" Size="ButtonSize.Sm" AriaLabel="@(AlvaStrings.Capacity_PreviousMonth)" OnClick="() => Shift(-1)" />
         <FlareChip Variant="ChipVariant.Filled" Color="FlareColor.Primary" Size="ChipSize.Sm">@_month.ToString("MMMM yyyy")</FlareChip>

@@ -97,7 +97,7 @@
 {
     <FlareCard Variant="CardVariant.Outlined" aria-live="polite">
         <FlareCardHeader Title="@($"{AlvaStrings.Sprint_AutoBalanceRecommendation} {ModeName(proposal.Mode)}")"
-                         Subtitle="@($"{StatusText(proposal.Status)}{(proposal.Note is { } note ? $" - {note}" : "")} - {AlvaStrings.Sprint_TheDashedLineOnTheGanttShowsWhereTasksWillMoveNothingIsSavedUntilYouAppl_0664fc}")">
+                         Subtitle="@($"{StatusText(proposal.Status)}{(proposal.Note is { } note ? $" - {note}" : "")}")">
             <AvatarContent><FlareIconView Value="@MaterialDesign3Icons.Regular.Balance" Size="20px" /></AvatarContent>
             <ActionContent>
                 <FlareStack Row Wrap Gap="FlareSpacing.Small">
