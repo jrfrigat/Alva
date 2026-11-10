@@ -34,7 +34,7 @@ public sealed class CapacityChartTests : UiTestBase
         var cut = Render<CapacityOverview>();
         cut.WaitForAssertion(() => Assert.Contains("Ключевой вывод", cut.Markup));
 
-        var table = Assert.Single(cut.FindAll("table"));
+        var table = cut.FindAll("table").Single(t => t.TextContent.Contains("Номинал фонда"));
         Assert.Contains("Номинал фонда", table.TextContent);
         Assert.Contains("Запланировано", table.TextContent);
         Assert.Contains("Дефицит", table.TextContent);

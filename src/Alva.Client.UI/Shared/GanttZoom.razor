@@ -3,7 +3,7 @@
 @* Gantt "Scale" slider: the width of one axis unit for the current scale. Stored on the device separately for
    each view and each scale; the minimum is half the normal width, the maximum is two and a half. *@
 <div class="alva-gantt-zoom">
-    <FlareSlider Value="Value" ValueChanged="Change" Min="Min" Max="Max" Step="Step" Label="@(AlvaStrings.Gantt_Scale)" AriaLabel="@(AlvaStrings.Gantt_AxisUnitWidth)" />
+    <FlareSlider Value="Value" ValueChanged="Change" Min="Min" Max="Max" Step="Step" Label="@(AlvaStrings.Gantt_Scale)" AriaLabel="@(AlvaStrings.Gantt_AxisUnitWidth)" Style="width:100%" />
 </div>
 
 @code {

@@ -10,17 +10,17 @@
                  AriaLabel="@(AlvaStrings.Gantt_PeopleAndRolesOverTime)"
                  ItemClass="ItemClass" CellClass="CellClass" RegionClass="RegionClass" MarkerClass="MarkerClass">
     <RowHeader Context="row">
-        <div class="alva-gantt-row">
+        <FlareStack Gap="FlareSpacing.XXSmall" Class="alva-gantt-row">
             @if (row.Kind == "person")
             {
-                <a class="alva-gantt-row__title" href="capacity/@row.Actor!.Id" title="@row.Name">@row.Name</a>
+                <FlareLink Class="alva-gantt-row__title" Href="@($"capacity/{row.Actor!.Id}")" title="@row.Name">@row.Name</FlareLink>
             }
             else
             {
-                <span class="alva-gantt-row__title" title="@row.Name">@row.Name</span>
+                <FlareText Typo="TypographyScale.LabelMedium" Class="alva-gantt-row__title" title="@row.Name">@row.Name</FlareText>
             }
-            <span class="alva-gantt-row__meta">@row.Meta</span>
-        </div>
+            <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant" Class="alva-gantt-row__meta">@row.Meta</FlareText>
+        </FlareStack>
     </RowHeader>
 </FlareGanttPanel>
 

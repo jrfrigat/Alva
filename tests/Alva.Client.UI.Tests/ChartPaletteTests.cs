@@ -30,10 +30,10 @@ public sealed class ChartPaletteTests
     }
 
     [Fact]
-    public void The_heat_bar_track_is_a_theme_token_and_not_a_fixed_dark_overlay()
+    public void The_heat_bar_uses_the_flare_progress_track_and_not_a_custom_dark_overlay()
     {
         var css = File.ReadAllText(Path.Combine(Root(), "src", "Alva.Client.UI", "wwwroot", "css", "app.css"));
-        Assert.Contains("background:var(--alva-heat-track)", css);
+        Assert.DoesNotContain(".alva-heat__bar", css);
         Assert.DoesNotContain("rgba(15,23,42,.08)", css);
     }
 

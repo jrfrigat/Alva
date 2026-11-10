@@ -178,7 +178,7 @@ else
                 </FlareCardContent>
             </FlareCard>
 
-            <h3 class="alva-section-title"><FlareIconView Value="@MaterialDesign3Icons.Regular.Hub" Size="18px" /> @(AlvaStrings.Projects_TeamsAndTheirSprintsPerProject)</h3>
+            <FlareStack Row Align="FlareAlignItems.Center" Gap="FlareSpacing.Small"><FlareIconView Value="@MaterialDesign3Icons.Regular.Hub" Size="18px" /><FlareText Element="h3" Typo="TypographyScale.LabelMedium">@(AlvaStrings.Projects_TeamsAndTheirSprintsPerProject)</FlareText></FlareStack>
             <div class="alva-proj-teams">
                 @foreach (var teamId in p.TeamIds)
                 {
@@ -220,40 +220,43 @@ else
                 }
             </div>
 
-            <FlareCard Variant="CardVariant.Outlined" Class="alva-wbs">
+            <FlareCard Variant="CardVariant.Outlined" aria-label="@(AlvaStrings.Projects_ProjectTaskTree)">
                 <FlareCardHeader Title="@(AlvaStrings.Projects_ProjectTaskTree)" Subtitle="@(AlvaStrings.Projects_TaskHierarchyProjectedOntoSprintsAndAssignees)">
                     <AvatarContent><FlareIconView Value="@MaterialDesign3Icons.Regular.AccountTree" Size="20px" /></AvatarContent>
                     <ActionContent><FlareTextField @bind-Value="_wbsSearch" Immediate Clearable Placeholder="@(AlvaStrings.Projects_SearchTheTree)" AriaLabel="@(AlvaStrings.Projects_SearchTheTaskTree)"><AdornmentStart><FlareIconView Value="@MaterialDesign3Icons.Regular.Search" Size="18px" /></AdornmentStart></FlareTextField></ActionContent>
                 </FlareCardHeader>
                 <FlareCardContent>
-                    @if (!Tree(tasks).Any())
+                    @if (WbsRoots(tasks).Length == 0)
                     {
                         <FlareEmptyState Compact Title="@(AlvaStrings.Projects_TheProjectHasNoTasksYet)" />
                     }
                     else
                     {
-                        <FlareList TItem="TaskModel" Dense="true">
-                            @foreach (var (task, depth) in Tree(tasks))
-                            {
-                                <FlareListItem @key="task.Id" OnClick="() => OpenTask(task.Id)" Style="@("padding-left: " + depth * 20 + "px")">
-                                    <Leading><FlareIconView Value="@(tasks.Any(t => t.ParentId == task.Id) ? MaterialDesign3Icons.Regular.Folder : MaterialDesign3Icons.Regular.SubdirectoryArrowRight)" Size="16px" /></Leading>
-                                    <ChildContent>
-                                        <FlareStack Gap="FlareSpacing.None">
-                                            <FlareText Typo="TypographyScale.LabelMedium">@task.Title</FlareText>
+                        <FlareDataGrid TItem="TaskModel" Items="WbsRoots(tasks)" RowKey="t => t.Id" Height="auto" Dense="true"
+                                       Presentation="DataGridPresentation.Auto" Tree="WbsTree(tasks)">
+                            <Columns>
+                                <FlareColumn TItem="TaskModel" Title="@(AlvaStrings.Common_Task)">
+                                    <Template Context="task">
+                                        <FlareStack Gap="FlareSpacing.XXSmall">
+                                            <FlareLink Href="@($"tasks/{task!.Id}")" title="@task.Title">@task.Title</FlareLink>
                                             <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@(task.SprintIds.Length == 0 ? AlvaStrings.Projects_TeamBacklog : string.Join(", ", _sprints.Where(s => task.SprintIds.Contains(s.Id)).OrderBy(s => s.StartDate).Select(s => s.Name))) · @(task.Deadline?.ToString("d MMM") ?? "—")</FlareText>
-                                            <AlvaAssignee Task="task" Actors="_actors" />
+                                            <AlvaAssignee Task="task!" Actors="_actors" />
                                         </FlareStack>
-                                    </ChildContent>
-                                    <Trailing>
+                                    </Template>
+                                </FlareColumn>
+                                <FlareColumn TItem="TaskModel" Title="@(AlvaStrings.Common_Status)">
+                                    <Template Context="task"><AlvaStatusChip Tone="AlvaTones.Status(task!.Status)">@Labels.Status(task.Status)</AlvaStatusChip></Template>
+                                </FlareColumn>
+                                <FlareColumn TItem="TaskModel" Title="@(AlvaStrings.Common_TaskActions)">
+                                    <Template Context="task">
                                         <FlareStack Row Gap="FlareSpacing.XXSmall">
-                                            <span @onclick:stopPropagation="true"><FlareIconButton Icon="@MaterialDesign3Icons.Regular.Add" Size="ButtonSize.Sm" Tooltip="@AddSubtaskLabel(task)" AriaLabel="@AddSubtaskLabel(task)" OnClick="() => OpenCreate(task.Id)" /></span>
-                                            <span @onclick:stopPropagation="true"><FlareIconButton Icon="@MaterialDesign3Icons.Regular.Hub" Size="ButtonSize.Sm" Tooltip="@AddLinkLabel(task)" AriaLabel="@AddLinkLabel(task)" OnClick="() => OpenLink(task)" /></span>
-                                            <AlvaStatusChip Tone="AlvaTones.Status(task.Status)">@Labels.Status(task.Status)</AlvaStatusChip>
+                                            <FlareIconButton Icon="@MaterialDesign3Icons.Regular.Add" Size="ButtonSize.Sm" Tooltip="@AddSubtaskLabel(task!)" AriaLabel="@AddSubtaskLabel(task!)" OnClick="() => OpenCreate(task!.Id)" />
+                                            <FlareIconButton Icon="@MaterialDesign3Icons.Regular.Hub" Size="ButtonSize.Sm" Tooltip="@AddLinkLabel(task!)" AriaLabel="@AddLinkLabel(task!)" OnClick="() => OpenLink(task!)" />
                                         </FlareStack>
-                                    </Trailing>
-                                </FlareListItem>
-                            }
-                        </FlareList>
+                                    </Template>
+                                </FlareColumn>
+                            </Columns>
+                        </FlareDataGrid>
                     }
                     <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@(AlvaStrings.Projects_LinkedTasksAreDistributedAcrossTeamSprints) · @(AlvaStrings.Projects_TotalInTheProject) @tasks.Length @AlvaFormat.Plural(tasks.Length, "task")</FlareText>
                 </FlareCardContent>
@@ -386,15 +389,28 @@ else
     private static string StatusLabel(string status) => status switch { "done" => AlvaStrings.Common_Completed, "active" => AlvaStrings.Common_InProgress, _ => AlvaStrings.Projects_NotStarted };
     private static AlvaTone StatusTone(string status) => status switch { "done" => AlvaTone.Ok, "active" => AlvaTone.Info, _ => AlvaTone.Neutral };
 
-    /// <summary>Project tasks in tree order: a root (whose parent is outside the project) and its descendants with depth.</summary>
-    private IEnumerable<(TaskModel Task, int Depth)> Tree(TaskModel[] tasks)
+    /// <summary>Project tasks in tree order: a root (whose parent is outside the project) and its descendants.</summary>
+    private TaskModel[] WbsRoots(TaskModel[] tasks)
     {
         var ids = tasks.Select(t => t.Id).ToHashSet();
-        IEnumerable<(TaskModel, int)> Walk(TaskModel node, int depth) =>
-            new[] { (node, depth) }.Concat(tasks.Where(t => t.ParentId == node.Id).OrderBy(t => t.Order).SelectMany(c => Walk(c, depth + 1)));
-        var all = tasks.Where(t => t.ParentId is null || !ids.Contains(t.ParentId.Value)).OrderBy(t => t.Order).SelectMany(r => Walk(r, 0));
-        return string.IsNullOrWhiteSpace(_wbsSearch) ? all : all.Where(x => x.Item1.Title.Contains(_wbsSearch, StringComparison.OrdinalIgnoreCase));
+        return tasks.Where(t => t.ParentId is null || !ids.Contains(t.ParentId.Value))
+            .Where(t => SubtreeMatches(tasks, t)).OrderBy(t => t.Order).ThenBy(t => t.Title).ToArray();
     }
+
+    private IEnumerable<TaskModel>? WbsChildren(TaskModel[] tasks, TaskModel task) =>
+        tasks.Where(t => t.ParentId == task.Id).OrderBy(t => t.Order).ThenBy(t => t.Title)
+            .Where(t => SubtreeMatches(tasks, t)).ToArray();
+
+    private bool SubtreeMatches(TaskModel[] tasks, TaskModel task) =>
+        string.IsNullOrWhiteSpace(_wbsSearch) || task.Title.Contains(_wbsSearch, StringComparison.OrdinalIgnoreCase)
+        || tasks.Any(t => t.ParentId == task.Id && SubtreeMatches(tasks, t));
+
+    private DataGridTreeConfig<TaskModel> WbsTree(TaskModel[] tasks) => new()
+    {
+        ChildrenSelector = task => WbsChildren(tasks, task),
+        InitiallyExpanded = _ => true,
+        IndentWidth = "20px"
+    };
 
     /// <summary>Project selected by link (for example, after creating a task from it).</summary>
     [SupplyParameterFromQuery(Name = "project")] public Guid? ProjectParam { get; set; }

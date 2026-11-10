@@ -67,63 +67,102 @@ else
         <span><i class="alva-heat--tension"></i>@(AlvaStrings.Capacity_Text101115Strained)</span>
         <span><i class="alva-heat--critical"></i>@(AlvaStrings.Capacity_Text115CriticalOverload)</span>
     </div>
-    <div class="alva-matrix" role="table" aria-label="@(AlvaStrings.Capacity_CapacityDistribution)" style="--alva-matrix-periods:@Math.Max(1, _periods.Length)">
-        <div class="alva-matrix__head" role="row">
-            <span role="columnheader">@(AlvaStrings.Capacity_ResourceSubTeam)</span><span role="columnheader">@(AlvaStrings.Capacity_RoleStatus)</span><span role="columnheader">@(AlvaStrings.Capacity_AvailableFund)</span>
-            @foreach (var period in _periods) { <span role="columnheader" class="alva-matrix__period"><b>@period.Title</b><small class="alva-num">@period.Subtitle</small></span> }
-            <span role="columnheader">@(AlvaStrings.Capacity_FundTotal)</span>
-        </div>
-        @foreach (var group in Groups)
-        {
-            var people = VisiblePeople.Where(p => GroupOf(p) == group.Id).ToArray();
-            var roles = Vacancies.Where(v => GroupOfRole(v) == group.Id).ToArray();
-            if (people.Length == 0 && roles.Length == 0) { continue; }
-            var groupFund = people.Sum(p => Available(p.Id));
-            var groupBalance = groupFund - people.Sum(p => Allocated(p.Id)) - roles.Sum(r => Demand(r));
-            <div class="alva-matrix__group" role="row">
-                <span role="cell" class="alva-matrix__group-name">@group.Name <small>(@people.Length @AlvaFormat.Plural(people.Length, "person")@(roles.Length > 0 ? string.Format(AlvaStrings.Capacity_Vacancies, roles.Length) : ""))</small></span>
-                <span role="cell" class="alva-matrix__group-total @(groupBalance < 0 ? "alva-matrix__group-total--critical" : "")">@(groupBalance < 0 ? string.Format(AlvaStrings.Capacity_PeriodDeficitH, AlvaFormat.Hours(-groupBalance)) : string.Format(AlvaStrings.Capacity_PeriodReserveH, AlvaFormat.Hours(groupBalance))) · @(AlvaStrings.Capacity_Fund) @AlvaFormat.Hours(groupFund) @(AlvaStrings.Sprint_HoursShort)</span>
-            </div>
-            @foreach (var person in people)
-            {
-                <div class="alva-matrix__row" role="row" @key="person.Id">
-                    <span role="cell" class="alva-matrix__who"><span class="alva-slot__mark" aria-hidden="true">@AlvaFormat.Initials(person.Name)</span><span><a href="@($"capacity/{person.Id}")" class="alva-matrix__name">@person.Name</a><small>@SkillsOf(person)</small></span></span>
-                    <span role="cell"><AlvaStatusChip Tone="AlvaTone.Info">@(AlvaStrings.Capacity_Staff)</AlvaStatusChip></span>
-                    <span role="cell" class="alva-num alva-matrix__fund">@AlvaFormat.Hours(Available(person.Id)) @(AlvaStrings.Sprint_HoursShort)</span>
-                    @foreach (var period in _periods)
+    <FlareDataGrid TItem="MatrixRow" Items="MatrixRows" RowKey="row => row.Key" Height="auto" Dense="true"
+                   Presentation="DataGridPresentation.Auto" aria-label="@(AlvaStrings.Capacity_CapacityDistribution)">
+        <Grouping>
+            <DataGridGroup Key="@(AlvaStrings.Capacity_ResourceSubTeam)" Selector="row => row.Group" />
+        </Grouping>
+        <Columns>
+            <FlareColumn TItem="MatrixRow" Title="@(AlvaStrings.Capacity_ResourceSubTeam)">
+                <Template Context="row">
+                    <FlareStack Row Align="FlareAlignItems.Center" Gap="FlareSpacing.Small">
+                        @if (row.Role is null)
+                        {
+                            <FlareAvatar Text="@AlvaFormat.Initials(row.Name)" Alt="@row.Name" Size="AvatarSize.Xs" />
+                        }
+                        else
+                        {
+                            <FlareIconView Value="@MaterialDesign3Icons.Regular.PersonAdd" Size="18px" />
+                        }
+                        <FlareStack Gap="FlareSpacing.None">
+                            @if (row.PersonId is { } personId)
+                            {
+                                <FlareLink Href="@($"capacity/{personId}")">@row.Name</FlareLink>
+                            }
+                            else
+                            {
+                                <FlareText Typo="TypographyScale.LabelMedium" Color="FlareColor.Error">@row.Name</FlareText>
+                            }
+                            <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@row.Meta</FlareText>
+                        </FlareStack>
+                    </FlareStack>
+                </Template>
+            </FlareColumn>
+            <FlareColumn TItem="MatrixRow" Title="@(AlvaStrings.Capacity_RoleStatus)">
+                <Template Context="row">
+                    @if (row.Role is null)
                     {
-                        var (avail, alloc) = Cell(person.Id, period);
-                        var pct = Pct(alloc, avail);
-                        var over = Overload(person.Id, period);
-                        <span role="cell" class="alva-heat alva-heat--@Heat(pct, avail, alloc) @(_highlight && over > 0 ? "alva-heat--flag" : "")">
-                            <span class="alva-heat__top alva-num"><span>@AlvaFormat.Hours(alloc) @(AlvaStrings.Sprint_HoursShort) / @AlvaFormat.Hours(avail) @(AlvaStrings.Sprint_HoursShort)</span><b>@(avail > 0 ? $"{pct}%" : "—")</b></span>
-                            <span class="alva-heat__bar"><span style="width:@Math.Min(100, pct)%"></span></span>
-                            <span class="alva-heat__note">@CellNote(avail, alloc, over)</span>
-                        </span>
+                        <AlvaStatusChip Tone="AlvaTone.Info">@(AlvaStrings.Capacity_Staff)</AlvaStatusChip>
                     }
-                    <span role="cell" class="alva-num alva-matrix__total @(Allocated(person.Id) > Available(person.Id) ? "alva-matrix__total--critical" : "")">@AlvaFormat.Hours(Allocated(person.Id)) @(AlvaStrings.Sprint_HoursShort) / @AlvaFormat.Hours(Available(person.Id)) @(AlvaStrings.Sprint_HoursShort)</span>
-                </div>
-            }
-            @foreach (var role in roles)
-            {
-                <div class="alva-matrix__row alva-matrix__row--vacancy" role="row" @key="role.Id">
-                    <span role="cell" class="alva-matrix__who"><span class="alva-slot__mark alva-slot__mark--vacancy" aria-hidden="true"><FlareIconView Value="@MaterialDesign3Icons.Regular.PersonAdd" Size="14px" /></span><span><span class="alva-matrix__name alva-matrix__name--critical">@Labels.Kind(role.Kind): @role.Name</span><small>@(AlvaStrings.Capacity_APersonRequiredVacantSlot)</small></span></span>
-                    <span role="cell"><AlvaStatusChip Tone="AlvaTone.Critical">@(AlvaStrings.Capacity_Vacancy)</AlvaStatusChip></span>
-                    <span role="cell" class="alva-num alva-matrix__fund alva-matrix__total--critical">0 @(AlvaStrings.Sprint_HoursShort)</span>
-                    @foreach (var period in _periods)
+                    else
                     {
-                        var demand = Demand(role, period);
-                        <span role="cell" class="alva-heat @(demand > 0 ? "alva-heat--critical" : "alva-heat--empty")">
-                            <span class="alva-heat__top alva-num"><span>@AlvaFormat.Hours(demand) @(AlvaStrings.Sprint_HoursShort) / 0 @(AlvaStrings.Sprint_HoursShort)</span>@if (demand > 0) { <b>@(AlvaStrings.Capacity_NoSlot)</b> }</span>
-                            <span class="alva-heat__note">@(demand > 0 ? string.Format(AlvaStrings.Capacity_DeficitH, AlvaFormat.Hours(demand)) : AlvaStrings.Capacity_NoAssignments)</span>
-                        </span>
+                        <AlvaStatusChip Tone="AlvaTone.Critical">@(AlvaStrings.Capacity_Vacancy)</AlvaStatusChip>
                     }
-                    <span role="cell" class="alva-num alva-matrix__total alva-matrix__total--critical">−@AlvaFormat.Hours(Demand(role)) @(AlvaStrings.Sprint_HoursShort)<br /><small>@(AlvaStrings.Capacity_Deficit)</small></span>
-                </div>
+                </Template>
+            </FlareColumn>
+            <FlareColumn TItem="MatrixRow" Title="@(AlvaStrings.Capacity_AvailableFund)">
+                <Template Context="row">
+                    @if (row.PersonId is { } personId)
+                    {
+                        <FlareText Typo="TypographyScale.BodySmall">@AlvaFormat.Hours(Available(personId)) @(AlvaStrings.Sprint_HoursShort)</FlareText>
+                    }
+                    else
+                    {
+                        <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.Error">0 @(AlvaStrings.Sprint_HoursShort)</FlareText>
+                    }
+                </Template>
+            </FlareColumn>
+            @foreach (var period in _periods)
+            {
+                var current = period;
+                <FlareColumn TItem="MatrixRow" Id="@($"period-{current.From:yyyyMMdd}")" Title="@($"{current.Title} · {current.Subtitle}")">
+                    <Template Context="row">
+                        @if (row.PersonId is { } personId)
+                        {
+                            var (avail, alloc) = Cell(personId, current);
+                            var pct = Pct(alloc, avail);
+                            var over = Overload(personId, current);
+                            <HeatCell Tone="@Heat(pct, avail, alloc)" Flag="@(_highlight && over > 0)"
+                                      Top="@($"{AlvaFormat.Hours(alloc)} / {AlvaFormat.Hours(avail)} {AlvaStrings.Sprint_HoursShort}")"
+                                      Percent="@(avail > 0 ? $"{pct}%" : "—")" Progress="@pct"
+                                      Note="@CellNote(avail, alloc, over)" />
+                        }
+                        else if (row.Role is { } role)
+                        {
+                            var demand = Demand(role, current);
+                            <HeatCell Tone="@(demand > 0 ? "critical" : "empty")"
+                                      Top="@($"{AlvaFormat.Hours(demand)} / 0 {AlvaStrings.Sprint_HoursShort}")"
+                                      Percent="@(demand > 0 ? AlvaStrings.Capacity_NoSlot : "")"
+                                      Note="@(demand > 0 ? string.Format(AlvaStrings.Capacity_DeficitH, AlvaFormat.Hours(demand)) : AlvaStrings.Capacity_NoAssignments)" />
+                        }
+                    </Template>
+                </FlareColumn>
             }
-        }
-        @if (!VisiblePeople.Any() && !Vacancies.Any()) { <FlareEmptyState Compact Title="@(AlvaStrings.Capacity_NoPeopleHaveSchedulesOverTheHorizon)" /> }
-    </div>
+            <FlareColumn TItem="MatrixRow" Title="@(AlvaStrings.Capacity_FundTotal)">
+                <Template Context="row">
+                    @if (row.PersonId is { } personId)
+                    {
+                        <FlareText Typo="TypographyScale.BodySmall" Color="@(Allocated(personId) > Available(personId) ? FlareColor.Error : FlareColor.OnSurface)">@AlvaFormat.Hours(Allocated(personId)) / @AlvaFormat.Hours(Available(personId)) @(AlvaStrings.Sprint_HoursShort)</FlareText>
+                    }
+                    else if (row.Role is { } role)
+                    {
+                        <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.Error">−@AlvaFormat.Hours(Demand(role)) @(AlvaStrings.Sprint_HoursShort) · @(AlvaStrings.Capacity_Deficit)</FlareText>
+                    }
+                </Template>
+            </FlareColumn>
+        </Columns>
+        <EmptyStateContent><FlareEmptyState Compact Title="@(AlvaStrings.Capacity_NoPeopleHaveSchedulesOverTheHorizon)" /></EmptyStateContent>
+    </FlareDataGrid>
     </FlareCardContent>
     <FlareCardActions Align="CardActionsAlign.Between">
         <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@(AlvaStrings.Capacity_Shown) @VisiblePeople.Length @AlvaFormat.Plural(VisiblePeople.Length, "person") @(AlvaStrings.Capacity_In) @Groups.Count(g => VisiblePeople.Any(p => GroupOf(p) == g.Id)) @AlvaFormat.Plural(Groups.Count(g => VisiblePeople.Any(p => GroupOf(p) == g.Id)), "subteam")</FlareText>
@@ -146,6 +185,7 @@ else
 
 @code {
     private sealed record Period(string Title, string Subtitle, DateOnly From, DateOnly To);
+    private sealed record MatrixRow(string Key, string Group, string Name, string Meta, Guid? PersonId, ActorModel? Role);
     private (string Mode, string Label)[] Modes => [("sprints", AlvaStrings.Capacity_BySprint), ("weeks", AlvaStrings.Capacity_ByWeek), ("days", AlvaStrings.Capacity_ByDay)];
 
     private CapacityDto[] _rows = [];
@@ -170,6 +210,33 @@ else
 
     private IEnumerable<(Guid? Id, string Name)> Groups =>
         _departments.Select(d => ((Guid?)d.Id, d.Name)).Append((null, AlvaStrings.People_NoSubTeam));
+
+    /// <summary>The matrix rows: people and vacant roles, grouped by sub-team. The group key carries the
+    /// group totals, because the Flare grid renders its own group headers.</summary>
+    private MatrixRow[] MatrixRows
+    {
+        get
+        {
+            var rows = new List<MatrixRow>();
+            foreach (var group in Groups)
+            {
+                var people = VisiblePeople.Where(p => GroupOf(p) == group.Id).ToArray();
+                var roles = Vacancies.Where(v => GroupOfRole(v) == group.Id).ToArray();
+                if (people.Length == 0 && roles.Length == 0) continue;
+                var fund = people.Sum(p => Available(p.Id));
+                var balance = fund - people.Sum(p => Allocated(p.Id)) - roles.Sum(r => Demand(r));
+                var total = balance < 0
+                    ? string.Format(AlvaStrings.Capacity_PeriodDeficitH, AlvaFormat.Hours(-balance))
+                    : string.Format(AlvaStrings.Capacity_PeriodReserveH, AlvaFormat.Hours(balance));
+                var label = $"{group.Name} ({people.Length} {AlvaFormat.Plural(people.Length, "person")}{(roles.Length > 0 ? string.Format(AlvaStrings.Capacity_Vacancies, roles.Length) : "")}) · {total} · {AlvaStrings.Capacity_Fund} {AlvaFormat.Hours(fund)} {AlvaStrings.Sprint_HoursShort}";
+                foreach (var person in people)
+                    rows.Add(new MatrixRow($"person-{person.Id}", label, person.Name, SkillsOf(person), person.Id, null));
+                foreach (var role in roles)
+                    rows.Add(new MatrixRow($"role-{role.Id}", label, $"{Labels.Kind(role.Kind)}: {role.Name}", AlvaStrings.Capacity_APersonRequiredVacantSlot, null, role));
+            }
+            return [.. rows];
+        }
+    }
 
     private Guid? GroupOf(ActorModel person) => person.DepartmentIds.FirstOrDefault(id => _departments.Any(d => d.Id == id)) is var id && id != Guid.Empty ? id : (Guid?)null;
     private Guid? GroupOfRole(ActorModel actor) => actor.Kind == "Department" ? actor.Id : actor.ParentId is { } parent && _departments.Any(d => d.Id == parent) ? parent : null;

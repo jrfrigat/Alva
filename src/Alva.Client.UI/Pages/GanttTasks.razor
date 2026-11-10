@@ -19,13 +19,12 @@ else if (_data is not null)
             <GanttZoom View="tasks" Scale="_scale" @bind-Value="_unit" />
             <FlareButton Size="ButtonSize.Sm" Variant="ButtonVariant.Text" OnClick="ToToday" Tooltip="@(AlvaStrings.Gantt_ToTodayAltWheelScrollThroughTime)">@(AlvaStrings.Gantt_Today)</FlareButton>
         </div>
-        <div class="alva-quickfilter" role="group" aria-label="@(AlvaStrings.Gantt_LinkTypes)">
+        <FlareChipGroup MultiSelect="true" SelectedValues="SelectedTypeCodes" SelectedValuesChanged="SetTypes" AriaLabel="@(AlvaStrings.Gantt_LinkTypes)">
             @foreach (var type in AllTypes)
             {
-                var t = type;
-                <button type="button" class="alva-quickfilter__item @(_types.Contains(t) ? "alva-quickfilter__item--active" : "")" aria-pressed="@_types.Contains(t)" @onclick="() => ToggleType(t)">@GanttData.Code(t)</button>
+                <FlareChip Value="@GanttData.Code(type)" Label="@GanttData.Code(type)" />
             }
-        </div>
+        </FlareChipGroup>
         <FlareSwitch @bind-Value="_critical" Label="@(AlvaStrings.Gantt_CriticalPath)" />
     </div>
 
@@ -99,11 +98,10 @@ else if (_data is not null)
 
     private static Dictionary<string, object> Aria(string label) => new() { ["aria-label"] = label };
 
-    private void ToggleType(GanttLinkType type)
-    {
-        if (!_types.Remove(type)) _types.Add(type);
-        _types = [.. _types];
-    }
+    private IReadOnlyCollection<string> SelectedTypeCodes => _types.Select(GanttData.Code).ToArray();
+
+    private void SetTypes(IReadOnlyCollection<string> codes) =>
+        _types = AllTypes.Where(type => codes.Contains(GanttData.Code(type))).ToHashSet();
 
     private async Task SaveSide(string width)
     {

@@ -16,7 +16,7 @@
         }
         else
         {
-            <div class="alva-gantt-row">@RowContent(task)</div>
+            <FlareStack Gap="FlareSpacing.XXSmall" Class="alva-gantt-row">@RowContent(task)</FlareStack>
         }
     </RowHeader>
 </FlareGanttPanel>
@@ -59,17 +59,17 @@
 
     private RenderFragment RowContent(TaskModel task) => __builder =>
     {
-        <span class="alva-gantt-row__body">
-            <a class="alva-gantt-row__title" href="tasks/@task.Id" title="@task.Title">@task.Title</a>
-            @if (task.DatesFixed)
-            {
-                <span class="alva-gantt-row__fixed" role="img" aria-label="@FixedLabel" title="@FixedLabel">
-                    <FlareIconView Value="@MaterialDesign3Icons.Regular.Lock" Size="14px" />
-                </span>
-            }
-            <span class="alva-gantt-row__meta">@Data.Assignee(task) · @AlvaFormat.Hours(task.EffectiveEstimateHours) @(AlvaStrings.Sprint_HoursShort)</span>
+        <FlareStack Gap="FlareSpacing.XXSmall" Class="alva-gantt-row__body">
+            <FlareStack Row Align="FlareAlignItems.Center" Gap="FlareSpacing.XXSmall">
+                <FlareLink Class="alva-gantt-row__title" Href="@($"tasks/{task.Id}")" title="@task.Title">@task.Title</FlareLink>
+                @if (task.DatesFixed)
+                {
+                    <FlareIconView Value="@MaterialDesign3Icons.Regular.Lock" Size="14px" Class="alva-gantt-row__fixed" title="@FixedLabel" aria-label="@FixedLabel" />
+                }
+            </FlareStack>
+            <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant" Class="alva-gantt-row__meta">@Data.Assignee(task) · @AlvaFormat.Hours(task.EffectiveEstimateHours) @(AlvaStrings.Sprint_HoursShort)</FlareText>
             <SkillMatch Required="task.RequiredSkillIds" Person="@(Data.Actor(task.ResolvedPersonId ?? task.AssignmentTargetId))" Skills="Data.SkillDictionary" />
-        </span>
+        </FlareStack>
         @if (RowActions is not null) { @RowActions(task) }
     };
 

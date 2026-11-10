@@ -50,7 +50,7 @@ public sealed class ProjectTaskActionsTests : UiTestBase
         var cut = Render<Projects>();
         cut.WaitForAssertion(() => Assert.Contains("План", cut.Markup));
 
-        cut.Find(".alva-wbs").QuerySelector("[aria-label='Добавить подзадачу: План']")!.Click();
+        cut.Find("[aria-label='Дерево задач проекта']").QuerySelector("[aria-label='Добавить подзадачу: План']")!.Click();
         Field(cut, "Название").Change("Подзадача плана");
         ClickExact(cut, "Создать");
 
@@ -68,7 +68,7 @@ public sealed class ProjectTaskActionsTests : UiTestBase
         var cut = Render<Projects>();
         cut.WaitForAssertion(() => Assert.Contains("План", cut.Markup));
 
-        cut.Find(".alva-wbs").QuerySelector("[aria-label='Добавить связь: План']")!.Click();
+        cut.Find("[aria-label='Дерево задач проекта']").QuerySelector("[aria-label='Добавить связь: План']")!.Click();
         Choose(cut.FindComponents<FlareSelect<Guid?>>().Single(s => s.Instance.Label == "Задача"),
             $"{AlvaFormat.Code(_second.Id)} {_second.Title}");
         Choose(cut.FindComponents<FlareSelect<string>>().Single(s => s.Instance.Label == "Вид"), label);
@@ -89,7 +89,7 @@ public sealed class ProjectTaskActionsTests : UiTestBase
         var cut = Render<Projects>();
         cut.WaitForAssertion(() => Assert.Contains("План", cut.Markup));
 
-        cut.Find(".alva-wbs").QuerySelector("[aria-label='Добавить связь: План']")!.Click();
+        cut.Find("[aria-label='Дерево задач проекта']").QuerySelector("[aria-label='Добавить связь: План']")!.Click();
 
         var candidates = cut.FindComponents<FlareSelect<Guid?>>().Single(s => s.Instance.Label == "Задача").Instance.Items!;
         Assert.DoesNotContain(_first.Id, candidates);
@@ -103,7 +103,7 @@ public sealed class ProjectTaskActionsTests : UiTestBase
         var cut = Render<Projects>();
         cut.WaitForAssertion(() => Assert.Contains("План", cut.Markup));
 
-        cut.Find(".alva-wbs").QuerySelector("[aria-label='Добавить связь: Анонс']")!.Click();
+        cut.Find("[aria-label='Дерево задач проекта']").QuerySelector("[aria-label='Добавить связь: Анонс']")!.Click();
         Choose(cut.FindComponents<FlareSelect<Guid?>>().Single(s => s.Instance.Label == "Задача"),
             $"{AlvaFormat.Code(_first.Id)} {_first.Title}");
         Choose(cut.FindComponents<FlareSelect<bool>>().Single(), "Последователь - ждёт эту задачу");
@@ -120,7 +120,7 @@ public sealed class ProjectTaskActionsTests : UiTestBase
         var cut = Render<Projects>();
         cut.WaitForAssertion(() => Assert.Contains("План", cut.Markup));
 
-        cut.Find(".alva-wbs").QuerySelector("[aria-label='Добавить связь: Анонс']")!.Click();
+        cut.Find("[aria-label='Дерево задач проекта']").QuerySelector("[aria-label='Добавить связь: Анонс']")!.Click();
         Choose(cut.FindComponents<FlareSelect<Guid?>>().Single(s => s.Instance.Label == "Задача"),
             $"{AlvaFormat.Code(_first.Id)} {_first.Title}");
         Dialog(cut).QuerySelectorAll("button").Single(b => b.TextContent.Trim() == "Добавить связь").Click();

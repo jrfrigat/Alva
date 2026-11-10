@@ -31,14 +31,14 @@
                     <LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.Person" Size="16px" /></LeadingIcon>
                     <ChildContent>@SummaryAssignee</ChildContent>
                 </FlareButton>
-                <span class="alva-task__summary-item" title="@(AlvaStrings.Common_Deadline)">
+                <FlareStack Row Align="FlareAlignItems.Center" Gap="FlareSpacing.XXSmall" title="@(AlvaStrings.Common_Deadline)">
                     <FlareIconView Value="@MaterialDesign3Icons.Regular.Event" Size="16px" />
                     <FlareText Typo="TypographyScale.BodySmall" Color="@(IsOverdue ? FlareColor.Error : FlareColor.OnSurfaceVariant)">@SummaryDeadline</FlareText>
-                </span>
-                <span class="alva-task__summary-item" title="@(AlvaStrings.Common_EstimateHours)">
+                </FlareStack>
+                <FlareStack Row Align="FlareAlignItems.Center" Gap="FlareSpacing.XXSmall" title="@(AlvaStrings.Common_EstimateHours)">
                     <FlareIconView Value="@MaterialDesign3Icons.Regular.Schedule" Size="16px" />
                     <FlareText Typo="TypographyScale.BodySmall">@SummaryEffort</FlareText>
-                </span>
+                </FlareStack>
                 @if (_risk is { HasRisk: true })
                 {
                     <AlvaStatusChip Tone="AlvaTones.Severity(_risk.Severity)">@(_risk.Severity == "High" ? AlvaStrings.Common_High : AlvaStrings.Risks_Medium)</AlvaStatusChip>
@@ -108,10 +108,9 @@
                 }
                 else
                 {
-                    <ul class="alva-task__reasons">
+                    <FlareStack Gap="FlareSpacing.XXSmall">
                         @foreach (var reason in _risk.Reasons)
                         {
-                            <li>
                                 <FlareStack Row Wrap Align="FlareAlignItems.Center" Gap="FlareSpacing.Small">
                                     @if (reason.Code is ReasonCodes.RiskNoAssignee or ReasonCodes.RiskRequiredPerson)
                                     {
@@ -129,9 +128,8 @@
                                         <FlareLink Href="@RiskActions.Href(reason, Item.Id, Item.ResolvedPersonId)" title="@RiskActions.Label(reason, Item.ResolvedPersonId)">@ReasonText.Describe(reason)</FlareLink>
                                     }
                                 </FlareStack>
-                            </li>
                         }
-                    </ul>
+                    </FlareStack>
                 }
                 @if (_risk is not null && (_risk.ForecastDate is not null || (_risk.ForecastNotes?.Length ?? 0) > 0))
                 {
@@ -422,7 +420,7 @@
     </HeaderContent>
     <ChildContent>
         <div class="alva-assign">
-            <span class="alva-micro-label">@(AlvaStrings.Task_BalancingType)</span>
+            <FlareText Typo="TypographyScale.LabelMedium" Color="FlareColor.OnSurfaceVariant">@(AlvaStrings.Task_BalancingType)</FlareText>
             <FlareTabs @bind-ActiveIndex="_assignTab">
                 @foreach (var kind in Kinds)
                 {

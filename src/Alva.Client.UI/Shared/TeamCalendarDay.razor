@@ -1,0 +1,34 @@
+@* One day inside FlareCalendar. The calendar grid, headers and keyboard live in Flare; this component
+   only carries the team-specific state and numbers. *@
+<FlareStack Gap="FlareSpacing.XXSmall" Class="@CellClass" Style="min-height:100%">
+    <FlareStack Row Wrap Align="FlareAlignItems.Center" StretchFirst Gap="FlareSpacing.XXSmall">
+        <FlareText Typo="TypographyScale.LabelMedium">@Date.Day</FlareText>
+        @if (SprintStart is not null) { <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.Primary">@AlvaStrings.Capacity_Start</FlareText> }
+        else if (SprintEnds) { <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.Primary">@(AlvaStrings.Capacity_Finish)</FlareText> }
+    </FlareStack>
+    @if (State == "off")
+    {
+        <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@(AlvaStrings.Capacity_DayOff)</FlareText>
+    }
+    else if (InMonth)
+    {
+        @if (SprintStart is not null) { <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.Primary">@SprintStart</FlareText> }
+        @foreach (var absence in Absences) { <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.Tertiary">@absence</FlareText> }
+        @foreach (var overload in Overloads) { <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.Error">@overload</FlareText> }
+        <FlareText Typo="TypographyScale.BodySmall">@Summary</FlareText>
+    }
+</FlareStack>
+
+@code {
+    [Parameter, EditorRequired] public DateOnly Date { get; set; }
+    [Parameter] public bool InMonth { get; set; }
+    [Parameter] public string State { get; set; } = "work";
+    [Parameter] public bool Today { get; set; }
+    [Parameter] public string? SprintStart { get; set; }
+    [Parameter] public bool SprintEnds { get; set; }
+    [Parameter] public IReadOnlyList<string> Absences { get; set; } = [];
+    [Parameter] public IReadOnlyList<string> Overloads { get; set; } = [];
+    [Parameter] public string Summary { get; set; } = "";
+
+    private string CellClass => $"alva-calendar-day alva-calendar-day--{State}" + (Today ? " alva-calendar-day--today" : "");
+}

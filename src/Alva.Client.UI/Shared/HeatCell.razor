@@ -1,0 +1,25 @@
+@* One cell of the capacity matrix. The grid and its headers are FlareDataGrid; only the heat
+   scale itself - the tone, the numbers and the overload note - belongs to the domain. *@
+<FlareStack Gap="FlareSpacing.XXSmall" Class="@CellClass">
+    <FlareStack Row Wrap Align="FlareAlignItems.Center" StretchFirst Gap="FlareSpacing.XXSmall">
+        <FlareText Typo="TypographyScale.BodySmall">@Top</FlareText>
+        <FlareText Typo="TypographyScale.LabelMedium">@Percent</FlareText>
+    </FlareStack>
+    @if (Progress is { } value)
+    {
+        <FlareProgressLinear Value="@Math.Min(100, value)" Size="TrackSize.Xs" Color="FlareColor.Primary" aria-label="@Top" />
+    }
+    <FlareText Typo="TypographyScale.BodySmall" Color="@NoteColor">@Note</FlareText>
+</FlareStack>
+
+@code {
+    [Parameter, EditorRequired] public string Tone { get; set; } = "empty";
+    [Parameter] public bool Flag { get; set; }
+    [Parameter] public string Top { get; set; } = "";
+    [Parameter] public string Percent { get; set; } = "";
+    [Parameter] public double? Progress { get; set; }
+    [Parameter] public string Note { get; set; } = "";
+
+    private string CellClass => $"alva-heat-cell alva-heat--{Tone}" + (Flag ? " alva-heat--flag" : "");
+    private FlareColor NoteColor => Tone == "critical" ? FlareColor.Error : FlareColor.OnSurfaceVariant;
+}

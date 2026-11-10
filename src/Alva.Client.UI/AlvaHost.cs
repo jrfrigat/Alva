@@ -32,6 +32,7 @@ public static class AlvaHost
             options.DefaultMode = ThemeMode.Light;
         });
         builder.Services.AddFlareGantt();
+        builder.Services.AddSingleton(TimeProvider.System);
         builder.Services.AddScoped<Services.AlvaSession>();
         builder.Services.AddScoped<Services.RiskNotifications>();
         builder.Services.AddScoped<Services.GanttPreferences>();

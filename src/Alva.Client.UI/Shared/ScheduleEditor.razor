@@ -61,21 +61,48 @@
                     <FlareChip Size="ChipSize.Sm" Variant="ChipVariant.Filled" Color="FlareColor.Primary" Label="@($"{AlvaStrings.Capacity_WeeklyFund} {AlvaFormat.Hours(_hours.Sum())} {AlvaStrings.Sprint_HoursShort}")" />
                     <FlareTextField Label="@(AlvaStrings.Capacity_IanaTimeZone)" ErrorText="@_timeZoneError" @bind-Value="_timeZone" HelperText="@(AlvaStrings.Capacity_ForExampleEuropeMoscow)" />
                 </FlareStack>
-                <div class="alva-week" role="table" aria-label="@(AlvaStrings.Capacity_WorkingHoursByWeekday)">
-                <div class="alva-week__row alva-week__row--head" role="row"><span role="columnheader">@(AlvaStrings.Capacity_Weekday)</span><span role="columnheader">@(AlvaStrings.Capacity_Working)</span><span role="columnheader">@(AlvaStrings.Capacity_HoursPerDay)</span><span role="columnheader">@(AlvaStrings.Capacity_Deductions)</span><span role="columnheader">@(AlvaStrings.Capacity_CleanHours)</span></div>
-                @for (var i = 0; i < 7; i++)
-                {
-                    var day = i;
-                    var blocks = BlocksOn(day);
-                    <div class="alva-week__row @(_hours[day] == 0 ? "alva-week__row--off" : "")" role="row" @key="day">
-                        <span role="cell" class="alva-week__day"><span class="alva-week__abbr">@Abbr[day]</span>@DayNames[day]</span>
-                        <span role="cell" class="alva-week__cell"><span class="alva-week__label">@(AlvaStrings.Capacity_Working)</span><FlareSwitch Value="@(_hours[day] > 0)" ValueChanged="(bool on) => _hours[day] = on ? (_lastHours[day] > 0 ? _lastHours[day] : 8) : Remember(day)" Label="@string.Format(AlvaStrings.Capacity_WorkingDayLabel, DayNames[day])" /></span>
-                        <span role="cell" class="alva-week__cell"><span class="alva-week__label">@(AlvaStrings.Capacity_HoursPerDay)</span>@if (_hours[day] > 0) { <FlareNumericField TValue="decimal" Value="_hours[day]" ValueChanged="(decimal v) => _hours[day] = v" Min="0" Max="24" Step="0.5" Suffix="@(AlvaStrings.Sprint_HoursShort)" InputAttributes="@(new Dictionary<string, object> { ["aria-label"] = string.Format(AlvaStrings.Capacity_HoursAriaLabel, DayNames[day]) })" Size="FieldSize.Sm" /> } else { <span class="alva-week__muted">@(AlvaStrings.Capacity_DayOffLabel)</span> }</span>
-                        <span role="cell" class="alva-week__cell alva-num alva-week__muted"><span class="alva-week__label">@(AlvaStrings.Capacity_Deductions)</span>@(blocks > 0 ? string.Format(AlvaStrings.Capacity_DeductionHours, AlvaFormat.Hours(blocks)) : "—")</span>
-                        <span role="cell" class="alva-week__cell alva-num alva-week__net"><span class="alva-week__label">@(AlvaStrings.Capacity_CleanHours)</span>@AlvaFormat.Hours(Math.Max(0, _hours[day] - blocks)) @(AlvaStrings.Sprint_HoursShort)</span>
-                    </div>
-                }
-                </div>
+                <FlareDataGrid TItem="int" Items="WeekDays" RowKey="day => day" Dense="true" Height="auto" Presentation="DataGridPresentation.Auto"
+                               aria-label="@(AlvaStrings.Capacity_WorkingHoursByWeekday)">
+                    <Columns>
+                        <FlareColumn TItem="int" Title="@(AlvaStrings.Capacity_Weekday)">
+                            <Template Context="day">
+                                <FlareStack Row Align="FlareAlignItems.Center" Gap="FlareSpacing.XSmall">
+                                    <FlareChip Size="ChipSize.Xs" Label="@Abbr[day]" />
+                                    <FlareText Typo="TypographyScale.LabelMedium">@DayNames[day]</FlareText>
+                                </FlareStack>
+                            </Template>
+                        </FlareColumn>
+                        <FlareColumn TItem="int" Title="@(AlvaStrings.Capacity_Working)">
+                            <Template Context="day">
+                                <FlareSwitch Value="@(_hours[day] > 0)" ValueChanged="(bool on) => _hours[day] = on ? (_lastHours[day] > 0 ? _lastHours[day] : 8) : Remember(day)"
+                                             InputAttributes="@(new Dictionary<string, object> { ["aria-label"] = string.Format(AlvaStrings.Capacity_WorkingDayLabel, DayNames[day]) })" />
+                            </Template>
+                        </FlareColumn>
+                        <FlareColumn TItem="int" Title="@(AlvaStrings.Capacity_HoursPerDay)">
+                            <Template Context="day">
+                                @if (_hours[day] > 0)
+                                {
+                                    <FlareNumericField TValue="decimal" Value="_hours[day]" ValueChanged="(decimal v) => _hours[day] = v" Min="0" Max="24" Step="0.5" Suffix="@(AlvaStrings.Sprint_HoursShort)"
+                                                       InputAttributes="@(new Dictionary<string, object> { ["aria-label"] = string.Format(AlvaStrings.Capacity_HoursAriaLabel, DayNames[day]) })" Size="FieldSize.Sm" />
+                                }
+                                else
+                                {
+                                    <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@(AlvaStrings.Capacity_DayOffLabel)</FlareText>
+                                }
+                            </Template>
+                        </FlareColumn>
+                        <FlareColumn TItem="int" Title="@(AlvaStrings.Capacity_Deductions)">
+                            <Template Context="day">
+                                <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@(BlocksOn(day) > 0 ? string.Format(AlvaStrings.Capacity_DeductionHours, AlvaFormat.Hours(BlocksOn(day))) : "—")</FlareText>
+                            </Template>
+                        </FlareColumn>
+                        <FlareColumn TItem="int" Title="@(AlvaStrings.Capacity_CleanHours)">
+                            <Template Context="day">
+                                <FlareText Typo="TypographyScale.LabelMedium">@AlvaFormat.Hours(Math.Max(0, _hours[day] - BlocksOn(day))) @(AlvaStrings.Sprint_HoursShort)</FlareText>
+                            </Template>
+                        </FlareColumn>
+                    </Columns>
+                </FlareDataGrid>
             </FlareStack>
             </FlareCardContent>
         </FlareCard>
@@ -174,9 +201,14 @@
             <FlareCardHeader Title="@(AlvaStrings.Capacity_TwoWeekCapacityCalculation)" />
             <FlareCardContent>
                 <FlareStack Gap="FlareSpacing.Medium">
-                    <div class="alva-ring" style="--alva-ring:@Pct(Net, Nominal)">
-                        <span class="alva-ring__value alva-num">@AlvaFormat.Hours(Net)</span><span class="alva-ring__label">@(AlvaStrings.Capacity_CleanHoursLabel)</span><span class="alva-ring__pct alva-num">@Pct(Net, Nominal)@(AlvaStrings.Capacity_OfNominal)</span>
-                    </div>
+                    <FlareProgressCircular Value="@Pct(Net, Nominal)" Diameter="11rem" Color="FlareColor.Primary"
+                                           aria-label="@($"{AlvaStrings.Capacity_CleanHoursLabel}: {AlvaFormat.Hours(Net)}")">
+                        <FlareStack Align="FlareAlignItems.Center" Gap="FlareSpacing.None">
+                            <FlareText Typo="TypographyScale.HeadlineLarge">@AlvaFormat.Hours(Net)</FlareText>
+                            <FlareText Typo="TypographyScale.LabelMedium" Color="FlareColor.OnSurfaceVariant">@(AlvaStrings.Capacity_CleanHoursLabel)</FlareText>
+                            <FlareText Typo="TypographyScale.LabelMedium" Color="FlareColor.Primary">@Pct(Net, Nominal)@(AlvaStrings.Capacity_OfNominal)</FlareText>
+                        </FlareStack>
+                    </FlareProgressCircular>
                     <FlareList TItem="CalcStat" Dense>
                         @foreach (var stat in CalcStats)
                         {
@@ -213,6 +245,7 @@
 
     private string[] DayNames => [AlvaStrings.Capacity_Monday, AlvaStrings.Capacity_Tuesday, AlvaStrings.Capacity_Wednesday, AlvaStrings.Capacity_Thursday, AlvaStrings.Capacity_Friday, AlvaStrings.Capacity_Saturday, AlvaStrings.Capacity_Sunday];
     private string[] Abbr => [AlvaStrings.Capacity_Mon, AlvaStrings.Capacity_Tue, AlvaStrings.Capacity_Wed, AlvaStrings.Capacity_Thu, AlvaStrings.Capacity_Fri, AlvaStrings.Capacity_Sat, AlvaStrings.Capacity_Sun];
+    private static readonly int[] WeekDays = [0, 1, 2, 3, 4, 5, 6];
     private CalendarDto? _calendar;
     private ActorModel[] _actors = [], _people = [];
     private CapacityDto[] _window = [];

@@ -13,7 +13,7 @@ public sealed class TouchTargetTests
         var coarse = Block(css, "@media (pointer:coarse)");
         Assert.Contains("min-height:44px", coarse);
         Assert.Contains(".flare-btn", coarse);
-        Assert.Contains(".alva-quickfilter__item", coarse);
+        Assert.Contains(".flare-chip", coarse);
 
         Assert.Contains("input,select,textarea{font-size:16px}", css);
         Assert.Contains(".flare-chip{font-size:12px", css);

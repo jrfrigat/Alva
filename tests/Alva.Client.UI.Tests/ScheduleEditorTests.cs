@@ -58,19 +58,18 @@ public sealed class ScheduleEditorTests : UiTestBase
         Assert.False(SaveButton(cut).HasAttribute("disabled"));
     }
 
-    // The narrow layout shows a day as a card: the labels in the cells must match the column headers,
-    // otherwise values are read without a name on the phone - the header row is hidden there.
+    // The Flare grid supplies the column headers and, in its stacked presentation, the per-cell
+    // labels, so the work week no longer carries hand-built header and cell markup.
     [Fact]
-    public void Every_day_row_labels_its_values_so_the_narrow_layout_stays_readable()
+    public void The_work_week_is_a_flare_data_grid_with_named_day_columns()
     {
         var cut = Editor();
 
-        var headers = cut.FindAll(".alva-week__row--head [role='columnheader']").Select(h => h.TextContent.Trim()).ToArray();
+        var grid = cut.FindComponent<FlareDataGrid<int>>();
+        Assert.Equal(DataGridPresentation.Auto, grid.Instance.Presentation);
+        var headers = cut.FindAll(".flare-datagrid__th").Select(h => h.TextContent.Trim()).ToArray();
         Assert.Equal(["День недели", "Рабочий", "Часов в день", "Вычеты", "Чистые часы"], headers);
-
-        var labels = cut.FindAll(".alva-week__row:not(.alva-week__row--head) .alva-week__label").Select(l => l.TextContent.Trim()).ToArray();
-        Assert.Equal(7 * 4, labels.Length);
-        Assert.Equal(headers.Skip(1), labels.Distinct());
+        Assert.Equal(7, cut.FindAll(".flare-switch").Count);
     }
 
     [Fact]

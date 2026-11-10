@@ -5,13 +5,18 @@
    3. Shared page elements: panels, filters, sections
    4. Task and assignee assignment
    5. Sprint planning
-   6. Projects and WBS
-   7. Capacity: matrix and heat scale
+   6. Projects
+   7. Capacity: heat scale
    8. Calendars and work schedule
    9. Analytics and risk bell
-   10. Gantt
-   11. Flare overrides, touch and mobile rules
-   Anything replaced by Flare components is not duplicated here. */
+   10. Gantt: documented Flare hooks and variables only
+   11. Flare point overrides, touch and mobile rules
+
+   Audit rule: a block stays here only when it is Alva domain styling or a documented Flare
+   hook/token. A Flare component is never restyled into a second copy, and markup that Flare
+   already provides (tables, tabs, panels, lists, drawers, alerts, empty states, skeletons,
+   calendars, WBS, the capacity matrix) is not reimplemented. The one declared exception until
+   TASK-243 and Flare 802..804 is the task treegrid in section 4. */
 
 /* 1. Foundation and utilities */
 :root{--alva-font:Inter,"Segoe UI",system-ui,sans-serif;--alva-primary:#0037b0;--alva-primary-container:#1d4ed8;--alva-primary-hover:#1e40af;--alva-secondary:#3755c3;--alva-tertiary:#5311bc;--alva-surface:#f8f9ff;--alva-surface-lowest:#ffffff;--alva-surface-container:#e5eeff;--alva-surface-high:#dce9ff;--alva-outline:#c4c5d7;--alva-outline-strong:#747686;--alva-on-surface:#0b1c30;--alva-on-surface-variant:#434655;--alva-critical:#ef4444;--alva-warning:#f59e0b;--alva-ok:#10b981;--alva-role:#8b5cf6;--alva-radius-sm:6px;--alva-radius-md:8px;--alva-row-height:34px;--flare-font-family:var(--alva-font)}
@@ -20,7 +25,6 @@ html,body{margin:0;min-height:100%;font-family:var(--alva-font);background:var(-
 .skip-link{position:fixed;top:-6rem;left:1rem;z-index:100000;padding:1rem;background:var(--flare-color-surface,#fff)}.skip-link:focus{top:1rem}
 #flare-splash{min-height:100dvh;display:grid;place-content:center;background:#f8fafc;color:#1e293b}#blazor-error-ui{display:none;position:fixed;bottom:0;padding:1rem;background:#f9dedc;color:#410e0b;width:100%;z-index:100000}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important}}
-.alva-micro-label{display:flex;align-items:center;gap:.375rem;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--flare-color-primary,var(--alva-primary-container))}
 .alva-num{font-variant-numeric:tabular-nums}
 .alva-field-error{color:var(--alva-critical-text)}
 .alva-page-loading{min-height:4px}
@@ -42,7 +46,11 @@ html,body{margin:0;min-height:100%;font-family:var(--alva-font);background:var(-
 .alva-user__avatar{display:grid;place-items:center;width:32px;height:32px;border-radius:9999px;background:var(--flare-color-primary,var(--alva-primary));color:var(--flare-color-on-primary,#fff)}
 .alva-user--menu{border:0;background:none;padding:0;cursor:pointer}
 
-/* 3. Shared page elements: panels, filters, sections */
+/* 3. Shared page elements: filter toolbars and composition surfaces around Flare controls.
+   FlareCard, FlareTabs, FlareSection and FlareList are used directly wherever the content is a card,
+   tab set, section or list; these classes only arrange them on a page. .alva-panel is the column
+   surface of the sprint planning board and the person week, where FlareDropZone and drag contexts
+   must live directly inside the surface; FlareCard is used for card-like content elsewhere. */
 .alva-panel{display:flex;flex-direction:column;gap:.75rem;padding:1rem;border:1px solid var(--alva-border);border-radius:6px;background:var(--flare-color-surface-container-lowest,#fff)}
 .alva-panel__header{display:flex;align-items:flex-start;gap:.5rem}
 .alva-panel__icon{color:var(--flare-color-primary,var(--alva-primary));margin-top:2px}
@@ -52,28 +60,17 @@ html,body{margin:0;min-height:100%;font-family:var(--alva-font);background:var(-
 .alva-filterbar__tabs{flex:1 1 28rem;min-width:0}
 .alva-filterbar__search{flex:0 1 20rem}
 .alva-filterbar__person{flex:0 1 14rem}
-.alva-section-title{display:flex;align-items:center;gap:.5rem;margin:.5rem 0 0;font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--flare-color-on-surface,var(--alva-on-surface))}
-.alva-project-chip{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:9999px;background:var(--flare-color-surface-container-low,#eff4ff);font-size:11px;font-weight:600;color:var(--alva-info-text)}
-.alva-quickfilter{display:flex;flex-wrap:wrap;align-items:center;gap:.25rem}
-.alva-quickfilter__item{padding:4px 8px;border:0;border-radius:4px;background:transparent;font:inherit;font-size:11px;font-weight:600;color:var(--flare-color-on-surface,var(--alva-on-surface));cursor:pointer}
-.alva-quickfilter__item:hover{background:var(--alva-hover)}
-.alva-quickfilter__item--active{background:var(--flare-color-surface-container,#e5eeff);color:var(--flare-color-primary,var(--alva-primary))}
-.alva-quickfilter__item:focus-visible{outline:2px solid var(--flare-color-primary,var(--alva-primary));outline-offset:1px}
 .alva-kpi__label{font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--flare-color-on-surface-variant,var(--alva-on-surface-variant))}
 .alva-kpi__aside--primary{color:var(--flare-color-primary,var(--alva-primary))}
 .alva-kpi__note{margin:0;font-size:12px;line-height:16px;color:var(--flare-color-on-surface-variant,var(--alva-on-surface-variant))}
 .alva-kpi__alert{display:inline-flex;align-items:center;gap:4px;font-weight:700;color:var(--alva-critical-text)}
 .alva-kpi__note a{color:inherit}
-.alva-slot__mark{display:grid;flex:none;place-items:center;width:28px;height:28px;border-radius:9999px;background:var(--flare-color-primary,var(--alva-primary));color:var(--flare-color-on-primary,#fff);font-size:11px;font-weight:700}
-.alva-slot__mark--vacancy{background:var(--alva-critical-bg);color:var(--alva-critical-text)}
 
 /* 4. Task and assignee assignment */
 .alva-task__external{font-size:.875rem;font-variant-numeric:tabular-nums;color:var(--flare-color-primary,var(--alva-primary));white-space:nowrap}
 .alva-task__actions{position:sticky;top:0;z-index:6;display:flex;flex-wrap:wrap;align-items:center;gap:.5rem;padding:.5rem .75rem;border:1px solid var(--alva-border);border-radius:6px;background:var(--flare-color-surface-container-lowest,#fff);box-shadow:0 2px 6px rgba(0,0,0,.08)}
 .alva-task__status-activator{border:0;background:none;padding:0;cursor:pointer;display:inline-flex;border-radius:9999px}
 .alva-task__status-activator:focus-visible{outline:2px solid var(--flare-color-primary,var(--alva-primary));outline-offset:2px}
-.alva-task__summary-item{display:inline-flex;align-items:center;gap:.25rem;font-size:12px;line-height:16px;color:var(--flare-color-on-surface-variant,var(--alva-on-surface-variant));white-space:nowrap}
-.alva-task__reasons{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:.25rem}
 .alva-integration__runs{display:flex;flex-direction:column;gap:.25rem;padding-top:.5rem;border-top:1px solid var(--alva-border)}
 .alva-assign{display:flex;flex-direction:column;gap:.75rem;padding:1rem}
 .alva-assign__header{display:flex;align-items:flex-start;gap:.5rem}
@@ -111,13 +108,10 @@ html,body{margin:0;min-height:100%;font-family:var(--alva-font);background:var(-
   .alva-tree__add{opacity:1}
 }
 @media(pointer:coarse){.alva-tree__toggle,.alva-tree__add{min-width:44px;min-height:44px}}
-.alva-task-row{min-width:0}
-.alva-task-row__main,.alva-task-row__meta{min-width:0}
-.alva-task-row__meta{font-size:12px;line-height:16px;color:var(--flare-color-on-surface-variant,var(--alva-on-surface-variant))}
-.alva-task-row__meta .flare-text{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-@media(max-width:600px){.alva-task-row__meta{gap:.125rem .5rem}.alva-task-row__meta .flare-text{font-size:12px}}
 
-/* 5. Sprint planning */
+/* 5. Sprint planning: the three-column board, pool and proposal zones are domain composition
+   over FlareDragContext, FlareDropZone and FlareDraggable. Flare controls render the controls
+   inside them; no drag/drop or card control is reimplemented. */
 .alva-plan-board{display:grid;grid-template-columns:minmax(15rem,18rem) minmax(0,1fr) minmax(15rem,18rem);gap:1rem;align-items:start}
 @media(max-width:1280px){.alva-plan-board{grid-template-columns:minmax(15rem,18rem) minmax(0,1fr)}.alva-plan-side{grid-column:1/-1;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,22rem),1fr))}}
 @media(max-width:900px){.alva-plan-board{grid-template-columns:minmax(0,1fr)}}
@@ -172,16 +166,16 @@ html,body{margin:0;min-height:100%;font-family:var(--alva-font);background:var(-
 .alva-skill__head{display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;gap:.375rem;font-size:13px}
 .alva-skill__foot{display:flex;flex-wrap:wrap;justify-content:space-between;gap:.25rem;font-size:11px;font-weight:600}
 
-/* 6. Projects and WBS */
+/* 6. Projects: only page layout; the WBS tree is a FlareDataGrid. */
 .alva-proj-layout{display:grid;grid-template-columns:minmax(17rem,22rem) minmax(0,1fr);gap:1rem;align-items:start}
 @media(max-width:1023px){.alva-proj-layout{grid-template-columns:minmax(0,1fr)}}
 .alva-proj-detail{display:flex;flex-direction:column;gap:1rem;min-width:0}
 .alva-proj-detail__head{display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;gap:.75rem}
 .alva-proj-teams{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,16rem),1fr));gap:.75rem}
 .alva-proj-team{gap:.5rem}
-.alva-wbs{padding:0;gap:0;overflow:hidden}
+/* WBS is a FlareDataGrid tree; the grid owns indentation, rows and headers, so no WBS CSS remains. */
 
-/* 7. Capacity: matrix and heat scale */
+/* 7. Capacity: FlareDataGrid wrapper; only the heat scale (coloring and legend) is domain. */
 .alva-capacity-bar{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem .75rem;padding:.5rem .75rem;border:1px solid var(--alva-border);border-radius:6px;background:var(--flare-color-surface-container-lowest,#fff)}
 .alva-capacity-bar__sep{width:1px;height:20px;background:var(--alva-border)}
 .alva-capacity-bar__check{margin-left:auto}
@@ -191,69 +185,25 @@ html,body{margin:0;min-height:100%;font-family:var(--alva-font);background:var(-
 .alva-heat-legend i{display:inline-block;width:12px;height:12px;border-radius:3px}
 .alva-heat-legend--inline{margin-left:auto;padding:0}
 .alva-heat--absence,.alva-heat-legend .alva-heat--absence{background:var(--alva-role-bg)}
-.alva-matrix{display:flex;flex-direction:column;overflow-x:auto}
-.alva-matrix__head,.alva-matrix__row{display:grid;grid-template-columns:minmax(14rem,1.6fr) 7rem 6rem repeat(var(--alva-matrix-periods),minmax(9rem,1fr)) 7.5rem;align-items:center;gap:.75rem;padding:8px 16px;min-width:fit-content}
-.alva-matrix__head{background:var(--flare-color-surface-container-low,#eff4ff);border-top:1px solid var(--alva-border);border-bottom:1px solid var(--alva-border);font-size:11px;font-weight:600;letter-spacing:.03em;text-transform:uppercase;color:var(--flare-color-on-surface-variant,var(--alva-on-surface-variant))}
-.alva-matrix__period{display:flex;flex-direction:column;align-items:center;text-align:center}
-.alva-matrix__period b{color:var(--flare-color-on-surface,var(--alva-on-surface))}
-.alva-matrix__period small{font-weight:600;text-transform:none;letter-spacing:0}
-.alva-matrix__group{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:.5rem;padding:8px 16px;background:var(--alva-subtle);border-bottom:1px solid var(--alva-border)}
-.alva-matrix__group-name{display:inline-flex;align-items:center;gap:6px;font-size:15px;font-weight:700}
-.alva-matrix__group-name small{font-size:11px;font-weight:500;color:var(--flare-color-on-surface-variant,var(--alva-on-surface-variant))}
-.alva-matrix__group-total{font-size:11px;font-weight:600;color:var(--flare-color-primary,var(--alva-primary))}
-.alva-matrix__group-total--critical{color:var(--alva-critical-text)}
-.alva-matrix__row{min-height:76px;border-bottom:1px solid var(--alva-border)}
-.alva-matrix__row--vacancy{background:var(--alva-critical-subtle)}
-.alva-matrix__who{display:flex;align-items:center;gap:.625rem;min-width:0}
-.alva-matrix__who>span:last-child{display:flex;flex-direction:column;min-width:0}
-.alva-matrix__who small{font-size:12px;color:var(--flare-color-on-surface-variant,var(--alva-on-surface-variant))}
-.alva-matrix__name{font-size:14px;font-weight:700;color:var(--flare-color-on-surface,var(--alva-on-surface));text-decoration:none}
-a.alva-matrix__name:hover{text-decoration:underline}
-.alva-matrix__name--critical{color:var(--alva-critical-text)}
-.alva-matrix__fund{font-size:14px;font-weight:600;text-align:center}
-.alva-matrix__total{font-size:14px;font-weight:700;text-align:right}
-.alva-matrix__total small{font-size:12px}
-.alva-matrix__total--critical{color:var(--alva-critical-text)}
-.alva-heat{display:flex;flex-direction:column;gap:4px;padding:6px 8px;border:1px solid transparent;border-radius:4px;font-size:11px}
-.alva-heat__top{display:flex;justify-content:space-between;gap:.25rem;font-weight:600}
-.alva-heat__top b{padding:0 4px;border-radius:3px}
-.alva-heat__bar{height:3px;overflow:hidden;border-radius:9999px;background:var(--alva-heat-track)}
-.alva-heat__bar span{display:block;height:100%;background:var(--flare-color-primary,var(--alva-primary))}
-.alva-heat__note{font-size:11px;color:var(--flare-color-on-surface-variant,var(--alva-on-surface-variant))}
+.alva-heat-cell{padding:6px 8px;border:1px solid transparent;border-radius:4px}
 .alva-heat--under,.alva-heat-legend .alva-heat--under{background:var(--alva-heat-under)}
 .alva-heat--balance,.alva-heat-legend .alva-heat--balance{background:var(--alva-heat-balance)}
 .alva-heat--tension,.alva-heat-legend .alva-heat--tension{background:var(--alva-heat-tension)}
 .alva-heat--critical,.alva-heat-legend .alva-heat--critical{background:var(--alva-critical-bg)}
-.alva-heat--critical{border-color:var(--alva-critical-border)}
-.alva-heat--critical .alva-heat__top b{background:var(--alva-critical-solid);color:#fff}
-.alva-heat--critical .alva-heat__bar span{background:var(--alva-critical-text)}
-.alva-heat--critical .alva-heat__note{color:var(--alva-critical-text);font-weight:600}
-.alva-heat--tension .alva-heat__top b{background:var(--flare-color-primary-container,#1d4ed8);color:#fff}
+.alva-heat-cell.alva-heat--critical{border-color:var(--alva-critical-border);color:var(--alva-critical-text)}
 .alva-heat--empty{background:var(--alva-subtle);color:var(--flare-color-on-surface-variant,var(--alva-on-surface-variant))}
 .alva-heat--flag{box-shadow:inset 0 0 0 2px var(--alva-critical-text)}
 
 /* 8. Calendars and work schedule */
 .alva-calendar-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(16rem,20rem);gap:1rem;align-items:start}
 @media(max-width:1100px){.alva-calendar-layout{grid-template-columns:minmax(0,1fr)}}
-.alva-month-grid{padding:0;gap:0;overflow:hidden}
-.alva-month-grid__head,.alva-month-grid__body{display:grid;grid-template-columns:repeat(7,minmax(0,1fr))}
-.alva-month-grid__head span{padding:8px;border-bottom:1px solid var(--alva-border);background:var(--flare-color-surface-container-low,#eff4ff);font-size:11px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;color:var(--flare-color-on-surface-variant,var(--alva-on-surface-variant))}
-.alva-day{display:flex;flex-direction:column;gap:3px;min-height:7rem;padding:6px 8px;border-right:1px solid var(--alva-border);border-bottom:1px solid var(--alva-border);font-size:11px;min-width:0}
-.alva-day:nth-child(7n){border-right:0}
-.alva-day--off{background:var(--alva-subtle);color:var(--flare-color-on-surface-variant,var(--alva-on-surface-variant))}
-.alva-day--out{background:var(--alva-subtle);opacity:.5}
-.alva-day--absence{background:var(--alva-role-subtle)}
-.alva-day--over{background:var(--alva-critical-subtle);box-shadow:inset 0 0 0 1px var(--alva-critical-border)}
-.alva-day--today .alva-day__top b{display:inline-grid;place-items:center;min-width:22px;height:22px;border-radius:9999px;background:var(--flare-color-primary-container,#1d4ed8);color:#fff}
-.alva-day__top{display:flex;align-items:center;justify-content:space-between;gap:4px;font-size:13px}
-.alva-day__flag{display:inline-flex;align-items:center;gap:2px;padding:0 4px;border-radius:3px;background:var(--flare-color-primary-container,#1d4ed8);color:#fff;font-size:10px;font-weight:700}
-.alva-day__note{margin-top:auto;font-size:11px}
-.alva-day__event{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:1px 4px;border-radius:3px;background:var(--flare-color-surface-container,#e5eeff);color:var(--alva-info-text);font-weight:600}
-.alva-day__event--absence{display:inline-flex;align-items:center;gap:2px;background:var(--alva-role-bg);color:var(--alva-role-text)}
-.alva-day__event--over{display:inline-flex;align-items:center;gap:2px;background:var(--alva-critical-bg);color:var(--alva-critical-text)}
-.alva-day__hours{display:flex;flex-direction:column;margin-top:auto;color:var(--flare-color-on-surface-variant,var(--alva-on-surface-variant))}
-.alva-day__hours b{font-size:13px;color:var(--flare-color-on-surface,var(--alva-on-surface))}
-.alva-day--over .alva-day__hours{color:var(--alva-critical-text);font-weight:600}
+/* TeamCalendar is a FlareCalendar; only the domain day-state colors and spacing remain. */
+.alva-calendar-day{padding:2px;border-radius:4px}
+.alva-calendar-day--off{background:var(--alva-subtle);color:var(--flare-color-on-surface-variant,var(--alva-on-surface-variant))}
+.alva-calendar-day--out{opacity:.5}
+.alva-calendar-day--absence{background:var(--alva-role-subtle)}
+.alva-calendar-day--over{background:var(--alva-critical-subtle);box-shadow:inset 0 0 0 1px var(--alva-critical-border)}
+.alva-calendar-day--today{outline:2px solid var(--flare-color-primary,var(--alva-primary));outline-offset:-2px}
 .alva-calendar-side,.alva-person-side,.alva-schedule__side{display:flex;flex-direction:column;gap:1rem;min-width:0}
 .alva-person-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(15rem,19rem);gap:1rem;align-items:start}
 @media(max-width:1100px){.alva-person-layout{grid-template-columns:minmax(0,1fr)}}
@@ -278,30 +228,6 @@ a.alva-matrix__name:hover{text-decoration:underline}
 .alva-schedule{display:grid;grid-template-columns:minmax(0,1fr) minmax(16rem,20rem);gap:1rem;align-items:start}
 @media(max-width:1100px){.alva-schedule{grid-template-columns:minmax(0,1fr)}}
 .alva-schedule__main{display:flex;flex-direction:column;gap:1rem;min-width:0}
-.alva-week{display:flex;flex-direction:column;border:1px solid var(--alva-border);border-radius:6px;overflow:hidden}
-.alva-week__row{display:grid;grid-template-columns:minmax(9rem,1.4fr) 4.5rem minmax(8rem,1.2fr) 5rem 6rem;align-items:center;gap:.75rem;min-height:48px;padding:6px 12px}
-.alva-week__row+.alva-week__row{border-top:1px solid var(--alva-border)}
-.alva-week__row--head{min-height:34px;background:var(--flare-color-surface-container-low,#eff4ff);font-size:11px;font-weight:600;letter-spacing:.03em;text-transform:uppercase;color:var(--flare-color-on-surface-variant,var(--alva-on-surface-variant))}
-.alva-week__row--off{background:var(--alva-subtle);color:var(--flare-color-on-surface-variant,var(--alva-on-surface-variant))}
-.alva-week__day{display:flex;align-items:center;gap:.5rem;font-size:14px;font-weight:600}
-.alva-week__abbr{display:grid;place-items:center;width:28px;height:24px;border-radius:4px;background:var(--flare-color-surface-container,#e5eeff);color:var(--flare-color-primary,var(--alva-primary));font-size:11px;font-weight:700}
-.alva-week__muted{font-size:12px;color:var(--flare-color-on-surface-variant,var(--alva-on-surface-variant))}
-.alva-week__net{font-size:14px;font-weight:700;text-align:right;color:var(--flare-color-primary,var(--alva-primary))}
-.alva-week__cell{min-width:0}
-.alva-week__label{display:none}
-@media(max-width:900px){
-.alva-week__row--head{display:none}
-.alva-week__row{grid-template-columns:minmax(0,1fr);gap:.5rem;padding:10px 12px;min-height:0}
-.alva-week__day{font-size:15px;padding-bottom:4px;border-bottom:1px solid var(--alva-border)}
-.alva-week__cell{display:flex;align-items:center;justify-content:space-between;gap:.75rem;min-height:32px}
-.alva-week__label{display:block;font-size:12px;line-height:1.4;font-weight:600;letter-spacing:.02em;text-transform:uppercase;color:var(--flare-color-on-surface-variant,var(--alva-on-surface-variant))}
-.alva-week__net{font-size:15px}
-}
-.alva-week .flare-switch__label{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
-.alva-ring{display:grid;place-content:center;justify-items:center;gap:2px;width:11rem;height:11rem;margin:.5rem auto;border-radius:9999px;background:radial-gradient(closest-side,var(--flare-color-surface-container-lowest) 78%,transparent 79%),conic-gradient(var(--flare-color-primary-container,#1d4ed8) calc(var(--alva-ring) * 1%),var(--flare-color-surface-container,#e5eeff) 0)}
-.alva-ring__value{font-size:1.875rem;line-height:2rem;font-weight:700}
-.alva-ring__label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
-.alva-ring__pct{font-size:11px;font-weight:700;color:var(--flare-color-primary,var(--alva-primary))}
 
 /* 9. Analytics and risk bell */
 .alva-risk-panel{padding:0;gap:0;overflow:hidden}
@@ -319,7 +245,9 @@ a.alva-matrix__name:hover{text-decoration:underline}
 .alva-bell__new{color:var(--flare-color-primary);font-weight:700}
 .alva-bell__actions{display:flex;justify-content:space-between;gap:var(--flare-spacing-2)}
 
-/* 10. Gantt */
+/* 10. Gantt: FlareGantt owns the chart. Only documented hooks - ItemClass, CellClass,
+   RowClass, RegionClass and MarkerClass - and --flare-gantt-* variables are styled here.
+   Internal Flare structure is not selected. */
 .alva-gantt__host{display:block;min-width:0}
 .alva-gantt__host:focus:not(:focus-visible){outline:none}
 .alva-gantt-bar__fields{display:flex;flex-wrap:wrap;gap:var(--flare-spacing-4,.5rem)}
@@ -337,13 +265,13 @@ a.alva-matrix__name:hover{text-decoration:underline}
 .alva-gantt-row:has(.alva-gantt-row__body){flex-direction:row;align-items:center;gap:.25rem}
 .alva-gantt-row__body{display:flex;flex-direction:column;min-width:0;flex:1}
 .alva-gantt-row--focus .alva-gantt-row__title{color:var(--flare-color-primary)}
-.alva-gantt .flare-gantt__row.alva-gantt-row--focus,.alva-gantt .alva-gantt-row--focus{background:color-mix(in srgb,var(--flare-color-primary) 8%,transparent)}
+.alva-gantt .alva-gantt-row--focus{background:color-mix(in srgb,var(--flare-color-primary) 8%,transparent)}
 .alva-gantt .alva-gantt-item--risk-medium{--flare-gantt-bar-bg:var(--alva-warning,#b45309)}
 .alva-gantt .alva-gantt-item--risk-high{--flare-gantt-bar-bg:var(--flare-color-error);--flare-gantt-bar-fg:var(--flare-color-on-error)}
 .alva-gantt .alva-gantt-item--done{--flare-gantt-bar-bg:var(--flare-color-surface-container-high,var(--flare-color-outline-variant));--flare-gantt-bar-fg:var(--flare-color-on-surface-variant)}
 .alva-gantt .alva-gantt-marker--today{--flare-gantt-marker:var(--flare-color-primary);--flare-gantt-marker-fg:var(--flare-color-on-primary)}
 .alva-gantt .alva-gantt-marker--deadline{--flare-gantt-marker-style:dashed}
-.alva-gantt .alva-gantt-region--sprint .flare-gantt__region-label{top:auto;bottom:var(--flare-spacing-1,.125rem)}
+.alva-gantt .alva-gantt-region--sprint{--flare-gantt-region-bg:color-mix(in srgb,var(--flare-color-primary) 5%,transparent);--flare-gantt-region-border:var(--flare-color-primary)}
 .alva-gantt .alva-gantt-cell--load{--flare-gantt-cell-bg:var(--flare-color-primary-container);--flare-gantt-cell-fg:var(--flare-color-on-primary-container)}
 .alva-gantt .alva-gantt-cell--overload{--flare-gantt-cell-bg:var(--flare-color-error);--flare-gantt-cell-fg:var(--flare-color-on-error)}
 .alva-gantt .alva-gantt-cell--free{--flare-gantt-cell-bg:var(--flare-color-surface-container-lowest,var(--flare-color-surface));--flare-gantt-cell-fg:var(--flare-color-on-surface-variant);font-weight:400}
@@ -358,20 +286,19 @@ a.alva-matrix__name:hover{text-decoration:underline}
 .alva-plan-gantt__link:hover,.alva-plan-gantt__link:focus-visible{text-decoration:underline}
 .alva-plan-gantt__chart{--flare-gantt-max-height:38rem}
 .alva-gantt .alva-gantt-region--sprint-other{--flare-gantt-region-bg:color-mix(in srgb,var(--flare-color-outline) 6%,transparent);--flare-gantt-region-border:var(--flare-color-outline);--flare-gantt-region-fg:var(--flare-color-on-surface-variant)}
-.alva-gantt .alva-gantt-region--sprint-other .flare-gantt__region-label{top:auto;bottom:var(--flare-spacing-1,.125rem)}
 .alva-gantt-zoom{display:flex;align-items:center;min-width:10rem;max-width:14rem;flex:1 1 10rem}
-.alva-gantt-zoom .flare-slider{width:100%}
-.alva-gantt .flare-gantt__segment.flare-gantt--kind-waiting{--flare-gantt-segment-bg:repeating-linear-gradient(135deg,color-mix(in srgb,#fff 55%,transparent) 0 4px,transparent 4px 8px)}
 
 /* 11. Flare overrides, touch and mobile rules */
 /* Point overrides for Flare that the theme has no token for. alva.css holds only theme variables;
    html strengthens the selector regardless of stylesheet load order. */
+/* DataGrid row height and header density are an application-wide density choice; Flare has no
+   token for them. The grid itself still draws the columns, tree and grouping. */
 html .flare-theme-alva .flare-datagrid{--flare-state-hover-layer:var(--alva-hover);--flare-stripe-bg:var(--alva-subtle)}
 html .flare-theme-alva .flare-datagrid:not(.flare-datagrid--stacked) .flare-datagrid__row{height:34px}
 html .flare-theme-alva .flare-datagrid:not(.flare-datagrid--stacked) .flare-datagrid__th{height:34px;padding:0 8px;background:var(--alva-subtle);color:var(--flare-color-on-surface-variant);font-size:11px;font-weight:600;line-height:14px;letter-spacing:.03em;text-transform:uppercase;border-bottom:1px solid var(--alva-border)}
 html .flare-theme-alva .flare-datagrid__td{padding:4px 8px}
+/* Alva navigation group labels and separators are app structure, not a Flare component. */
 html .flare-theme-alva .alva-nav-group-label{margin-top:8px;padding:4px 12px;color:var(--flare-color-on-surface-variant);font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase}
-html .flare-theme-alva .flare-tree-item__children{margin-left:11px;border-left:1px dashed var(--alva-border-strong)}
 html .flare-theme-alva .flare-progress{--flare-color-secondary-container:var(--flare-color-surface-container)}
 html .flare-theme-alva .alva-nav-sep{margin:4px 12px 8px;border-top:1px solid var(--alva-border)}
 html .flare-theme-alva .flare-alert--warning{background:var(--alva-warning-bg);color:var(--alva-warning-text)}
@@ -389,15 +316,12 @@ html .flare-theme-alva .alva-num,html .flare-theme-alva td,html .flare-theme-alv
 /* On a touch screen targets are at least 44px, text is no smaller than 12px and fields are 16px
    so iOS does not zoom the page. Desktop density is unchanged: the rules are inside media queries only. */
 @media (pointer:coarse){
-  .flare-btn,.flare-icon-button,.flare-tab,.flare-menu-item,.flare-bottom-nav-item,.flare-nav-link,.alva-quickfilter__item{min-height:44px}
+  .flare-btn,.flare-icon-button,.flare-chip,.flare-tab,.flare-menu-item,.flare-bottom-nav-item,.flare-nav-link{min-height:44px}
   .flare-btn--icon-only,.flare-icon-button{min-width:44px}
-  .alva-quickfilter__item{padding:10px 12px}
-  .alva-matrix__name{position:relative}
-  .alva-matrix__name::after{content:"";position:absolute;inset:-12px -8px}
 }
 @media(max-width:767px){
   .flare-chip{font-size:12px;line-height:16px;padding:3px 7px}
-  .alva-micro-label,.alva-kpi__label,.alva-heat,.alva-heat__note,.alva-matrix__group-name small,.alva-matrix__group-total,.alva-plan-head__horizon,.alva-quickfilter__item{font-size:12px}
+  .alva-kpi__label,.alva-plan-head__horizon{font-size:12px}
   .alva-panel__subtitle,.alva-kpi__note,.alva-risk-panel__details{font-size:13px;line-height:18px}
   input,select,textarea{font-size:16px}
 }

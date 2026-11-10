@@ -42,36 +42,16 @@ else
 </div>
 
 <div class="alva-calendar-layout">
-    <FlareCard Variant="CardVariant.Outlined" Class="alva-month-grid">
+    <FlareCard Variant="CardVariant.Outlined">
         <FlareCardHeader Title="@(AlvaStrings.Capacity_MonthCalendar)" />
         <FlareCardContent>
-        <div class="alva-month-grid__head">@foreach (var d in WeekDays) { <span>@d</span> }</div>
-        <div class="alva-month-grid__body">
-            @foreach (var date in Cells)
-            {
-                var inMonth = date.Month == _month.Month;
-                var rows = RowsOn(date);
-                var avail = rows.Sum(r => r.AvailableHours);
-                var alloc = rows.Sum(r => r.AllocatedHours);
-                var overloaded = rows.Where(r => r.AllocatedHours > r.AvailableHours).ToArray();
-                var absent = AbsentOn(date).ToArray();
-                var weekend = !rows.Any(r => r.AvailableHours > 0) && !absent.Any();
-                var sprintStart = _sprints.FirstOrDefault(s => s.StartDate == date);
-                var sprintEnd = _sprints.FirstOrDefault(s => s.EndDate == date);
-                var state = !inMonth ? "out" : weekend ? "off" : overloaded.Length > 0 ? "over" : absent.Length > 0 ? "absence" : "work";
-                <div class="alva-day alva-day--@state @(date == Today ? "alva-day--today" : "")" @key="date">
-                    <div class="alva-day__top"><b class="alva-num">@date.Day</b>@if (sprintStart is not null) { <span class="alva-day__flag"><FlareIconView Value="@MaterialDesign3Icons.Regular.Flag" Size="12px" /> @(AlvaStrings.Capacity_Start)</span> } else if (sprintEnd is not null) { <span class="alva-day__flag">@(AlvaStrings.Capacity_Finish)</span> }</div>
-                    @if (state == "off") { <span class="alva-day__note">@(AlvaStrings.Capacity_DayOff)</span> }
-                    else if (inMonth)
-                    {
-                        @if (sprintStart is not null) { <span class="alva-day__event">@sprintStart.Name</span> }
-                        @foreach (var away in absent.Take(2)) { <span class="alva-day__event alva-day__event--absence"><FlareIconView Value="@MaterialDesign3Icons.Regular.BeachAccess" Size="12px" /> @Short(away.Name)</span> }
-                        @foreach (var o in overloaded.Take(1)) { <span class="alva-day__event alva-day__event--over"><FlareIconView Value="@MaterialDesign3Icons.Regular.Warning" Size="12px" /> @Short(o.ActorName) @Pct(o.AllocatedHours, o.AvailableHours)%</span> }
-                        <span class="alva-day__hours alva-num"><b>@AlvaFormat.Hours(avail) @(AlvaStrings.Sprint_HoursShort)</b> @(overloaded.Length > 0 ? string.Format(AlvaStrings.Common_DeficitH, AlvaFormat.Hours(overloaded.Sum(o => o.AllocatedHours - o.AvailableHours))) : alloc > 0 ? $"{AlvaStrings.Common_BusyLower} {AlvaFormat.Hours(alloc)}" : AlvaStrings.Common_Available)</span>
-                    }
-                </div>
-            }
-        </div>
+            <FlareCalendar ViewDate="_month" InitialDate="_month" ShowNavigation="false" MonthHeaderTemplate="NoMonthHeader" AriaLabel="@(_month.ToString("MMMM yyyy"))">
+                <DateTemplate Context="date">
+                    <TeamCalendarDay Date="date" InMonth="@(date.Month == _month.Month)" State="@DayState(date)" Today="@(date == Today)"
+                                     SprintStart="@SprintStartOn(date)?.Name" SprintEnds="@(SprintEndOn(date) is not null)"
+                                     Absences="@AbsenceLabels(date)" Overloads="@OverloadLabels(date)" Summary="@DaySummary(date)" />
+                </DateTemplate>
+            </FlareCalendar>
         </FlareCardContent>
     </FlareCard>
     <aside class="alva-calendar-side">
@@ -125,7 +105,6 @@ else
 }
 
 @code {
-    private static readonly string[] WeekDays = [AlvaStrings.Capacity_Monday, AlvaStrings.Capacity_Tuesday, AlvaStrings.Capacity_Wednesday, AlvaStrings.Capacity_Thursday, AlvaStrings.Capacity_Friday, AlvaStrings.Capacity_Saturday, AlvaStrings.Capacity_Sunday];
     private DateOnly _month = new(DateTime.Today.Year, DateTime.Today.Month, 1);
     private ActorModel[] _actors = [];
     private SprintModel[] _sprints = [];
@@ -136,11 +115,38 @@ else
     private bool _busy, _loaded;
 
     private static DateOnly Today => DateOnly.FromDateTime(DateTime.Today);
+    // The page header already names the month; the grid keeps its accessible label instead of a second title.
+    private static RenderFragment<DateOnly> NoMonthHeader => _ => __builder => { };
     private DateOnly GridStart => _month.AddDays(-(((int)_month.DayOfWeek + 6) % 7));
-    private IEnumerable<DateOnly> Cells => Enumerable.Range(0, (int)Math.Ceiling((_month.DayNumber - GridStart.DayNumber + DateTime.DaysInMonth(_month.Year, _month.Month)) / 7.0) * 7).Select(i => GridStart.AddDays(i));
     private ActorModel[] People => _actors.Where(a => a.Kind == "Person" && _calendars.ContainsKey(a.Id)).OrderBy(a => a.Name).ToArray();
     private ActorModel? Focus => People.FirstOrDefault(p => p.Id == _focus);
     private IEnumerable<CapacityDto> RowsOn(DateOnly d) => _rows.Where(r => r.Date == d && (_focus is null || r.ActorId == _focus));
+    private CapacityDto[] OverloadedOn(DateOnly d) => RowsOn(d).Where(r => r.AllocatedHours > r.AvailableHours).ToArray();
+    private SprintModel? SprintStartOn(DateOnly d) => _sprints.FirstOrDefault(s => s.StartDate == d);
+    private SprintModel? SprintEndOn(DateOnly d) => _sprints.FirstOrDefault(s => s.EndDate == d);
+    private string DayState(DateOnly d)
+    {
+        if (d.Month != _month.Month) return "out";
+        var rows = RowsOn(d).ToArray();
+        var absent = AbsentOn(d).Any();
+        if (!rows.Any(r => r.AvailableHours > 0) && !absent) return "off";
+        if (rows.Any(r => r.AllocatedHours > r.AvailableHours)) return "over";
+        return absent ? "absence" : "work";
+    }
+    private string[] AbsenceLabels(DateOnly d) => AbsentOn(d).Take(2).Select(a => Short(a.Name)).ToArray();
+    private string[] OverloadLabels(DateOnly d) => OverloadedOn(d).Take(1)
+        .Select(o => $"{Short(o.ActorName)} {Pct(o.AllocatedHours, o.AvailableHours)}%").ToArray();
+    private string DaySummary(DateOnly d)
+    {
+        var rows = RowsOn(d).ToArray();
+        var avail = rows.Sum(r => r.AvailableHours);
+        var alloc = rows.Sum(r => r.AllocatedHours);
+        var over = OverloadedOn(d);
+        var note = over.Length > 0
+            ? string.Format(AlvaStrings.Common_DeficitH, AlvaFormat.Hours(over.Sum(o => o.AllocatedHours - o.AvailableHours)))
+            : alloc > 0 ? $"{AlvaStrings.Common_BusyLower} {AlvaFormat.Hours(alloc)}" : AlvaStrings.Common_Available;
+        return $"{AlvaFormat.Hours(avail)} {AlvaStrings.Sprint_HoursShort} · {note}";
+    }
     private IEnumerable<(string Name, CalendarExceptionDto Ex)> AbsentOn(DateOnly d) => People.Where(p => _focus is null || p.Id == _focus)
         .SelectMany(p => _calendars[p.Id].Exceptions.Where(e => d >= e.From && d <= e.To && e.AvailableHours < NominalOn(p.Id, d)).Select(e => (p.Name, e)));
     private IEnumerable<(string Name, CalendarExceptionDto Ex)> MonthAbsences => People.Where(p => _focus is null || p.Id == _focus)

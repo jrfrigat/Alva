@@ -67,6 +67,8 @@ public sealed class ProjectGanttTests : UiTestBase
         cut.WaitForAssertion(() => Assert.NotEmpty(cut.FindAll(".alva-gantt")));
 
         Assert.NotEmpty(cut.FindComponents<FlareGantt>());
+        Assert.NotEmpty(cut.FindComponents<FlareDataGrid<TaskModel>>());
+        Assert.DoesNotContain("alva-wbs", cut.Markup);
         var data = cut.FindComponents<GanttTaskPanel>().Single().Instance.Data;
         Assert.Equal(["План портала", "Подзадача портала"], data.Tasks.Select(t => t.Title));
         Assert.DoesNotContain(data.Tasks, t => t.Id == _other.Id);
