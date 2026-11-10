@@ -40,6 +40,13 @@ public static class CapacityMath
     /// <summary>Available hours from the calendar that applies on this exact day.</summary>
     public static decimal Available(Func<DateOnly, CalendarDto> calendarOf, DateOnly day) => Available(calendarOf(day), day);
 
+    /// <summary>The reason of the exception that sets the day's hours, or null for a normal week and a block without a note.</summary>
+    public static string? AbsenceReason(CalendarDto calendar, DateOnly day) =>
+        calendar.Exceptions.Where(x => x.From <= day && day <= x.To)
+            .OrderBy(x => x.AvailableHours)
+            .Select(x => x.Reason)
+            .FirstOrDefault(x => !string.IsNullOrWhiteSpace(x));
+
     /// <summary>
     /// A person's calendar together with the calendars of their departments: weekly hours are personal,
     /// while department exceptions and recurring blocks are added to the personal ones.
@@ -184,7 +191,10 @@ public static class CapacityMath
         var rows = new List<CapacityDto>();
         foreach (var (id, name) in persons)
             for (var day = from; day <= to; day = day.AddDays(1))
-                rows.Add(new CapacityDto(id, name, day, Available(day => calendarOf(id, day), day), Math.Round(allocated.GetValueOrDefault((id, day)), 2)));
+            {
+                var calendar = calendarOf(id, day);
+                rows.Add(new CapacityDto(id, name, day, Available(calendar, day), Math.Round(allocated.GetValueOrDefault((id, day)), 2), AbsenceReason(calendar, day)));
+            }
         return [.. rows];
     }
 }

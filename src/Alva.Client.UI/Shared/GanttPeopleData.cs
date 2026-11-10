@@ -169,11 +169,14 @@ public sealed class GanttPeopleData
                     // Weekends are the axis background; an empty work period for a person with a schedule is an absence.
                     if (Enumerable.Range(0, to.DayNumber - from.DayNumber + 1).All(i => GanttData.IsWeekend(from.AddDays(i)))) continue;
                     if (!_capacityOf[row.Actor!.Id].Any(c => c.AvailableHours > 0)) continue;
-                    yield return new GanttCell(row.Key, span, "absence", "—", string.Format(AlvaStrings.Gantt_Absent, row.Name));
+                    var reason = string.Join(", ", days.Select(d => d.AbsenceReason).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct());
+                    yield return string.IsNullOrWhiteSpace(reason)
+                        ? new GanttCell(row.Key, span, "absence", "—", string.Format(AlvaStrings.Gantt_Absent, row.Name))
+                        : new GanttCell(row.Key, span, "absence", reason, $"{row.Name}: {reason}");
                     continue;
                 }
                 var kind = allocated > available ? "overload" : allocated == 0 ? "free" : "load";
-                yield return new GanttCell(row.Key, span, kind, Hours(allocated, scale), title);
+                yield return new GanttCell(row.Key, span, kind, Load(allocated, available, scale), title);
             }
             else if (row.Kind == "role")
             {
@@ -186,6 +189,11 @@ public sealed class GanttPeopleData
 
     // A day has room only for the number; a week and a month have room for the unit of measure.
     private static string Hours(decimal hours, GanttScale scale) => scale == GanttScale.Day ? AlvaFormat.Hours(hours) : $"{AlvaFormat.Hours(hours)} {AlvaStrings.Sprint_HoursShort}";
+
+    // How much of the available time is taken: 0/8, 4/8, 10/8; a week and a month carry the unit.
+    private static string Load(decimal allocated, decimal available, GanttScale scale) =>
+        scale == GanttScale.Day ? $"{AlvaFormat.Hours(allocated)}/{AlvaFormat.Hours(available)}"
+        : $"{AlvaFormat.Hours(allocated)}/{AlvaFormat.Hours(available)} {AlvaStrings.Sprint_HoursShort}";
 
     /// <summary>Axis units clipped to the window: days, weeks starting on Monday, or calendar months.</summary>
     private static IEnumerable<(DateOnly From, DateOnly To)> Units(GanttScale scale, DateOnly first, DateOnly last)

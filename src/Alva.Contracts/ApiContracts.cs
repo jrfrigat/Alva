@@ -43,7 +43,7 @@ public record CalendarExceptionRequest(DateOnly From, DateOnly To, decimal Avail
 public record RecurringBlockDto(Guid Id, int DayOfWeek, decimal Hours, string Name);
 public record RecurringBlockRequest(int DayOfWeek, decimal Hours, string Name);
 public record CalendarRequest(string TimeZone, decimal Monday, decimal Tuesday, decimal Wednesday, decimal Thursday, decimal Friday, decimal Saturday, decimal Sunday);
-public record CapacityDto(Guid ActorId, string ActorName, DateOnly Date, decimal AvailableHours, decimal AllocatedHours);
+public record CapacityDto(Guid ActorId, string ActorName, DateOnly Date, decimal AvailableHours, decimal AllocatedHours, string? AbsenceReason = null);
 public record CapacityDemandDto(Guid TargetId, string TargetName, string Kind, DateOnly Date, decimal Hours);
 /// <summary>A reason for the UI: a stable code and arguments. The client chooses the text for the current language,
 /// so the API and the demo do not send ready-made phrases. Arguments are names, dates in yyyy-MM-dd and invariant numbers.</summary>

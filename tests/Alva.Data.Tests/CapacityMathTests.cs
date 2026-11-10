@@ -15,6 +15,26 @@ public sealed class CapacityMathTests
         new(Person, "Europe/Moscow", 8m, 8m, 8m, 8m, 6m, 0m, sunday, exceptions ?? [], blocks ?? []);
 
     [Fact]
+    public void An_absence_reason_comes_from_the_exception()
+    {
+        var calendar = Week([new(Guid.NewGuid(), Monday, Monday, 0m, "Отпуск")]);
+
+        Assert.Equal("Отпуск", CapacityMath.AbsenceReason(calendar, Monday));
+        Assert.Null(CapacityMath.AbsenceReason(calendar, Friday));
+    }
+
+    [Fact]
+    public void Build_carries_the_absence_reason()
+    {
+        var calendar = Week([new(Guid.NewGuid(), Monday, Monday, 0m, "Отпуск")]);
+
+        var rows = CapacityMath.Build([(Person, "Анна")], _ => calendar, [], Friday, Monday);
+
+        Assert.Equal("Отпуск", rows.Single(x => x.Date == Monday).AbsenceReason);
+        Assert.Null(rows.Single(x => x.Date == Friday).AbsenceReason);
+    }
+
+    [Fact]
     public void Available_hours_follow_the_week_exceptions_and_blocks()
     {
         var calendar = Week([new(Guid.NewGuid(), Monday, Monday, 4m, "Врач")], [new(Guid.NewGuid(), (int)DayOfWeek.Friday, 1.5m, "Ретро")]);
