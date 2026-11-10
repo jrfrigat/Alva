@@ -359,7 +359,11 @@
                             <Template Context="child"><AlvaAssignee Task="child!" Actors="Actors" ShowSkillMatch="false" /></Template>
                         </FlareColumn>
                         <FlareColumn TItem="TaskModel" Title="@(AlvaStrings.Common_Estimate)">
-                            <Template Context="child">@(child!.EstimateHours.HasValue ? $"{AlvaFormat.Hours(child.EstimateHours.Value)} {AlvaStrings.Sprint_HoursShort}" : "-")</Template>
+                            <Template Context="child">
+                                <FlareNumericField TValue="decimal?" Value="child!.EstimateHours" ValueChanged="hours => SaveEstimate(child!, hours)"
+                                                   Min="0" Max="100000" Size="FieldSize.Xs" Variant="InputVariant.Bare" Suffix="@AlvaStrings.Sprint_HoursShort"
+                                                   InputAttributes="@(new Dictionary<string, object> { ["aria-label"] = $"{AlvaStrings.Common_Estimate}: {child.Title}" })" Style="width:6.5rem" />
+                            </Template>
                         </FlareColumn>
                     </Columns>
                     <EmptyStateContent><FlareEmptyState Compact Title="@(AlvaStrings.Task_NoSubtasksYet)" Description="@(AlvaStrings.Task_AddTheFirstSubtaskBelow)" /></EmptyStateContent>
@@ -368,6 +372,8 @@
                     <FlareTextField @bind-Value="_quickTitle" Immediate Placeholder="@(AlvaStrings.Task_QuickAddOfANestedTaskEnter)" AriaLabel="@(AlvaStrings.Task_NewSubtaskTitle)" OnKeyDown="QuickKey" Style="flex:1 1 16rem;min-width:0">
                         <AdornmentStart><FlareIconView Value="@MaterialDesign3Icons.Regular.AddCircle" Size="18px" /></AdornmentStart>
                     </FlareTextField>
+                    <FlareNumericField TValue="decimal?" @bind-Value="_quickEstimate" Min="0" Max="100000" Size="FieldSize.Sm"
+                                       Placeholder="@AlvaStrings.Sprint_HoursShort" InputAttributes="@(new Dictionary<string, object> { ["aria-label"] = AlvaStrings.Common_EstimateHours })" Suffix="@AlvaStrings.Sprint_HoursShort" Style="width:6.5rem" />
                     <FlareButton Variant="ButtonVariant.Tonal" Size="ButtonSize.Sm" Loading="_adding" Disabled="@(_adding || string.IsNullOrWhiteSpace(_quickTitle))" OnClick="QuickAdd">@(AlvaStrings.Task_AddANestedTask)</FlareButton>
                 </FlareStack>
             </FlareStack>
@@ -516,6 +522,7 @@
     private int _linkLag;
     private FlareButton? _assignButton;
     private string? _error, _quickTitle, _assignSearch;
+    private decimal? _quickEstimate;
     private string? _parentError,_startError,_endError,_estimateError,_remainingError,_limitError;
     private readonly List<string> _formErrors=[]; private ElementReference _errorSummary;
     private bool _busy, _saved, _assignOpen, _adding, _titleEditing, _showAllHistory;
@@ -943,12 +950,26 @@
             {
                 var order = Children.Select(c => c.Order).DefaultIfEmpty(-1).Max() + 1;
                 await Session.Save<TaskModel>(HttpMethod.Post, Session.TeamPath("tasks"),
-                    new TaskRequest(title, "", "Backlog", Item.ProjectId, Item.Id, null, null, null, null, order, null));
+                    new TaskRequest(title, "", "Backlog", Item.ProjectId, Item.Id, _quickEstimate, null, null, null, order, null));
                 _quickTitle = null;
+                _quickEstimate = null;
                 await Changed.InvokeAsync();
             });
         }
         finally { _adding = false; }
+    }
+
+    /// <summary>Saves one work's estimate in place; the page refresh rolls the new hours into the task and the plan.</summary>
+    private async Task SaveEstimate(TaskModel child, decimal? hours)
+    {
+        if (child.EstimateHours == hours) return;
+        await Run(async () =>
+        {
+            await Session.Save<TaskModel>(HttpMethod.Put, Session.TeamPath($"tasks/{child.Id}"),
+                new TaskRequest(child.Title, child.Description, child.Status, child.ProjectId, child.ParentId, hours,
+                    child.Deadline, child.StartDate, child.EndDate, child.Order, child.Version));
+            await Changed.InvokeAsync();
+        });
     }
 
     private async Task Archive()

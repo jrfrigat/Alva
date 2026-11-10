@@ -183,7 +183,7 @@
            blocks share one narrow rail. *@
         <FlareCol Span="12" Md="8" Lg="9" Xl="10">
             <GanttSprintBoard @ref="_board" Sprint="Sprint" Data="_gantt" People="_people" Range="_axis" RangeChanged="Grow" Focus="_focus" OnTaskChange="TaskChange" OnPeopleChange="PeopleChange"
-                              OnLinkCreate="Link" OnLinkRejected="Rejected" OnUnplan="t => Move(t, false)" Suggested="Chosen" />
+                              OnLinkCreate="Link" OnLinkRejected="Rejected" OnItemClick="OpenTask" OnUnplan="t => Move(t, false)" Suggested="Chosen" />
         </FlareCol>
 
         <FlareCol Span="12" Md="4" Lg="3" Xl="2">

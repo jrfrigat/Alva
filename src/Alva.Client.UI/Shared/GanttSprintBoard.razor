@@ -33,7 +33,7 @@
                     <Corner><FlareText Typo="TypographyScale.LabelSmall">@(AlvaStrings.Gantt_TaskAssignee)</FlareText></Corner>
                     <ChildContent>
                         <GanttTaskPanel Data="Data" SprintIds="SprintIds" DragRows="true" OnChange="OnTaskChange" OnLinkCreate="OnLinkCreate" OnLinkRejected="OnLinkRejected"
-                                        DropGroup="plan" DropAccepts="IsTask" ItemDropGroup="plan" ItemDropAccepts="IsPerson" Suggested="TaskGhosts">
+                                        OnItemClick="OnItemClick" DropGroup="plan" DropAccepts="IsTask" ItemDropGroup="plan" ItemDropAccepts="IsPerson" Suggested="TaskGhosts">
                             <Header>@(AlvaStrings.Gantt_Projection1SprintTasks)</Header>
                             <RowActions Context="task">
                                 <FlareIconButton Icon="@MaterialDesign3Icons.Regular.Close" Size="ButtonSize.Sm" Tooltip="@UnplanHint(task)"
@@ -41,7 +41,7 @@
                             </RowActions>
                         </GanttTaskPanel>
                         <GanttPeoplePanel People="People" Range="Range" Focus="Focus" OnChange="OnPeopleChange" OnLinkCreate="OnLinkCreate" OnLinkRejected="OnLinkRejected"
-                                          DropGroup="plan" DropAccepts="IsTask" ItemDropGroup="plan" ItemDropAccepts="IsPerson" Suggested="PeopleGhosts">
+                                          OnItemClick="OnItemClick" DropGroup="plan" DropAccepts="IsTask" ItemDropGroup="plan" ItemDropAccepts="IsPerson" Suggested="PeopleGhosts">
                             <Header>@(AlvaStrings.Gantt_Projection2PeopleLanesAndCapacityHoursPerDay)</Header>
                         </GanttPeoplePanel>
                     </ChildContent>
@@ -68,6 +68,9 @@
     [Parameter] public EventCallback<GanttChangeEventArgs> OnPeopleChange { get; set; }
     [Parameter] public EventCallback<GanttLinkEventArgs> OnLinkCreate { get; set; }
     [Parameter] public EventCallback<GanttLinkRejectedEventArgs> OnLinkRejected { get; set; }
+
+    /// <summary>A click on a bar opens the task panel.</summary>
+    [Parameter] public EventCallback<TaskModel> OnItemClick { get; set; }
     [Parameter] public EventCallback<TaskModel> OnUnplan { get; set; }
 
     /// <summary>Selected auto-balance changes: shown as ghosts until they are applied or rejected.</summary>

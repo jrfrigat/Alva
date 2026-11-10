@@ -38,6 +38,34 @@ public sealed class QuickAddTests : UiTestBase
     }
 
     [Fact]
+    public void A_quick_subtask_can_be_created_with_an_estimate()
+    {
+        var cut = Details();
+        Input(cut).Input("Вёрстка");
+        cut.Find("input[aria-label='Оценка, часы']").Change("8");
+
+        Input(cut).KeyDown(new KeyboardEventArgs { Key = "Enter" });
+
+        cut.WaitForAssertion(() => Assert.Equal(1, Posts));
+        var request = Assert.IsType<TaskRequest>(Api.Sent.Single(x => x.Method == HttpMethod.Post).Value);
+        Assert.Equal(8m, request.EstimateHours);
+    }
+
+    [Fact]
+    public void A_subtask_estimate_can_be_changed_in_place()
+    {
+        var child = new TaskModel { Id = Guid.NewGuid(), ParentId = _task.Id, Title = "Вёрстка", Status = "Backlog", Version = 3 };
+        var cut = Render<TaskDetails>(p => p.Add(x => x.Item, _task).Add(x => x.Tasks, new[] { _task, child }));
+        TaskTabs(cut).QuerySelectorAll("[role=tab]").Single(x => x.TextContent.Trim() == "Подзадачи").Click();
+
+        cut.Find($"input[aria-label='Оценка: Вёрстка']").Change("6");
+
+        cut.WaitForAssertion(() => Assert.Contains(Api.Sent, x =>
+            x.Method == HttpMethod.Put && x.Path.EndsWith($"tasks/{child.Id}", StringComparison.Ordinal)
+            && x.Value is TaskRequest { EstimateHours: 6m }));
+    }
+
+    [Fact]
     public void A_failed_request_keeps_the_title_and_allows_a_retry()
     {
         Api.OnSend = (method, _, _) => method == HttpMethod.Post ? new HttpRequestException("Сервер недоступен") : null;
