@@ -72,6 +72,7 @@ public sealed class ProjectGanttTests : UiTestBase
         Assert.DoesNotContain(data.Tasks, t => t.Id == _other.Id);
         Assert.Single(data.Dependencies);
         Assert.DoesNotContain(data.Dependencies, d => d.PredecessorId == _other.Id || d.SuccessorId == _other.Id);
+        Assert.Single(data.Links());
     }
 
     [Fact]

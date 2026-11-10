@@ -156,6 +156,12 @@ public static class TaskEndpoints
             await Find(db, teamId, request.SuccessorId);
             if (!Enum.TryParse<DependencyKind>(request.Kind, true, out var kind) || !Enum.IsDefined(kind)) throw new ApiException(400, "Неизвестный вид зависимости.");
             if (await db.Dependencies.AnyAsync(x => x.PredecessorId == request.PredecessorId && x.SuccessorId == request.SuccessorId)) throw new ApiException(409, "Зависимость уже существует.");
+            var teamTasks = await db.Tasks.AsNoTracking().Where(x => x.TeamId == teamId).Select(x => x.Id).ToListAsync();
+            var edges = await db.Dependencies.AsNoTracking()
+                .Where(x => teamTasks.Contains(x.PredecessorId) && teamTasks.Contains(x.SuccessorId))
+                .Select(x => new { x.PredecessorId, x.SuccessorId }).ToListAsync();
+            if (Reaches(edges.Select(x => (x.PredecessorId, x.SuccessorId)), request.SuccessorId, request.PredecessorId))
+                throw new ApiException(400, "Зависимость создаст цикл.");
             var dependency = new TaskDependency { PredecessorId = request.PredecessorId, SuccessorId = request.SuccessorId, Kind = kind, LagDays = request.LagDays };
             db.Add(dependency);
             await db.SaveChangesAsync();
@@ -368,4 +374,21 @@ public static class TaskEndpoints
 
     internal static Dictionary<Guid, TaskCard[]> Children(TaskCard[] tasks) =>
         tasks.Where(x => x.ParentId.HasValue).GroupBy(x => x.ParentId!.Value).ToDictionary(g => g.Key, g => g.ToArray());
+
+    /// <summary>Whether a path already goes from one task to the other; adding the reverse link would close a cycle.</summary>
+    private static bool Reaches(IEnumerable<(Guid From, Guid To)> edges, Guid from, Guid target)
+    {
+        var next = edges.ToLookup(edge => edge.From, edge => edge.To);
+        var seen = new HashSet<Guid>();
+        var stack = new Stack<Guid>();
+        stack.Push(from);
+        while (stack.Count > 0)
+        {
+            var current = stack.Pop();
+            if (current == target) return true;
+            if (!seen.Add(current)) continue;
+            foreach (var id in next[current]) stack.Push(id);
+        }
+        return false;
+    }
 }

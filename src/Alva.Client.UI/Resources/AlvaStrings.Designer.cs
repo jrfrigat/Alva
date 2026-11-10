@@ -3443,4 +3443,13 @@ public static class AlvaStrings
 
     /// <summary>Open the full task Gantt</summary>
     public static string Projects_OpenTheFullTaskGantt => Get("Projects_OpenTheFullTaskGantt");
+
+    /// <summary>This link already exists.</summary>
+    public static string Projects_LinkAlreadyExists => Get("Projects_LinkAlreadyExists");
+
+    /// <summary>The link would create a cycle.</summary>
+    public static string Projects_LinkWouldCreateACycle => Get("Projects_LinkWouldCreateACycle");
+
+    /// <summary>A task cannot be linked to itself.</summary>
+    public static string Projects_ATaskCannotLinkToItself => Get("Projects_ATaskCannotLinkToItself");
 }

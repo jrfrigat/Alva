@@ -1214,4 +1214,7 @@
   <data name="Projects_ProjectGantt" xml:space="preserve"><value>Гантт проекта</value></data>
   <data name="Projects_ProjectGanttDescription" xml:space="preserve"><value>Окна задач, иерархия и связи этого проекта.</value></data>
   <data name="Projects_OpenTheFullTaskGantt" xml:space="preserve"><value>Открыть полный Гантт задач</value></data>
+  <data name="Projects_LinkAlreadyExists" xml:space="preserve"><value>Такая связь уже есть.</value></data>
+  <data name="Projects_LinkWouldCreateACycle" xml:space="preserve"><value>Связь создаст цикл.</value></data>
+  <data name="Projects_ATaskCannotLinkToItself" xml:space="preserve"><value>Задача не может быть связана сама с собой.</value></data>
 </root>

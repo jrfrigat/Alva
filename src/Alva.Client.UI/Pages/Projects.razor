@@ -3,6 +3,7 @@
 @inject AlvaSession Session
 @inject NavigationManager Navigation
 @inject DraftGuard Drafts
+@inject ISnackbarService Snackbar
 @using Flare.Components.Gantt
 <PageTitle>@(AlvaStrings.Projects_ProjectsAlva)</PageTitle>
 <NavigationLock OnBeforeInternalNavigation="ConfirmLeave" ConfirmExternalNavigation="IsDirty" />
@@ -110,7 +111,7 @@ else
                     <AvatarContent><AlvaStatusChip Tone="StatusTone(Status(p))">@StatusLabel(Status(p))</AlvaStatusChip></AvatarContent>
                     <ActionContent>
                         <FlareButton Variant="ButtonVariant.Tonal" Size="ButtonSize.Sm" OnClick="() => Edit(p)"><LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.Edit" Size="18px" /></LeadingIcon><ChildContent>@(AlvaStrings.Projects_ProjectSettings)</ChildContent></FlareButton>
-                        <FlareButton Href="@($"tasks?new=1&project={p.Id}&back=project")" Size="ButtonSize.Sm"><LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.AddTask" Size="18px" /></LeadingIcon><ChildContent>@(AlvaStrings.Projects_CreateATask)</ChildContent></FlareButton>
+                        <FlareButton OnClick="() => OpenCreate(null)" Size="ButtonSize.Sm"><LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.AddTask" Size="18px" /></LeadingIcon><ChildContent>@(AlvaStrings.Projects_CreateATask)</ChildContent></FlareButton>
                     </ActionContent>
                 </FlareCardHeader>
                 <FlareCardContent>
@@ -163,7 +164,14 @@ else
                                     NonWorking="GanttData.IsWeekend" Markers="GanttData.TodayMarkers" AriaLabel="@(AlvaStrings.Projects_ProjectGantt)" Class="alva-gantt">
                             <Corner><span>@(AlvaStrings.Gantt_TaskAssigneeHours)</span></Corner>
                             <ChildContent>
-                                <GanttTaskPanel Data="projectData" Editable="false" OnItemClick="task => OpenTask(task.Id)" />
+                                <GanttTaskPanel Data="projectData" Editable="false" OnItemClick="task => OpenTask(task.Id)">
+                                    <RowActions Context="task">
+                                        <FlareStack Row Gap="FlareSpacing.XXSmall">
+                                            <FlareIconButton Icon="@MaterialDesign3Icons.Regular.Add" Size="ButtonSize.Sm" Tooltip="@AddSubtaskLabel(task)" AriaLabel="@AddSubtaskLabel(task)" OnClick="() => OpenCreate(task.Id)" />
+                                            <FlareIconButton Icon="@MaterialDesign3Icons.Regular.Hub" Size="ButtonSize.Sm" Tooltip="@AddLinkLabel(task)" AriaLabel="@AddLinkLabel(task)" OnClick="() => OpenLink(task)" />
+                                        </FlareStack>
+                                    </RowActions>
+                                </GanttTaskPanel>
                             </ChildContent>
                         </FlareGantt>
                     }
@@ -236,7 +244,13 @@ else
                                             <AlvaAssignee Task="task" Actors="_actors" />
                                         </FlareStack>
                                     </ChildContent>
-                                    <Trailing><AlvaStatusChip Tone="AlvaTones.Status(task.Status)">@Labels.Status(task.Status)</AlvaStatusChip></Trailing>
+                                    <Trailing>
+                                        <FlareStack Row Gap="FlareSpacing.XXSmall">
+                                            <span @onclick:stopPropagation="true"><FlareIconButton Icon="@MaterialDesign3Icons.Regular.Add" Size="ButtonSize.Sm" Tooltip="@AddSubtaskLabel(task)" AriaLabel="@AddSubtaskLabel(task)" OnClick="() => OpenCreate(task.Id)" /></span>
+                                            <span @onclick:stopPropagation="true"><FlareIconButton Icon="@MaterialDesign3Icons.Regular.Hub" Size="ButtonSize.Sm" Tooltip="@AddLinkLabel(task)" AriaLabel="@AddLinkLabel(task)" OnClick="() => OpenLink(task)" /></span>
+                                            <AlvaStatusChip Tone="AlvaTones.Status(task.Status)">@Labels.Status(task.Status)</AlvaStatusChip>
+                                        </FlareStack>
+                                    </Trailing>
                                 </FlareListItem>
                             }
                         </FlareList>
@@ -245,6 +259,36 @@ else
                 </FlareCardContent>
             </FlareCard>
         </section>
+
+        <FlareDrawer Anchor="DrawerAnchor.Right" Open="_createOpen" OpenChanged="OnCreateOpen" Width="34rem" ContentPadding="FlareSpacing.Large" AriaLabel="@CreateTitle">
+            <FlareStack Gap="FlareSpacing.Medium">
+                <FlareStack Row StretchFirst><FlareText Element="h2" Typo="TypographyScale.TitleLarge">@CreateTitle</FlareText><FlareButton Variant="ButtonVariant.Text" Size="ButtonSize.Sm" OnClick="CloseCreate">@(AlvaStrings.Common_Cancel)</FlareButton></FlareStack>
+                <FlareTextField Label="@(AlvaStrings.Common_Title)" @bind-Value="_createTitle" Required MaxLength="500" Autofocus />
+                @if (CreateContext is { Length: > 0 } context) { <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@context</FlareText> }
+                @if (_createError is not null) { <FlareAlert Severity="AlertSeverity.Error">@_createError</FlareAlert> }
+                <FlareStack Row Wrap Gap="FlareSpacing.Small">
+                    <FlareButton Loading="_createBusy" Disabled="@(_createBusy || string.IsNullOrWhiteSpace(_createTitle))" OnClick="CreateTask">@(AlvaStrings.Tasks_Create)</FlareButton>
+                    <FlareButton Variant="ButtonVariant.Text" OnClick="CloseCreate">@(AlvaStrings.Common_Cancel)</FlareButton>
+                </FlareStack>
+            </FlareStack>
+        </FlareDrawer>
+
+        <FlareDialog @bind-Visible="_linkOpen" Title="@(AlvaStrings.Task_AddLink)" Size="DialogSize.Sm">
+            <ChildContent>
+                <FlareStack Gap="FlareSpacing.Medium">
+                    @if (_linkTask is { } first) { <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@TaskLabel(first.Id)</FlareText> }
+                    @if (_linkError is not null) { <FlareAlert Severity="AlertSeverity.Error">@_linkError</FlareAlert> }
+                    <FlareSelect TValue="Guid?" Label="@(AlvaStrings.Common_Task)" Items="LinkCandidates" ItemLabel="TaskLabel" NullOption="@(AlvaStrings.Common_ChooseATask)" @bind-Value="_linkOther" Searchable />
+                    <FlareSelect TValue="bool" Label="@(AlvaStrings.Task_Link)" Items="Directions" ItemLabel="DirectionLabel" @bind-Value="_linkIncoming" />
+                    <FlareSelect TValue="string" Label="@(AlvaStrings.Task_Type)" Items="DependencyKinds" ItemLabel="KindLabel" @bind-Value="_linkKind" />
+                    <FlareNumericField TValue="int" Label="@(AlvaStrings.Task_LagDays)" @bind-Value="_linkLag" Min="-365" Max="365" />
+                </FlareStack>
+            </ChildContent>
+            <ActionsContent>
+                <FlareButton Variant="ButtonVariant.Text" OnClick="CloseLink">@(AlvaStrings.Common_Cancel)</FlareButton>
+                <FlareButton Loading="_linkBusy" Disabled="@(_linkBusy || _linkOther is null)" OnClick="AddLink">@(AlvaStrings.Task_AddLink)</FlareButton>
+            </ActionsContent>
+        </FlareDialog>
     }
 </div>
 }
@@ -284,6 +328,18 @@ else
     }
     private string? _error, _wbsSearch;
     private bool _busy;
+    private bool _createOpen, _createBusy;
+    private string? _createTitle, _createError;
+    private Guid? _createParentId;
+    private bool _linkOpen, _linkBusy;
+    private TaskModel? _linkTask;
+    private Guid? _linkOther;
+    private bool _linkIncoming = true;
+    private string _linkKind = "FS";
+    private int _linkLag;
+    private string? _linkError;
+    private static readonly bool[] Directions = [true, false];
+    private static readonly string[] DependencyKinds = ["FS", "SS", "FF", "SF"];
 
     private IEnumerable<ProjectModel> Visible => _projects.Where(p => _filter == "all" || Status(p) == _filter)
         .OrderByDescending(p => ProjectTasks(p).Where(t => t.Status is not ("Done" or "Cancelled")).Sum(t => t.EstimateHours ?? 0));
@@ -359,6 +415,123 @@ else
 
     private void OpenSprint(Guid id) => Navigation.NavigateTo($"sprints/{id}");
     private void OpenTask(Guid id) => Navigation.NavigateTo($"tasks/{id}");
+
+    private string CreateTitle => _createParentId is null ? AlvaStrings.Tasks_NewTask : AlvaStrings.Tasks_AddSubtask;
+    private string? CreateContext => Selected is { } project
+        ? _createParentId is { } parentId
+            ? $"{AlvaStrings.Common_Project}: {project.Name} - {AlvaStrings.Common_ParentTask}: {TaskLabel(parentId)}"
+            : $"{AlvaStrings.Common_Project}: {project.Name}"
+        : null;
+    private static string AddSubtaskLabel(TaskModel task) => $"{AlvaStrings.Tasks_AddSubtask}: {task.Title}";
+    private static string AddLinkLabel(TaskModel task) => $"{AlvaStrings.Task_AddLink}: {task.Title}";
+    private string TaskLabel(Guid? id) => _tasks.FirstOrDefault(t => t.Id == id) is { } task ? $"{AlvaFormat.Code(task.Id)} {task.Title}" : "";
+    private static string DirectionLabel(bool incoming) => incoming ? AlvaStrings.Task_PredecessorThisTaskWaitsForIt : AlvaStrings.Task_SuccessorWaitsForThisTask;
+    private static string KindLabel(string kind) => kind switch
+    {
+        "SS" => AlvaStrings.Task_StartStart,
+        "FF" => AlvaStrings.Task_FinishFinish,
+        "SF" => AlvaStrings.Task_StartFinish,
+        _ => AlvaStrings.Task_FinishStart
+    };
+    private IEnumerable<Guid?> LinkCandidates => _linkTask is { } first && Selected is { } project
+        ? TasksOf(project).Where(t => t.Id != first.Id).OrderBy(t => t.Order).ThenBy(t => t.Title).Select(t => (Guid?)t.Id)
+        : [];
+
+    private void OpenCreate(Guid? parentId)
+    {
+        if (Selected is null) return;
+        _createParentId = parentId;
+        _createTitle = "";
+        _createError = null;
+        _createOpen = true;
+    }
+
+    private void CloseCreate() { _createOpen = false; _createError = null; }
+    private void OnCreateOpen(bool open) { if (!open) CloseCreate(); }
+
+    private async Task CreateTask()
+    {
+        if (Selected is not { } project || string.IsNullOrWhiteSpace(_createTitle) || _createBusy) return;
+        _createBusy = true;
+        _createError = null;
+        try
+        {
+            var order = _tasks.Where(t => t.ProjectId == project.Id && t.ParentId == _createParentId)
+                .Select(t => t.Order).DefaultIfEmpty(-1).Max() + 1;
+            await Session.Save<TaskModel>(HttpMethod.Post, Session.TeamPath("tasks"),
+                new TaskRequest(_createTitle.Trim(), "", "Backlog", project.Id, _createParentId, Order: order));
+            _createOpen = false;
+            Snackbar.Show(AlvaStrings.Tasks_Created, SnackbarSeverity.Success);
+            await Load();
+        }
+        catch (Exception e) when (e is HttpRequestException or InvalidOperationException)
+        {
+            _createError = PageFeedback.Describe(e);
+        }
+        finally { _createBusy = false; }
+    }
+
+    private void OpenLink(TaskModel task)
+    {
+        _linkTask = task;
+        _linkOther = null;
+        _linkIncoming = true;
+        _linkKind = "FS";
+        _linkLag = 0;
+        _linkError = null;
+        _linkOpen = true;
+    }
+
+    private void CloseLink() { _linkOpen = false; _linkError = null; }
+
+    private async Task AddLink()
+    {
+        if (_linkTask is not { } first || _linkOther is not { } other || _linkBusy) return;
+        var predecessor = _linkIncoming ? other : first.Id;
+        var successor = _linkIncoming ? first.Id : other;
+        if (predecessor == successor) { _linkError = AlvaStrings.Projects_ATaskCannotLinkToItself; return; }
+        if (_dependencies.Any(d => d.PredecessorId == predecessor && d.SuccessorId == successor))
+        {
+            _linkError = AlvaStrings.Projects_LinkAlreadyExists;
+            return;
+        }
+        if (WouldCycle(predecessor, successor))
+        {
+            _linkError = AlvaStrings.Projects_LinkWouldCreateACycle;
+            return;
+        }
+        _linkBusy = true;
+        _linkError = null;
+        try
+        {
+            await Session.Save<DependencyDto>(HttpMethod.Post, Session.TeamPath($"tasks/{first.Id}/dependencies"),
+                new DependencyRequest(predecessor, successor, _linkKind, _linkLag));
+            _linkOpen = false;
+            Snackbar.Show(AlvaStrings.Gantt_LinkAdded, SnackbarSeverity.Success);
+            await Load();
+        }
+        catch (Exception e) when (e is HttpRequestException or InvalidOperationException)
+        {
+            _linkError = PageFeedback.Describe(e);
+        }
+        finally { _linkBusy = false; }
+    }
+
+    private bool WouldCycle(Guid predecessor, Guid successor)
+    {
+        var next = _dependencies.ToLookup(d => d.PredecessorId, d => d.SuccessorId);
+        var seen = new HashSet<Guid>();
+        var stack = new Stack<Guid>();
+        stack.Push(successor);
+        while (stack.Count > 0)
+        {
+            var current = stack.Pop();
+            if (current == predecessor) return true;
+            if (!seen.Add(current)) continue;
+            foreach (var id in next[current]) stack.Push(id);
+        }
+        return false;
+    }
 
     private async Task Run(Func<Task> action)
     {

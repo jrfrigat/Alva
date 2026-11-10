@@ -167,10 +167,28 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
         if (request.PredecessorId == request.SuccessorId) throw new InvalidOperationException("Задача не может зависеть от самой себя.");
         if (!store.Tasks.Any(t => t.Id == request.PredecessorId) || !store.Tasks.Any(t => t.Id == request.SuccessorId)) throw new InvalidOperationException("Задача не найдена.");
         if (store.Dependencies.Any(d => d.PredecessorId == request.PredecessorId && d.SuccessorId == request.SuccessorId)) throw new InvalidOperationException("Зависимость уже существует.");
+        if (WouldCycle(store, request.PredecessorId, request.SuccessorId)) throw new InvalidOperationException("Зависимость создаст цикл.");
         var kind = request.Kind.ToUpperInvariant() is "FS" or "SS" or "FF" or "SF" ? request.Kind.ToUpperInvariant() : throw new InvalidOperationException("Неизвестный вид зависимости.");
         var dependency = new DependencyDto(Guid.NewGuid(), request.PredecessorId, request.SuccessorId, kind, request.LagDays);
         store.Dependencies.Add(dependency);
         return dependency;
+    }
+
+    /// <summary>Adding the link would close a cycle when the successor already reaches the predecessor.</summary>
+    private static bool WouldCycle(DemoStore store, Guid predecessor, Guid successor)
+    {
+        var next = store.Dependencies.ToLookup(d => d.PredecessorId, d => d.SuccessorId);
+        var seen = new HashSet<Guid>();
+        var stack = new Stack<Guid>();
+        stack.Push(successor);
+        while (stack.Count > 0)
+        {
+            var current = stack.Pop();
+            if (current == predecessor) return true;
+            if (!seen.Add(current)) continue;
+            foreach (var id in next[current]) stack.Push(id);
+        }
+        return false;
     }
 
     private static HistoryDto[] History(DemoStore store, Guid taskId) =>

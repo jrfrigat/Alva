@@ -1214,4 +1214,7 @@
   <data name="Projects_ProjectGantt" xml:space="preserve"><value>Project Gantt</value></data>
   <data name="Projects_ProjectGanttDescription" xml:space="preserve"><value>Task windows, hierarchy and links for this project.</value></data>
   <data name="Projects_OpenTheFullTaskGantt" xml:space="preserve"><value>Open the full task Gantt</value></data>
+  <data name="Projects_LinkAlreadyExists" xml:space="preserve"><value>This link already exists.</value></data>
+  <data name="Projects_LinkWouldCreateACycle" xml:space="preserve"><value>The link would create a cycle.</value></data>
+  <data name="Projects_ATaskCannotLinkToItself" xml:space="preserve"><value>A task cannot be linked to itself.</value></data>
 </root>
