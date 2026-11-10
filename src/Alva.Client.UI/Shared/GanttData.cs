@@ -351,7 +351,7 @@ public sealed class GanttData
             await Put(session, item, null, null);
     }
 
-    private static async Task Put(AlvaSession session, TaskModel task, DateOnly? start, DateOnly? end)
+    private async Task Put(AlvaSession session, TaskModel task, DateOnly? start, DateOnly? end)
     {
         var saved = await session.Save<TaskModel>(HttpMethod.Put, session.TeamPath($"tasks/{task.Id}"),
             new TaskRequest(task.Title, task.Description, task.Status, task.ProjectId, task.ParentId,
@@ -362,6 +362,8 @@ public sealed class GanttData
         task.Version = saved.Version;
         task.StartDate = saved.StartDate;
         task.EndDate = saved.EndDate;
+        // The page no longer reloads tasks after a successful edit: keep the sprint membership in step with the new dates.
+        task.SprintIds = [.. SprintWindows.Of(task.StartDate, task.EndDate, Sprints, s => s.StartDate, s => s.EndDate).Select(s => s.Id)];
     }
 
     /// <summary>The sprint axis: its days, and if the sprint's work runs past the end, to the end of that work.</summary>

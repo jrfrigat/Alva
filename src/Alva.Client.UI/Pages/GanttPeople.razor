@@ -189,9 +189,28 @@ else if (_data is not null && _people is not null)
         // Flare can report the same pointer gesture twice while its script is attached twice (FLARE TASK-808).
         if (!Edits.TryTake(args.ItemKey)) { args.Cancel = true; return; }
         _error = null;
-        try { _notice = await _people!.Apply(Session, args); }
-        catch (Exception e) when (e is HttpRequestException or InvalidOperationException) { args.Cancel = true; _error = PageFeedback.Describe(e); }
-        await Reload();
+        try
+        {
+            _notice = await _people!.Apply(Session, args);
+            // The task already moved; only the capacity cells need the new numbers. No loading bar, no full reload.
+            await RefreshCapacity();
+        }
+        catch (Exception e) when (e is HttpRequestException or InvalidOperationException)
+        {
+            args.Cancel = true;
+            _error = PageFeedback.Describe(e);
+            await Reload();
+        }
+    }
+
+    private async Task RefreshCapacity()
+    {
+        try
+        {
+            _people = await GanttPeopleData.Load(Session, _data!, _range);
+            StateHasChanged();
+        }
+        catch (Exception e) when (e is HttpRequestException or InvalidOperationException) { _error ??= PageFeedback.Describe(e); }
     }
 
     private async Task Link(GanttLinkEventArgs args)

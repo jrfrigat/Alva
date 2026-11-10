@@ -236,16 +236,32 @@ public sealed class GanttPeopleData
     /// Reassigns the task to a row: to a person (keeping the assignment sub-team if the person belongs to it)
     /// or to a sub-team without a person, or clears the assignment for Unassigned.
     /// </summary>
-    public Task Reassign(AlvaSession session, TaskModel task, string rowKey)
+    public async Task Reassign(AlvaSession session, TaskModel task, string rowKey)
     {
         var path = session.TeamPath($"tasks/{task.Id}/assignment");
-        if (rowKey == Pool) return session.Send(HttpMethod.Delete, path, new { });
+        if (rowKey == Pool)
+        {
+            await session.Send(HttpMethod.Delete, path, new { });
+            task.AssignmentTargetId = null;
+            task.ResolvedPersonId = null;
+            return;
+        }
         if (IsGroup(rowKey)) throw new InvalidOperationException(GroupRefusal);
         var actor = Data.Actor(Guid.ParseExact(rowKey[2..], "N")) ?? throw new InvalidOperationException(AlvaStrings.Gantt_AssigneeNotFound);
         if (actor.Kind == "Skill") throw new InvalidOperationException(AlvaStrings.Gantt_ATaskCannotBeAssignedToASkillChooseAPersonOrASubTeam);
-        if (actor.Kind != "Person") return session.Send(HttpMethod.Put, path, new AssignmentRequest(actor.Id));
+        if (actor.Kind != "Person")
+        {
+            await session.Send(HttpMethod.Put, path, new AssignmentRequest(actor.Id));
+            task.AssignmentTargetId = actor.Id;
+            task.ResolvedPersonId = null;
+            return;
+        }
         var keep = Data.Actor(task.AssignmentTargetId) is { Kind: not "Person" } target
             && (actor.SkillIds.Contains(target.Id) || actor.DepartmentIds.Contains(target.Id));
-        return session.Send(HttpMethod.Put, path, keep ? new AssignmentRequest(task.AssignmentTargetId!.Value, actor.Id) : new AssignmentRequest(actor.Id));
+        var assigned = keep ? task.AssignmentTargetId!.Value : actor.Id;
+        await session.Send(HttpMethod.Put, path, new AssignmentRequest(assigned, actor.Id));
+        // The page no longer reloads tasks after a successful drop: move the bar now, not on the next load.
+        task.AssignmentTargetId = assigned;
+        task.ResolvedPersonId = actor.Id;
     }
 }

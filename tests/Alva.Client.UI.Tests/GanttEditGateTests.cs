@@ -1,6 +1,7 @@
 using Alva.Client.Models;
 using Alva.Client.Services;
 using Alva.Client.Shared;
+using Alva.Contracts;
 using Flare.Components.Gantt;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
@@ -62,5 +63,40 @@ public sealed class GanttSaveTests : UiTestBase
         Assert.Equal(new DateOnly(2026, 11, 13), task.EndDate);
         Assert.Single(Api.Sent);
         Assert.Equal(HttpMethod.Put, Api.Sent[0].Method);
+    }
+
+    [Fact]
+    public async Task A_saved_task_updates_its_sprint_membership_from_the_new_dates()
+    {
+        var id = Guid.NewGuid();
+        var monday = new DateOnly(2026, 11, 9);
+        var sprint = new SprintModel { Id = Guid.NewGuid(), StartDate = monday, EndDate = monday.AddDays(4) };
+        var task = new TaskModel { Id = id, Title = "API", StartDate = monday, EndDate = monday, Version = 1, SprintIds = [sprint.Id] };
+        var data = GanttData.Create([task], [sprint], [], [], []);
+        var session = Services.GetRequiredService<AlvaSession>();
+        Api.SaveResult = new TaskModel { Id = id, Title = "API", StartDate = monday.AddDays(7), EndDate = monday.AddDays(8), Version = 2 };
+
+        await data.Save(session, [new GanttChange(GanttData.Key(id), GanttSpan.FromDays(monday.AddDays(7), monday.AddDays(8)))]);
+
+        Assert.Empty(task.SprintIds);
+    }
+
+    [Fact]
+    public async Task Reassignment_moves_the_task_to_the_new_person()
+    {
+        var monday = new DateOnly(2026, 11, 9);
+        var person = new ActorModel { Id = Guid.NewGuid(), Name = "Анна", Kind = "Person" };
+        var task = new TaskModel { Id = Guid.NewGuid(), Title = "API", StartDate = monday, EndDate = monday.AddDays(1) };
+        var data = GanttData.Create([task], [], [person], [], []);
+        var range = GanttSpan.FromDays(monday, monday.AddDays(1));
+        Api.Answer("capacity", _ => Array.Empty<CapacityDto>()).Answer("capacity/demand", _ => Array.Empty<CapacityDemandDto>());
+        var session = Services.GetRequiredService<AlvaSession>();
+        var people = await GanttPeopleData.Load(session, data, range);
+
+        await people.Reassign(session, task, GanttPeopleData.PersonKey(person.Id));
+
+        Assert.Equal(person.Id, task.AssignmentTargetId);
+        Assert.Equal(person.Id, task.ResolvedPersonId);
+        Assert.Single(Api.Sent);
     }
 }

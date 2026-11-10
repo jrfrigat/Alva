@@ -509,10 +509,54 @@
         // Flare can report the same pointer gesture twice while its script is attached twice (FLARE TASK-808).
         if (!Edits.TryTake(args.ItemKey)) { args.Cancel = true; return; }
         _error = null;
-        try { await save(); }
-        catch (Exception e) when (e is HttpRequestException or InvalidOperationException or NotSupportedException) { args.Cancel = true; _error = PageFeedback.Describe(e); }
-        try { await Refresh(); }
-        catch (Exception e) when (e is HttpRequestException or InvalidOperationException or NotSupportedException) { _error ??= e.Message; }
+        try
+        {
+            // The saved task carries its new dates, version and assignee: update locally instead of reloading the
+            // page, so a successful drag has no loading bar and no flicker.
+            await save();
+            _proposal = null;
+            SyncTasks();
+            await RefreshCapacityOnly();
+        }
+        catch (Exception e) when (e is HttpRequestException or InvalidOperationException or NotSupportedException)
+        {
+            args.Cancel = true;
+            _error = PageFeedback.Describe(e);
+            try { await Refresh(); }
+            catch (Exception reload) when (reload is HttpRequestException or InvalidOperationException or NotSupportedException) { _error ??= reload.Message; }
+        }
+    }
+
+    /// <summary>Copies the fields a Gantt write changed back to the page's task array, so no reload is needed.</summary>
+    private void SyncTasks()
+    {
+        if (_gantt is null) return;
+        foreach (var source in _gantt.Tasks)
+            if (Tasks.FirstOrDefault(t => t.Id == source.Id) is { } target)
+            {
+                target.StartDate = source.StartDate;
+                target.EndDate = source.EndDate;
+                target.Version = source.Version;
+                target.SprintIds = source.SprintIds;
+                target.AssignmentTargetId = source.AssignmentTargetId;
+                target.ResolvedPersonId = source.ResolvedPersonId;
+            }
+    }
+
+    /// <summary>Capacity and the people projection in the background: no skeleton and no page-wide reload.</summary>
+    private async Task RefreshCapacityOnly()
+    {
+        try
+        {
+            _capacity = await Session.Get<CapacityDto[]>(Session.TeamPath($"capacity?from={Sprint.StartDate:yyyy-MM-dd}&to={Sprint.EndDate:yyyy-MM-dd}"));
+            _load = _capacity.GroupBy(r => r.ActorId).ToDictionary(g => g.Key, g => (g.Sum(r => r.AvailableHours), g.Sum(r => r.AllocatedHours)));
+            if (_gantt is not null) _people = await GanttPeopleData.Load(Session, _gantt, _axis);
+            StateHasChanged();
+        }
+        catch (Exception e) when (e is HttpRequestException or InvalidOperationException)
+        {
+            _error ??= PageFeedback.Describe(e);
+        }
     }
 
     private Task Link(GanttLinkEventArgs args) => Run(async () =>
