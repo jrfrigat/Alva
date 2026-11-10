@@ -1210,4 +1210,8 @@
   <data name="Task_NoSprintsYet" xml:space="preserve"><value>The task is not in any sprint yet</value></data>
   <data name="Task_SetTheTaskDatesToSeeItsSprints" xml:space="preserve"><value>Set the task dates to see its sprints</value></data>
   <data name="Task_SprintMembershipFollowsTheTaskDates" xml:space="preserve"><value>Sprint membership follows the task dates and refreshes after saving.</value></data>
+  <data name="Projects_OpenInANewTab" xml:space="preserve"><value>Open in a new tab</value></data>
+  <data name="Projects_ProjectGantt" xml:space="preserve"><value>Project Gantt</value></data>
+  <data name="Projects_ProjectGanttDescription" xml:space="preserve"><value>Task windows, hierarchy and links for this project.</value></data>
+  <data name="Projects_OpenTheFullTaskGantt" xml:space="preserve"><value>Open the full task Gantt</value></data>
 </root>

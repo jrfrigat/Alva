@@ -1210,4 +1210,8 @@
   <data name="Task_NoSprintsYet" xml:space="preserve"><value>Задача пока не входит ни в один спринт</value></data>
   <data name="Task_SetTheTaskDatesToSeeItsSprints" xml:space="preserve"><value>Укажите даты задачи, чтобы увидеть спринты</value></data>
   <data name="Task_SprintMembershipFollowsTheTaskDates" xml:space="preserve"><value>Вхождение в спринт определяется датами задачи и обновляется после сохранения.</value></data>
+  <data name="Projects_OpenInANewTab" xml:space="preserve"><value>Открыть в новой вкладке</value></data>
+  <data name="Projects_ProjectGantt" xml:space="preserve"><value>Гантт проекта</value></data>
+  <data name="Projects_ProjectGanttDescription" xml:space="preserve"><value>Окна задач, иерархия и связи этого проекта.</value></data>
+  <data name="Projects_OpenTheFullTaskGantt" xml:space="preserve"><value>Открыть полный Гантт задач</value></data>
 </root>

@@ -34,14 +34,46 @@ public sealed class GanttData
         var actors = session.Get<ActorModel[]>(session.TeamPath("actors"));
         var risks = session.Get<RiskDto[]>(session.TeamPath("risks"));
         var dependencies = session.Get<DependencyDto[]>(session.TeamPath("tasks/dependencies"));
+        return Create(await tasks, await sprints, await actors, (await risks).Where(r => r.HasRisk).ToArray(), await dependencies);
+    }
+
+    /// <summary>
+    /// One projection over the given team data. With a project id only that project's tasks and their
+    /// descendants are kept, together with the links and risks that stay inside the set.
+    /// </summary>
+    public static GanttData Create(IEnumerable<TaskModel> tasks, IEnumerable<SprintModel> sprints, IEnumerable<ActorModel> actors,
+        IEnumerable<RiskDto> risks, IEnumerable<DependencyDto> dependencies, Guid? projectId = null)
+    {
+        var allTasks = tasks.ToArray();
+        var scopedTasks = projectId is { } id ? ProjectWithDescendants(allTasks, id) : allTasks;
+        var ids = scopedTasks.Select(t => t.Id).ToHashSet();
         var data = new GanttData
         {
-            Tasks = await tasks, Sprints = await sprints, Actors = await actors, Risks = (await risks).Where(r => r.HasRisk).ToArray(), Dependencies = await dependencies
+            Tasks = scopedTasks,
+            Sprints = sprints.ToArray(),
+            Actors = actors.ToArray(),
+            Risks = risks.Where(r => ids.Contains(r.TaskId)).ToArray(),
+            Dependencies = dependencies.Where(d => ids.Contains(d.PredecessorId) && ids.Contains(d.SuccessorId)).ToArray()
         };
         data._risks = data.Risks.GroupBy(r => r.TaskId).ToDictionary(g => g.Key, g => g.First());
         data._sprints = data.Sprints.ToDictionary(s => s.Id);
         data._actors = data.Actors.ToDictionary(a => a.Id);
         return data;
+    }
+
+    private static TaskModel[] ProjectWithDescendants(TaskModel[] tasks, Guid projectId)
+    {
+        var children = tasks.Where(t => t.ParentId is not null && t.Status != "Cancelled")
+            .ToLookup(t => t.ParentId!.Value);
+        var included = new HashSet<Guid>();
+        var queue = new Queue<Guid>(tasks.Where(t => t.ProjectId == projectId && t.Status != "Cancelled").Select(t => t.Id));
+        while (queue.Count > 0)
+        {
+            var current = queue.Dequeue();
+            if (!included.Add(current)) continue;
+            foreach (var child in children[current]) queue.Enqueue(child.Id);
+        }
+        return tasks.Where(t => included.Contains(t.Id)).ToArray();
     }
 
     public static string Key(Guid id) => id.ToString("N");

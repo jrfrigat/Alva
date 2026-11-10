@@ -3431,4 +3431,16 @@ public static class AlvaStrings
 
     /// <summary>Sprint membership follows the task dates and refreshes after saving.</summary>
     public static string Task_SprintMembershipFollowsTheTaskDates => Get("Task_SprintMembershipFollowsTheTaskDates");
+
+    /// <summary>Open in a new tab</summary>
+    public static string Projects_OpenInANewTab => Get("Projects_OpenInANewTab");
+
+    /// <summary>Project Gantt</summary>
+    public static string Projects_ProjectGantt => Get("Projects_ProjectGantt");
+
+    /// <summary>Task windows, hierarchy and links for this project.</summary>
+    public static string Projects_ProjectGanttDescription => Get("Projects_ProjectGanttDescription");
+
+    /// <summary>Open the full task Gantt</summary>
+    public static string Projects_OpenTheFullTaskGantt => Get("Projects_OpenTheFullTaskGantt");
 }

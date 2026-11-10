@@ -3,6 +3,7 @@
 @inject AlvaSession Session
 @inject NavigationManager Navigation
 @inject DraftGuard Drafts
+@using Flare.Components.Gantt
 <PageTitle>@(AlvaStrings.Projects_ProjectsAlva)</PageTitle>
 <NavigationLock OnBeforeInternalNavigation="ConfirmLeave" ConfirmExternalNavigation="IsDirty" />
 <AlvaPageHeader Category="@(AlvaStrings.Projects_ProjectsOfSeveralTeams)" Title="@(AlvaStrings.Common_Projects)" Description="@(AlvaStrings.Projects_ProjectRegistryAndTeamInvolvementProjectsUniteTasksDeliveredBySprintsOfD_6fd9fb)">
@@ -74,6 +75,14 @@ else
                                     <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@Pct(done, total)% (@tasks.Count(t => t.Status == "Done") / @tasks.Length @AlvaFormat.Plural(tasks.Length, "task")) · @(AlvaStrings.Projects_LatestTaskDeadline) @(LatestDeadline(project)?.ToString("d MMM yyyy") ?? "—")</FlareText>
                                 </FlareStack>
                             </ChildContent>
+                            <Trailing>
+                                <span @onclick:stopPropagation="true">
+                                    <FlareLink Href="@($"projects?project={project.Id}")" target="_blank" rel="noopener noreferrer"
+                                               title="@(AlvaStrings.Projects_OpenInANewTab)" aria-label="@(AlvaStrings.Projects_OpenInANewTab)">
+                                        <FlareIconView Value="@MaterialDesign3Icons.Regular.ArrowForward" Size="18px" />
+                                    </FlareLink>
+                                </span>
+                            </Trailing>
                         </FlareListItem>
                     }
                 </FlareList>
@@ -127,6 +136,37 @@ else
                         </CaptionContent>
                     </FlareStat>
                 </FlareGrid>
+                </FlareCardContent>
+            </FlareCard>
+
+            <FlareCard Variant="CardVariant.Outlined">
+                <FlareCardHeader Title="@(AlvaStrings.Projects_ProjectGantt)" Subtitle="@(AlvaStrings.Projects_ProjectGanttDescription)">
+                    <AvatarContent><FlareIconView Value="@MaterialDesign3Icons.Regular.ViewTimeline" Size="20px" /></AvatarContent>
+                    <ActionContent>
+                        <FlareStack Row Wrap Align="FlareAlignItems.Center" Gap="FlareSpacing.Small">
+                            <FlareSelect TValue="GanttScale" Items="GanttData.Scales" ItemLabel="GanttData.ScaleName" @bind-Value="_ganttScale" @bind-Value:after="ResetGanttUnit" Size="FieldSize.Sm" InputAttributes="@(new Dictionary<string, object> { ["aria-label"] = AlvaStrings.Gantt_Scale })" />
+                            <GanttZoom View="project" Scale="_ganttScale" @bind-Value="_ganttUnit" />
+                            <FlareLink Href="gantt/tasks">@(AlvaStrings.Projects_OpenTheFullTaskGantt)</FlareLink>
+                        </FlareStack>
+                    </ActionContent>
+                </FlareCardHeader>
+                <FlareCardContent>
+                    @{ var projectData = ProjectGantt(p); }
+                    @if (tasks.Length == 0 || projectData is null)
+                    {
+                        <FlareEmptyState Compact Title="@(AlvaStrings.Projects_TheProjectHasNoTasksYet)" />
+                    }
+                    else
+                    {
+                        <FlareGantt Range="@Axis(p, projectData)" RangeChanged="r => _ganttRange = r" Endless="true" Scale="_ganttScale" UnitWidth="_ganttUnit"
+                                    FillWidth="true" Virtualize="true" RowHeight="36" SideWidth="22rem" DefaultSideWidth="22rem" ResizableSide="true"
+                                    NonWorking="GanttData.IsWeekend" Markers="GanttData.TodayMarkers" AriaLabel="@(AlvaStrings.Projects_ProjectGantt)" Class="alva-gantt">
+                            <Corner><span>@(AlvaStrings.Gantt_TaskAssigneeHours)</span></Corner>
+                            <ChildContent>
+                                <GanttTaskPanel Data="projectData" Editable="false" OnItemClick="task => OpenTask(task.Id)" />
+                            </ChildContent>
+                        </FlareGantt>
+                    }
                 </FlareCardContent>
             </FlareCard>
 
@@ -216,6 +256,13 @@ else
     private SprintModel[] _sprints = [];
     private ActorModel[] _actors = [];
     private RiskDto[] _risks = [];
+    private DependencyDto[] _dependencies = [];
+    private GanttData? _gantt;
+    private Guid? _ganttFor;
+    private GanttSpan _ganttRange;
+    private Guid? _ganttRangeFor;
+    private GanttScale _ganttScale = GanttScale.Day;
+    private double _ganttUnit = GanttData.UnitWidth(GanttScale.Day);
     private readonly Dictionary<Guid, TaskModel[]> _teamTasks = [];
     private readonly HashSet<Guid> _closedTeams = [];
     private ProjectModel? _project;
@@ -254,6 +301,22 @@ else
     /// <summary>The latest deadline of the project's tasks. This is not a release: Alva does not yet have a separate delivery entity.</summary>
     private DateOnly? LatestDeadline(ProjectModel p) => ProjectTasks(p).Where(t => t.Deadline.HasValue).Select(t => t.Deadline).Max();
     private SprintModel[] SprintsOf(ProjectModel p) => _sprints.Where(s => TasksOf(p).Any(t => t.SprintIds.Contains(s.Id))).OrderBy(s => s.StartDate).ToArray();
+    private static DateOnly Today => DateOnly.FromDateTime(DateTime.Today);
+    /// <summary>The project plan over the current team's data; rebuilt when the page reloads or another project is selected.</summary>
+    private GanttData? ProjectGantt(ProjectModel p)
+    {
+        if (_ganttFor == p.Id && _gantt is not null) return _gantt;
+        _gantt = GanttData.Create(_tasks, _sprints, _actors, _risks, _dependencies, p.Id);
+        _ganttFor = p.Id;
+        _ganttRangeFor = null;
+        return _gantt;
+    }
+    private GanttSpan Axis(ProjectModel p, GanttData data)
+    {
+        if (_ganttRangeFor != p.Id) (_ganttRange, _ganttRangeFor) = (data.Range(null, Today), p.Id);
+        return _ganttRange;
+    }
+    private void ResetGanttUnit() => _ganttUnit = GanttData.UnitWidth(_ganttScale);
     private static int Pct(decimal part, decimal whole) => whole <= 0 ? 0 : (int)Math.Round(part / whole * 100);
     private string TeamName(Guid id) => Session.Teams.FirstOrDefault(t => t.Id == id)?.Name ?? (id == Session.TeamId ? Session.TeamName : AlvaStrings.Projects_AnotherTeam);
 
@@ -314,6 +377,9 @@ else
         _sprints = await Session.Get<SprintModel[]>(Session.TeamPath("sprints"));
         _actors = await Session.Get<ActorModel[]>(Session.TeamPath("actors"));
         _risks = (await Session.Get<RiskDto[]>(Session.TeamPath("risks"))).Where(r => r.HasRisk).ToArray();
+        _dependencies = await Session.Get<DependencyDto[]>(Session.TeamPath("tasks/dependencies"));
+        _gantt = null;
+        _ganttFor = null;
         _teamTasks.Clear();
         _closedTeams.Clear();
         foreach (var teamId in _projects.SelectMany(p => p.TeamIds).Distinct().Where(id => id != Session.TeamId))

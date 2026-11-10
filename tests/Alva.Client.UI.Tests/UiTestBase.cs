@@ -25,6 +25,7 @@ public abstract class UiTestBase : BunitContext, IAsyncLifetime
         Services.AddLocalization();
         Services.AddScoped<CultureService>();
         Services.AddScoped<DraftGuard>();
+        Services.AddScoped<GanttPreferences>();
         Services.AddSingleton<IApiService>(Api);
         Services.AddScoped<AlvaSession>();
         // The risk bell in the header depends on this service; for header tests it must be in the container.

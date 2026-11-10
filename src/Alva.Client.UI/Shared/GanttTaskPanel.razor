@@ -5,7 +5,7 @@
                  RowClass="RowClass" Items="@Data.Tasks" ItemKey="t => GanttData.Key(t.Id)" ItemRow="t => GanttData.Key(t.Id)"
                  ItemSpan="Data.Span" ItemCover="Data.Cover" ItemKind="Data.Kind" ItemSegments="Data.Segments" ItemLabel="t => t.Title" ItemTitle="Data.Title"
                  Links="@Data.Links().ToArray()" LinkTypes="@Types" ShowCriticalPath="Critical" RollupParents="true"
-                 Markers="@DeadlineMarkers" Editable="true" AllowRowChange="false" OnChange="OnChange" OnLinkCreate="OnLinkCreate"
+                 Markers="@DeadlineMarkers" Editable="Editable" AllowRowChange="false" OnChange="OnChange" OnLinkCreate="OnLinkCreate"
                  OnLinkRejected="OnLinkRejected" OnItemClick="OnItemClick" Header="Header" DropGroup="@DropGroup" DropAccepts="DropAccepts"
                  ItemDropGroup="@ItemDropGroup" ItemDropAccepts="ItemDropAccepts" Suggested="Suggested" AriaLabel="@(AlvaStrings.Gantt_TasksOverTime)"
                  ItemClass="ItemClass" RegionClass="RegionClass" MarkerClass="MarkerClass">
@@ -32,6 +32,9 @@
 
     [Parameter] public IReadOnlyCollection<GanttLinkType>? Types { get; set; }
     [Parameter] public bool Critical { get; set; }
+
+    /// <summary>Whether bars can be dragged and links drawn. A project overview keeps the plan read-only.</summary>
+    [Parameter] public bool Editable { get; set; } = true;
     [Parameter] public RenderFragment? Header { get; set; }
     [Parameter] public EventCallback<GanttChangeEventArgs> OnChange { get; set; }
     [Parameter] public EventCallback<GanttLinkEventArgs> OnLinkCreate { get; set; }
