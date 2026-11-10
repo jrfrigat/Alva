@@ -39,7 +39,7 @@ else if (_data is not null && _people is not null)
         <ChildContent>
             @if (_twoD)
             {
-                <GanttTaskPanel Data="_data" SprintId="_sprintId" OnChange="Change" OnLinkCreate="Link" OnLinkRejected="Rejected" OnItemClick="OpenTask">
+                <GanttTaskPanel Data="_data" SprintId="_sprintId" SelectedKey="@_selected" OnChange="Change" OnLinkCreate="Link" OnLinkRejected="Rejected" OnItemClick="OpenTask">
                     <Header>@(AlvaStrings.Gantt_Projection1WorkHierarchyAndPhasesOverTime)</Header>
                 </GanttTaskPanel>
             }

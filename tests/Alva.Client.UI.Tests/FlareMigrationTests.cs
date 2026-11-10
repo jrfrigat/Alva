@@ -96,6 +96,8 @@ public sealed class FlareMigrationTests : UiTestBase
 
         Assert.Contains(".alva-gantt-row--person{background:", css);
         Assert.Contains(".alva-gantt-row--group{background:", css);
+        Assert.Contains(".alva-gantt-row--selected{background:", css);
+        Assert.Contains("padding:3px 6px", css);
         Assert.Contains("--flare-gantt-side-bg", css);
         Assert.Contains("BarInset=\"10\"", board);
     }

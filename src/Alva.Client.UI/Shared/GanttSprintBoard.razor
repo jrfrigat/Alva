@@ -32,7 +32,7 @@
                             AriaLabel="@(AlvaStrings.Gantt_SprintGantt)" Class="alva-gantt" Style="--flare-gantt-max-height:38rem">
                     <Corner><FlareText Typo="TypographyScale.LabelSmall">@(AlvaStrings.Gantt_TaskAssignee)</FlareText></Corner>
                     <ChildContent>
-                        <GanttTaskPanel Data="Data" SprintIds="SprintIds" DragRows="true" OnChange="OnTaskChange" OnLinkCreate="OnLinkCreate" OnLinkRejected="OnLinkRejected"
+                        <GanttTaskPanel Data="Data" SprintIds="SprintIds" DragRows="true" SelectedKey="@_selected" OnChange="OnTaskChange" OnLinkCreate="OnLinkCreate" OnLinkRejected="OnLinkRejected"
                                         OnItemClick="OnItemClick" DropGroup="plan" DropAccepts="IsTask" ItemDropGroup="plan" ItemDropAccepts="IsPerson" Suggested="TaskGhosts">
                             <Header>@(AlvaStrings.Gantt_Projection1SprintTasks)</Header>
                             <RowActions Context="task">

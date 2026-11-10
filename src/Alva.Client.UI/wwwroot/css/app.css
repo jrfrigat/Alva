@@ -93,7 +93,7 @@ html,body{margin:0;min-height:100%;font-family:var(--alva-font);background:var(-
    tokens in Alva.Theme.Alva (--flare-gantt-* and flare-gantt--kind-*); only the row header
    composition, the focus row and the chart height are application rules. */
 .alva-gantt{--flare-gantt-max-height:70vh}
-.alva-gantt-row{display:flex;flex-direction:column;min-width:0;line-height:1.2}
+.alva-gantt-row{display:flex;flex-direction:column;min-width:0;line-height:1.2;padding:3px 6px;box-sizing:border-box}
 .alva-gantt-row__title{overflow:hidden;white-space:nowrap;text-overflow:ellipsis;color:var(--flare-color-on-surface);font-weight:600;text-decoration:none}
 .alva-gantt-row__title:hover,.alva-gantt-row__title:focus-visible{text-decoration:underline}
 .alva-gantt-row__meta{overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-size:11px;color:var(--flare-color-on-surface-variant)}
@@ -109,7 +109,9 @@ html,body{margin:0;min-height:100%;font-family:var(--alva-font);background:var(-
 .alva-gantt-row--focus .alva-gantt-row__title{color:var(--flare-color-primary)}
 .alva-gantt-row--person{background:var(--flare-color-surface-container-low);--flare-gantt-side-bg:var(--flare-color-surface-container-low)}
 .alva-gantt-row--group{background:var(--flare-color-surface-container);--flare-gantt-side-bg:var(--flare-color-surface-container)}
-.alva-gantt .alva-gantt-row--focus{background:color-mix(in srgb,var(--flare-color-primary) 8%,transparent)}
+.alva-gantt-row--selected{background:color-mix(in srgb,var(--flare-color-primary) 16%,transparent);--flare-gantt-side-bg:color-mix(in srgb,var(--flare-color-primary) 16%,transparent)}
+.alva-gantt-row--selected .alva-gantt-row__title{color:var(--flare-color-primary)}
+.alva-gantt .alva-gantt-row--focus{background:color-mix(in srgb,var(--flare-color-primary) 14%,transparent);--flare-gantt-side-bg:color-mix(in srgb,var(--flare-color-primary) 14%,transparent)}
 .alva-gantt-row--group .alva-gantt-row__title{text-transform:uppercase;font-size:11px;letter-spacing:.04em;color:var(--flare-color-primary)}
 .alva-gantt-row--role .alva-gantt-row__title{color:var(--flare-color-error)}
 .alva-gantt-row--pool .alva-gantt-row__title{color:var(--flare-color-on-surface-variant)}

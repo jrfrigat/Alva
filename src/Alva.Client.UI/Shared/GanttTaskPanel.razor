@@ -53,6 +53,9 @@
     /// <summary>Row headers can be dragged (TaskDrag) - an external FlareDragContext is required.</summary>
     [Parameter] public bool DragRows { get; set; }
 
+    /// <summary>Key of the selected task: its row is highlighted, not only the bar.</summary>
+    [Parameter] public string? SelectedKey { get; set; }
+
     /// <summary>Actions in a task row header, for example return to backlog.</summary>
     [Parameter] public RenderFragment<TaskModel>? RowActions { get; set; }
 
@@ -121,10 +124,11 @@
 
     private string? RowClass(TaskModel task)
     {
-        var classes = new List<string>(3);
+        var classes = new List<string>(4);
         if (GanttData.IsClosed(task)) classes.Add("alva-gantt-row--closed");
         if (task.DatesFixed) classes.Add("alva-gantt-row--fixed");
         if (MissingSkills(task).Length > 0) classes.Add("alva-gantt-row--skill");
+        if (SelectedKey == GanttData.Key(task.Id)) classes.Add("alva-gantt-row--selected");
         return classes.Count == 0 ? null : string.Join(' ', classes);
     }
 

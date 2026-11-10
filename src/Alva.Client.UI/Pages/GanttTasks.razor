@@ -49,7 +49,7 @@ else if (_data is not null)
                     AriaLabel="@(AlvaStrings.Gantt_TaskGantt)" Class="alva-gantt">
             <Corner><FlareText Typo="TypographyScale.LabelSmall">@(AlvaStrings.Gantt_TaskAssigneeHours)</FlareText></Corner>
             <ChildContent>
-                <GanttTaskPanel Data="_data" SprintId="_sprintId" Types="_types" Critical="_critical" OnChange="Change" OnLinkCreate="Link" OnLinkRejected="Rejected" OnItemClick="OpenTask" />
+                <GanttTaskPanel Data="_data" SprintId="_sprintId" Types="_types" Critical="_critical" SelectedKey="@_selected" OnChange="Change" OnLinkCreate="Link" OnLinkRejected="Rejected" OnItemClick="OpenTask" />
             </ChildContent>
         </FlareGantt>
         </div>

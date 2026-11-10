@@ -46,6 +46,16 @@ public sealed class GanttTaskPanelTests : UiTestBase
     }
 
     [Fact]
+    public void The_selected_task_row_is_highlighted()
+    {
+        var cut = Chart();
+
+        cut.Find("[role='button']").Click();
+
+        cut.WaitForAssertion(() => Assert.NotEmpty(cut.FindAll(".alva-gantt-row--selected")));
+    }
+
+    [Fact]
     public void A_task_bar_carries_the_flare_kind_class()
     {
         var cut = Chart();
