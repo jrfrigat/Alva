@@ -74,6 +74,18 @@ public sealed class FlareMigrationTests : UiTestBase
     }
 
     [Fact]
+    public void People_and_group_rows_are_separated_in_the_gantt()
+    {
+        var css = File.ReadAllText(Path.Combine(Root(), "src", "Alva.Client.UI", "wwwroot", "css", "app.css"));
+        var board = File.ReadAllText(Path.Combine(Root(), "src", "Alva.Client.UI", "Shared", "GanttSprintBoard.razor"));
+
+        Assert.Contains(".alva-gantt-row--person{background:", css);
+        Assert.Contains(".alva-gantt-row--group{background:", css);
+        Assert.Contains("--flare-gantt-side-bg", css);
+        Assert.Contains("BarInset=\"10\"", board);
+    }
+
+    [Fact]
     public void Gantt_colors_and_surfaces_come_from_the_theme()
     {
         var theme = File.ReadAllText(Path.Combine(Root(), "src", "Alva.Theme.Alva", "wwwroot", "css", "alva.css"));

@@ -44,7 +44,7 @@ else if (_data is not null)
         @* The wrapper catches Enter from a bar (the bar is focusable and marked role="button") and holds focus
            after the panel closes: the bar's events bubble up here. *@
         <div @ref="_host" tabindex="-1" @onkeydown="OnChartKey">
-        <FlareGantt @ref="_chart" Range="@Axis()" RangeChanged="r => _range = r" Endless="true" Scale="_scale" UnitWidth="_unit" FillWidth="true" Virtualize="true" RowHeight="56" SideWidth="@_side" DefaultSideWidth="22rem" ResizableSide="true" SideWidthChanged="SaveSide"
+        <FlareGantt @ref="_chart" Range="@Axis()" RangeChanged="r => _range = r" Endless="true" Scale="_scale" UnitWidth="_unit" FillWidth="true" Virtualize="true" RowHeight="56" BarInset="10" SideWidth="@_side" DefaultSideWidth="22rem" ResizableSide="true" SideWidthChanged="SaveSide"
                     NonWorking="GanttData.IsWeekend" Markers="@GanttData.TodayMarkers" Regions="@_data.SprintRegions(Sprint)" @bind-SelectedKey="_selected"
                     AriaLabel="@(AlvaStrings.Gantt_TaskGantt)" Class="alva-gantt">
             <Corner><FlareText Typo="TypographyScale.LabelSmall">@(AlvaStrings.Gantt_TaskAssigneeHours)</FlareText></Corner>
