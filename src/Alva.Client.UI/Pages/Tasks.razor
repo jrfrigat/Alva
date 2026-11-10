@@ -145,7 +145,7 @@ else
             <FlareMultiSelect TValue="Guid" Label="@(AlvaStrings.Common_RequiredSkills)" Items="SkillActors.Select(a=>a.Id)"
                               ItemLabel="SkillName" Chips="true" Searchable="true"
                               Values="_editing.RequiredSkillIds" ValuesChanged="(IReadOnlyList<Guid> skills) => _editing.RequiredSkillIds = skills.ToArray()" />
-            <TaskFormPlan Task="_editing" Projects="_projects" Sprints="_sprints" Tasks="_tasks"
+            <TaskFormPlan Task="_editing" Projects="_projects" Tasks="_tasks"
                           SelfId="@(_editing.Id == Guid.Empty ? (Guid?)null : _editing.Id)"
                           ParentError="@_parentError" EstimateError="@_estimateError" RemainingError="@_remainingError"
                           LimitError="@_limitError" StartError="@_startError" EndError="@_endError" Changed="StateHasChanged" />
@@ -175,7 +175,7 @@ else
     private Guid? _selectedId;
     private bool _quickOpen, _quickBusy;
     private string? _quickTitle, _quickError;
-    private Guid? _quickParentId, _quickProjectId, _quickSprintId;
+    private Guid? _quickParentId, _quickProjectId;
     private string _quickStatus = "Backlog";
     private Guid? _highlightId;
     private FlareTextField? _quickTitleField;
@@ -346,7 +346,6 @@ else
     private static string EffortLabel(TaskModel task) => $"{Hours(task.EstimateHours)} / {Hours(task.RemainingHours)} {AlvaStrings.Sprint_HoursShort}";
     private static string Hours(decimal? value) => value is { } hours ? AlvaFormat.Hours(hours) : "-";
     private string ProjectName(Guid? id)=>_projects.FirstOrDefault(x=>x.Id==id)?.Name??AlvaStrings.Sprint_Ongoing;
-    private string SprintName(Guid? id)=>_sprints.FirstOrDefault(x=>x.Id==id)?.Name??AlvaStrings.Common_NoSprint;
     private string TaskName(Guid? id)=>_tasks.FirstOrDefault(x=>x.Id==id)?.Title??AlvaStrings.Common_RootTask;
     private string ActorName(Guid? id) { var actor=_actors.FirstOrDefault(x=>x.Id==id);return actor is null?AlvaStrings.Common_UnassignedTask:$"{actor.Name} - {Labels.Kind(actor.Kind)}"; }
     private string SkillName(Guid id) => _actors.FirstOrDefault(x => x.Id == id)?.Name ?? "";
@@ -581,7 +580,6 @@ else
             var parts = new List<string>();
             if (_quickParentId is { } parentId) parts.Add($"{AlvaStrings.Common_ParentTask}: {TaskName(parentId)}");
             if (_quickProjectId is { } projectId) parts.Add($"{AlvaStrings.Common_Project}: {ProjectName(projectId)}");
-            if (_quickSprintId is { } sprintId) parts.Add($"{AlvaStrings.Common_SprintByDates}: {SprintName(sprintId)}");
             parts.Add($"{AlvaStrings.Common_Status}: {Labels.Status(_quickStatus)}");
             return string.Join(" - ", parts);
         }
@@ -594,7 +592,6 @@ else
         _selectedId = null;
         _quickParentId = parentId;
         _quickProjectId = parent?.ProjectId ?? selected?.ProjectId ?? _projectFilter;
-        _quickSprintId = FirstSprint(parent) ?? FirstSprint(selected);
         _quickStatus = "Backlog";
         _quickTitle = "";
         _quickError = null;
@@ -602,7 +599,6 @@ else
         _focusQuick = true;
         if (hadSelection) await SaveTreeState();
     }
-    private static Guid? FirstSprint(TaskModel? task) => task?.SprintIds is { Length: > 0 } sprintIds ? sprintIds[0] : null;
     private void CloseQuick() { _quickOpen = false; _quickError = null; _returnFocus = true; }
     private void OpenFullForm()
     {

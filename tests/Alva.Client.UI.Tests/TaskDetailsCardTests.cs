@@ -206,17 +206,80 @@ public sealed class TaskDetailsCardTests : UiTestBase
     }
 
     [Fact]
-    public void Sprints_tab_lists_the_sprints_that_include_the_task()
+    public void Sprints_tab_lists_every_sprint_that_includes_the_task()
     {
-        var sprint = new SprintModel { Id = Guid.NewGuid(), Name = "Спринт 7", Status = "Active", StartDate = new DateOnly(2026, 10, 5), EndDate = new DateOnly(2026, 10, 16) };
-        var item = new TaskModel { Id = _task.Id, Title = _task.Title, Status = "Planned", Version = 1, SprintIds = [sprint.Id] };
-        var cut = Page(item, sprints: [sprint]);
+        var first = new SprintModel { Id = Guid.NewGuid(), Name = "Спринт 7", Status = "Active", StartDate = new DateOnly(2026, 10, 5), EndDate = new DateOnly(2026, 10, 16) };
+        var second = new SprintModel { Id = Guid.NewGuid(), Name = "Спринт 8", Status = "Planned", StartDate = new DateOnly(2026, 10, 12), EndDate = new DateOnly(2026, 10, 23) };
+        var item = new TaskModel
+        {
+            Id = _task.Id, Title = _task.Title, Status = "Planned", Version = 1,
+            StartDate = new DateOnly(2026, 10, 10), EndDate = new DateOnly(2026, 10, 20),
+            SprintIds = [first.Id, second.Id]
+        };
+        var cut = Page(item, sprints: [first, second]);
 
         TaskTabs(cut).QuerySelectorAll("[role=tab]").Single(t => t.TextContent.Trim() == "Спринты").Click();
 
         var panel = TaskTabs(cut).QuerySelector(".flare-tabs__panel:not(.flare-tab-panel--hidden)")!;
         Assert.Contains("Спринт 7", panel.TextContent);
-        Assert.Contains(panel.QuerySelectorAll("a"), a => a.GetAttribute("href") == $"sprints/{sprint.Id}");
+        Assert.Contains("Спринт 8", panel.TextContent);
+        Assert.Contains(panel.QuerySelectorAll("a"), a => a.GetAttribute("href") == $"sprints/{first.Id}");
+        Assert.Contains(panel.QuerySelectorAll("a"), a => a.GetAttribute("href") == $"sprints/{second.Id}");
+    }
+
+    [Fact]
+    public void Sprints_tab_refreshes_when_the_reloaded_task_has_new_dates()
+    {
+        var first = new SprintModel { Id = Guid.NewGuid(), Name = "Спринт 7", Status = "Active", StartDate = new DateOnly(2026, 10, 5), EndDate = new DateOnly(2026, 10, 16) };
+        var second = new SprintModel { Id = Guid.NewGuid(), Name = "Спринт 8", Status = "Planned", StartDate = new DateOnly(2026, 10, 19), EndDate = new DateOnly(2026, 10, 30) };
+        var item = new TaskModel
+        {
+            Id = _task.Id, Title = _task.Title, Status = "Planned", Version = 1,
+            StartDate = first.StartDate, EndDate = first.EndDate, SprintIds = [first.Id]
+        };
+        var cut = Page(item, sprints: [first, second]);
+        TaskTabs(cut).QuerySelectorAll("[role=tab]").Single(t => t.TextContent.Trim() == "Спринты").Click();
+
+        item.StartDate = second.StartDate;
+        item.EndDate = second.EndDate;
+        item.SprintIds = [second.Id];
+        item.Version = 2;
+        cut.FindComponent<TaskDetails>().Render();
+
+        cut.WaitForAssertion(() =>
+        {
+            var panel = TaskTabs(cut).QuerySelector(".flare-tabs__panel:not(.flare-tab-panel--hidden)")!;
+            Assert.Contains("Спринт 8", panel.TextContent);
+            Assert.DoesNotContain("Спринт 7", panel.TextContent);
+        });
+    }
+
+    [Fact]
+    public void Sprints_tab_asks_for_dates_when_the_task_has_none()
+    {
+        var cut = Page(_task);
+
+        TaskTabs(cut).QuerySelectorAll("[role=tab]").Single(t => t.TextContent.Trim() == "Спринты").Click();
+
+        var panel = TaskTabs(cut).QuerySelector(".flare-tabs__panel:not(.flare-tab-panel--hidden)")!;
+        Assert.Contains("Укажите даты задачи, чтобы увидеть спринты", panel.TextContent);
+    }
+
+    [Fact]
+    public void Sprints_tab_says_when_the_task_dates_miss_every_sprint()
+    {
+        var sprint = new SprintModel { Id = Guid.NewGuid(), Name = "Спринт 7", Status = "Active", StartDate = new DateOnly(2026, 10, 5), EndDate = new DateOnly(2026, 10, 16) };
+        var item = new TaskModel
+        {
+            Id = _task.Id, Title = _task.Title, Status = "Planned", Version = 1,
+            StartDate = new DateOnly(2026, 11, 1), EndDate = new DateOnly(2026, 11, 5)
+        };
+        var cut = Page(item, sprints: [sprint]);
+
+        TaskTabs(cut).QuerySelectorAll("[role=tab]").Single(t => t.TextContent.Trim() == "Спринты").Click();
+
+        var panel = TaskTabs(cut).QuerySelector(".flare-tabs__panel:not(.flare-tab-panel--hidden)")!;
+        Assert.Contains("Задача пока не входит ни в один спринт", panel.TextContent);
     }
 
     [Fact]
@@ -247,6 +310,7 @@ public sealed class TaskDetailsCardTests : UiTestBase
         var cut = Page();
 
         Assert.NotEmpty(cut.FindComponents<TaskFormPlan>());
+        Assert.DoesNotContain(cut.FindAll("label"), l => l.TextContent.Trim() == "Спринт (по датам)");
         var plan = cut.FindAll("section").Single(s => s.QuerySelector("h2")?.TextContent.Trim() == "План");
         Assert.Contains("Контекст", plan.TextContent);
         Assert.Contains("Усилие", plan.TextContent);

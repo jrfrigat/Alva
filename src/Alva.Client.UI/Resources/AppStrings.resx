@@ -1208,5 +1208,6 @@
   <data name="Task_TabSubtasks" xml:space="preserve"><value>Subtasks</value></data>
   <data name="Task_TabHistory" xml:space="preserve"><value>History</value></data>
   <data name="Task_NoSprintsYet" xml:space="preserve"><value>The task is not in any sprint yet</value></data>
-  <data name="Task_SprintMembershipFollowsTheTaskDates" xml:space="preserve"><value>Sprint membership follows the task dates.</value></data>
+  <data name="Task_SetTheTaskDatesToSeeItsSprints" xml:space="preserve"><value>Set the task dates to see its sprints</value></data>
+  <data name="Task_SprintMembershipFollowsTheTaskDates" xml:space="preserve"><value>Sprint membership follows the task dates and refreshes after saving.</value></data>
 </root>

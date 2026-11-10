@@ -1208,5 +1208,6 @@
   <data name="Task_TabSubtasks" xml:space="preserve"><value>Подзадачи</value></data>
   <data name="Task_TabHistory" xml:space="preserve"><value>История</value></data>
   <data name="Task_NoSprintsYet" xml:space="preserve"><value>Задача пока не входит ни в один спринт</value></data>
-  <data name="Task_SprintMembershipFollowsTheTaskDates" xml:space="preserve"><value>Вхождение в спринт определяется датами задачи.</value></data>
+  <data name="Task_SetTheTaskDatesToSeeItsSprints" xml:space="preserve"><value>Укажите даты задачи, чтобы увидеть спринты</value></data>
+  <data name="Task_SprintMembershipFollowsTheTaskDates" xml:space="preserve"><value>Вхождение в спринт определяется датами задачи и обновляется после сохранения.</value></data>
 </root>

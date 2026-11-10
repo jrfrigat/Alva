@@ -35,6 +35,7 @@ public sealed class TasksQuickCreateTests : UiTestBase
         Button(cut, "Больше полей").Click();
 
         Assert.NotEmpty(cut.FindComponents<TaskFormPlan>());
+        Assert.DoesNotContain(cut.FindAll("label"), l => l.TextContent.Trim() == "Спринт (по датам)");
     }
 
     [Fact]

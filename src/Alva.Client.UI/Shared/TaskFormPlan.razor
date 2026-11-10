@@ -8,7 +8,6 @@
             <FlareSelect TValue="string" Label="@(AlvaStrings.Common_Status)" Items="Statuses" ItemLabel="Labels.Status" @bind-Value="Task.Status" @bind-Value:after="Notify" />
             <FlareSelect TValue="string" Label="@(AlvaStrings.Common_Priority)" Items="Labels.Priorities" ItemLabel="Labels.Priority" @bind-Value="Task.Priority" @bind-Value:after="Notify" />
             <FlareSelect TValue="Guid?" Label="@(AlvaStrings.Common_Project)" Items="Projects.Select(x => (Guid?)x.Id)" ItemLabel="ProjectName" NullOption="@(AlvaStrings.Sprint_Ongoing)" @bind-Value="Task.ProjectId" @bind-Value:after="Notify" />
-            <FlareSelect TValue="Guid?" Label="@(AlvaStrings.Common_SprintByDates)" Items="Sprints.OrderBy(x => x.StartDate).Select(x => (Guid?)x.Id)" ItemLabel="SprintName" NullOption="@(AlvaStrings.Common_BacklogUndated)" Value="SprintDates.First(Task, Sprints)" ValueChanged="SetSprint" HelperText="@SprintDates.Hint(Task, Sprints)" Disabled="Task.DatesFixed" />
             <FlareSelect TValue="Guid?" Label="@(AlvaStrings.Common_ParentTask)" ErrorText="@ParentError" Items="Tasks.Where(x => x.Id != SelfId).Select(x => (Guid?)x.Id)" ItemLabel="TaskLabel" NullOption="@(AlvaStrings.Common_RootTask)" @bind-Value="Task.ParentId" @bind-Value:after="Notify" Searchable />
         </FlareGrid>
     </FlareStack>
@@ -38,7 +37,6 @@
 
     [Parameter, EditorRequired] public TaskModel Task { get; set; } = default!;
     [Parameter] public ProjectModel[] Projects { get; set; } = [];
-    [Parameter] public SprintModel[] Sprints { get; set; } = [];
     [Parameter] public TaskModel[] Tasks { get; set; } = [];
     [Parameter] public Guid? SelfId { get; set; }
     [Parameter] public string? ParentError { get; set; }
@@ -51,12 +49,6 @@
     [Parameter] public EventCallback Changed { get; set; }
 
     private Task Notify() => Changed.InvokeAsync();
-    private Task SetSprint(Guid? id)
-    {
-        SprintDates.Place(Task, Sprints.FirstOrDefault(s => s.Id == id));
-        return Notify();
-    }
     private string ProjectName(Guid? id) => Projects.FirstOrDefault(x => x.Id == id)?.Name ?? AlvaStrings.Sprint_Ongoing;
-    private string SprintName(Guid? id) => Sprints.FirstOrDefault(x => x.Id == id)?.Name ?? AlvaStrings.Common_NoSprint;
     private string TaskLabel(Guid? id) => Tasks.FirstOrDefault(x => x.Id == id) is { } task ? $"{AlvaFormat.Code(task.Id)} {task.Title}" : AlvaStrings.Common_RootTask;
 }

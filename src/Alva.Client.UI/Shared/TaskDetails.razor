@@ -206,7 +206,7 @@
         <ChildContent>
             <FlareStack Gap="FlareSpacing.Medium">
                 @if (_formErrors.Count > 0) { <div tabindex="-1" @ref="_errorSummary"><AlvaValidationSummary Messages="_formErrors" /></div> }
-                <TaskFormPlan Task="_model" Projects="Projects" Sprints="Sprints" Tasks="Tasks" SelfId="Item.Id"
+                <TaskFormPlan Task="_model" Projects="Projects" Tasks="Tasks" SelfId="Item.Id"
                               ParentError="@_parentError" EstimateError="@_estimateError" RemainingError="@_remainingError"
                               LimitError="@_limitError" StartError="@_startError" EndError="@_endError" FixedHint="@FixedHint" Changed="StateHasChanged" />
             </FlareStack>
@@ -228,9 +228,13 @@
             </FlareStack>
         </HeadingContent>
         <ChildContent>
-            @if (TaskSprints.Length == 0)
+            @if (Item.StartDate is null || Item.EndDate is null)
             {
-                <FlareEmptyState Compact Title="@(AlvaStrings.Task_NoSprintsYet)" Description="@(AlvaStrings.Task_SprintMembershipFollowsTheTaskDates)" />
+                <FlareEmptyState Compact Title="@(AlvaStrings.Task_SetTheTaskDatesToSeeItsSprints)" Description="@(AlvaStrings.Task_SprintMembershipFollowsTheTaskDates)" />
+            }
+            else if (TaskSprints.Length == 0)
+            {
+                <FlareEmptyState Compact Title="@(AlvaStrings.Task_NoSprintsYet)" />
             }
             else
             {
@@ -643,7 +647,6 @@
     /// the page data until they are saved.</summary>
     private TaskModel Fresh() => System.Text.Json.JsonSerializer.Deserialize<TaskModel>(System.Text.Json.JsonSerializer.Serialize(Item))!;
     private string ProjectName(Guid? id) => Projects.FirstOrDefault(x => x.Id == id)?.Name ?? AlvaStrings.Sprint_Ongoing;
-    private string SprintName(Guid? id) => Sprints.FirstOrDefault(x => x.Id == id)?.Name ?? AlvaStrings.Common_NoSprint;
     private string TaskName(Guid? id)
     {
         var task = Tasks.FirstOrDefault(x => x.Id == id);

@@ -3426,6 +3426,9 @@ public static class AlvaStrings
     /// <summary>The task is not in any sprint yet</summary>
     public static string Task_NoSprintsYet => Get("Task_NoSprintsYet");
 
-    /// <summary>Sprint membership follows the task dates.</summary>
+    /// <summary>Set the task dates to see its sprints</summary>
+    public static string Task_SetTheTaskDatesToSeeItsSprints => Get("Task_SetTheTaskDatesToSeeItsSprints");
+
+    /// <summary>Sprint membership follows the task dates and refreshes after saving.</summary>
     public static string Task_SprintMembershipFollowsTheTaskDates => Get("Task_SprintMembershipFollowsTheTaskDates");
 }
