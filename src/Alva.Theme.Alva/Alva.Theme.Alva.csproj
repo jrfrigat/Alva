@@ -16,7 +16,7 @@
       Expressive, and everything Alva actually overrides is stated in AlvaTheme. The theme package is needed
       only for the base tokens; the theme's own values are defined in AlvaTheme.cs.
     -->
-    <PackageReference Include="Flare.Theme.MaterialDesign3Expressive" Version="0.54.0" />
+    <PackageReference Include="Flare.Theme.MaterialDesign3Expressive" Version="0.55.0" />
   </ItemGroup>
 
 </Project>
