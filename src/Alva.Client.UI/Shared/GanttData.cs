@@ -351,9 +351,18 @@ public sealed class GanttData
             await Put(session, item, null, null);
     }
 
-    private static Task Put(AlvaSession session, TaskModel task, DateOnly? start, DateOnly? end) =>
-        session.Send(HttpMethod.Put, session.TeamPath($"tasks/{task.Id}"), new TaskRequest(task.Title, task.Description, task.Status,
-            task.ProjectId, task.ParentId, task.EstimateHours, task.Deadline, start, end, task.Order, task.Version));
+    private static async Task Put(AlvaSession session, TaskModel task, DateOnly? start, DateOnly? end)
+    {
+        var saved = await session.Save<TaskModel>(HttpMethod.Put, session.TeamPath($"tasks/{task.Id}"),
+            new TaskRequest(task.Title, task.Description, task.Status, task.ProjectId, task.ParentId,
+                task.EstimateHours, task.Deadline, start, end, task.Order, task.Version));
+        // The server owns the version and may widen the window around its children: take both back, so a
+        // second save in this run - or a duplicate commit of the same gesture - never sends a stale version.
+        if (saved is null) return;
+        task.Version = saved.Version;
+        task.StartDate = saved.StartDate;
+        task.EndDate = saved.EndDate;
+    }
 
     /// <summary>The sprint axis: its days, and if the sprint's work runs past the end, to the end of that work.</summary>
     public GanttSpan SprintRange(SprintModel sprint)

@@ -36,5 +36,6 @@ public static class AlvaHost
         builder.Services.AddScoped<Services.AlvaSession>();
         builder.Services.AddScoped<Services.RiskNotifications>();
         builder.Services.AddScoped<Services.GanttPreferences>();
+        builder.Services.AddScoped<Services.GanttEditGate>();
     }
 }

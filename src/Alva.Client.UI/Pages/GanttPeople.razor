@@ -2,6 +2,7 @@
 @page "/gantt/2d"
 @inject AlvaSession Session
 @inject GanttPreferences Preferences
+@inject GanttEditGate Edits
 @inject NavigationManager Navigation
 @using Flare.Components.Gantt
 @* People Gantt (projection 2): lanes of people and skills with capacity hours and the assignee's tasks.
@@ -185,6 +186,8 @@ else if (_data is not null && _people is not null)
 
     private async Task Change(GanttChangeEventArgs args)
     {
+        // Flare can report the same pointer gesture twice while its script is attached twice (FLARE TASK-808).
+        if (!Edits.TryTake(args.ItemKey)) { args.Cancel = true; return; }
         _error = null;
         try { _notice = await _people!.Apply(Session, args); }
         catch (Exception e) when (e is HttpRequestException or InvalidOperationException) { args.Cancel = true; _error = PageFeedback.Describe(e); }

@@ -2,6 +2,7 @@
 @page "/diagrams"
 @inject AlvaSession Session
 @inject GanttPreferences Preferences
+@inject GanttEditGate Edits
 @using Flare.Components.Gantt
 @* Task Gantt (projection 1): work tree, task windows, deadlines, sprint and links.
    Alva builds the projection from Flare.Components.Gantt primitives; the library itself knows nothing about tasks. *@
@@ -166,6 +167,9 @@ else if (_data is not null)
 
     private async Task Change(GanttChangeEventArgs args)
     {
+        // Flare can report the same pointer gesture twice while its script is attached twice (FLARE TASK-808):
+        // the second report would move the bar one more unit and send a second, conflicting save.
+        if (!Edits.TryTake(args.ItemKey)) { args.Cancel = true; return; }
         _error = null;
         try
         {

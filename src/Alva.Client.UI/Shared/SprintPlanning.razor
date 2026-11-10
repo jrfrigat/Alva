@@ -3,6 +3,7 @@
    gets an assignee; a person dropped on a task becomes its assignee; a task dropped into the backlog leaves the sprint. *@
 @using Flare.Components.Gantt
 @inject AlvaSession Session
+@inject GanttEditGate Edits
 @inject NavigationManager Navigation
 <FlareGrid Columns="12" AlignItems="FlareAlignItems.Stretch" Gap="FlareSpacing.Large">
     <FlareCol Span="12" Md="8" Lg="8">
@@ -504,6 +505,8 @@
 
     private async Task Edit(GanttChangeEventArgs args, Func<Task<string>> save)
     {
+        // Flare can report the same pointer gesture twice while its script is attached twice (FLARE TASK-808).
+        if (!Edits.TryTake(args.ItemKey)) { args.Cancel = true; return; }
         _error = null;
         try { await save(); }
         catch (Exception e) when (e is HttpRequestException or InvalidOperationException or NotSupportedException) { args.Cancel = true; _error = PageFeedback.Describe(e); }
