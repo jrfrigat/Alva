@@ -17,7 +17,7 @@
                 {
                     var person = row.Person;
                     var focused = Focus == person.Id;
-                    <FlareListItem @key="person.Id" Selected="@focused" OnClick="() => Toggle(person.Id)">
+                    <FlareListItem @key="person.Id" Selected="@focused">
                         <Leading><FlareAvatar Text="@AlvaFormat.Initials(person.Name)" Size="AvatarSize.Sm" Color="FlareColor.Primary" /></Leading>
                         <ChildContent>
                             <FlareDraggable Payload="@(new PersonDrag(person.Id))">
@@ -26,6 +26,7 @@
                                         <FlareText Typo="TypographyScale.LabelMedium">@person.Name</FlareText>
                                         <FlareStack Row Align="FlareAlignItems.Center" Gap="FlareSpacing.XSmall">
                                             <AlvaStatusChip Tone="@(row.Tone == "critical" ? AlvaTone.Critical : row.Tone == "info" ? AlvaTone.Info : AlvaTone.Ok)" Title="@(AlvaStrings.Common_WorkloadOverThePeriod)">@row.Percent%</AlvaStatusChip>
+                                            <FlareIconButton Icon="@MaterialDesign3Icons.Regular.CenterFocusStrong" Size="ButtonSize.Sm" Color="@(focused ? FlareColor.Primary : FlareColor.Default)" Tooltip="@(AlvaStrings.Sprint_ShowOnGantt)" AriaLabel="@($"{AlvaStrings.Sprint_ShowOnGantt}: {person.Name}")" OnClick="() => Toggle(person.Id)" />
                                             <FlareIconButton Icon="@MaterialDesign3Icons.Regular.PersonAdd" Size="ButtonSize.Sm" Tooltip="@(AlvaStrings.Common_AssignAnAssignee)" AriaLabel="@($"{AlvaStrings.Common_AssignAnAssignee}: {person.Name}")" OnClick="() => OpenAssign(person.Id)" />
                                         </FlareStack>
                                     </FlareStack>

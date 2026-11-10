@@ -266,6 +266,7 @@
   <data name="Gantt_PeopleAndRolesOverTime" xml:space="preserve"><value>People and roles over time</value></data>
   <data name="People_TeamPeople" xml:space="preserve"><value>Team people</value></data>
   <data name="Sprint_SprintPeople" xml:space="preserve"><value>Sprint people</value></data>
+  <data name="Sprint_ShowOnGantt" xml:space="preserve"><value>Show on the Gantt</value></data>
   <data name="Sprint_Maximum" xml:space="preserve"><value>Maximum</value></data>
   <data name="Gantt_Scale" xml:space="preserve"><value>Scale</value></data>
   <data name="Capacity_CapacityDistributionMatrix" xml:space="preserve"><value>Capacity distribution matrix</value></data>

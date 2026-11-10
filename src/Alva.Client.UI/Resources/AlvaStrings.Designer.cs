@@ -819,6 +819,9 @@ public static class AlvaStrings
     /// <summary>Sprint people</summary>
     public static string Sprint_SprintPeople => Get("Sprint_SprintPeople");
 
+    /// <summary>Show on the Gantt</summary>
+    public static string Sprint_ShowOnGantt => Get("Sprint_ShowOnGantt");
+
     /// <summary>Maximum</summary>
     public static string Sprint_Maximum => Get("Sprint_Maximum");
 

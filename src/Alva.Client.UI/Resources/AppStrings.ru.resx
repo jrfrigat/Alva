@@ -266,6 +266,7 @@
   <data name="Gantt_PeopleAndRolesOverTime" xml:space="preserve"><value>Люди и роли во времени</value></data>
   <data name="People_TeamPeople" xml:space="preserve"><value>Люди команды</value></data>
   <data name="Sprint_SprintPeople" xml:space="preserve"><value>Люди спринта</value></data>
+  <data name="Sprint_ShowOnGantt" xml:space="preserve"><value>Показать на Гантте</value></data>
   <data name="Sprint_Maximum" xml:space="preserve"><value>Максимум</value></data>
   <data name="Gantt_Scale" xml:space="preserve"><value>Масштаб</value></data>
   <data name="Capacity_CapacityDistributionMatrix" xml:space="preserve"><value>Матрица распределения ёмкости</value></data>
