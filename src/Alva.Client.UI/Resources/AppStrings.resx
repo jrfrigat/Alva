@@ -371,6 +371,9 @@
   <data name="Capacity_NoVacationsOrHolidaysSet" xml:space="preserve"><value>No vacations or holidays set.</value></data>
   <data name="Capacity_NoVacationsPlanned" xml:space="preserve"><value>No vacations planned.</value></data>
   <data name="Gantt_Absence" xml:space="preserve"><value>Absence</value></data>
+  <data name="Gantt_NoEstimateTaskTakesNoHours" xml:space="preserve"><value>No estimate: the task takes no hours</value></data>
+  <data name="Gantt_NoDatesTaskIsNotPlanned" xml:space="preserve"><value>No dates: the task is not planned</value></data>
+  <data name="Gantt_NoEstimateOrDatesTaskTakesNoHours" xml:space="preserve"><value>No estimate or dates: the task takes no hours</value></data>
   <data name="Capacity_NoAbsencesPlanned" xml:space="preserve"><value>No absences planned</value></data>
   <data name="Common_Estimate" xml:space="preserve"><value>Estimate</value></data>
   <data name="Common_EstimateHours" xml:space="preserve"><value>Estimate, hours</value></data>

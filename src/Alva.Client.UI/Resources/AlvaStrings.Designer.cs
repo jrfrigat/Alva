@@ -1134,6 +1134,15 @@ public static class AlvaStrings
     /// <summary>Absence</summary>
     public static string Gantt_Absence => Get("Gantt_Absence");
 
+    /// <summary>No estimate: the task takes no hours</summary>
+    public static string Gantt_NoEstimateTaskTakesNoHours => Get("Gantt_NoEstimateTaskTakesNoHours");
+
+    /// <summary>No dates: the task is not planned</summary>
+    public static string Gantt_NoDatesTaskIsNotPlanned => Get("Gantt_NoDatesTaskIsNotPlanned");
+
+    /// <summary>No estimate or dates: the task takes no hours</summary>
+    public static string Gantt_NoEstimateOrDatesTaskTakesNoHours => Get("Gantt_NoEstimateOrDatesTaskTakesNoHours");
+
     /// <summary>No absences planned</summary>
     public static string Capacity_NoAbsencesPlanned => Get("Capacity_NoAbsencesPlanned");
 

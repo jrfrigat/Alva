@@ -226,29 +226,42 @@ public sealed class ApiServiceLocalStorage(IJSRuntime js) : IApiService
     private static IEnumerable<(TaskModel Task, DateOnly? Start, DateOnly? End)> OpenTasks(DemoStore store, Guid teamId, bool includeClosed = false) =>
         store.Tasks.Where(t => t.TeamId == teamId && (includeClosed || t.Status is not ("Done" or "Cancelled"))).Select(t => (t, t.StartDate, t.EndDate));
 
-    /// <summary>Open tasks with planned dates: only they occupy people; the backlog does not count toward capacity (as in the API).</summary>
-    private static IEnumerable<(TaskModel Task, DateOnly? Start, DateOnly? End)> PlannedTasks(DemoStore store, Guid teamId) =>
-        OpenTasks(store, teamId).Where(x => SprintWindows.Planned(x.Start, x.End));
-
     private static CapacityDemandDto[] Demand(DemoStore store, Guid teamId, DateOnly from, DateOnly to)
     {
         var targets = store.Actors.Where(a => a.Kind != "Person").ToDictionary(a => a.Id);
-        var work = PlannedTasks(store, teamId)
-            .Where(x => x.Task.ResolvedPersonId is null && x.Task.AssignmentTargetId is { } id && targets.ContainsKey(id))
-            .Select(x => (Task: x, Target: targets[x.Task.AssignmentTargetId!.Value]))
-            .Select(x => new DemandWork(x.Target.Id, x.Target.Name, x.Target.Kind, x.Task.Task.EstimateHours ?? 0m, x.Task.Start, x.Task.End, x.Task.Task.Deadline, x.Task.Task.DailyHoursLimit));
+        var work = CapacityPlan.Roots(PlanTasks(store, teamId))
+            .Where(x => x.Task.Hours > 0 && x.Task.PersonId is null && x.Task.TargetId is { } id && targets.ContainsKey(id))
+            .Select(x => new DemandWork(x.Task.TargetId!.Value, targets[x.Task.TargetId!.Value].Name, targets[x.Task.TargetId!.Value].Kind,
+                x.Task.Hours, x.Window.Start, x.Window.End, x.Task.Deadline, x.Task.DailyHoursLimit));
         return CapacityMath.Demand(work, from, to);
     }
 
     private static CapacityDto[] Capacity(DemoStore store, Guid teamId, DateOnly from, DateOnly to)
     {
         var people = store.Actors.Where(a => a.TeamId == teamId && a.Kind == "Person").ToArray();
-        var work = PlannedTasks(store, teamId).Select(x => (x, Person: PersonOf(store, x.Task))).Where(w => w.Person.HasValue)
-            .Select(w => new CapacityWork(w.Person!.Value, w.x.Task.EstimateHours ?? 0m, w.x.Start, w.x.End, w.x.Task.Deadline, w.x.Task.DailyHoursLimit));
+        var work = CapacityPlan.Roots(PlanTasks(store, teamId))
+            .Where(x => x.Task.Hours > 0)
+            .Select(x => (x.Task, Person: PersonOf(store, x.Task), x.Window))
+            .Where(x => x.Person.HasValue)
+            .Select(x => new CapacityWork(x.Person!.Value, x.Task.Hours, x.Window.Start, x.Window.End, x.Task.Deadline, x.Task.DailyHoursLimit));
         return CapacityMath.Build(people.Select(p => (p.Id, p.Name)), (id, day) => CalendarOf(store, people.First(p => p.Id == id), day), work, from, to);
     }
 
+    /// <summary>Open team tasks with the estimate rolled up the tree - the input of capacity planning.</summary>
+    private static PlanTask[] PlanTasks(DemoStore store, Guid teamId)
+    {
+        var tasks = store.Tasks.Where(t => t.TeamId == teamId).ToArray();
+        WithRollup(tasks);
+        return [.. tasks.Where(t => t.Status is not ("Done" or "Cancelled"))
+            .Select(t => new PlanTask(t.Id, t.ParentId, t.EffectiveEstimateHours, t.StartDate, t.EndDate, t.Deadline,
+                t.AssignmentTargetId, t.ResolvedPersonId, t.DailyHoursLimit))];
+    }
+
     /// <summary>Who does the task - the same rule as in the API: the resolved person, otherwise the assignment target if it is a person.</summary>
+    private static Guid? PersonOf(DemoStore store, PlanTask task) =>
+        task.PersonId is { } resolved && store.Actors.Any(a => a.Id == resolved && a.Kind == "Person") ? resolved
+        : store.Actors.FirstOrDefault(a => a.Id == task.TargetId && a.Kind == "Person")?.Id;
+
     private static Guid? PersonOf(DemoStore store, TaskModel task) =>
         task.ResolvedPersonId ?? (store.Actors.FirstOrDefault(a => a.Id == task.AssignmentTargetId) is { Kind: "Person" } target ? target.Id : null);
 

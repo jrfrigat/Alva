@@ -67,6 +67,13 @@
                 }
             </FlareStack>
             <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant" Class="alva-gantt-row__meta">@Data.Assignee(task) · @AlvaFormat.Hours(task.EffectiveEstimateHours) @(AlvaStrings.Sprint_HoursShort)</FlareText>
+            @if (NoHoursReason(task) is { } reason)
+            {
+                <FlareStack Row Align="FlareAlignItems.Center" Gap="FlareSpacing.XXSmall">
+                    <FlareIconView Value="@MaterialDesign3Icons.Regular.Warning" Size="14px" />
+                    <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.Warning">@reason</FlareText>
+                </FlareStack>
+            }
             <SkillMatch Required="task.RequiredSkillIds" Person="@(Data.Actor(task.ResolvedPersonId ?? task.AssignmentTargetId))" Skills="Data.SkillDictionary" />
         </FlareStack>
         @if (RowActions is not null) { @RowActions(task) }
@@ -87,6 +94,21 @@
     }
 
     private static string FixedLabel => AlvaStrings.Gantt_DatesAreFixedTheTaskCannotBeMoved;
+
+    /// <summary>Why an assigned task takes no capacity hours - no estimate, no dates, or both.</summary>
+    private string? NoHoursReason(TaskModel task)
+    {
+        if (GanttData.IsClosed(task) || (task.ResolvedPersonId ?? task.AssignmentTargetId) is null) return null;
+        var noEstimate = task.EffectiveEstimateHours <= 0;
+        var noDates = Data.Span(task) is null;
+        return (noEstimate, noDates) switch
+        {
+            (true, true) => AlvaStrings.Gantt_NoEstimateOrDatesTaskTakesNoHours,
+            (true, false) => AlvaStrings.Gantt_NoEstimateTaskTakesNoHours,
+            (false, true) => AlvaStrings.Gantt_NoDatesTaskIsNotPlanned,
+            _ => null
+        };
+    }
 
     private static string? RowClass(TaskModel task)
     {

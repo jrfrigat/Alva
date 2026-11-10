@@ -335,21 +335,37 @@ public static class PlanningEndpoints
     {
         var (start, end) = Period(from, to);
         var (people, calendarOf) = await PeopleCalendars(db, teamId);
+        var plan = PlanTasks(await OpenWork(db, teamId));
         var work = new List<CapacityWork>();
-        foreach (var (task, assignment, taskStart, taskEnd) in await OpenWork(db, teamId))
-            if (SprintWindows.Planned(taskStart, taskEnd) && assignment is not null && ResolvePerson(assignment, people) is { } person) work.Add(new CapacityWork(person.Id, task.EstimateHours ?? 0m, taskStart, taskEnd, task.Deadline, task.DailyHoursLimit));
+        foreach (var (task, window) in CapacityPlan.Roots(plan))
+            if (task.Hours > 0 && PersonOf(task, people) is { } person)
+                work.Add(new CapacityWork(person, task.Hours, window.Start, window.End, task.Deadline, task.DailyHoursLimit));
         return CapacityMath.Build(people.Select(x => (x.Id, x.Name)), calendarOf, work, start, end);
     }
+
+    /// <summary>Open tasks with the estimate rolled up the tree and their assignment - the input of capacity planning.</summary>
+    private static PlanTask[] PlanTasks(List<(TaskCard Task, Assignment? Assignment, DateOnly? Start, DateOnly? End)> tasks)
+    {
+        var estimates = TaskEndpoints.EffectiveEstimates(tasks.Select(x => x.Task).ToArray());
+        return [.. tasks.Select(x => new PlanTask(x.Task.Id, x.Task.ParentId, estimates.GetValueOrDefault(x.Task.Id),
+            x.Task.StartDate, x.Task.EndDate, x.Task.Deadline, x.Assignment?.TargetId, x.Assignment?.ResolvedPersonId, x.Task.DailyHoursLimit))];
+    }
+
+    /// <summary>The person a plan task occupies: the resolved person, otherwise the assignment target when it is a person.</summary>
+    private static Guid? PersonOf(PlanTask task, List<Actor> people) =>
+        task.PersonId is { } resolved && people.Any(x => x.Id == resolved) ? resolved
+        : task.TargetId is { } target && people.Any(x => x.Id == target) ? target : null;
 
     /// <summary>Demand for departments and skills: tasks assigned to them without a chosen person.</summary>
     internal static async Task<CapacityDemandDto[]> Demand(AlvaDbContext db, Guid teamId, DateOnly? from, DateOnly? to)
     {
         var (start, end) = Period(from, to);
         var targets = await db.Actors.AsNoTracking().Where(x => x.TeamId == teamId && !x.Archived && x.Kind != ActorKind.Person).ToDictionaryAsync(x => x.Id);
+        var plan = PlanTasks(await OpenWork(db, teamId));
         var work = new List<DemandWork>();
-        foreach (var (task, assignment, taskStart, taskEnd) in await OpenWork(db, teamId))
-            if (SprintWindows.Planned(taskStart, taskEnd) && assignment is { ResolvedPersonId: null } && targets.TryGetValue(assignment.TargetId, out var target))
-                work.Add(new DemandWork(target.Id, target.Name, target.Kind.ToString(), task.EstimateHours ?? 0m, taskStart, taskEnd, task.Deadline, task.DailyHoursLimit));
+        foreach (var (task, window) in CapacityPlan.Roots(plan))
+            if (task.Hours > 0 && task.PersonId is null && task.TargetId is { } targetId && targets.TryGetValue(targetId, out var target))
+                work.Add(new DemandWork(target.Id, target.Name, target.Kind.ToString(), task.Hours, window.Start, window.End, task.Deadline, task.DailyHoursLimit));
         return CapacityMath.Demand(work, start, end);
     }
 
