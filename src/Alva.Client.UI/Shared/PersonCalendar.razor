@@ -37,8 +37,10 @@
                Caption="@(NextAbsence is { } a ? $"{AlvaStrings.Capacity_Nearest} {a.From:d MMM}–{a.To:d MMM}, {a.Reason}" : AlvaStrings.Capacity_NoAbsencesPlanned)" />
 </FlareGrid>
 
-<div class="alva-person-layout">
-    <section class="alva-panel alva-weekdays" aria-label="@(AlvaStrings.Capacity_Weekdays)">
+<FlareGrid Columns="5" Gap="FlareSpacing.Medium" AlignItems="FlareAlignItems.Start">
+    <FlareCol Xs="5" Sm="5" Md="3" Lg="4">
+    <section aria-label="@(AlvaStrings.Capacity_Weekdays)">
+        <FlareGrid Columns="7" Gap="FlareSpacing.Small">
         @for (var i = 0; i < 7; i++)
         {
             var date = _monday.AddDays(i);
@@ -49,24 +51,36 @@
             var weekend = Nominal(date) == 0 && absence is null;
             var tasks = TasksOn(date);
             var state = weekend ? "off" : absence is not null ? "absence" : alloc > avail ? "over" : "ok";
-            <div class="alva-weekday alva-weekday--@state @(date == Today ? "alva-weekday--today" : "")" @key="date">
-                <div class="alva-weekday__head"><b>@date.ToString("ddd, d MMM")</b><span class="alva-num">@AlvaFormat.Hours(alloc) / @AlvaFormat.Hours(avail) @(AlvaStrings.Sprint_HoursShort)</span></div>
-                <div class="alva-weekday__status">
-                    @switch (state)
-                    {
-                        case "off": <span>@(AlvaStrings.Capacity_DayOff)</span>; break;
-                        case "absence": <span><FlareIconView Value="@MaterialDesign3Icons.Regular.BeachAccess" Size="14px" /> @absence!.Reason</span>; break;
-                        case "over": <span><FlareIconView Value="@MaterialDesign3Icons.Regular.Warning" Size="14px" /> +@AlvaFormat.Hours(alloc - avail) @(AlvaStrings.Sprint_HoursShort) @(AlvaStrings.Capacity_Overtime)</span>; break;
-                        default: <span>@(alloc == 0 ? AlvaStrings.Capacity_FreePerson : alloc >= avail ? AlvaStrings.Capacity_FullDay : AlvaStrings.Capacity_NormBalance)</span>; break;
-                    }
-                </div>
-                @if (avail > 0) { <FlareProgressLinear Value="@Math.Min(100, Pct(alloc, avail))" Size="TrackSize.Xs" Color="@(alloc > avail ? FlareColor.Error : FlareColor.Primary)" aria-label="@(AlvaStrings.Capacity_DayLoad)" /> }
-                @foreach (var block in Blocks(date)) { <span class="alva-weekday__item alva-weekday__item--meeting"><FlareIconView Value="@MaterialDesign3Icons.Regular.Groups" Size="14px" /> @block.Name · @AlvaFormat.Hours(block.Hours) @(AlvaStrings.Sprint_HoursShort)</span> }
-                @foreach (var task in tasks) { <a class="alva-weekday__item" href="@($"tasks/{task.Id}")"><span class="alva-plan-card__code">@AlvaFormat.Code(task.Id)</span> @task.Title</a> }
-            </div>
+            <FlareCol Xs="7" Sm="7" Md="1" Lg="1" @key="date">
+                <FlareCard Variant="CardVariant.Outlined">
+                    <FlareCardContent>
+                    <FlareStack Gap="FlareSpacing.Small">
+                        <FlareStack Gap="FlareSpacing.None">
+                            <FlareText Typo="TypographyScale.LabelMedium">@date.ToString("ddd, d MMM")</FlareText>
+                            <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@AlvaFormat.Hours(alloc) / @AlvaFormat.Hours(avail) @(AlvaStrings.Sprint_HoursShort)</FlareText>
+                        </FlareStack>
+                        <AlvaStatusChip Tone="@DayTone(state)">
+                            @switch (state)
+                            {
+                                case "off": @AlvaStrings.Capacity_DayOff; break;
+                                case "absence": @($"{absence!.Reason}"); break;
+                                case "over": @($"+{AlvaFormat.Hours(alloc - avail)} {AlvaStrings.Sprint_HoursShort} {AlvaStrings.Capacity_Overtime}"); break;
+                                default: @(alloc == 0 ? AlvaStrings.Capacity_FreePerson : alloc >= avail ? AlvaStrings.Capacity_FullDay : AlvaStrings.Capacity_NormBalance); break;
+                            }
+                        </AlvaStatusChip>
+                        @if (avail > 0) { <FlareProgressLinear Value="@Math.Min(100, Pct(alloc, avail))" Size="TrackSize.Xs" Color="@(alloc > avail ? FlareColor.Error : FlareColor.Primary)" aria-label="@(AlvaStrings.Capacity_DayLoad)" /> }
+                        @foreach (var block in Blocks(date)) { <FlareStack Row Align="FlareAlignItems.Center" Gap="FlareSpacing.XXSmall"><FlareIconView Value="@MaterialDesign3Icons.Regular.Groups" Size="14px" /><FlareText Typo="TypographyScale.BodySmall">@block.Name, @AlvaFormat.Hours(block.Hours) @(AlvaStrings.Sprint_HoursShort)</FlareText></FlareStack> }
+                        @foreach (var task in tasks) { <FlareLink Href="@($"tasks/{task.Id}")">@AlvaFormat.Code(task.Id) @task.Title</FlareLink> }
+                    </FlareStack>
+                    </FlareCardContent>
+                </FlareCard>
+            </FlareCol>
         }
+        </FlareGrid>
     </section>
-    <aside class="alva-person-side">
+    </FlareCol>
+    <FlareCol Xs="5" Sm="5" Md="2" Lg="1">
+    <FlareStack Gap="FlareSpacing.Medium">
         <FlareCard Variant="CardVariant.Outlined">
             <FlareCardHeader Title="@($"{AlvaStrings.Capacity_TasksThisWeek} ({WeekTasks.Length})")" />
             <FlareCardContent>
@@ -103,8 +117,9 @@
                 <FlareButton Href="@($"capacity/{ActorId}/schedule")" Variant="ButtonVariant.Tonal" Size="ButtonSize.Sm"><LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.Add" Size="18px" /></LeadingIcon><ChildContent>@(AlvaStrings.Capacity_TimeOffVacation)</ChildContent></FlareButton>
             </FlareCardContent>
         </FlareCard>
-    </aside>
-</div>
+    </FlareStack>
+    </FlareCol>
+</FlareGrid>
 
 @code {
     [Parameter, EditorRequired] public Guid ActorId { get; set; }
@@ -125,6 +140,7 @@
     private IEnumerable<string> Tags => Person is null ? [] : _actors.Where(a => Person.SkillIds.Contains(a.Id) || Person.DepartmentIds.Contains(a.Id)).Select(a => a.Name);
     private SprintModel? SprintOfWeek => _sprints.Where(s => s.StartDate <= _monday.AddDays(6) && s.EndDate >= _monday).OrderBy(s => s.StartDate).FirstOrDefault();
     private static int Pct(decimal part, decimal whole) => whole <= 0 ? 0 : (int)Math.Round(part / whole * 100);
+    private static AlvaTone DayTone(string state) => state switch { "off" => AlvaTone.Neutral, "absence" => AlvaTone.Role, "over" => AlvaTone.Critical, _ => AlvaTone.Ok };
 
     private decimal Nominal(DateOnly d) => _calendar is null ? 0 : d.DayOfWeek switch
     {

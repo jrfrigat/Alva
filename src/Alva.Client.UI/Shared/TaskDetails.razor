@@ -16,9 +16,9 @@
             <FlareStack Row Wrap Align="FlareAlignItems.Center" Gap="FlareSpacing.Small">
                 <FlareMenu Anchor="MenuAnchor.BottomStart" AriaLabel="@(AlvaStrings.Common_Status)">
                     <Activator>
-                        <button type="button" class="alva-task__status-activator" aria-label="@(AlvaStrings.Common_Status)" title="@(AlvaStrings.Common_Status)">
+                        <FlareButton Variant="ButtonVariant.Text" Size="ButtonSize.Sm" aria-label="@(AlvaStrings.Common_Status)" title="@(AlvaStrings.Common_Status)">
                             <AlvaStatusChip Tone="AlvaTones.Status(_model.Status)">@Labels.Status(_model.Status)</AlvaStatusChip>
-                        </button>
+                        </FlareButton>
                     </Activator>
                     <ChildContent>
                         @foreach (var status in Statuses)
@@ -56,7 +56,7 @@
                 {
                     @if (Item.ExternalUrl is { Length: > 0 } externalUrl)
                     {
-                        <FlareLink Class="alva-task__external" Href="@externalUrl" target="_blank" rel="noopener noreferrer" title="@(AlvaStrings.Task_OpenInTheExternalTracker)">@externalKey -></FlareLink>
+                        <FlareLink Href="@externalUrl" target="_blank" rel="noopener noreferrer" title="@(AlvaStrings.Task_OpenInTheExternalTracker)">@externalKey -></FlareLink>
                     }
                     else { <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@externalKey</FlareText> }
                 }
@@ -65,7 +65,9 @@
         </DescriptionContent>
     </FlarePageHeader>
     </div>
-    <div class="alva-task__actions" role="toolbar" aria-label="@(AlvaStrings.Common_TaskActions)">
+    <FlareCard Variant="CardVariant.Outlined" Style="position:sticky;top:0;z-index:6">
+        <FlareCardContent>
+        <FlareStack Row Wrap Align="FlareAlignItems.Center" Gap="FlareSpacing.Small" role="toolbar" aria-label="@(AlvaStrings.Common_TaskActions)">
         <FlareButton Loading="_busy" Disabled="@(string.IsNullOrWhiteSpace(_model.Title) || !Dirty)" OnClick="Save" Size="ButtonSize.Sm">
             <LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.Save" Size="18px" /></LeadingIcon>
             <ChildContent>@(AlvaStrings.Common_Save)</ChildContent>
@@ -84,13 +86,15 @@
         </FlareMenu>
         <FlareSpacer />
         <EditorStatus Dirty="Dirty" Saving="_busy" Saved="_saved" />
-    </div>
+        </FlareStack>
+        </FlareCardContent>
+    </FlareCard>
     <PageFeedback Error="@_error" />
 
     <FlareTabs ActiveIndex="_tabIndex" ActiveIndexChanged="OnTabChanged">
         <FlareTab Label="@TabLabel("summary")">
             <FlareStack Gap="FlareSpacing.Large">
-    <FlareSection Class="alva-task__risk">
+    <FlareSection>
         <HeadingContent>
             <FlareStack Row Align="FlareAlignItems.Center" Gap="FlareSpacing.Small">
                 <FlareIconView Value="@(_risk is { HasRisk: true } ? MaterialDesign3Icons.Regular.Warning : MaterialDesign3Icons.Regular.CheckCircle)" Size="20px" />
@@ -256,7 +260,7 @@
 
         <FlareTab Label="@TabLabel("links")">
             <FlareStack Gap="FlareSpacing.Large">
-    <FlareSection Class="alva-task__deps">
+    <FlareSection>
         <HeadingContent>
             <FlareStack Row Align="FlareAlignItems.Center" Gap="FlareSpacing.Small">
                 <FlareIconView Value="@MaterialDesign3Icons.Regular.Hub" Size="20px" />
@@ -408,18 +412,18 @@
     </FlareTabs>
 </FlareStack>
 
-<FlareDrawer Anchor="DrawerAnchor.Right" @bind-Open="_assignOpen" @bind-Open:after="AssignToggled" Width="26rem" AriaLabel="@(AlvaStrings.Task_Assignment)">
+<FlareDrawer Anchor="DrawerAnchor.Right" @bind-Open="_assignOpen" @bind-Open:after="AssignToggled" Width="26rem" ContentPadding="FlareSpacing.Large" AriaLabel="@(AlvaStrings.Task_Assignment)">
     <HeaderContent>
-        <div class="alva-assign__header">
-            <FlareIconView Value="@MaterialDesign3Icons.Regular.PersonAdd" Size="22px" Class="alva-panel__icon" />
-            <div>
-                <div class="alva-assign__title">@(AlvaStrings.Task_Assignment)</div>
-                <div class="alva-assign__task alva-num">@Code(Item)@(Item.EstimateHours.HasValue ? $" ({AlvaFormat.Hours(Item.EstimateHours.Value)}{AlvaStrings.Sprint_HoursShort})" : "")</div>
-            </div>
-        </div>
+        <FlareStack Row Align="FlareAlignItems.Start" Gap="FlareSpacing.Small">
+            <FlareIconView Value="@MaterialDesign3Icons.Regular.PersonAdd" Size="22px" />
+            <FlareStack Gap="FlareSpacing.None">
+                <FlareText Typo="TypographyScale.TitleMedium">@(AlvaStrings.Task_Assignment)</FlareText>
+                <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.Primary">@Code(Item)@(Item.EstimateHours.HasValue ? $" ({AlvaFormat.Hours(Item.EstimateHours.Value)}{AlvaStrings.Sprint_HoursShort})" : "")</FlareText>
+            </FlareStack>
+        </FlareStack>
     </HeaderContent>
     <ChildContent>
-        <div class="alva-assign">
+        <FlareStack Gap="FlareSpacing.Medium">
             <FlareText Typo="TypographyScale.LabelMedium" Color="FlareColor.OnSurfaceVariant">@(AlvaStrings.Task_BalancingType)</FlareText>
             <FlareTabs @bind-ActiveIndex="_assignTab">
                 @foreach (var kind in Kinds)
@@ -431,18 +435,21 @@
             {
                 <FlareSelect TValue="Guid?" Label="@(AlvaStrings.Common_SpecificAssignee)" Items="AssignablePeople.Select(a => (Guid?)a.Id)" ItemLabel="ActorName" NullOption="@(AlvaStrings.Task_NotChosenYetAPersonIsRequired)" @bind-Value="_assignPerson" Searchable />
             }
-            <div class="alva-assign__footer">
+            <FlareDivider />
+            <FlareStack Row Wrap Justify="FlareJustifyContent.SpaceBetween" Gap="FlareSpacing.Small">
                 @if (Item.AssignmentTargetId is not null)
                 {
                     <FlareButton Variant="ButtonVariant.Text" Size="ButtonSize.Sm" Color="FlareColor.Error" Disabled="_busy" OnClick="ClearAssign">@(AlvaStrings.Task_Unassign)</FlareButton>
                 }
-                <FlareButton Variant="ButtonVariant.Text" Size="ButtonSize.Sm" OnClick="CloseAssign">@(AlvaStrings.Common_Cancel)</FlareButton>
-                <FlareButton Size="ButtonSize.Sm" Loading="_busy" Disabled="@(_assignTarget is null)" OnClick="ApplyAssign">
-                    <LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.Check" Size="18px" /></LeadingIcon>
-                    <ChildContent>@(AlvaStrings.Common_ApplyTheAssignment)</ChildContent>
-                </FlareButton>
-            </div>
-        </div>
+                <FlareStack Row Wrap Gap="FlareSpacing.Small">
+                    <FlareButton Variant="ButtonVariant.Text" Size="ButtonSize.Sm" OnClick="CloseAssign">@(AlvaStrings.Common_Cancel)</FlareButton>
+                    <FlareButton Size="ButtonSize.Sm" Loading="_busy" Disabled="@(_assignTarget is null)" OnClick="ApplyAssign">
+                        <LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.Check" Size="18px" /></LeadingIcon>
+                        <ChildContent>@(AlvaStrings.Common_ApplyTheAssignment)</ChildContent>
+                    </FlareButton>
+                </FlareStack>
+            </FlareStack>
+        </FlareStack>
     </ChildContent>
 </FlareDrawer>
 

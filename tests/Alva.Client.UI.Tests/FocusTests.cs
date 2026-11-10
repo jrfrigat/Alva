@@ -45,7 +45,7 @@ public sealed class FocusTests : UiTestBase
 
         cut.WaitForAssertion(() => Assert.Contains(Focused(cut, JSInterop), f => f.StartsWith("div:")));
         Assert.Equal("Релиз", cut.Find("h1").TextContent.Trim());
-        Assert.Equal("-1", cut.Find(".alva-task-card").GetAttribute("tabindex"));
+        Assert.Equal("-1", cut.Find("[tabindex='-1'][aria-label]").GetAttribute("tabindex"));
 
         // A normal page re-render does not touch focus.
         cut.Render();

@@ -4,6 +4,7 @@ using Alva.Client.Pages;
 using Alva.Client.Shared;
 using Alva.Contracts;
 using Bunit;
+using Flare.Components;
 using Xunit;
 
 namespace Alva.Client.UI.Tests;
@@ -101,7 +102,7 @@ public sealed class RiskActionUiTests : UiTestBase
             var cut = Render<Analytics>();
 
             cut.WaitForAssertion(() => Assert.Single(cut.FindAll("tbody tr[role=row]")));
-            cut.Find(".alva-filterbar__search input").Input("zzz");
+            cut.FindComponent<FlareTextField>().Find("input").Input("zzz");
             cut.WaitForAssertion(() => Assert.Contains("Reset the filter", cut.Markup));
             cut.FindAll("button").First(b => b.TextContent.Contains("Reset the filter")).Click();
             cut.WaitForAssertion(() => Assert.Single(cut.FindAll("tbody tr[role=row]")));

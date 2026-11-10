@@ -26,7 +26,7 @@ public sealed class LoadingStateTests : UiTestBase
 
         var cut = Render<Overview>();
 
-        Assert.Contains("alva-loading", cut.Markup);
+        Assert.Contains("aria-busy=\"true\"", cut.Markup);
         Assert.DoesNotContain("Задач в работе", cut.Markup);
         gate.SetResult();
         cut.WaitForAssertion(() => Assert.Contains("Первый запуск", cut.Markup));
@@ -40,7 +40,7 @@ public sealed class LoadingStateTests : UiTestBase
 
         var cut = Render<Tasks>();
 
-        Assert.Contains("alva-loading", cut.Markup);
+        Assert.Contains("aria-busy=\"true\"", cut.Markup);
         Assert.DoesNotContain("Задач пока нет", cut.Markup);
         gate.SetResult();
         cut.WaitForAssertion(() => Assert.Contains("Задач пока нет", cut.Markup));

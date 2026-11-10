@@ -62,17 +62,21 @@ else
     </FlareStat>
 </FlareGrid>
 
-<div class="alva-filterbar">
-    <FlareTabs @bind-ActiveIndex="_filter" Class="alva-filterbar__tabs">
+<FlareCard Variant="CardVariant.Outlined">
+    <FlareCardContent>
+    <FlareStack Row Wrap Align="FlareAlignItems.Center" Gap="FlareSpacing.Medium" StretchFirst="true">
+    <FlareTabs @bind-ActiveIndex="_filter">
         <FlareTab Label="@(AlvaStrings.Common_AllSprints)" Badge="@Sprints.Length.ToString()" BadgeColor="FlareColor.Secondary" />
         <FlareTab Label="@(AlvaStrings.Sprint_ActiveTab)" Badge="@Count("Active").ToString()" BadgeColor="FlareColor.Secondary" />
         <FlareTab Label="@(AlvaStrings.Sprint_PlannedTab)" Badge="@Count("Planned").ToString()" BadgeColor="FlareColor.Secondary" />
         <FlareTab Label="@(AlvaStrings.Sprint_Completed)" Badge="@Count("Completed").ToString()" BadgeColor="FlareColor.Secondary" />
     </FlareTabs>
-    <FlareTextField @bind-Value="_search" Immediate Clearable Placeholder="@(AlvaStrings.Sprint_SearchBySprintName)" AriaLabel="@(AlvaStrings.Sprint_SearchASprint)" Class="alva-filterbar__search">
+    <FlareTextField @bind-Value="_search" Immediate Clearable Placeholder="@(AlvaStrings.Sprint_SearchBySprintName)" AriaLabel="@(AlvaStrings.Sprint_SearchASprint)" Style="flex:0 1 20rem">
         <AdornmentStart><FlareIconView Value="@MaterialDesign3Icons.Regular.Search" Size="18px" /></AdornmentStart>
     </FlareTextField>
-</div>
+    </FlareStack>
+    </FlareCardContent>
+</FlareCard>
 <PageFeedback Error="@_error" />
 
 @if (Sprints.Length == 0)

@@ -11,14 +11,16 @@
 @if (Session.TeamId is null) { <TeamRequired /> }
 else if (_data is not null)
 {
-    <div class="alva-filterbar alva-gantt-bar">
-        <div class="alva-gantt-bar__fields">
+    <FlareCard Variant="CardVariant.Outlined">
+        <FlareCardContent>
+        <FlareStack Row Wrap Align="FlareAlignItems.Center" Gap="FlareSpacing.Medium" StretchFirst="true">
+        <FlareStack Row Wrap Align="FlareAlignItems.Center" Gap="FlareSpacing.Small">
             <FlareSelect TValue="Guid?" Items="@(_data.Sprints.OrderBy(s => s.StartDate).Select(s => (Guid?)s.Id))" ItemLabel="_data.SprintName" NullOption="@(AlvaStrings.Gantt_AllTasks)"
                          @bind-Value="_sprintId" Size="FieldSize.Sm" InputAttributes="@(Aria(AlvaStrings.Gantt_Sprint))" />
             <FlareSelect TValue="GanttScale" Items="GanttData.Scales" ItemLabel="GanttData.ScaleName" @bind-Value="_scale" Size="FieldSize.Sm" InputAttributes="@(Aria(AlvaStrings.Gantt_Scale))" />
             <GanttZoom View="tasks" Scale="_scale" @bind-Value="_unit" />
             <FlareButton Size="ButtonSize.Sm" Variant="ButtonVariant.Text" OnClick="ToToday" Tooltip="@(AlvaStrings.Gantt_ToTodayAltWheelScrollThroughTime)">@(AlvaStrings.Gantt_Today)</FlareButton>
-        </div>
+        </FlareStack>
         <FlareChipGroup MultiSelect="true" SelectedValues="SelectedTypeCodes" SelectedValuesChanged="SetTypes" AriaLabel="@(AlvaStrings.Gantt_LinkTypes)">
             @foreach (var type in AllTypes)
             {
@@ -26,7 +28,9 @@ else if (_data is not null)
             }
         </FlareChipGroup>
         <FlareSwitch @bind-Value="_critical" Label="@(AlvaStrings.Gantt_CriticalPath)" />
-    </div>
+        </FlareStack>
+        </FlareCardContent>
+    </FlareCard>
 
     <GanttLegend Notice="@_notice" />
 
@@ -38,11 +42,11 @@ else if (_data is not null)
     {
         @* The wrapper catches Enter from a bar (the bar is focusable and marked role="button") and holds focus
            after the panel closes: the bar's events bubble up here. *@
-        <div class="alva-gantt__host" @ref="_host" tabindex="-1" @onkeydown="OnChartKey">
+        <div @ref="_host" tabindex="-1" @onkeydown="OnChartKey">
         <FlareGantt @ref="_chart" Range="@Axis()" RangeChanged="r => _range = r" Endless="true" Scale="_scale" UnitWidth="_unit" FillWidth="true" Virtualize="true" RowHeight="56" SideWidth="@_side" DefaultSideWidth="22rem" ResizableSide="true" SideWidthChanged="SaveSide"
                     NonWorking="GanttData.IsWeekend" Markers="@GanttData.TodayMarkers" Regions="@_data.SprintRegions(Sprint)" @bind-SelectedKey="_selected"
                     AriaLabel="@(AlvaStrings.Gantt_TaskGantt)" Class="alva-gantt">
-            <Corner><span>@(AlvaStrings.Gantt_TaskAssigneeHours)</span></Corner>
+            <Corner><FlareText Typo="TypographyScale.LabelSmall">@(AlvaStrings.Gantt_TaskAssigneeHours)</FlareText></Corner>
             <ChildContent>
                 <GanttTaskPanel Data="_data" SprintId="_sprintId" Types="_types" Critical="_critical" OnChange="Change" OnLinkCreate="Link" OnLinkRejected="Rejected" OnItemClick="OpenTask" />
             </ChildContent>

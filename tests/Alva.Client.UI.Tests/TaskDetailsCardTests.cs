@@ -1,6 +1,7 @@
 using Alva.Client.Models;
 using Alva.Client.Shared;
 using Alva.Contracts;
+using AngleSharp.Dom;
 using Bunit;
 using Flare.Components;
 using Xunit;
@@ -27,6 +28,9 @@ public sealed class TaskDetailsCardTests : UiTestBase
             .Add(x => x.Sprints, sprints ?? [])
             .Add(x => x.Tasks, [item ?? _task, _blocker, _next])));
 
+    private static IElement Section(IRenderedComponent<FlareConfirmDialogProvider> cut, string title) =>
+        cut.FindAll(".flare-section").Single(s => s.QuerySelector("h2")?.TextContent.Trim() == title);
+
     private static void ConfirmDialog(IRenderedComponent<FlareConfirmDialogProvider> cut, string action)
     {
         cut.WaitForAssertion(() => Assert.NotNull(cut.Find("[role='alertdialog']")));
@@ -36,7 +40,7 @@ public sealed class TaskDetailsCardTests : UiTestBase
     [Fact]
     public void Actions_are_in_a_sticky_toolbar()
     {
-        var toolbar = Page().Find(".alva-task__actions");
+        var toolbar = Page().Find("[role='toolbar'][aria-label='Действия с задачей']");
 
         Assert.Contains("Сохранить", toolbar.TextContent);
         Assert.Contains("Назначить исполнителя", toolbar.TextContent);
@@ -97,7 +101,7 @@ public sealed class TaskDetailsCardTests : UiTestBase
 
         var cut = Page();
 
-        var block = cut.Find(".alva-task__risk");
+        var block = Section(cut, "Риск");
         Assert.Contains("Высокий", block.TextContent);
         Assert.Contains("Срок прошёл", block.TextContent);
         Assert.Contains(block.QuerySelectorAll("a"), a => a.GetAttribute("href") == $"tasks/{_blocker.Id}");
@@ -110,7 +114,7 @@ public sealed class TaskDetailsCardTests : UiTestBase
         Api.Answer("risks", _ => new[] { new RiskDto(_task.Id, _task.Title, "Medium", [new ReasonDto(ReasonCodes.RiskNoAssignee)], null) });
         var cut = Page();
 
-        cut.Find(".alva-task__risk").QuerySelector("button")!.Click();
+        Section(cut, "Риск").QuerySelector("button")!.Click();
 
         cut.WaitForAssertion(() => Assert.Contains(Api.Reads, r => r.Contains("capacity")));
     }
@@ -118,7 +122,7 @@ public sealed class TaskDetailsCardTests : UiTestBase
     [Fact]
     public void Task_without_risk_says_so()
     {
-        Assert.Contains("Рисков нет", Page().Find(".alva-task__risk").TextContent);
+        Assert.Contains("Рисков нет", Section(Page(), "Риск").TextContent);
     }
 
     [Fact]
@@ -129,7 +133,7 @@ public sealed class TaskDetailsCardTests : UiTestBase
             new RiskDto(_task.Id, _task.Title, "Info", [], null, [new ReasonDto(ReasonCodes.ForecastUnknownRemaining)])
         });
 
-        var block = Page().Find(".alva-task__risk");
+        var block = Section(Page(), "Риск");
 
         Assert.Contains("Рисков нет", block.TextContent);
         Assert.Contains("Неизвестен остаток работы", block.TextContent);
@@ -297,10 +301,10 @@ public sealed class TaskDetailsCardTests : UiTestBase
         Assert.Contains("Анна", header.TextContent);
         Assert.Contains("8 / 4", header.TextContent);
 
-        cut.Find(".alva-task__status-activator").Click();
+        cut.Find("button[aria-label='Статус']").Click();
         cut.WaitForAssertion(() => Assert.Contains("Готова", cut.Markup));
         Button(cut, "Готова").Click();
-        cut.WaitForAssertion(() => Assert.Contains("Готова", cut.Find(".alva-task__status-activator").TextContent));
+        cut.WaitForAssertion(() => Assert.Contains("Готова", cut.Find("button[aria-label='Статус']").TextContent));
         Assert.False(Button(cut, "Сохранить").HasAttribute("disabled"));
     }
 
@@ -345,7 +349,7 @@ public sealed class TaskDetailsCardTests : UiTestBase
             new DependencyDto(Guid.NewGuid(), _task.Id, _next.Id, "SS", 0)
         });
 
-        var deps = Page().Find(".alva-task__deps");
+        var deps = Section(Page(), "Зависимости");
 
         Assert.Contains("Предшественники (1)", deps.TextContent);
         Assert.Contains("Последователи (1)", deps.TextContent);

@@ -17,24 +17,29 @@
     </Actions>
 </AlvaPageHeader>
 
-<div class="alva-capacity-bar">
-    <FlareToggleGroup TValue="string" Value="@_mode" ValueChanged="SetMode" Size="ButtonSize.Sm" Mandatory AriaLabel="@(AlvaStrings.Capacity_PeriodBreakdown)">
-        @foreach (var (mode, label) in Modes)
-        {
-            <FlareToggleButton Value="@mode">@label</FlareToggleButton>
-        }
-    </FlareToggleGroup>
-    <span class="alva-capacity-bar__sep" aria-hidden="true"></span>
-    <FlareText Typo="TypographyScale.LabelMedium" Color="FlareColor.OnSurfaceVariant">@(AlvaStrings.Capacity_Departments)</FlareText>
-    <FlareChipGroup SelectedValues="SelectedDepartments" SelectedValuesChanged="SetDepartment" AriaLabel="@(AlvaStrings.Common_SubTeams)">
-        <FlareChip Value="" Label="@($"{AlvaStrings.Capacity_AllSubTeams} ({_departments.Length})")" />
-        @foreach (var dept in _departments)
-        {
-            <FlareChip Value="@dept.Id.ToString()" Label="@($"{dept.Name}: {People.Count(p => GroupOf(p) == dept.Id)}")" />
-        }
-    </FlareChipGroup>
-    <FlareCheckbox TValue="bool" @bind-Value="_highlight" Label="@(AlvaStrings.Capacity_ShowOverloads100)" Class="alva-capacity-bar__check" />
-</div>
+<FlareCard Variant="CardVariant.Outlined">
+    <FlareCardContent>
+    <FlareStack Row Wrap Align="FlareAlignItems.Center" Gap="FlareSpacing.Medium">
+        <FlareToggleGroup TValue="string" Value="@_mode" ValueChanged="SetMode" Size="ButtonSize.Sm" Mandatory AriaLabel="@(AlvaStrings.Capacity_PeriodBreakdown)">
+            @foreach (var (mode, label) in Modes)
+            {
+                <FlareToggleButton Value="@mode">@label</FlareToggleButton>
+            }
+        </FlareToggleGroup>
+        <FlareDivider Vertical="true" />
+        <FlareText Typo="TypographyScale.LabelMedium" Color="FlareColor.OnSurfaceVariant">@(AlvaStrings.Capacity_Departments)</FlareText>
+        <FlareChipGroup SelectedValues="SelectedDepartments" SelectedValuesChanged="SetDepartment" AriaLabel="@(AlvaStrings.Common_SubTeams)">
+            <FlareChip Value="" Label="@($"{AlvaStrings.Capacity_AllSubTeams} ({_departments.Length})")" />
+            @foreach (var dept in _departments)
+            {
+                <FlareChip Value="@dept.Id.ToString()" Label="@($"{dept.Name}: {People.Count(p => GroupOf(p) == dept.Id)}")" />
+            }
+        </FlareChipGroup>
+        <FlareSpacer />
+        <FlareCheckbox TValue="bool" @bind-Value="_highlight" Label="@(AlvaStrings.Capacity_ShowOverloads100)" />
+    </FlareStack>
+    </FlareCardContent>
+</FlareCard>
 <PageFeedback Error="@_error" Loading="_busy" OnRetry="Load" />
 @if (!_loaded) { <LoadingSkeleton Height="20rem" /> }
 else
@@ -60,13 +65,13 @@ else
 <FlareCard Variant="CardVariant.Outlined">
     <FlareCardHeader Title="@(AlvaStrings.Capacity_CapacityDistributionMatrix)" Subtitle="@($"{AlvaStrings.Capacity_Spread} {string.Join(", ", _periods.Select(p => p.Title))}")" />
     <FlareCardContent>
-    <div class="alva-heat-legend">
-        <span class="alva-heat-legend__title">@(AlvaStrings.Capacity_HeatScale)</span>
-        <span><i class="alva-heat--under"></i>@(AlvaStrings.Capacity_Text70Underload)</span>
-        <span><i class="alva-heat--balance"></i>@(AlvaStrings.Capacity_Text70100Balanced)</span>
-        <span><i class="alva-heat--tension"></i>@(AlvaStrings.Capacity_Text101115Strained)</span>
-        <span><i class="alva-heat--critical"></i>@(AlvaStrings.Capacity_Text115CriticalOverload)</span>
-    </div>
+    <FlareStack Row Wrap Align="FlareAlignItems.Center" Gap="FlareSpacing.Medium">
+        <FlareText Typo="TypographyScale.LabelSmall" Color="FlareColor.OnSurfaceVariant">@(AlvaStrings.Capacity_HeatScale)</FlareText>
+        <FlareStack Row Align="FlareAlignItems.Center" Gap="FlareSpacing.XXSmall"><FlareBadge Standalone="true" Dot="true" Color="FlareColor.Info" /><FlareText Typo="TypographyScale.BodySmall">@(AlvaStrings.Capacity_Text70Underload)</FlareText></FlareStack>
+        <FlareStack Row Align="FlareAlignItems.Center" Gap="FlareSpacing.XXSmall"><FlareBadge Standalone="true" Dot="true" Color="FlareColor.Success" /><FlareText Typo="TypographyScale.BodySmall">@(AlvaStrings.Capacity_Text70100Balanced)</FlareText></FlareStack>
+        <FlareStack Row Align="FlareAlignItems.Center" Gap="FlareSpacing.XXSmall"><FlareBadge Standalone="true" Dot="true" Color="FlareColor.Warning" /><FlareText Typo="TypographyScale.BodySmall">@(AlvaStrings.Capacity_Text101115Strained)</FlareText></FlareStack>
+        <FlareStack Row Align="FlareAlignItems.Center" Gap="FlareSpacing.XXSmall"><FlareBadge Standalone="true" Dot="true" Color="FlareColor.Error" /><FlareText Typo="TypographyScale.BodySmall">@(AlvaStrings.Capacity_Text115CriticalOverload)</FlareText></FlareStack>
+    </FlareStack>
     <FlareDataGrid TItem="MatrixRow" Items="MatrixRows" RowKey="row => row.Key" Height="auto" Dense="true"
                    Presentation="DataGridPresentation.Auto" aria-label="@(AlvaStrings.Capacity_CapacityDistribution)">
         <Grouping>
@@ -175,9 +180,9 @@ else
     <FlareCard Variant="CardVariant.Outlined">
         <FlareCardHeader Title="@(AlvaStrings.Capacity_CapacityBalanceForecastByPeriod)" Subtitle="@(AlvaStrings.Capacity_ComparisonOfTheFundNominalPlannedWorkAndResourceDeficit)" />
         <FlareCardContent>
-            <FlareChart Type="ChartType.Bar" Data="Forecast" Height="260" ComponentCssClass="alva-forecast-chart"
+            <FlareChart Type="ChartType.Bar" Data="Forecast" Height="260"
                         Description="@ForecastSummary" DataTable="true" aria-label="@(AlvaStrings.Capacity_FundPlanAndDeficitByPeriod)" />
-            <FlareText Element="p" Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant"><b>@(AlvaStrings.Capacity_KeyTakeaway)</b> @ForecastSummary</FlareText>
+            <FlareText Element="p" Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant"><FlareText Element="strong" Typo="TypographyScale.LabelMedium">@(AlvaStrings.Capacity_KeyTakeaway)</FlareText> @ForecastSummary</FlareText>
         </FlareCardContent>
     </FlareCard>
 }

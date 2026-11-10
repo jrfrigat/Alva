@@ -3,47 +3,51 @@
 @* Sprint Gantt on the planning board: tasks of all unfinished sprints and people lanes on one axis,
    each sprint is labelled and the selected one is highlighted. Bars are edited as on the Gantt pages; the day a task
    is dropped on or a bar is moved to decides which sprint it lands in. *@
-<section class="alva-panel alva-plan-gantt">
-    <header class="alva-panel__header">
-        <FlareIconView Value="@MaterialDesign3Icons.Regular.AlignHorizontalLeft" Size="20px" Class="alva-panel__icon" />
-        <div>
-            <h2 class="alva-panel__title">@string.Format(AlvaStrings.Gantt_Synchronous2dGanttOnTheAxis, $"{SprintCount} {AlvaFormat.Plural(SprintCount, "sprint")}")</h2>
-            <p class="alva-panel__subtitle">@(AlvaStrings.Gantt_DropATaskOntoADayItJoinsThatDaySSprintAndGetsADueDateOntoAPersonSRowItAl_c6e380)</p>
-        </div>
-        <GanttLegend Class="alva-plan-gantt__legend" Items="BoardKey">
-            <Trailing><a class="alva-plan-gantt__link" href="gantt/2d">@(AlvaStrings.Gantt_OpenTheGantt)</a></Trailing>
-        </GanttLegend>
-        <GanttZoom View="@View" Default="DefaultUnit" @bind-Value="_unit" />
-        <FlareButton Size="ButtonSize.Sm" Variant="ButtonVariant.Text" OnClick="ToToday" Tooltip="@(AlvaStrings.Gantt_ToTodayAltWheelScrollThroughTime)">@(AlvaStrings.Gantt_Today)</FlareButton>
-    </header>
-    @if (Data is null || People is null)
-    {
-        <FlareSkeleton Height="240px" Announce />
-    }
-    else
-    {
-        <FlareGantt @ref="_chart" Range="Range" RangeChanged="RangeChanged" Endless="true" Scale="GanttScale.Day" UnitWidth="_unit" FillWidth="true" Virtualize="true" RowHeight="56"
-                    SideWidth="@_side" DefaultSideWidth="14rem" ResizableSide="true" SideWidthChanged="SaveSide" NonWorking="GanttData.IsWeekend"
-                    Markers="@GanttData.TodayMarkers" Regions="@Data.PlanRegions(Sprint)" @bind-SelectedKey="_selected"
-                    AriaLabel="@(AlvaStrings.Gantt_SprintGantt)" Class="alva-gantt alva-plan-gantt__chart">
-            <Corner><span>@(AlvaStrings.Gantt_TaskAssignee)</span></Corner>
-            <ChildContent>
-                <GanttTaskPanel Data="Data" SprintIds="SprintIds" DragRows="true" OnChange="OnTaskChange" OnLinkCreate="OnLinkCreate" OnLinkRejected="OnLinkRejected"
-                                DropGroup="plan" DropAccepts="IsTask" ItemDropGroup="plan" ItemDropAccepts="IsPerson" Suggested="TaskGhosts">
-                    <Header>@(AlvaStrings.Gantt_Projection1SprintTasks)</Header>
-                    <RowActions Context="task">
-                        <FlareIconButton Icon="@MaterialDesign3Icons.Regular.Close" Size="ButtonSize.Sm" Tooltip="@UnplanHint(task)"
-                                         AriaLabel="@string.Format(AlvaStrings.Gantt_ReturnToTheBacklog, task.Title)" OnClick="() => OnUnplan.InvokeAsync(task)" />
-                    </RowActions>
-                </GanttTaskPanel>
-                <GanttPeoplePanel People="People" Range="Range" Focus="Focus" OnChange="OnPeopleChange" OnLinkCreate="OnLinkCreate" OnLinkRejected="OnLinkRejected"
-                                  DropGroup="plan" DropAccepts="IsTask" ItemDropGroup="plan" ItemDropAccepts="IsPerson" Suggested="PeopleGhosts">
-                    <Header>@(AlvaStrings.Gantt_Projection2PeopleLanesAndCapacityHoursPerDay)</Header>
-                </GanttPeoplePanel>
-            </ChildContent>
-        </FlareGantt>
-    }
-</section>
+<FlareCard Variant="CardVariant.Outlined">
+    <FlareCardHeader Title="@string.Format(AlvaStrings.Gantt_Synchronous2dGanttOnTheAxis, $"{SprintCount} {AlvaFormat.Plural(SprintCount, "sprint")}")"
+                     Subtitle="@(AlvaStrings.Gantt_DropATaskOntoADayItJoinsThatDaySSprintAndGetsADueDateOntoAPersonSRowItAl_c6e380)">
+        <AvatarContent><FlareIconView Value="@MaterialDesign3Icons.Regular.AlignHorizontalLeft" Size="20px" /></AvatarContent>
+    </FlareCardHeader>
+    <FlareCardContent>
+        <FlareStack Gap="FlareSpacing.Medium">
+            <FlareStack Row Wrap Align="FlareAlignItems.Center" Gap="FlareSpacing.Small">
+                <GanttLegend Items="BoardKey">
+                    <Trailing><FlareLink Href="gantt/2d">@(AlvaStrings.Gantt_OpenTheGantt)</FlareLink></Trailing>
+                </GanttLegend>
+                <FlareSpacer />
+                <GanttZoom View="@View" Default="DefaultUnit" @bind-Value="_unit" />
+                <FlareButton Size="ButtonSize.Sm" Variant="ButtonVariant.Text" OnClick="ToToday" Tooltip="@(AlvaStrings.Gantt_ToTodayAltWheelScrollThroughTime)">@(AlvaStrings.Gantt_Today)</FlareButton>
+            </FlareStack>
+            @if (Data is null || People is null)
+            {
+                <FlareSkeleton Height="240px" Announce />
+            }
+            else
+            {
+                <FlareGantt @ref="_chart" Range="Range" RangeChanged="RangeChanged" Endless="true" Scale="GanttScale.Day" UnitWidth="_unit" FillWidth="true" Virtualize="true" RowHeight="56"
+                            SideWidth="@_side" DefaultSideWidth="14rem" ResizableSide="true" SideWidthChanged="SaveSide" NonWorking="GanttData.IsWeekend"
+                            Markers="@GanttData.TodayMarkers" Regions="@Data.PlanRegions(Sprint)" @bind-SelectedKey="_selected"
+                            AriaLabel="@(AlvaStrings.Gantt_SprintGantt)" Class="alva-gantt" Style="--flare-gantt-max-height:38rem">
+                    <Corner><FlareText Typo="TypographyScale.LabelSmall">@(AlvaStrings.Gantt_TaskAssignee)</FlareText></Corner>
+                    <ChildContent>
+                        <GanttTaskPanel Data="Data" SprintIds="SprintIds" DragRows="true" OnChange="OnTaskChange" OnLinkCreate="OnLinkCreate" OnLinkRejected="OnLinkRejected"
+                                        DropGroup="plan" DropAccepts="IsTask" ItemDropGroup="plan" ItemDropAccepts="IsPerson" Suggested="TaskGhosts">
+                            <Header>@(AlvaStrings.Gantt_Projection1SprintTasks)</Header>
+                            <RowActions Context="task">
+                                <FlareIconButton Icon="@MaterialDesign3Icons.Regular.Close" Size="ButtonSize.Sm" Tooltip="@UnplanHint(task)"
+                                                 AriaLabel="@string.Format(AlvaStrings.Gantt_ReturnToTheBacklog, task.Title)" OnClick="() => OnUnplan.InvokeAsync(task)" />
+                            </RowActions>
+                        </GanttTaskPanel>
+                        <GanttPeoplePanel People="People" Range="Range" Focus="Focus" OnChange="OnPeopleChange" OnLinkCreate="OnLinkCreate" OnLinkRejected="OnLinkRejected"
+                                          DropGroup="plan" DropAccepts="IsTask" ItemDropGroup="plan" ItemDropAccepts="IsPerson" Suggested="PeopleGhosts">
+                            <Header>@(AlvaStrings.Gantt_Projection2PeopleLanesAndCapacityHoursPerDay)</Header>
+                        </GanttPeoplePanel>
+                    </ChildContent>
+                </FlareGantt>
+            }
+        </FlareStack>
+    </FlareCardContent>
+</FlareCard>
 
 @code {
     private const string View = "plan";

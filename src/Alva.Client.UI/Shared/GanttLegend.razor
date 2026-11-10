@@ -2,11 +2,11 @@
 @* A single legend for all Gantt charts: the library draws the samples with the same elements as the chart, so the
    colors come from the same .alva-gantt rules. Page-specific items (sprints, capacity cells, suggestion) come before
    the bar kinds; the page's link and notice come after. *@
-<FlareGanttLegend Items="@AllItems" AriaLabel="@(AlvaStrings.Gantt_Legend)" Class="@($"alva-gantt alva-gantt-legend {Class}".Trim())">
+<FlareGanttLegend Items="@AllItems" AriaLabel="@(AlvaStrings.Gantt_Legend)" Class="@($"alva-gantt {Class}".Trim())">
     @Trailing
     @if (Notice is not null)
     {
-        <span class="alva-gantt-legend__notice" role="status">@Notice</span>
+        <FlareText Typo="TypographyScale.LabelMedium" Color="FlareColor.Primary" role="status" Style="margin-left:auto">@Notice</FlareText>
     }
 </FlareGanttLegend>
 

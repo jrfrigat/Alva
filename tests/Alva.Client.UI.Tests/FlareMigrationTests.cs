@@ -49,6 +49,62 @@ public sealed class FlareMigrationTests : UiTestBase
     }
 
     [Fact]
+    public void Removed_custom_surfaces_stay_out_of_the_stylesheet()
+    {
+        var css = File.ReadAllText(Path.Combine(Root(), "src", "Alva.Client.UI", "wwwroot", "css", "app.css"));
+
+        foreach (var removed in new[]
+                 {
+                     ".alva-appbar", ".alva-brand", ".alva-team-chip", ".alva-user", ".alva-panel", ".alva-kpi",
+                     ".alva-plan-", ".alva-skill", ".alva-filterbar", ".alva-task__actions",
+                     ".alva-task__status-activator", ".alva-proj-", ".alva-gantt__host", ".alva-integration__runs"
+                 })
+            Assert.DoesNotContain(removed, css);
+
+        // Only the declared domain exceptions remain: the task treegrid until TASK-243, heat cells,
+        // calendar day states and documented Gantt hooks.
+        Assert.Contains(".alva-tree", css);
+        Assert.Contains(".alva-heat-cell", css);
+        Assert.Contains(".alva-calendar-day", css);
+        Assert.Contains(".alva-gantt-item--risk-high", css);
+    }
+
+    [Fact]
+    public void The_app_bar_is_built_from_flare_components()
+    {
+        var markup = File.ReadAllText(Path.Combine(Root(), "src", "Alva.Client.UI", "Layout", "MainLayout.razor"));
+
+        Assert.Contains("<FlareLayoutAppBar", markup);
+        Assert.DoesNotContain("alva-appbar", markup);
+        Assert.DoesNotContain("alva-brand", markup);
+        Assert.DoesNotContain("alva-team-chip", markup);
+        Assert.DoesNotContain("alva-user", markup);
+    }
+
+    [Fact]
+    public void Pages_do_not_bring_removed_custom_wrappers_back()
+    {
+        var root = Path.Combine(Root(), "src", "Alva.Client.UI");
+        var sources = Directory.GetFiles(root, "*.razor", SearchOption.AllDirectories)
+            .Where(f => !f.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}")
+                        && !f.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}"));
+
+        string[] removed =
+        [
+            "alva-appbar", "alva-brand", "alva-team-chip", "alva-user", "alva-panel", "alva-kpi", "alva-plan-",
+            "alva-skill", "alva-filterbar", "alva-task__actions", "alva-task__status-activator", "alva-proj-",
+            "alva-gantt__host", "alva-integration", "alva-task-card", "alva-loading", "alva-task__risk",
+            "alva-task__deps", "alva-forecast-chart"
+        ];
+        foreach (var file in sources)
+        {
+            var markup = File.ReadAllText(file);
+            foreach (var name in removed)
+                Assert.DoesNotContain(name, markup);
+        }
+    }
+
+    [Fact]
     public void The_capacity_matrix_is_a_flare_grid_with_domain_heat_cells()
     {
         var cut = Render<CapacityOverview>();

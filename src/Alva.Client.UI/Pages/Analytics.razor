@@ -34,17 +34,21 @@ else
     </FlareChipGroup>
 </FlareStack>
 
-<div class="alva-filterbar">
-    <FlareTabs @bind-ActiveIndex="_level" Class="alva-filterbar__tabs">
+<FlareCard Variant="CardVariant.Outlined">
+    <FlareCardContent>
+    <FlareStack Row Wrap Align="FlareAlignItems.Center" Gap="FlareSpacing.Medium" StretchFirst="true">
+    <FlareTabs @bind-ActiveIndex="_level">
         <FlareTab Label="@(AlvaStrings.Risks_AllLevels)" Badge="@_risks.Length.ToString()" BadgeColor="FlareColor.Secondary" />
         <FlareTab Label="@(AlvaStrings.Common_High)" Badge="@High.ToString()" BadgeColor="FlareColor.Error" />
         <FlareTab Label="@(AlvaStrings.Risks_Medium)" Badge="@((_risks.Length - High).ToString())" BadgeColor="FlareColor.Secondary" />
     </FlareTabs>
-    <FlareSelect TValue="Guid?" Items="@(People.Select(p => (Guid?)p.Id))" ItemLabel="PersonName" NullOption="@(AlvaStrings.Risks_AllAssignees)" @bind-Value="_person" Size="FieldSize.Sm" InputAttributes="@(new Dictionary<string, object> { ["aria-label"] = AlvaStrings.Risks_Assignee })" Class="alva-filterbar__person" />
-    <FlareTextField @bind-Value="_search" Immediate Clearable Placeholder="@(AlvaStrings.Risks_SearchByTaskOrReason)" AriaLabel="@(AlvaStrings.Risks_SearchARisk)" Class="alva-filterbar__search">
+    <FlareSelect TValue="Guid?" Items="@(People.Select(p => (Guid?)p.Id))" ItemLabel="PersonName" NullOption="@(AlvaStrings.Risks_AllAssignees)" @bind-Value="_person" Size="FieldSize.Sm" InputAttributes="@(new Dictionary<string, object> { ["aria-label"] = AlvaStrings.Risks_Assignee })" />
+    <FlareTextField @bind-Value="_search" Immediate Clearable Placeholder="@(AlvaStrings.Risks_SearchByTaskOrReason)" AriaLabel="@(AlvaStrings.Risks_SearchARisk)" Style="flex:0 1 20rem">
         <AdornmentStart><FlareIconView Value="@MaterialDesign3Icons.Regular.Search" Size="18px" /></AdornmentStart>
     </FlareTextField>
-</div>
+    </FlareStack>
+    </FlareCardContent>
+</FlareCard>
 
 @if (_tasks.Length == 0)
 {
@@ -56,7 +60,7 @@ else if (_risks.Length == 0)
 }
 else
 {
-<FlareCard Variant="CardVariant.Outlined" Class="alva-risk-panel">
+<FlareCard Variant="CardVariant.Outlined">
     <FlareCardHeader Title="@(AlvaStrings.Risks_TasksAtRisk)" />
     <FlareCardContent>
         <FlareDataGrid TItem="RiskDto" Items="Visible" Height="auto" Dense="true" RowKey="r => r!.TaskId" Presentation="DataGridPresentation.Auto">
@@ -119,10 +123,11 @@ else
             </EmptyStateContent>
         </FlareDataGrid>
         <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@(AlvaStrings.Risks_TheForecastUsesTheQueueCalendarsAndDependenciesItIsNotAPromise)</FlareText>
-        <details class="alva-risk-panel__details">
-            <summary>@(AlvaStrings.Risks_MoreAboutTheForecast)</summary>
-            <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@(AlvaStrings.Risks_TheForecastUsesRemainingWorkASharedQueueAcrossAllProjectsInThisTeamCalen_2be3c7)</FlareText>
-        </details>
+        <FlareAccordion>
+            <FlareAccordionPanel Header="@(AlvaStrings.Risks_MoreAboutTheForecast)">
+                <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@(AlvaStrings.Risks_TheForecastUsesRemainingWorkASharedQueueAcrossAllProjectsInThisTeamCalen_2be3c7)</FlareText>
+            </FlareAccordionPanel>
+        </FlareAccordion>
     </FlareCardContent>
 </FlareCard>
 }

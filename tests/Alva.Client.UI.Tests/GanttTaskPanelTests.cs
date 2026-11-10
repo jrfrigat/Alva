@@ -61,7 +61,7 @@ public sealed class GanttTaskPanelTests : UiTestBase
         var cut = Chart();
 
         cut.Find("[role='button']").Click();
-        cut.Find(".alva-gantt__host").KeyDown(new KeyboardEventArgs { Key = "Enter" });
+        cut.Find(".flare-gantt").ParentElement!.KeyDown(new KeyboardEventArgs { Key = "Enter" });
 
         cut.WaitForAssertion(() => Assert.Contains("Релиз", Panel(cut).TextContent));
     }

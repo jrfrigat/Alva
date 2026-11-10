@@ -16,9 +16,9 @@
     @* Esc closes the card and returns to the list with the previous filters; unsaved edits are not
        discarded - the card itself holds them, and then Esc does nothing. The wrapper takes focus when
        the task opens, including via Enter from the list, so focus does not fall to body. *@
-    <div class="alva-task-card" @ref="_card" tabindex="-1" aria-label="@Current.Title" @onkeydown="OnCardKey">
+    <FlareStack Gap="FlareSpacing.None" @ref="_card" tabindex="-1" aria-label="@Current.Title" @onkeydown="OnCardKey">
         <TaskDetails @ref="_details" Item="Current" Tasks="_tasks" Projects="_projects" Sprints="_sprints" Actors="_actors" Changed="Load" InitialTab="@Tab" />
-    </div>
+    </FlareStack>
 }
 else if (TaskId.HasValue)
 {
@@ -36,12 +36,12 @@ else
 @if(Session.TeamId is null) { <TeamRequired /> }
 else
 {
-<FlareStack Row Wrap Gap="FlareSpacing.Small" Class="alva-task-filters">
+<FlareStack Row Wrap Gap="FlareSpacing.Small">
     <FlareTextField Label="@(AlvaStrings.Tasks_SearchTasks)" @bind-Value="_search" @bind-Value:after="SaveListContext" Immediate Clearable Style="flex:2;min-width:min(100%,15rem)" />
     <FlareSelect TValue="Guid?" Label="@(AlvaStrings.Common_Project)" Items="_projects.Select(x => (Guid?)x.Id)" ItemLabel="ProjectName" NullOption="@(AlvaStrings.Projects_AllProjects)" @bind-Value="_projectFilter" @bind-Value:after="SaveListContext" Style="flex:1;min-width:12rem" />
     <FlareSelect TValue="string" Label="@(AlvaStrings.Common_Status)" Items="_statuses" ItemLabel="Labels.Status" NullOption="@(AlvaStrings.Tasks_AllStatuses)" @bind-Value="_statusFilter" @bind-Value:after="SaveListContext" Style="flex:1;min-width:12rem" />
 </FlareStack>
-<FlareStack Row Wrap Gap="FlareSpacing.Small" Class="alva-task-filters">
+<FlareStack Row Wrap Gap="FlareSpacing.Small">
     <FlareSelect TValue="Guid?" Label="@(AlvaStrings.Tasks_FilterAssignee)" Items="FilterAssignees.Select(a => (Guid?)a.Id)" ItemLabel="ActorName" NullOption="@(AlvaStrings.Tasks_AnyAssignee)" @bind-Value="_assigneeFilter" @bind-Value:after="SaveExtraFilters" Searchable Style="flex:1;min-width:12rem" />
     <FlareSelect TValue="string" Label="@(AlvaStrings.Tasks_FilterPriority)" Items="Labels.Priorities" ItemLabel="Labels.Priority" NullOption="@(AlvaStrings.Tasks_AnyPriority)" @bind-Value="_priorityFilter" @bind-Value:after="SaveExtraFilters" Style="flex:1;min-width:10rem" />
     <FlareSelect TValue="string" Label="@(AlvaStrings.Tasks_FilterDeadline)" Items="DeadlineFilters" ItemLabel="DeadlineFilterLabel" NullOption="@(AlvaStrings.Tasks_AnyDeadline)" @bind-Value="_deadlineFilter" @bind-Value:after="SaveExtraFilters" Style="flex:1;min-width:10rem" />
@@ -49,9 +49,8 @@ else
 </FlareStack>
 @if (HasFilters)
 {
-<FlareStack Row Wrap Gap="FlareSpacing.Small" Class="alva-task-active-filters">
-    @if (!string.IsNullOrWhiteSpace(_search)) { <FlareChip Closable="true" OnClose="ClearSearch">@(AlvaStrings.Tasks_FilterSearch): @_search</FlareChip> }
-    @if (_projectFilter is { } projectId) { <FlareChip Closable="true" OnClose="ClearProject">@(AlvaStrings.Common_Project): @ProjectName(projectId)</FlareChip> }
+<FlareStack Row Wrap Gap="FlareSpacing.Small">
+    @if (!string.IsNullOrWhiteSpace(_search)) { <FlareChip Closable="true" OnClose="ClearSearch">@(AlvaStrings.Tasks_FilterSearch): @_search</FlareChip> }    @if (_projectFilter is { } projectId) { <FlareChip Closable="true" OnClose="ClearProject">@(AlvaStrings.Common_Project): @ProjectName(projectId)</FlareChip> }
     @if (_statusFilter is { } status) { <FlareChip Closable="true" OnClose="ClearStatus">@(AlvaStrings.Common_Status): @Labels.Status(status)</FlareChip> }
     @if (_assigneeFilter is { } assigneeId) { <FlareChip Closable="true" OnClose="ClearAssignee">@(AlvaStrings.Tasks_FilterAssignee): @ActorName(assigneeId)</FlareChip> }
     @if (_priorityFilter is { } priority) { <FlareChip Closable="true" OnClose="ClearPriority">@(AlvaStrings.Common_Priority): @Labels.Priority(priority)</FlareChip> }
@@ -61,7 +60,7 @@ else
 </FlareStack>
 <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant"><span role="status" aria-live="polite">@string.Format(AlvaStrings.Tasks_FoundCount, Matched.Count())</span></FlareText>
 }
-<FlareStack Row Wrap Gap="FlareSpacing.Small"><FlareLink Href="tasks" Class="alva-task-view" aria-current="@(Route == "tasks" ? "page" : null)">@(AlvaStrings.Gantt_AllTasks)</FlareLink><FlareLink Href="unassigned" Class="alva-task-view" aria-current="@(Route == "unassigned" ? "page" : null)">@(AlvaStrings.Common_Unassigned)</FlareLink><FlareLink Href="my-work" Class="alva-task-view" aria-current="@(Route == "my-work" ? "page" : null)">@(AlvaStrings.Tasks_MyWork)</FlareLink><FlareButton OnClick="Load" Variant="ButtonVariant.Text" Size="ButtonSize.Sm">@(AlvaStrings.Tasks_Refresh)</FlareButton></FlareStack>
+<FlareStack Row Wrap Gap="FlareSpacing.Small"><FlareButton Href="tasks" aria-current="@(Route == "tasks" ? "page" : null)" Variant="@(Route == "tasks" ? ButtonVariant.Tonal : ButtonVariant.Text)" Size="ButtonSize.Sm">@(AlvaStrings.Gantt_AllTasks)</FlareButton><FlareButton Href="unassigned" aria-current="@(Route == "unassigned" ? "page" : null)" Variant="@(Route == "unassigned" ? ButtonVariant.Tonal : ButtonVariant.Text)" Size="ButtonSize.Sm">@(AlvaStrings.Common_Unassigned)</FlareButton><FlareButton Href="my-work" aria-current="@(Route == "my-work" ? "page" : null)" Variant="@(Route == "my-work" ? ButtonVariant.Tonal : ButtonVariant.Text)" Size="ButtonSize.Sm">@(AlvaStrings.Tasks_MyWork)</FlareButton><FlareButton OnClick="Load" Variant="ButtonVariant.Text" Size="ButtonSize.Sm">@(AlvaStrings.Tasks_Refresh)</FlareButton></FlareStack>
 <FlareCard Variant="CardVariant.Outlined"><FlareCardContent>
     @if (!_loaded) { <LoadingSkeleton Height="24rem" /> }
     else if (_error is not null) { <FlareAlert Severity="AlertSeverity.Error">@_error</FlareAlert><FlareButton Variant="ButtonVariant.Text" Size="ButtonSize.Sm" OnClick="Load">@(AlvaStrings.Common_TryAgain)</FlareButton> }
@@ -376,7 +375,7 @@ else
         if (_focusCard)
         {
             _focusCard = false;
-            try { await _card.FocusAsync(); }
+            try { if (_card is not null) await _card.FocusAsync(); }
             catch (JSDisconnectedException) { }
         }
         if (_returnFocus)
@@ -648,7 +647,7 @@ else
     private Task Load()=>Run(async()=>{await Session.Initialize();if(Session.TeamId is null)return;_tasks=await Session.Get<TaskModel[]>(Session.TeamPath("tasks"));_projects=await Session.Get<ProjectModel[]>(Session.TeamPath("projects"));_actors=await Session.Get<ActorModel[]>(Session.TeamPath("actors"));_sprints=await Session.Get<SprintModel[]>(Session.TeamPath("sprints"));_risks=(await Session.Get<RiskDto[]>(Session.TeamPath("risks"))).Where(r=>r.HasRisk).ToArray();_loaded=true;});
     private void NewTask(){_editing=new TaskModel { TeamId=Session.TeamId!.Value };_editingSnapshot=DraftSnapshot.Of(_editing);}
     private FlareButton? _newButton;
-    private ElementReference _card;
+    private FlareStack? _card;
     private TaskDetails? _details;
     private Guid? _opened;
     private bool _focusCard;

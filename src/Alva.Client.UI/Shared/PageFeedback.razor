@@ -2,12 +2,12 @@
 {
     <FlareAlert Severity="AlertSeverity.Error" Title="@(AlvaStrings.Common_TheActionFailed)">
         <FlareStack Gap="FlareSpacing.Small">
-            <span>@Error</span>
+            <FlareText Typo="TypographyScale.BodyMedium">@Error</FlareText>
             @if (OnRetry.HasDelegate) { <FlareButton Size="ButtonSize.Sm" Variant="ButtonVariant.Tonal" OnClick="Retry">@(AlvaStrings.Common_TryAgain)</FlareButton> }
         </FlareStack>
     </FlareAlert>
 }
-@if (Loading) { <div class="alva-page-loading" role="status" aria-busy="true"><FlareProgressLinear Value="null" aria-label="@(AlvaStrings.Common_LoadingData)" /></div> }
+@if (Loading) { <FlareStack role="status" aria-busy="true" Gap="FlareSpacing.None"><FlareProgressLinear Value="null" aria-label="@(AlvaStrings.Common_LoadingData)" /></FlareStack> }
 @code {
     [Parameter] public string? Error { get; set; }
     [Parameter] public bool Loading { get; set; }

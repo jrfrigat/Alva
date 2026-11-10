@@ -10,51 +10,62 @@
 <FlareConfirmDialogProvider @ref="_confirm">
 <FlareLayout>
     <FlareLayoutAppBar DrawerToggle="true">
-        <div class="alva-appbar">
-            <a href="@AppRoutes.Home" class="alva-brand" aria-label="@(AlvaStrings.Nav_AlvaHome)">
-                <span class="alva-brand__mark" aria-hidden="true">A</span>
-                <span class="alva-brand__text"><span class="alva-brand__name">ALVA</span><span class="alva-brand__caption">@(AlvaStrings.Nav_ResourcePlanning)</span></span>
-            </a>
-            <span class="alva-appbar__sep" aria-hidden="true"></span>
-            <a href="workspaces" class="alva-team-chip" title="@(AlvaStrings.Nav_ChangeTeam)">
-                <FlareIconView Value="@MaterialDesign3Icons.Regular.Groups" Size="18px" Class="alva-team-chip__icon" />
-                <span class="alva-team-chip__name">@Session.TeamName</span>
-                <FlareIconView Value="@MaterialDesign3Icons.Regular.KeyboardArrowDown" Size="16px" Class="alva-team-chip__chevron" />
-            </a>
-            <FlareSpacer />
-            @if (_mobile && Session.User is not null)
-            {
-                @* On a phone the header keeps only the notification bell and the avatar; language, profile and sign-out
-                   go into the menu behind the avatar, otherwise the sign-out label is truncated and the team name disappears. *@
-                <RiskBell />
-                <FlareMenu Anchor="MenuAnchor.BottomRight" AriaLabel="@(AlvaStrings.Nav_ProfileAndSettings)">
-                    <Activator>
-                        <button type="button" class="alva-user alva-user--menu" aria-label="@(AlvaStrings.Nav_ProfileAndSettings)">
-                            <span class="alva-user__avatar" aria-hidden="true"><FlareIconView Value="@MaterialDesign3Icons.Regular.Person" Size="18px" /></span>
-                        </button>
-                    </Activator>
-                    <ChildContent>
-                        <FlareMenuItem Href="settings">@Session.User.DisplayName</FlareMenuItem>
-                        <FlareMenuItem OnClick="ToggleCulture">@(Cultures.Current == "ru" ? "English" : "Русский")</FlareMenuItem>
-                        <FlareMenuItem OnClick="Logout">@(AlvaStrings.Nav_SignOut)</FlareMenuItem>
-                    </ChildContent>
-                </FlareMenu>
-            }
-            else
-            {
-            <FlareButton OnClick="ToggleCulture" Variant="ButtonVariant.Text" Size="ButtonSize.Sm" aria-label="@(AlvaStrings.Nav_Language)" title="@(AlvaStrings.Nav_Language)">@(Cultures.Current == "ru" ? "EN" : "RU")</FlareButton>
-            @if (Session.User is not null)
-            {
-                <RiskBell />
-                <a href="settings" class="alva-user" title="@(AlvaStrings.Nav_ProfileAndSettings)">
-                    <span class="alva-user__avatar" aria-hidden="true"><FlareIconView Value="@MaterialDesign3Icons.Regular.Person" Size="18px" /></span>
-                    <span class="alva-user__name">@Session.User.DisplayName</span>
-                </a>
-                <FlareButton OnClick="Logout" Variant="ButtonVariant.Text" Size="ButtonSize.Sm">@(AlvaStrings.Nav_SignOut)</FlareButton>
-            }
-            else { <FlareButton Href="login" Size="ButtonSize.Sm">@(AlvaStrings.Common_SignIn)</FlareButton> }
-            }
-        </div>
+        <FlareLink Href="@AppRoutes.Home" aria-label="@(AlvaStrings.Nav_AlvaHome)">
+            <FlareStack Row Align="FlareAlignItems.Center" Gap="FlareSpacing.Small">
+                <FlareAvatar Text="A" Size="AvatarSize.Sm" Color="FlareColor.Primary" />
+                @if (_mobile)
+                {
+                    <FlareText Typo="TypographyScale.LabelLarge">ALVA</FlareText>
+                }
+                else
+                {
+                    <FlareStack Gap="FlareSpacing.None">
+                        <FlareText Typo="TypographyScale.LabelLarge">ALVA</FlareText>
+                        <FlareText Typo="TypographyScale.LabelSmall" Color="FlareColor.OnSurfaceVariant">@(AlvaStrings.Nav_ResourcePlanning)</FlareText>
+                    </FlareStack>
+                }
+            </FlareStack>
+        </FlareLink>
+        @if (!_mobile) { <FlareDivider Vertical="true" /> }
+        <FlareLink Href="workspaces" title="@(AlvaStrings.Nav_ChangeTeam)">
+            <FlareChip Size="@(_mobile ? ChipSize.Xs : ChipSize.Sm)" LeadingIcon="@TeamIcon">
+                <FlareStack Row Align="FlareAlignItems.Center" Gap="FlareSpacing.XXSmall">
+                    <FlareText Typo="TypographyScale.LabelMedium">@Session.TeamName</FlareText>
+                    @if (!_mobile) { <FlareIconView Value="@MaterialDesign3Icons.Regular.KeyboardArrowDown" Size="16px" /> }
+                </FlareStack>
+            </FlareChip>
+        </FlareLink>
+        <FlareSpacer />
+        @if (_mobile && Session.User is not null)
+        {
+            @* On a phone the header keeps only the notification bell and the avatar; language, profile and sign-out
+               go into the menu behind the avatar, otherwise the sign-out label is truncated and the team name disappears. *@
+            <RiskBell />
+            <FlareMenu Anchor="MenuAnchor.BottomRight" AriaLabel="@(AlvaStrings.Nav_ProfileAndSettings)">
+                <Activator>
+                    <FlareIconButton Icon="@MaterialDesign3Icons.Regular.Person" Size="ButtonSize.Sm" Tooltip="@(AlvaStrings.Nav_ProfileAndSettings)" AriaLabel="@(AlvaStrings.Nav_ProfileAndSettings)" />
+                </Activator>
+                <ChildContent>
+                    <FlareMenuItem Href="settings">@Session.User.DisplayName</FlareMenuItem>
+                    <FlareMenuItem OnClick="ToggleCulture">@(Cultures.Current == "ru" ? "English" : "Русский")</FlareMenuItem>
+                    <FlareMenuItem OnClick="Logout">@(AlvaStrings.Nav_SignOut)</FlareMenuItem>
+                </ChildContent>
+            </FlareMenu>
+        }
+        else
+        {
+        <FlareButton OnClick="ToggleCulture" Variant="ButtonVariant.Text" Size="ButtonSize.Sm" aria-label="@(AlvaStrings.Nav_Language)" title="@(AlvaStrings.Nav_Language)">@(Cultures.Current == "ru" ? "EN" : "RU")</FlareButton>
+        @if (Session.User is not null)
+        {
+            <RiskBell />
+            <FlareButton Href="settings" Variant="ButtonVariant.Text" Size="ButtonSize.Sm" title="@(AlvaStrings.Nav_ProfileAndSettings)">
+                <LeadingIcon><FlareAvatar Text="@AlvaFormat.Initials(Session.User.DisplayName)" Size="AvatarSize.Sm" /></LeadingIcon>
+                <ChildContent>@Session.User.DisplayName</ChildContent>
+            </FlareButton>
+            <FlareButton OnClick="Logout" Variant="ButtonVariant.Text" Size="ButtonSize.Sm">@(AlvaStrings.Nav_SignOut)</FlareButton>
+        }
+        else { <FlareButton Href="login" Size="ButtonSize.Sm">@(AlvaStrings.Common_SignIn)</FlareButton> }
+        }
     </FlareLayoutAppBar>
     <FlareLayoutDrawer @bind-Open="_open" Variant="DrawerVariant.Responsive" Width="18rem" AriaLabel="@(AlvaStrings.Nav_Navigation)">
         <FlareNavMenu AriaLabel="@(AlvaStrings.Nav_Navigation)">
@@ -64,16 +75,17 @@
             </FlareNavLink>
             @foreach (var group in NavigationItems.Groups)
             {
-                <div class="alva-nav-group-label">@group.Title</div>
-                @foreach (var item in group.Entries)
-                {
-                    <FlareNavLink Href="@item.Path" Match="NavMatchMode.Exact">
-                        <IconContent><FlareIconView Value="@item.Icon" Size="1.25rem" /></IconContent>
-                        <ChildContent>@item.Label</ChildContent>
-                    </FlareNavLink>
-                }
+                <FlareNavGroup Label="@group.Title" Expanded="true">
+                    @foreach (var item in group.Entries)
+                    {
+                        <FlareNavLink Href="@item.Path" Match="NavMatchMode.Exact">
+                            <IconContent><FlareIconView Value="@item.Icon" Size="1.25rem" /></IconContent>
+                            <ChildContent>@item.Label</ChildContent>
+                        </FlareNavLink>
+                    }
+                </FlareNavGroup>
             }
-            <div class="alva-nav-sep"></div>
+            <FlareDivider />
             @foreach (var item in NavigationItems.Tail)
             {
                 <FlareNavLink Href="@item.Path" Match="NavMatchMode.Exact">
@@ -104,6 +116,7 @@
 @code {
     private bool _open;
     private bool _mobile;
+    private static RenderFragment TeamIcon => __builder => { <FlareIconView Value="@MaterialDesign3Icons.Regular.Groups" Size="18px" /> };
     private IAsyncDisposable? _viewportSubscription;
     // Pages with several routes (/team and /team/roles, /capacity and /capacity/people) receive the same
     // parameters, and Blazor does not re-render them when navigating from the menu; a key by path recreates the page.

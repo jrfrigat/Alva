@@ -1,50 +1,54 @@
 @implements IDisposable
 @inject RiskNotifications Notifications
 @inject NavigationManager Navigation
-<FlarePopover @bind-Open="_open" Trigger="PopoverTrigger.Click" Placement="Placement.BottomEnd" MinWidth="min(22rem, 92vw)" MaxWidth="min(26rem, 92vw)" MaxHeight="70vh" Class="alva-bell">
+<FlarePopover @bind-Open="_open" Trigger="PopoverTrigger.Click" Placement="Placement.BottomEnd" MinWidth="min(22rem, 92vw)" MaxWidth="min(26rem, 92vw)" MaxHeight="70vh">
     <AnchorContent>
         <FlareBadge Count="Notifications.Unseen" Visible="@(Notifications.Unseen > 0)" Color="FlareColor.Error">
             <FlareIconButton Icon="@(Notifications.Unseen > 0 ? MaterialDesign3Icons.Regular.NotificationsActive : MaterialDesign3Icons.Regular.Notifications)" AriaLabel="@Label" Tooltip="@Label" />
         </FlareBadge>
     </AnchorContent>
     <ChildContent>
-        <div class="alva-bell__panel" role="region" aria-label="@(AlvaStrings.Common_RiskNotifications)">
-            <div class="alva-bell__head">
+        <FlareStack role="region" aria-label="@(AlvaStrings.Common_RiskNotifications)" Gap="FlareSpacing.Small">
+            <FlareStack Row Wrap Align="FlareAlignItems.Center" Justify="FlareJustifyContent.SpaceBetween" Gap="FlareSpacing.Small">
                 <FlareText Element="h2" Typo="TypographyScale.TitleMedium">@(AlvaStrings.Risks_Risks)</FlareText>
-                <FlareText Typo="TypographyScale.LabelMedium" Class="alva-bell__scope">@ScopeLabel(Notifications.Scope)</FlareText>
-            </div>
+                <FlareText Typo="TypographyScale.LabelMedium" Color="FlareColor.OnSurfaceVariant">@ScopeLabel(Notifications.Scope)</FlareText>
+            </FlareStack>
             @if (Notifications.Items.Length == 0)
             {
-                <FlareText Typo="TypographyScale.BodyMedium" Class="alva-bell__empty">@(AlvaStrings.Risks_NoRisksMatchYourSubscription)</FlareText>
+                <FlareText Typo="TypographyScale.BodyMedium" Color="FlareColor.OnSurfaceVariant">@(AlvaStrings.Risks_NoRisksMatchYourSubscription)</FlareText>
             }
             else
             {
-                <ul class="alva-bell__list">
+                <FlareList TItem="RiskNotice" Dense="true">
                     @foreach (var item in Notifications.Items)
                     {
-                        <li class="alva-bell__item @(item.New ? "alva-bell__item--new" : "")">
-                            <div class="alva-bell__title">
-                                <AlvaStatusChip Tone="AlvaTones.Severity(item.Risk.Severity)">@(item.Risk.Severity == "High" ? AlvaStrings.Common_High : AlvaStrings.Risks_Medium)</AlvaStatusChip>
-                                <a href="tasks/@item.Risk.TaskId" @onclick="Close">@item.Risk.Title</a>
-                                @if (item.New) { <span class="alva-bell__new">@(AlvaStrings.Risks_New)</span> }
-                            </div>
-                            <FlareText Typo="TypographyScale.BodySmall" Class="alva-bell__reasons">
-                                @for (var i = 0; i < item.Risk.Reasons.Length; i++)
-                                {
-                                    if (i > 0) { <text> · </text> }
-                                    var reason = item.Risk.Reasons[i];
-                                    <a href="@RiskActions.Href(reason, item.Risk.TaskId)" title="@RiskActions.Label(reason)">@ReasonText.Describe(reason)</a>
-                                }
-                            </FlareText>
-                        </li>
+                        <FlareListItem @key="item.Risk.TaskId" Selected="@item.New">
+                            <ChildContent>
+                                <FlareStack Gap="FlareSpacing.XXSmall">
+                                    <FlareStack Row Wrap Align="FlareAlignItems.Center" Gap="FlareSpacing.Small">
+                                        <AlvaStatusChip Tone="AlvaTones.Severity(item.Risk.Severity)">@(item.Risk.Severity == "High" ? AlvaStrings.Common_High : AlvaStrings.Risks_Medium)</AlvaStatusChip>
+                                        <FlareLink Href="@($"tasks/{item.Risk.TaskId}")" @onclick="Close">@item.Risk.Title</FlareLink>
+                                        @if (item.New) { <FlareChip Size="ChipSize.Xs" Color="FlareColor.Primary" Label="@(AlvaStrings.Risks_New)" /> }
+                                    </FlareStack>
+                                    <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">
+                                        @for (var i = 0; i < item.Risk.Reasons.Length; i++)
+                                        {
+                                            if (i > 0) { <text>, </text> }
+                                            var reason = item.Risk.Reasons[i];
+                                            <FlareLink Href="@RiskActions.Href(reason, item.Risk.TaskId)" title="@RiskActions.Label(reason)">@ReasonText.Describe(reason)</FlareLink>
+                                        }
+                                    </FlareText>
+                                </FlareStack>
+                            </ChildContent>
+                        </FlareListItem>
                     }
-                </ul>
+                </FlareList>
             }
-            <div class="alva-bell__actions">
+            <FlareStack Row Wrap Justify="FlareJustifyContent.SpaceBetween" Gap="FlareSpacing.Small">
                 <FlareButton Variant="ButtonVariant.Text" Size="ButtonSize.Sm" Disabled="@(Notifications.Unseen == 0)" OnClick="Notifications.MarkAllSeen">@(AlvaStrings.Risks_MarkAllAsRead)</FlareButton>
                 <FlareButton Variant="ButtonVariant.Tonal" Size="ButtonSize.Sm" OnClick="OpenAll">@(AlvaStrings.Common_AllRisks)</FlareButton>
-            </div>
-        </div>
+            </FlareStack>
+        </FlareStack>
     </ChildContent>
 </FlarePopover>
 @code {

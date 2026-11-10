@@ -47,7 +47,8 @@ else
 }
 else
 {
-<div class="alva-proj-layout">
+<FlareGrid Columns="5" Gap="FlareSpacing.Medium" AlignItems="FlareAlignItems.Start">
+    <FlareCol Xs="5" Sm="5" Md="2" Lg="2">
     <FlareCard Variant="CardVariant.Outlined">
         <FlareCardHeader Title="@(AlvaStrings.Projects_ProjectRegistry)" Subtitle="@(AlvaStrings.Projects_SortWorkload)" />
         <FlareCardContent>
@@ -90,10 +91,11 @@ else
             }
             <FlareStack Row Align="FlareAlignItems.Center" Gap="FlareSpacing.Small">
                 <FlareIconView Value="@MaterialDesign3Icons.Regular.Hub" Size="18px" />
-                <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant"><b>@(AlvaStrings.Projects_AProjectOfSeveralTeams)</b> @(AlvaStrings.Projects_AProjectIsNotTiedToOneTeamDifferentTeamsPullItsTasksIntoTheirSprints)</FlareText>
+                <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant"><FlareText Element="strong" Typo="TypographyScale.LabelMedium">@(AlvaStrings.Projects_AProjectOfSeveralTeams)</FlareText> @(AlvaStrings.Projects_AProjectIsNotTiedToOneTeamDifferentTeamsPullItsTasksIntoTheirSprints)</FlareText>
             </FlareStack>
         </FlareCardContent>
     </FlareCard>
+    </FlareCol>
 
     @if (Selected is { } p)
     {
@@ -105,9 +107,10 @@ else
         var sprints = SprintsOf(p);
         var latest = LatestDeadline(p);
         var risks = _risks.Count(r => tasks.Any(t => t.Id == r.TaskId));
-        <section class="alva-proj-detail" aria-label="@p.Name">
+        <FlareCol Xs="5" Sm="5" Md="3" Lg="3">
+            <FlareStack Gap="FlareSpacing.Large" aria-label="@p.Name">
             <FlareCard Variant="CardVariant.Outlined">
-                <FlareCardHeader Class="alva-proj-detail__head" Title="@p.Name" Subtitle="@p.Description">
+                <FlareCardHeader Title="@p.Name" Subtitle="@p.Description">
                     <AvatarContent><AlvaStatusChip Tone="StatusTone(Status(p))">@StatusLabel(Status(p))</AlvaStatusChip></AvatarContent>
                     <ActionContent>
                         <FlareButton Variant="ButtonVariant.Tonal" Size="ButtonSize.Sm" OnClick="() => Edit(p)"><LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.Edit" Size="18px" /></LeadingIcon><ChildContent>@(AlvaStrings.Projects_ProjectSettings)</ChildContent></FlareButton>
@@ -162,7 +165,7 @@ else
                         <FlareGantt Range="@Axis(p, projectData)" RangeChanged="r => _ganttRange = r" Endless="true" Scale="_ganttScale" UnitWidth="_ganttUnit"
                                     FillWidth="true" Virtualize="true" RowHeight="56" SideWidth="22rem" DefaultSideWidth="22rem" ResizableSide="true"
                                     NonWorking="GanttData.IsWeekend" Markers="GanttData.TodayMarkers" AriaLabel="@(AlvaStrings.Projects_ProjectGantt)" Class="alva-gantt">
-                            <Corner><span>@(AlvaStrings.Gantt_TaskAssigneeHours)</span></Corner>
+                            <Corner><FlareText Typo="TypographyScale.LabelSmall">@(AlvaStrings.Gantt_TaskAssigneeHours)</FlareText></Corner>
                             <ChildContent>
                                 <GanttTaskPanel Data="projectData" Editable="false" OnItemClick="task => OpenTask(task.Id)">
                                     <RowActions Context="task">
@@ -179,10 +182,10 @@ else
             </FlareCard>
 
             <FlareStack Row Align="FlareAlignItems.Center" Gap="FlareSpacing.Small"><FlareIconView Value="@MaterialDesign3Icons.Regular.Hub" Size="18px" /><FlareText Element="h3" Typo="TypographyScale.LabelMedium">@(AlvaStrings.Projects_TeamsAndTheirSprintsPerProject)</FlareText></FlareStack>
-            <div class="alva-proj-teams">
+            <FlareGrid MinColumnWidth="min(100%,16rem)" AutoFit="true" Gap="FlareSpacing.Small">
                 @foreach (var teamId in p.TeamIds)
                 {
-                    <FlareCard Variant="CardVariant.Outlined" Class="alva-proj-team" @key="teamId">
+                    <FlareCard Variant="CardVariant.Outlined" @key="teamId">
                         <FlareCardHeader Title="@TeamName(teamId)">
                             <AvatarContent><FlareAvatar Text="@AlvaFormat.Initials(TeamName(teamId))" Size="AvatarSize.Sm" Color="FlareColor.Primary" /></AvatarContent>
                             <ActionContent>@if (teamId == Session.TeamId) { <AlvaStatusChip Tone="AlvaTone.Info">@(AlvaStrings.Projects_CurrentTeam)</AlvaStatusChip> }</ActionContent>
@@ -218,7 +221,7 @@ else
                         </FlareCardContent>
                     </FlareCard>
                 }
-            </div>
+            </FlareGrid>
 
             <FlareCard Variant="CardVariant.Outlined" aria-label="@(AlvaStrings.Projects_ProjectTaskTree)">
                 <FlareCardHeader Title="@(AlvaStrings.Projects_ProjectTaskTree)" Subtitle="@(AlvaStrings.Projects_TaskHierarchyProjectedOntoSprintsAndAssignees)">
@@ -261,7 +264,8 @@ else
                     <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@(AlvaStrings.Projects_LinkedTasksAreDistributedAcrossTeamSprints) · @(AlvaStrings.Projects_TotalInTheProject) @tasks.Length @AlvaFormat.Plural(tasks.Length, "task")</FlareText>
                 </FlareCardContent>
             </FlareCard>
-        </section>
+            </FlareStack>
+        </FlareCol>
 
         <FlareDrawer Anchor="DrawerAnchor.Right" Open="_createOpen" OpenChanged="OnCreateOpen" Width="34rem" ContentPadding="FlareSpacing.Large" AriaLabel="@CreateTitle">
             <FlareStack Gap="FlareSpacing.Medium">
@@ -293,7 +297,7 @@ else
             </ActionsContent>
         </FlareDialog>
     }
-</div>
+</FlareGrid>
 }
 }
 @code {

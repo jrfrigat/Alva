@@ -121,7 +121,7 @@ public sealed class IntegrationsPageTests : UiTestBase
 
         var cut = Render<FlareConfirmDialogProvider>(p => p.AddChildContent<TaskDetails>(d => d.Add(x => x.Item, task)));
 
-        var link = cut.Find("a.alva-task__external");
+        var link = cut.Find("a[target='_blank']");
         Assert.Equal("https://tracker.yandex.ru/TEST-7", link.GetAttribute("href"));
         Assert.Equal("_blank", link.GetAttribute("target"));
         Assert.Contains("TEST-7", link.TextContent);

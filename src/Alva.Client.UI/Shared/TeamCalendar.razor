@@ -24,28 +24,37 @@ else
                Caption="@($"{AlvaStrings.Sprint_OutOf} {AlvaFormat.Hours(NominalMonth)} {AlvaStrings.Capacity_HNominal} ({Pct(Effective, NominalMonth)}%)")" />
 </FlareGrid>
 
-<div class="alva-capacity-bar">
-    <FlareText Typo="TypographyScale.LabelMedium" Color="FlareColor.OnSurfaceVariant"><FlareIconView Value="@MaterialDesign3Icons.Regular.FilterList" Size="16px" /> @(AlvaStrings.Capacity_EngineerFilterLabel)</FlareText>
-    <FlareChipGroup SelectedValues="SelectedPeople" SelectedValuesChanged="SetPersonFilter" AriaLabel="@(AlvaStrings.Capacity_EngineerFilter)">
-        <FlareChip Value="" Label="@($"{AlvaStrings.Sprint_All} ({People.Length})")" />
-        @foreach (var person in People)
-        {
-            <FlareChip Value="@person.Id.ToString()">
-                <AvatarContent><FlareAvatar Text="@AlvaFormat.Initials(person.Name)" Alt="@person.Name" Size="AvatarSize.Xs" /></AvatarContent>
-                <ChildContent>@person.Name</ChildContent>
-            </FlareChip>
-        }
-    </FlareChipGroup>
-    <div class="alva-heat-legend alva-heat-legend--inline">
-        <span><i class="alva-heat--balance"></i>@(AlvaStrings.Capacity_WorkingDay)</span><span><i class="alva-heat--absence"></i>@(AlvaStrings.Capacity_VacationAbsence)</span><span><i class="alva-heat--critical"></i>@(AlvaStrings.Common_OverloadLabel)</span><span><i class="alva-heat--empty"></i>@(AlvaStrings.Capacity_DayOff)</span>
-    </div>
-</div>
+<FlareCard Variant="CardVariant.Outlined">
+    <FlareCardContent>
+    <FlareStack Row Wrap Align="FlareAlignItems.Center" Gap="FlareSpacing.Medium">
+        <FlareText Typo="TypographyScale.LabelMedium" Color="FlareColor.OnSurfaceVariant"><FlareIconView Value="@MaterialDesign3Icons.Regular.FilterList" Size="16px" /> @(AlvaStrings.Capacity_EngineerFilterLabel)</FlareText>
+        <FlareChipGroup SelectedValues="SelectedPeople" SelectedValuesChanged="SetPersonFilter" AriaLabel="@(AlvaStrings.Capacity_EngineerFilter)">
+            <FlareChip Value="" Label="@($"{AlvaStrings.Sprint_All} ({People.Length})")" />
+            @foreach (var person in People)
+            {
+                <FlareChip Value="@person.Id.ToString()">
+                    <AvatarContent><FlareAvatar Text="@AlvaFormat.Initials(person.Name)" Alt="@person.Name" Size="AvatarSize.Xs" /></AvatarContent>
+                    <ChildContent>@person.Name</ChildContent>
+                </FlareChip>
+            }
+        </FlareChipGroup>
+        <FlareSpacer />
+        <FlareStack Row Wrap Align="FlareAlignItems.Center" Gap="FlareSpacing.Small">
+            <FlareStack Row Align="FlareAlignItems.Center" Gap="FlareSpacing.XXSmall"><FlareBadge Standalone="true" Dot="true" Color="FlareColor.Success" /><FlareText Typo="TypographyScale.BodySmall">@(AlvaStrings.Capacity_WorkingDay)</FlareText></FlareStack>
+            <FlareStack Row Align="FlareAlignItems.Center" Gap="FlareSpacing.XXSmall"><FlareBadge Standalone="true" Dot="true" Color="FlareColor.Tertiary" /><FlareText Typo="TypographyScale.BodySmall">@(AlvaStrings.Capacity_VacationAbsence)</FlareText></FlareStack>
+            <FlareStack Row Align="FlareAlignItems.Center" Gap="FlareSpacing.XXSmall"><FlareBadge Standalone="true" Dot="true" Color="FlareColor.Error" /><FlareText Typo="TypographyScale.BodySmall">@(AlvaStrings.Common_OverloadLabel)</FlareText></FlareStack>
+            <FlareStack Row Align="FlareAlignItems.Center" Gap="FlareSpacing.XXSmall"><FlareBadge Standalone="true" Dot="true" Color="FlareColor.Default" /><FlareText Typo="TypographyScale.BodySmall">@(AlvaStrings.Capacity_DayOff)</FlareText></FlareStack>
+        </FlareStack>
+    </FlareStack>
+    </FlareCardContent>
+</FlareCard>
 
-<div class="alva-calendar-layout">
+<FlareGrid Columns="5" Gap="FlareSpacing.Medium" AlignItems="FlareAlignItems.Start">
+    <FlareCol Xs="5" Sm="5" Md="3" Lg="4">
     <FlareCard Variant="CardVariant.Outlined">
         <FlareCardHeader Title="@(AlvaStrings.Capacity_MonthCalendar)" />
         <FlareCardContent>
-            <FlareCalendar ViewDate="_month" InitialDate="_month" ShowNavigation="false" MonthHeaderTemplate="NoMonthHeader" AriaLabel="@(_month.ToString("MMMM yyyy"))">
+            <FlareCalendar ViewDate="_month" InitialDate="_month" ShowNavigation="false" MonthHeaderTemplate="NoMonthHeader" Style="--flare-calendar-max-width:100%" AriaLabel="@(_month.ToString("MMMM yyyy"))">
                 <DateTemplate Context="date">
                     <TeamCalendarDay Date="date" InMonth="@(date.Month == _month.Month)" State="@DayState(date)" Today="@(date == Today)"
                                      SprintStart="@SprintStartOn(date)?.Name" SprintEnds="@(SprintEndOn(date) is not null)"
@@ -54,7 +63,9 @@ else
             </FlareCalendar>
         </FlareCardContent>
     </FlareCard>
-    <aside class="alva-calendar-side">
+    </FlareCol>
+    <FlareCol Xs="5" Sm="5" Md="2" Lg="1">
+    <FlareStack Gap="FlareSpacing.Medium">
         @if (Focus is { } focused)
         {
             var mine = _rows.Where(r => r.ActorId == focused.Id && r.Date.Month == _month.Month).ToArray();
@@ -100,8 +111,9 @@ else
                 </FlareList>
             </FlareCardContent>
         </FlareCard>
-    </aside>
-</div>
+    </FlareStack>
+    </FlareCol>
+</FlareGrid>
 }
 
 @code {

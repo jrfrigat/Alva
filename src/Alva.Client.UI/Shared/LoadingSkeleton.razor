@@ -1,7 +1,7 @@
 @* Stable loading placeholder: a screen reader announces that data is loading, and the content does not jump once the response arrives. *@
-<div class="alva-loading" role="status" aria-busy="true" aria-label="@(AlvaStrings.Common_LoadingData)">
+<FlareStack role="status" aria-busy="true" aria-label="@(AlvaStrings.Common_LoadingData)" Gap="FlareSpacing.None">
     <FlareSkeleton Height="@Height" Announce />
-</div>
+</FlareStack>
 
 @code {
     [Parameter] public string Height { get; set; } = "12rem";

@@ -1,8 +1,8 @@
 /* Alva - application domain styles.
    Section map:
    1. Foundation and utilities
-   2. Shell: app bar, brand, team, user
-   3. Shared page elements: panels, filters, sections
+   2. Shell: skip link only
+   3. Shared page elements: Flare composition only
    4. Task and assignee assignment
    5. Sprint planning
    6. Projects
@@ -26,59 +26,14 @@ html,body{margin:0;min-height:100%;font-family:var(--alva-font);background:var(-
 #flare-splash{min-height:100dvh;display:grid;place-content:center;background:#f8fafc;color:#1e293b}#blazor-error-ui{display:none;position:fixed;bottom:0;padding:1rem;background:#f9dedc;color:#410e0b;width:100%;z-index:100000}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important}}
 .alva-num{font-variant-numeric:tabular-nums}
-.alva-field-error{color:var(--alva-critical-text)}
-.alva-page-loading{min-height:4px}
 
-/* 2. Shell: app bar, brand, team, user */
-.alva-appbar{display:flex;align-items:center;gap:1rem;flex:1;min-width:0;padding-inline:.25rem 1.25rem}
-.alva-brand{display:flex;align-items:center;gap:.375rem;text-decoration:none;color:inherit}
-.alva-brand__mark{display:grid;place-items:center;width:28px;height:28px;border-radius:12px;background:var(--flare-color-primary-container,#1d4ed8);color:#fff;font-size:18px;font-weight:700;box-shadow:0 1px 4px rgba(0,0,0,.1)}
-.alva-brand__text{display:flex;flex-direction:column;line-height:1}
-.alva-brand__name{font-size:15px;font-weight:700;letter-spacing:-.005em;color:var(--flare-color-on-surface,var(--alva-on-surface))}
-.alva-brand__caption{margin-top:2px;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--flare-color-primary,var(--alva-primary))}
-.alva-appbar__sep{width:1px;height:20px;background:color-mix(in srgb,var(--flare-color-outline-variant,#c4c5d7) 40%,transparent)}
-.alva-team-chip{display:inline-flex;align-items:center;gap:.25rem;min-width:0;padding:4px 6px;border-radius:4px;background:var(--flare-color-surface-container-low,#eff4ff);color:var(--flare-color-on-surface,var(--alva-on-surface));font-size:13px;font-weight:700;text-decoration:none;transition:background-color .15s}
-.alva-team-chip:hover{background:var(--flare-color-surface-container,#e5eeff)}
-.alva-team-chip__icon{color:var(--flare-color-primary,var(--alva-primary))}
-.alva-team-chip__chevron{color:var(--flare-color-outline,#747686)}
-.alva-team-chip__name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.alva-user{display:flex;align-items:center;gap:.375rem;text-decoration:none;color:var(--flare-color-on-surface,var(--alva-on-surface));font-size:13px;font-weight:700}
-.alva-user__avatar{display:grid;place-items:center;width:32px;height:32px;border-radius:9999px;background:var(--flare-color-primary,var(--alva-primary));color:var(--flare-color-on-primary,#fff)}
-.alva-user--menu{border:0;background:none;padding:0;cursor:pointer}
+/* 2. Shell: the app bar and navigation are FlareLayoutAppBar/FlareNavMenu; only the skip link remains. */
 
-/* 3. Shared page elements: filter toolbars and composition surfaces around Flare controls.
-   FlareCard, FlareTabs, FlareSection and FlareList are used directly wherever the content is a card,
-   tab set, section or list; these classes only arrange them on a page. .alva-panel is the column
-   surface of the sprint planning board and the person week, where FlareDropZone and drag contexts
-   must live directly inside the surface; FlareCard is used for card-like content elsewhere. */
-.alva-panel{display:flex;flex-direction:column;gap:.75rem;padding:1rem;border:1px solid var(--alva-border);border-radius:6px;background:var(--flare-color-surface-container-lowest,#fff)}
-.alva-panel__header{display:flex;align-items:flex-start;gap:.5rem}
-.alva-panel__icon{color:var(--flare-color-primary,var(--alva-primary));margin-top:2px}
-.alva-panel__title{margin:0;font-size:1.125rem;line-height:1.5rem;font-weight:600;letter-spacing:-.01em;color:var(--flare-color-on-surface,var(--alva-on-surface))}
-.alva-panel__subtitle{margin:0;font-size:12px;line-height:16px;font-weight:600;color:var(--flare-color-on-surface-variant,var(--alva-on-surface-variant))}
-.alva-filterbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:.75rem;padding:.5rem .75rem;border:1px solid var(--alva-border);border-radius:6px;background:var(--flare-color-surface-container-lowest,#fff)}
-.alva-filterbar__tabs{flex:1 1 28rem;min-width:0}
-.alva-filterbar__search{flex:0 1 20rem}
-.alva-filterbar__person{flex:0 1 14rem}
-.alva-kpi__label{font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--flare-color-on-surface-variant,var(--alva-on-surface-variant))}
-.alva-kpi__aside--primary{color:var(--flare-color-primary,var(--alva-primary))}
-.alva-kpi__note{margin:0;font-size:12px;line-height:16px;color:var(--flare-color-on-surface-variant,var(--alva-on-surface-variant))}
-.alva-kpi__alert{display:inline-flex;align-items:center;gap:4px;font-weight:700;color:var(--alva-critical-text)}
-.alva-kpi__note a{color:inherit}
+/* 3. Shared page elements are Flare components: FlareCard, FlareTabs, FlareStack, FlareGrid and
+   FlareList. Only page composition stays in markup; no panel, toolbar or card surface is defined
+   here. */
 
 /* 4. Task and assignee assignment */
-.alva-task__external{font-size:.875rem;font-variant-numeric:tabular-nums;color:var(--flare-color-primary,var(--alva-primary));white-space:nowrap}
-.alva-task__actions{position:sticky;top:0;z-index:6;display:flex;flex-wrap:wrap;align-items:center;gap:.5rem;padding:.5rem .75rem;border:1px solid var(--alva-border);border-radius:6px;background:var(--flare-color-surface-container-lowest,#fff);box-shadow:0 2px 6px rgba(0,0,0,.08)}
-.alva-task__status-activator{border:0;background:none;padding:0;cursor:pointer;display:inline-flex;border-radius:9999px}
-.alva-task__status-activator:focus-visible{outline:2px solid var(--flare-color-primary,var(--alva-primary));outline-offset:2px}
-.alva-integration__runs{display:flex;flex-direction:column;gap:.25rem;padding-top:.5rem;border-top:1px solid var(--alva-border)}
-.alva-assign{display:flex;flex-direction:column;gap:.75rem;padding:1rem}
-.alva-assign__header{display:flex;align-items:flex-start;gap:.5rem}
-.alva-assign__title{font-size:1.125rem;line-height:1.5rem;font-weight:600}
-.alva-assign__task{font-size:12px;font-weight:700;color:var(--flare-color-primary,var(--alva-primary))}
-.alva-assign__footer{display:flex;justify-content:space-between;gap:.5rem;padding-top:.75rem;border-top:1px solid var(--alva-border)}
-.alva-task-filters{min-width:0}
-.alva-task-view[aria-current="page"]{font-weight:600;color:var(--flare-color-primary,var(--alva-primary));text-decoration:underline;text-underline-offset:.2em}
 .alva-tree{display:flex;flex-direction:column;width:100%;min-width:0}
 .alva-tree__head,.alva-tree__row{display:grid;grid-template-columns:minmax(14rem,2fr) 6rem 5.5rem 9rem 6.5rem 7rem 5.5rem 7rem;gap:.5rem;align-items:center}
 .alva-tree__head{position:sticky;top:0;z-index:2;padding:.5rem .75rem;border-bottom:1px solid var(--alva-border);background:var(--flare-color-surface-container-lowest,#fff);font-size:12px;font-weight:600;color:var(--flare-color-on-surface-variant,var(--alva-on-surface-variant))}
@@ -109,94 +64,22 @@ html,body{margin:0;min-height:100%;font-family:var(--alva-font);background:var(-
 }
 @media(pointer:coarse){.alva-tree__toggle,.alva-tree__add{min-width:44px;min-height:44px}}
 
-/* 5. Sprint planning: the three-column board, pool and proposal zones are domain composition
-   over FlareDragContext, FlareDropZone and FlareDraggable. Flare controls render the controls
-   inside them; no drag/drop or card control is reimplemented. */
-.alva-plan-board{display:grid;grid-template-columns:minmax(15rem,18rem) minmax(0,1fr) minmax(15rem,18rem);gap:1rem;align-items:start}
-@media(max-width:1280px){.alva-plan-board{grid-template-columns:minmax(15rem,18rem) minmax(0,1fr)}.alva-plan-side{grid-column:1/-1;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,22rem),1fr))}}
-@media(max-width:900px){.alva-plan-board{grid-template-columns:minmax(0,1fr)}}
-.alva-plan-head{display:flex;flex-direction:column;gap:.75rem;padding:1rem;border:1px solid var(--alva-border);border-radius:6px;background:var(--flare-color-surface-container-lowest,#fff)}
-.alva-plan-head__row{display:flex;flex-wrap:wrap;align-items:center;gap:.75rem}
-.alva-plan-head__picker{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem .75rem;padding:.375rem .75rem;border-radius:6px;background:var(--flare-color-surface-container-low,#eff4ff)}
-.alva-plan-head__picker>.flare-field,.alva-plan-head__picker>div:not(:first-child){min-width:16rem}
-.alva-plan-head__horizon{font-size:11px;font-weight:600;color:var(--flare-color-on-surface-variant,var(--alva-on-surface-variant))}
-.alva-plan-head__actions{display:flex;flex-wrap:wrap;gap:.5rem}
-.alva-plan-mode{display:flex;flex-direction:column;line-height:1.25}
-.alva-plan-mode small{font-size:11px;color:var(--flare-color-on-surface-variant)}
-.alva-plan-proposal{border-color:var(--flare-color-primary)}
-.alva-plan-proposal__actions{display:flex;flex-wrap:wrap;gap:.5rem;margin-left:auto}
-.alva-plan-proposal__metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,11rem),1fr));gap:.5rem}
-.alva-plan-proposal__scope{margin:.5rem 0 0;font-size:12px;color:var(--flare-color-on-surface-variant,var(--alva-on-surface-variant))}
-.alva-plan-proposal__excluded{font-size:12px;margin:.25rem 0}
-.alva-plan-proposal__excluded ul{margin:.25rem 0 0;padding-left:1.25rem}
-.alva-plan-metric{display:flex;flex-direction:column;gap:2px;padding:.5rem .75rem;border-radius:6px;background:var(--flare-color-surface-container-low)}
-.alva-plan-metric s{color:var(--flare-color-on-surface-variant)}
-.alva-plan-metric b{font-size:15px}
-.alva-plan-metric--better b{color:var(--flare-color-primary)}
-.alva-plan-metric--worse b{color:var(--flare-color-error)}
-.alva-plan-proposal__list{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,22rem),1fr));gap:.5rem;margin:0;padding:0;list-style:none;max-height:18rem;overflow:auto}
-.alva-plan-change{display:flex;align-items:flex-start;gap:.5rem;padding:.5rem;border:1px dashed var(--flare-color-primary);border-radius:6px}
-.alva-plan-change__body{display:flex;flex-direction:column;gap:2px;min-width:0}
-.alva-plan-change__title{overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-weight:600;font-size:13px;color:inherit}
-.alva-plan-change__what{display:flex;flex-wrap:wrap;gap:.25rem .75rem;font-size:12px}
-.alva-plan-change__why{font-size:11px;color:var(--flare-color-on-surface-variant)}
-.alva-plan-card-zone{border-radius:6px}
-.alva-plan-cards.flare-drop-zone--candidate .alva-plan-card-zone:not(.flare-drop-zone--candidate){pointer-events:none}
-.alva-plan-card-zone.flare-drop-zone--candidate{outline:none}
-.alva-plan-card-zone.flare-drop-zone--candidate .alva-plan-card{border-color:var(--flare-color-primary)}
-.alva-plan-card-zone.flare-drop-zone--over .alva-plan-card{box-shadow:0 0 0 2px var(--flare-color-primary)}
-.flare-draggable--dragging.alva-plan-card{opacity:.5}
-.alva-plan-count{padding:0 8px;border-radius:9999px;background:var(--flare-color-surface-container,#e5eeff);font-size:12px;font-weight:700;color:var(--flare-color-primary,var(--alva-primary))}
-.alva-plan-cards{display:flex;flex-direction:column;gap:.5rem;max-height:40rem;overflow:auto}
-.alva-plan-card{display:flex;flex-direction:column;gap:.375rem;padding:.625rem .75rem;border:1px solid transparent;border-radius:6px;background:var(--flare-color-surface-container-low,#eff4ff);cursor:grab}
-.alva-plan-card:hover{border-color:var(--alva-border-strong)}
-.alva-plan-card__top{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem}
-.alva-plan-card__code{font-size:12px;font-weight:700;color:var(--flare-color-primary,var(--alva-primary));text-decoration:none;font-variant-numeric:tabular-nums}
-.alva-plan-card__est{display:inline-flex;align-items:center;gap:4px;margin-left:auto;font-size:12px;font-weight:600}
-.alva-plan-card__title{font-size:15px;font-weight:500;line-height:20px;color:var(--flare-color-on-surface,var(--alva-on-surface))}
-.alva-plan-card__bottom{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem}
-.alva-plan-card__deadline{margin-left:auto;font-size:12px;color:var(--flare-color-on-surface-variant,var(--alva-on-surface-variant))}
-.alva-plan-card__unready{font-size:11px;font-weight:600;color:var(--flare-color-error,var(--alva-critical))}
-.alva-plan-card__rank{display:inline-flex}
-.alva-plan-hint{display:flex;align-items:center;justify-content:center;gap:6px;padding:.5rem;border-radius:6px;background:var(--flare-color-surface-container-low,#eff4ff);font-size:12px;font-weight:600;color:var(--flare-color-on-surface,var(--alva-on-surface))}
-.alva-plan-side{display:flex;flex-direction:column;gap:1rem;min-width:0}
-.alva-plan-pool .alva-panel__header{align-items:center}
-.alva-skills{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,12rem),1fr));gap:.5rem}
-.alva-skill{display:flex;flex-direction:column;gap:6px;padding:.625rem .75rem;border-radius:6px;background:var(--alva-subtle)}
-.alva-skill__head{display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;gap:.375rem;font-size:13px}
-.alva-skill__foot{display:flex;flex-wrap:wrap;justify-content:space-between;gap:.25rem;font-size:11px;font-weight:600}
+/* 5. Sprint planning: FlareCard, FlareGrid, FlareStack, FlareDragContext, FlareDropZone and
+   FlareDraggable compose the board. No page-specific board, pool or card surface is defined here. */
 
-/* 6. Projects: only page layout; the WBS tree is a FlareDataGrid. */
-.alva-proj-layout{display:grid;grid-template-columns:minmax(17rem,22rem) minmax(0,1fr);gap:1rem;align-items:start}
-@media(max-width:1023px){.alva-proj-layout{grid-template-columns:minmax(0,1fr)}}
-.alva-proj-detail{display:flex;flex-direction:column;gap:1rem;min-width:0}
-.alva-proj-detail__head{display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;gap:.75rem}
-.alva-proj-teams{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,16rem),1fr));gap:.75rem}
-.alva-proj-team{gap:.5rem}
-/* WBS is a FlareDataGrid tree; the grid owns indentation, rows and headers, so no WBS CSS remains. */
+/* 6. Projects: only page layout; the WBS is a FlareDataGrid tree. */
 
 /* 7. Capacity: FlareDataGrid wrapper; only the heat scale (coloring and legend) is domain. */
-.alva-capacity-bar{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem .75rem;padding:.5rem .75rem;border:1px solid var(--alva-border);border-radius:6px;background:var(--flare-color-surface-container-lowest,#fff)}
-.alva-capacity-bar__sep{width:1px;height:20px;background:var(--alva-border)}
-.alva-capacity-bar__check{margin-left:auto}
-.alva-heat-legend{display:flex;flex-wrap:wrap;align-items:center;gap:.75rem;padding:.5rem 1rem .75rem;font-size:11px;font-weight:600}
-.alva-heat-legend__title{text-transform:uppercase;letter-spacing:.04em;color:var(--flare-color-on-surface-variant,var(--alva-on-surface-variant))}
-.alva-heat-legend span{display:inline-flex;align-items:center;gap:6px}
-.alva-heat-legend i{display:inline-block;width:12px;height:12px;border-radius:3px}
-.alva-heat-legend--inline{margin-left:auto;padding:0}
-.alva-heat--absence,.alva-heat-legend .alva-heat--absence{background:var(--alva-role-bg)}
 .alva-heat-cell{padding:6px 8px;border:1px solid transparent;border-radius:4px}
-.alva-heat--under,.alva-heat-legend .alva-heat--under{background:var(--alva-heat-under)}
-.alva-heat--balance,.alva-heat-legend .alva-heat--balance{background:var(--alva-heat-balance)}
-.alva-heat--tension,.alva-heat-legend .alva-heat--tension{background:var(--alva-heat-tension)}
-.alva-heat--critical,.alva-heat-legend .alva-heat--critical{background:var(--alva-critical-bg)}
+.alva-heat--under{background:var(--flare-color-info-container)}
+.alva-heat--balance{background:var(--flare-color-success-container)}
+.alva-heat--tension{background:var(--flare-color-warning-container)}
+.alva-heat--critical{background:var(--flare-color-error-container)}
 .alva-heat-cell.alva-heat--critical{border-color:var(--alva-critical-border);color:var(--alva-critical-text)}
-.alva-heat--empty{background:var(--alva-subtle);color:var(--flare-color-on-surface-variant,var(--alva-on-surface-variant))}
+.alva-heat--empty{background:var(--flare-color-surface-container);color:var(--flare-color-on-surface-variant)}
 .alva-heat--flag{box-shadow:inset 0 0 0 2px var(--alva-critical-text)}
 
 /* 8. Calendars and work schedule */
-.alva-calendar-layout{--flare-calendar-max-width:100%;display:grid;grid-template-columns:minmax(0,1fr) minmax(16rem,20rem);gap:1rem;align-items:start}
-@media(max-width:1100px){.alva-calendar-layout{grid-template-columns:minmax(0,1fr)}}
 /* TeamCalendar is a FlareCalendar; only the domain day-state colors and spacing remain. */
 .alva-calendar-day{padding:2px;border-radius:4px}
 .alva-calendar-day--off{background:var(--alva-subtle);color:var(--flare-color-on-surface-variant,var(--alva-on-surface-variant))}
@@ -204,54 +87,11 @@ html,body{margin:0;min-height:100%;font-family:var(--alva-font);background:var(-
 .alva-calendar-day--absence{background:var(--alva-role-subtle)}
 .alva-calendar-day--over{background:var(--alva-critical-subtle);box-shadow:inset 0 0 0 1px var(--alva-critical-border)}
 .alva-calendar-day--today{outline:2px solid var(--flare-color-primary,var(--alva-primary));outline-offset:-2px}
-.alva-calendar-side,.alva-person-side,.alva-schedule__side{display:flex;flex-direction:column;gap:1rem;min-width:0}
-.alva-person-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(15rem,19rem);gap:1rem;align-items:start}
-@media(max-width:1100px){.alva-person-layout{grid-template-columns:minmax(0,1fr)}}
-.alva-weekdays{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:.5rem;padding:.75rem}
-@media(max-width:900px){.alva-weekdays{grid-template-columns:minmax(0,1fr)}}
-.alva-weekday{display:flex;flex-direction:column;gap:6px;min-width:0;min-height:12rem;padding:.5rem;border:1px solid var(--alva-border);border-radius:6px;background:var(--flare-color-surface-container-lowest)}
-.alva-weekday--off{background:var(--alva-subtle);color:var(--flare-color-on-surface-variant,var(--alva-on-surface-variant))}
-.alva-weekday--absence{background:var(--alva-role-subtle)}
-.alva-weekday--over{border-color:var(--alva-critical-border);background:var(--alva-critical-subtle)}
-.alva-weekday--today{box-shadow:inset 0 3px 0 var(--flare-color-primary-container,#1d4ed8)}
-.alva-weekday__head{display:flex;flex-direction:column;font-size:12px}
-.alva-weekday__head b{text-transform:capitalize}
-.alva-weekday__head span{font-size:11px;color:var(--flare-color-on-surface-variant,var(--alva-on-surface-variant))}
-.alva-weekday__status{font-size:11px;font-weight:700;color:var(--flare-color-primary,var(--alva-primary))}
-.alva-weekday__status span{display:inline-flex;align-items:center;gap:3px}
-.alva-weekday--over .alva-weekday__status{color:var(--alva-critical-text)}
-.alva-weekday--absence .alva-weekday__status{color:var(--alva-role-text)}
-.alva-weekday--off .alva-weekday__status{color:inherit}
-.alva-weekday__item{display:block;overflow:hidden;padding:4px 6px;border-left:3px solid var(--flare-color-primary-container,#1d4ed8);border-radius:3px;background:var(--flare-color-surface-container-low,#eff4ff);color:var(--flare-color-on-surface,var(--alva-on-surface));font-size:11px;line-height:14px;text-decoration:none}
-.alva-weekday__item:hover{background:var(--flare-color-surface-container,#e5eeff)}
-.alva-weekday__item--meeting{display:flex;align-items:center;gap:3px;border-left-color:var(--alva-role);background:var(--alva-role-subtle)}
-.alva-schedule{display:grid;grid-template-columns:minmax(0,1fr) minmax(16rem,20rem);gap:1rem;align-items:start}
-@media(max-width:1100px){.alva-schedule{grid-template-columns:minmax(0,1fr)}}
-.alva-schedule__main{display:flex;flex-direction:column;gap:1rem;min-width:0}
-
-/* 9. Analytics and risk bell */
-.alva-risk-panel{padding:0;gap:0;overflow:hidden}
-.alva-risk-panel__details{padding:0 1rem .75rem;font-size:12px;color:var(--flare-color-on-surface-variant,var(--alva-on-surface-variant))}
-.alva-risk-panel__details summary{cursor:pointer;font-weight:600}
-.alva-bell__panel{display:flex;flex-direction:column;gap:var(--flare-spacing-3);padding:var(--flare-spacing-4)}
-.alva-bell__head{display:flex;align-items:baseline;justify-content:space-between;gap:var(--flare-spacing-2)}
-.alva-bell__scope,.alva-bell__reasons,.alva-bell__empty{color:var(--flare-color-on-surface-variant)}
-.alva-bell__list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:var(--flare-spacing-2)}
-.alva-bell__item{display:flex;flex-direction:column;gap:var(--flare-spacing-1);padding:var(--flare-spacing-2) var(--flare-spacing-3);border-radius:var(--flare-shape-medium);background:var(--flare-color-surface-container-low)}
-.alva-bell__item--new{background:var(--flare-color-surface-container-lowest);box-shadow:inset var(--flare-spacing-1) 0 0 var(--flare-color-primary)}
-.alva-bell__title{display:flex;flex-wrap:wrap;align-items:center;gap:var(--flare-spacing-2)}
-.alva-bell__title a{color:var(--flare-color-on-surface);font-weight:600;text-decoration:none}
-.alva-bell__title a:hover,.alva-bell__title a:focus-visible{text-decoration:underline}
-.alva-bell__new{color:var(--flare-color-primary);font-weight:700}
-.alva-bell__actions{display:flex;justify-content:space-between;gap:var(--flare-spacing-2)}
+/* 9. Analytics and risk bell: FlareCard, FlareAccordion and FlarePopover own the surfaces. */
 
 /* 10. Gantt: FlareGantt owns the chart. Only documented hooks - ItemClass, CellClass,
    RowClass, RegionClass and MarkerClass - and --flare-gantt-* variables are styled here.
    Internal Flare structure is not selected. */
-.alva-gantt__host{display:block;min-width:0}
-.alva-gantt__host:focus:not(:focus-visible){outline:none}
-.alva-gantt-bar__fields{display:flex;flex-wrap:wrap;gap:var(--flare-spacing-4,.5rem)}
-.alva-gantt-legend__notice{margin-left:auto;color:var(--flare-color-primary);font-weight:600}
 .alva-gantt{--flare-gantt-max-height:70vh}
 .alva-gantt-row{display:flex;flex-direction:column;min-width:0;line-height:1.2}
 .alva-gantt-row__title{overflow:hidden;white-space:nowrap;text-overflow:ellipsis;color:var(--flare-color-on-surface);font-weight:600;text-decoration:none}
@@ -280,13 +120,7 @@ html,body{margin:0;min-height:100%;font-family:var(--alva-font);background:var(-
 .alva-gantt-row--group .alva-gantt-row__title{text-transform:uppercase;font-size:11px;letter-spacing:.04em;color:var(--flare-color-primary)}
 .alva-gantt-row--role .alva-gantt-row__title{color:var(--flare-color-error)}
 .alva-gantt-row--pool .alva-gantt-row__title{color:var(--flare-color-on-surface-variant)}
-.alva-plan-gantt .alva-panel__header{flex-wrap:wrap}
-.alva-plan-gantt__legend{margin-left:auto}
-.alva-plan-gantt__link{color:var(--flare-color-primary);font-weight:600;text-decoration:none}
-.alva-plan-gantt__link:hover,.alva-plan-gantt__link:focus-visible{text-decoration:underline}
-.alva-plan-gantt__chart{--flare-gantt-max-height:38rem}
 .alva-gantt .alva-gantt-region--sprint-other{--flare-gantt-region-bg:color-mix(in srgb,var(--flare-color-outline) 6%,transparent);--flare-gantt-region-border:var(--flare-color-outline);--flare-gantt-region-fg:var(--flare-color-on-surface-variant)}
-.alva-gantt-zoom{display:flex;align-items:center;min-width:10rem;max-width:14rem;flex:1 1 10rem}
 
 /* 11. Flare overrides, touch and mobile rules */
 /* Point overrides for Flare that the theme has no token for. alva.css holds only theme variables;
@@ -298,9 +132,7 @@ html .flare-theme-alva .flare-datagrid:not(.flare-datagrid--stacked) .flare-data
 html .flare-theme-alva .flare-datagrid:not(.flare-datagrid--stacked) .flare-datagrid__th{height:34px;padding:0 8px;background:var(--alva-subtle);color:var(--flare-color-on-surface-variant);font-size:11px;font-weight:600;line-height:14px;letter-spacing:.03em;text-transform:uppercase;border-bottom:1px solid var(--alva-border)}
 html .flare-theme-alva .flare-datagrid__td{padding:4px 8px}
 /* Alva navigation group labels and separators are app structure, not a Flare component. */
-html .flare-theme-alva .alva-nav-group-label{margin-top:8px;padding:4px 12px;color:var(--flare-color-on-surface-variant);font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase}
 html .flare-theme-alva .flare-progress{--flare-color-secondary-container:var(--flare-color-surface-container)}
-html .flare-theme-alva .alva-nav-sep{margin:4px 12px 8px;border-top:1px solid var(--alva-border)}
 html .flare-theme-alva .flare-alert--warning{background:var(--alva-warning-bg);color:var(--alva-warning-text)}
 html .flare-theme-alva .flare-alert--error{background:var(--alva-critical-bg);color:var(--alva-critical-text)}
 /* Stock amber #F59E0B on white does not reach 4.5:1. The semantic Alva token is
@@ -321,14 +153,5 @@ html .flare-theme-alva .alva-num,html .flare-theme-alva td,html .flare-theme-alv
 }
 @media(max-width:767px){
   .flare-chip{font-size:12px;line-height:16px;padding:3px 7px}
-  .alva-kpi__label,.alva-plan-head__horizon{font-size:12px}
-  .alva-panel__subtitle,.alva-kpi__note,.alva-risk-panel__details{font-size:13px;line-height:18px}
   input,select,textarea{font-size:16px}
 }
-@media(max-width:600px){
-  .alva-appbar{gap:.5rem;padding-inline:0 .5rem}
-  .alva-team-chip{max-width:min(42vw,11rem)}
-  .alva-task-filters > *{flex:1 1 calc(50% - .5rem) !important;min-width:0 !important}
-  .alva-task-filters > :first-child{flex-basis:100% !important}
-}
-@media(max-width:767px){.alva-brand__text,.alva-appbar__sep,.alva-user__name{display:none}}

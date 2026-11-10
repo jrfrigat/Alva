@@ -54,7 +54,7 @@ public sealed class TaskListKeysTests : UiTestBase
     {
         var cut = Card();
 
-        cut.Find(".alva-task-card").KeyDown(new KeyboardEventArgs { Key = "Escape" });
+        cut.Find("[tabindex='-1'][aria-label]").KeyDown(new KeyboardEventArgs { Key = "Escape" });
 
         Assert.EndsWith("/tasks", Navigation.Uri);
     }
@@ -66,11 +66,11 @@ public sealed class TaskListKeysTests : UiTestBase
         var before = Navigation.Uri;
         Field(cut, "Остаток, часы").Change("5");
 
-        cut.Find(".alva-task-card").KeyDown(new KeyboardEventArgs { Key = "Escape" });
+        cut.Find("[tabindex='-1'][aria-label]").KeyDown(new KeyboardEventArgs { Key = "Escape" });
 
         // The draft holds the card: edits are only sent after explicit confirmation, so no navigation happens.
         Assert.Equal(before, Navigation.Uri);
-        Assert.NotEmpty(cut.FindAll(".alva-task-card"));
+        Assert.NotEmpty(cut.FindAll("[tabindex='-1'][aria-label]"));
     }
 
     private IRenderedComponent<Tasks> List()
@@ -85,8 +85,8 @@ public sealed class TaskListKeysTests : UiTestBase
     {
         Navigation.NavigateTo($"/tasks/{_task.Id}");
         var cut = Render<FlareConfirmDialogProvider>(p => p.AddChildContent<Tasks>(t => t.Add(x => x.TaskId, _task.Id)));
-        cut.WaitForAssertion(() => Assert.NotEmpty(cut.FindAll(".alva-task-card")));
-        Assert.Equal(_task.Title, cut.Find(".alva-task-card").GetAttribute("aria-label"));
+        cut.WaitForAssertion(() => Assert.NotEmpty(cut.FindAll("[tabindex='-1'][aria-label]")));
+        Assert.Equal(_task.Title, cut.Find("[tabindex='-1'][aria-label]").GetAttribute("aria-label"));
         return cut;
     }
 

@@ -4,16 +4,18 @@
 @using Flare.Components.Gantt
 @inject AlvaSession Session
 @inject NavigationManager Navigation
-<section class="alva-plan-head">
-    <div class="alva-plan-head__row">
-        <div class="alva-plan-head__picker">
-            <FlareIconView Value="@MaterialDesign3Icons.Regular.CalendarMonth" Size="22px" Class="alva-panel__icon" />
+<FlareCard Variant="CardVariant.Outlined">
+    <FlareCardContent>
+    <FlareStack Gap="FlareSpacing.Medium">
+    <FlareStack Row Wrap Align="FlareAlignItems.Center" Justify="FlareJustifyContent.SpaceBetween" Gap="FlareSpacing.Medium">
+        <FlareStack Row Wrap Align="FlareAlignItems.Center" Gap="FlareSpacing.Small">
+            <FlareIconView Value="@MaterialDesign3Icons.Regular.CalendarMonth" Size="22px" />
             <FlareSelect TValue="Guid" Label="@(AlvaStrings.Gantt_Sprint)" Items="Choices.Select(s => s.Id)" ItemLabel="SprintLabel" Value="Sprint.Id" ValueChanged="Pick" />
-            <span class="alva-plan-head__horizon alva-num">@(AlvaStrings.Sprint_PlanningHorizon) @AlvaFormat.WorkDays(Sprint.StartDate, Sprint.EndDate) @(AlvaStrings.Sprint_WorkShifts) · @AlvaFormat.Period(Sprint.StartDate, Sprint.EndDate)</span>
-        </div>
+            <FlareText Typo="TypographyScale.LabelSmall" Color="FlareColor.OnSurfaceVariant">@(AlvaStrings.Sprint_PlanningHorizon) @AlvaFormat.WorkDays(Sprint.StartDate, Sprint.EndDate) @(AlvaStrings.Sprint_WorkShifts), @AlvaFormat.Period(Sprint.StartDate, Sprint.EndDate)</FlareText>
+        </FlareStack>
         <AlvaStatusChip Tone="@(Sprint.Status == "Planned" ? AlvaTone.Info : AlvaTones.Status(Sprint.Status))">@(Sprint.Status == "Planned" ? AlvaStrings.Sprint_PlanningDraft : Labels.Status(Sprint.Status))</AlvaStatusChip>
-    </div>
-    <div class="alva-plan-head__actions">
+    </FlareStack>
+    <FlareStack Row Wrap Gap="FlareSpacing.Small">
         <FlareMenu Anchor="MenuAnchor.BottomLeft" AriaLabel="@(AlvaStrings.Sprint_AutoBalanceMode)">
             <Activator>
                 <FlareButton Variant="ButtonVariant.Tonal" Size="ButtonSize.Sm" Loading="_balancing" Disabled="_busy">
@@ -25,7 +27,10 @@
                 @foreach (var (mode, label, hint) in BalanceModesMenu)
                 {
                     <FlareMenuItem OnClick="() => Balance(mode)">
-                        <span class="alva-plan-mode"><b>@label</b><small>@hint</small></span>
+                        <FlareStack Gap="FlareSpacing.None">
+                            <FlareText Typo="TypographyScale.LabelMedium">@label</FlareText>
+                            <FlareText Typo="TypographyScale.LabelSmall" Color="FlareColor.OnSurfaceVariant">@hint</FlareText>
+                        </FlareStack>
                     </FlareMenuItem>
                 }
             </ChildContent>
@@ -42,7 +47,7 @@
                 <ChildContent>@(AlvaStrings.Sprint_CommitTheSprint)</ChildContent>
             </FlareButton>
         }
-    </div>
+    </FlareStack>
     <FlareGrid MinColumnWidth="min(100%,12rem)">
         <FlareStat Label="@(AlvaStrings.Sprint_TeamCapacity)" Value="@($"{AlvaFormat.Hours(Capacity)} {AlvaStrings.Sprint_HoursShort}")" Icon="@MaterialDesign3Icons.Regular.Groups" />
         <FlareStat Label="@(AlvaStrings.Sprint_PlannedIntoTheSprint)" Value="@($"{AlvaFormat.Hours(Planned)} {AlvaStrings.Sprint_HoursShort}")" Icon="@MaterialDesign3Icons.Regular.FactCheck">
@@ -53,156 +58,200 @@
             <CaptionContent>@if (OvertimePeople > 0) { <AlvaStatusChip Tone="AlvaTone.Critical">@OvertimePeople @(AlvaStrings.Common_People)</AlvaStatusChip> }</CaptionContent>
         </FlareStat>
     </FlareGrid>
-</section>
+    </FlareStack>
+    </FlareCardContent>
+</FlareCard>
 <PageFeedback Error="@_error" />
 
 @if (_proposal is { } proposal)
 {
-    <section class="alva-panel alva-plan-proposal" aria-live="polite">
-        <header class="alva-panel__header">
-            <FlareIconView Value="@MaterialDesign3Icons.Regular.Balance" Size="20px" Class="alva-panel__icon" />
-            <div>
-                <h2 class="alva-panel__title">@(AlvaStrings.Sprint_AutoBalanceRecommendation) @ModeName(proposal.Mode)</h2>
-                <p class="alva-panel__subtitle">@StatusText(proposal.Status)@(proposal.Note is { } note ? $" · {note}" : "") · @(AlvaStrings.Sprint_TheDashedLineOnTheGanttShowsWhereTasksWillMoveNothingIsSavedUntilYouAppl_0664fc)</p>
-            </div>
-            <div class="alva-plan-proposal__actions">
-                @if (proposal.Changes.Length > 0)
-                {
-                    <FlareButton Size="ButtonSize.Sm" Loading="_busy" Disabled="Chosen.Count == 0" OnClick="ApplyProposal">@(AlvaStrings.Sprint_ApplySelected) (@Chosen.Count)</FlareButton>
-                }
-                <FlareButton Size="ButtonSize.Sm" Variant="ButtonVariant.Outlined" Disabled="_busy" OnClick="RejectProposal">@(proposal.Changes.Length > 0 ? AlvaStrings.Sprint_Reject : AlvaStrings.Common_Close)</FlareButton>
-            </div>
-        </header>
-        <div class="alva-plan-proposal__metrics">
+    <FlareCard Variant="CardVariant.Outlined" aria-live="polite">
+        <FlareCardHeader Title="@($"{AlvaStrings.Sprint_AutoBalanceRecommendation} {ModeName(proposal.Mode)}")"
+                         Subtitle="@($"{StatusText(proposal.Status)}{(proposal.Note is { } note ? $" - {note}" : "")} - {AlvaStrings.Sprint_TheDashedLineOnTheGanttShowsWhereTasksWillMoveNothingIsSavedUntilYouAppl_0664fc}")">
+            <AvatarContent><FlareIconView Value="@MaterialDesign3Icons.Regular.Balance" Size="20px" /></AvatarContent>
+            <ActionContent>
+                <FlareStack Row Wrap Gap="FlareSpacing.Small">
+                    @if (proposal.Changes.Length > 0)
+                    {
+                        <FlareButton Size="ButtonSize.Sm" Loading="_busy" Disabled="Chosen.Count == 0" OnClick="ApplyProposal">@(AlvaStrings.Sprint_ApplySelected) (@Chosen.Count)</FlareButton>
+                    }
+                    <FlareButton Size="ButtonSize.Sm" Variant="ButtonVariant.Outlined" Disabled="_busy" OnClick="RejectProposal">@(proposal.Changes.Length > 0 ? AlvaStrings.Sprint_Reject : AlvaStrings.Common_Close)</FlareButton>
+                </FlareStack>
+            </ActionContent>
+        </FlareCardHeader>
+        <FlareCardContent>
+        <FlareStack Gap="FlareSpacing.Medium">
+        <FlareGrid MinColumnWidth="min(100%,11rem)">
             @foreach (var (label, before, after, unit) in Metrics(proposal))
             {
-                <div class="alva-plan-metric alva-plan-metric--@(after < before ? "better" : after > before ? "worse" : "same")">
-                    <span class="alva-kpi__label">@label</span>
-                    <span class="alva-num"><s>@AlvaFormat.Hours(before)</s> → <b>@AlvaFormat.Hours(after)</b> @unit</span>
-                </div>
+                <FlarePaper Outlined="true" Padding="FlareSpacing.Small">
+                    <FlareStack Gap="FlareSpacing.XXSmall">
+                        <FlareText Typo="TypographyScale.LabelSmall" Color="FlareColor.OnSurfaceVariant">@label</FlareText>
+                        <FlareText Typo="TypographyScale.BodySmall"><s>@AlvaFormat.Hours(before)</s> -> @AlvaFormat.Hours(after) @unit</FlareText>
+                    </FlareStack>
+                </FlarePaper>
             }
-        </div>
+        </FlareGrid>
         @* The calculation does not move everything: in-progress, parent, unestimated or unassigned tasks stay as they are. *@
-        <p class="alva-plan-proposal__scope alva-num">@(AlvaStrings.Sprint_TasksConsidered) @proposal.Considered@(proposal.Excluded is { Length: > 0 } skipped ? $" · {AlvaStrings.Sprint_LeftOut} {skipped.Length}" : "")</p>
+        <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@(AlvaStrings.Sprint_TasksConsidered) @proposal.Considered@(proposal.Excluded is { Length: > 0 } skipped ? $", {AlvaStrings.Sprint_LeftOut} {skipped.Length}" : "")</FlareText>
         @if (proposal.Excluded is { Length: > 0 } excluded)
         {
-            <details class="alva-plan-proposal__excluded">
-                <summary>@(AlvaStrings.Sprint_WhyTasksWereLeftOut)</summary>
-                <ul>
-                    @foreach (var item in excluded)
-                    {
-                        <li @key="item.TaskId"><a href="tasks/@item.TaskId">@item.Title</a> — @ReasonText.Describe(item.Reason)</li>
-                    }
-                </ul>
-            </details>
+            <FlareAccordion>
+                <FlareAccordionPanel Header="@(AlvaStrings.Sprint_WhyTasksWereLeftOut)">
+                    <FlareStack Gap="FlareSpacing.XSmall">
+                        @foreach (var item in excluded)
+                        {
+                            <FlareStack Row Wrap Align="FlareAlignItems.Center" Gap="FlareSpacing.Small" @key="item.TaskId">
+                                <FlareLink Href="@($"tasks/{item.TaskId}")">@item.Title</FlareLink>
+                                <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@ReasonText.Describe(item.Reason)</FlareText>
+                            </FlareStack>
+                        }
+                    </FlareStack>
+                </FlareAccordionPanel>
+            </FlareAccordion>
         }
         @if (proposal.Changes.Length == 0)
         {
-            <p class="alva-panel__subtitle">@(proposal.Status == BalanceMath.Infeasible
+            <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@(proposal.Status == BalanceMath.Infeasible
                 ? AlvaStrings.Sprint_NoFeasiblePlanFixedDatesAndLinksContradictEachOther
-                : proposal.Excluded is { Length: > 0 } ? AlvaStrings.Sprint_NoImprovementAmongTheTasksConsideredTheTasksTheCalculationDidNotTouchAre_277646 : AlvaStrings.Sprint_ThePlanIsAlreadyBalancedInThisModeNothingToChange)</p>
+                : proposal.Excluded is { Length: > 0 } ? AlvaStrings.Sprint_NoImprovementAmongTheTasksConsideredTheTasksTheCalculationDidNotTouchAre_277646 : AlvaStrings.Sprint_ThePlanIsAlreadyBalancedInThisModeNothingToChange)</FlareText>
         }
         else
         {
-            <ul class="alva-plan-proposal__list">
+            <FlareGrid MinColumnWidth="min(100%,22rem)">
                 @foreach (var change in proposal.Changes)
                 {
-                    <li class="alva-plan-change" @key="change.TaskId">
-                        <FlareCheckbox TValue="bool" Value="_chosen.Contains(change.TaskId)" ValueChanged="(bool on) => Choose(change.TaskId, on)"
-                                       AriaLabel="@string.Format(AlvaStrings.Sprint_ApplyTheChange, change.Title)" />
-                        <div class="alva-plan-change__body">
-                            <a class="alva-plan-change__title" href="tasks/@change.TaskId">@change.Title</a>
-                            <span class="alva-plan-change__what alva-num">
+                    <FlarePaper Outlined="true" Padding="FlareSpacing.Small" @key="change.TaskId">
+                        <FlareStack Row Align="FlareAlignItems.Start" Gap="FlareSpacing.Small">
+                            <FlareCheckbox TValue="bool" Value="_chosen.Contains(change.TaskId)" ValueChanged="(bool on) => Choose(change.TaskId, on)"
+                                           AriaLabel="@string.Format(AlvaStrings.Sprint_ApplyTheChange, change.Title)" />
+                            <FlareStack Gap="FlareSpacing.XXSmall">
+                                <FlareLink Href="@($"tasks/{change.TaskId}")">@change.Title</FlareLink>
                                 @if (change.FromPersonId != change.ToPersonId)
                                 {
-                                    <span>@(change.FromPersonName ?? AlvaStrings.Sprint_Nobody) → <b>@change.ToPersonName</b></span>
+                                    <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@(change.FromPersonName ?? AlvaStrings.Sprint_Nobody) -> @change.ToPersonName</FlareText>
                                 }
                                 @if (change.FromStart != change.ToStart || change.FromEnd != change.ToEnd)
                                 {
-                                    <span>@AlvaFormat.Period(change.FromStart, change.FromEnd) → <b>@AlvaFormat.Period(change.ToStart, change.ToEnd)</b></span>
+                                    <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@AlvaFormat.Period(change.FromStart, change.FromEnd) -> @AlvaFormat.Period(change.ToStart, change.ToEnd)</FlareText>
                                 }
-                            </span>
-                            <small class="alva-plan-change__why">@ReasonText.Join(change.Reasons)</small>
-                        </div>
-                    </li>
+                                <FlareText Typo="TypographyScale.LabelSmall" Color="FlareColor.OnSurfaceVariant">@ReasonText.Join(change.Reasons)</FlareText>
+                            </FlareStack>
+                        </FlareStack>
+                    </FlarePaper>
                 }
-            </ul>
+            </FlareGrid>
         }
-    </section>
+        </FlareStack>
+        </FlareCardContent>
+    </FlareCard>
 }
 
-<FlareDragContext TPayload="PlanDrag" Group="plan" OnDrop="Drop" Class="alva-plan-board">
-    <section class="alva-panel alva-plan-pool">
-        <header class="alva-panel__header">
-            <FlareIconView Value="@MaterialDesign3Icons.Regular.Inventory2" Size="20px" Class="alva-panel__icon" />
-            <h2 class="alva-panel__title">@(AlvaStrings.Sprint_TaskPoolBacklog)</h2>
-            <span class="alva-plan-count alva-num">@Pool.Count()</span>
-        </header>
-        <FlareChipGroup SelectedValues="PoolFilterValues" SelectedValuesChanged="SetPoolFilter" AriaLabel="@(AlvaStrings.Sprint_PoolFilter)">
-            @foreach (var (key, label) in PoolFilters)
-            {
-                <FlareChip Value="@key" Label="@($"{label} ({Pool.Count(t => Matches(t, key))})")" />
-            }
-        </FlareChipGroup>
-        <FlareTextField @bind-Value="_search" Immediate Clearable Placeholder="@(AlvaStrings.Sprint_SearchByCodeOrTitle)" AriaLabel="@(AlvaStrings.Sprint_SearchThePool)">
-            <AdornmentStart><FlareIconView Value="@MaterialDesign3Icons.Regular.Search" Size="18px" /></AdornmentStart>
-        </FlareTextField>
-        <FlareDropZone Target="pool" Accepts="FromSprint" Class="alva-plan-cards">
-            @foreach (var task in Pool.Where(t => Matches(t, _poolFilter) && Found(t)))
-            {
-                <FlareDropZone Target="@($"task:{task.Id}")" Accepts="IsPerson" Class="alva-plan-card-zone" @key="task.Id">
-                    <FlareDraggable Payload="@(new TaskDrag(task.Id))" Class="alva-plan-card">
-                        <div class="alva-plan-card__top">
-                            <a class="alva-plan-card__code" href="@($"tasks/{task.Id}")">@AlvaFormat.Code(task.Id)</a>
-                            <FlareChip Size="ChipSize.Xs">@ProjectName(task.ProjectId)</FlareChip>
-                            @if (task.Priority != "Normal") { <AlvaStatusChip Tone="AlvaTones.Priority(task.Priority)">@Labels.Priority(task.Priority)</AlvaStatusChip> }
-                            <span class="alva-plan-card__est alva-num"><FlareIconView Value="@MaterialDesign3Icons.Regular.Schedule" Size="15px" /> @(task.EstimateHours.HasValue ? $"{AlvaFormat.Hours(task.EstimateHours.Value)} {AlvaStrings.Sprint_HoursShort}" : "—")</span>
-                        </div>
-                        <div class="alva-plan-card__title">@task.Title</div>
-                        <div class="alva-plan-card__bottom">
-                            <AlvaAssignee Task="task" Actors="_actors" />
-                            <span class="alva-plan-card__deadline alva-num">@(task.Deadline.HasValue ? task.Deadline.Value.ToString("d MMM") : AlvaStrings.Sprint_NoDeadline)</span>
-                            @if (!Ready(task)) { <span class="alva-plan-card__unready" title="@(AlvaStrings.Sprint_NeedsAnEstimateAndAnAssigneeOrRole)">@(AlvaStrings.Sprint_NotReady)</span> }
-                            <span class="alva-plan-card__rank">
-                                <FlareIconButton Icon="@MaterialDesign3Icons.Regular.ArrowUpward" Size="ButtonSize.Sm" AriaLabel="@($"{AlvaStrings.Sprint_MoveUpInThePool}: {task.Title}")" Disabled="@(_busy || task == Pool.First())" OnClick="() => Rerank(task, -1)" />
-                                <FlareIconButton Icon="@MaterialDesign3Icons.Regular.ArrowDownward" Size="ButtonSize.Sm" AriaLabel="@($"{AlvaStrings.Sprint_MoveDownInThePool}: {task.Title}")" Disabled="@(_busy || task == Pool.Last())" OnClick="() => Rerank(task, 1)" />
-                            </span>
-                            <FlareButton Size="ButtonSize.Sm" Variant="ButtonVariant.Tonal" Disabled="_busy" OnClick="() => Move(task, true)">@(AlvaStrings.Sprint_IntoSprint)</FlareButton>
-                        </div>
-                    </FlareDraggable>
-                </FlareDropZone>
-            }
-            @if (!Pool.Any(t => Matches(t, _poolFilter) && Found(t))) { <FlareEmptyState Compact Title="@(AlvaStrings.Sprint_ThePoolIsEmpty)" Description="@(AlvaStrings.Sprint_NoTaskMatchesThisFilter)" /> }
-        </FlareDropZone>
-        <div class="alva-plan-hint"><FlareIconView Value="@MaterialDesign3Icons.Regular.DragIndicator" Size="16px" /> @(AlvaStrings.Sprint_DragATaskOntoTheGanttOntoADayOrOntoAPersonSRowHereToReturnItToTheBacklog)</div>
-    </section>
+<FlareDragContext TPayload="PlanDrag" Group="plan" OnDrop="Drop">
+    <FlareGrid Columns="12" AlignItems="FlareAlignItems.Start" Gap="FlareSpacing.Large">
+        <FlareCol Span="12" Md="5" Lg="3">
+            <FlareCard Variant="CardVariant.Outlined">
+                <FlareCardHeader Title="@(AlvaStrings.Sprint_TaskPoolBacklog)">
+                    <AvatarContent><FlareIconView Value="@MaterialDesign3Icons.Regular.Inventory2" Size="20px" /></AvatarContent>
+                    <ActionContent><FlareChip Variant="ChipVariant.Filled" Color="FlareColor.Primary" Size="ChipSize.Sm">@Pool.Count()</FlareChip></ActionContent>
+                </FlareCardHeader>
+                <FlareCardContent>
+                    <FlareStack Gap="FlareSpacing.Small">
+                        <FlareChipGroup SelectedValues="PoolFilterValues" SelectedValuesChanged="SetPoolFilter" AriaLabel="@(AlvaStrings.Sprint_PoolFilter)">
+                            @foreach (var (key, label) in PoolFilters)
+                            {
+                                <FlareChip Value="@key" Label="@($"{label} ({Pool.Count(t => Matches(t, key))})")" />
+                            }
+                        </FlareChipGroup>
+                        <FlareTextField @bind-Value="_search" Immediate Clearable Placeholder="@(AlvaStrings.Sprint_SearchByCodeOrTitle)" AriaLabel="@(AlvaStrings.Sprint_SearchThePool)">
+                            <AdornmentStart><FlareIconView Value="@MaterialDesign3Icons.Regular.Search" Size="18px" /></AdornmentStart>
+                        </FlareTextField>
+                        <FlareDropZone Target="pool" Accepts="FromSprint">
+                            <FlareStack Gap="FlareSpacing.Small" MaxHeight="40rem" Overflow="auto">
+                                @foreach (var task in Pool.Where(t => Matches(t, _poolFilter) && Found(t)))
+                                {
+                                    <FlareDropZone Target="@($"task:{task.Id}")" Accepts="AcceptsOnCard" @key="task.Id">
+                                        <FlareDraggable Payload="@(new TaskDrag(task.Id))">
+                                            <FlarePaper Outlined="true" Padding="FlareSpacing.Small">
+                                                <FlareStack Gap="FlareSpacing.XSmall">
+                                                    <FlareStack Row Wrap Align="FlareAlignItems.Center" Gap="FlareSpacing.Small">
+                                                        <FlareLink Href="@($"tasks/{task.Id}")">@AlvaFormat.Code(task.Id)</FlareLink>
+                                                        <FlareChip Size="ChipSize.Xs">@ProjectName(task.ProjectId)</FlareChip>
+                                                        @if (task.Priority != "Normal") { <AlvaStatusChip Tone="AlvaTones.Priority(task.Priority)">@Labels.Priority(task.Priority)</AlvaStatusChip> }
+                                                        <FlareSpacer />
+                                                        <FlareText Typo="TypographyScale.LabelSmall" Color="FlareColor.OnSurfaceVariant"><FlareIconView Value="@MaterialDesign3Icons.Regular.Schedule" Size="15px" /> @(task.EstimateHours.HasValue ? $"{AlvaFormat.Hours(task.EstimateHours.Value)} {AlvaStrings.Sprint_HoursShort}" : "-")</FlareText>
+                                                    </FlareStack>
+                                                    <FlareText Typo="TypographyScale.BodyMedium">@task.Title</FlareText>
+                                                    <FlareStack Row Wrap Align="FlareAlignItems.Center" Gap="FlareSpacing.Small">
+                                                        <AlvaAssignee Task="task" Actors="_actors" />
+                                                        <FlareSpacer />
+                                                        <FlareText Typo="TypographyScale.LabelSmall" Color="FlareColor.OnSurfaceVariant">@(task.Deadline.HasValue ? task.Deadline.Value.ToString("d MMM") : AlvaStrings.Sprint_NoDeadline)</FlareText>
+                                                        @if (!Ready(task)) { <FlareText Typo="TypographyScale.LabelSmall" Color="FlareColor.Error" title="@(AlvaStrings.Sprint_NeedsAnEstimateAndAnAssigneeOrRole)">@(AlvaStrings.Sprint_NotReady)</FlareText> }
+                                                        <FlareStack Row Gap="FlareSpacing.None">
+                                                            <FlareIconButton Icon="@MaterialDesign3Icons.Regular.ArrowUpward" Size="ButtonSize.Sm" AriaLabel="@($"{AlvaStrings.Sprint_MoveUpInThePool}: {task.Title}")" Disabled="@(_busy || task == Pool.First())" OnClick="() => Rerank(task, -1)" />
+                                                            <FlareIconButton Icon="@MaterialDesign3Icons.Regular.ArrowDownward" Size="ButtonSize.Sm" AriaLabel="@($"{AlvaStrings.Sprint_MoveDownInThePool}: {task.Title}")" Disabled="@(_busy || task == Pool.Last())" OnClick="() => Rerank(task, 1)" />
+                                                        </FlareStack>
+                                                        <FlareButton Size="ButtonSize.Sm" Variant="ButtonVariant.Tonal" Disabled="_busy" OnClick="() => Move(task, true)">@(AlvaStrings.Sprint_IntoSprint)</FlareButton>
+                                                    </FlareStack>
+                                                </FlareStack>
+                                            </FlarePaper>
+                                        </FlareDraggable>
+                                    </FlareDropZone>
+                                }
+                                @if (!Pool.Any(t => Matches(t, _poolFilter) && Found(t))) { <FlareEmptyState Compact Title="@(AlvaStrings.Sprint_ThePoolIsEmpty)" Description="@(AlvaStrings.Sprint_NoTaskMatchesThisFilter)" /> }
+                            </FlareStack>
+                        </FlareDropZone>
+                        <FlarePaper Padding="FlareSpacing.XSmall">
+                            <FlareStack Row Align="FlareAlignItems.Center" Justify="FlareJustifyContent.Center" Gap="FlareSpacing.XSmall">
+                                <FlareIconView Value="@MaterialDesign3Icons.Regular.DragIndicator" Size="16px" />
+                                <FlareText Typo="TypographyScale.LabelSmall">@(AlvaStrings.Sprint_DragATaskOntoTheGanttOntoADayOrOntoAPersonSRowHereToReturnItToTheBacklog)</FlareText>
+                            </FlareStack>
+                        </FlarePaper>
+                    </FlareStack>
+                </FlareCardContent>
+            </FlareCard>
+        </FlareCol>
 
-    <GanttSprintBoard @ref="_board" Sprint="Sprint" Data="_gantt" People="_people" Range="_axis" RangeChanged="Grow" Focus="_focus" OnTaskChange="TaskChange" OnPeopleChange="PeopleChange"
-                      OnLinkCreate="Link" OnLinkRejected="Rejected" OnUnplan="t => Move(t, false)" Suggested="Chosen" />
+        <FlareCol Span="12" Md="7" Lg="6">
+            <GanttSprintBoard @ref="_board" Sprint="Sprint" Data="_gantt" People="_people" Range="_axis" RangeChanged="Grow" Focus="_focus" OnTaskChange="TaskChange" OnPeopleChange="PeopleChange"
+                              OnLinkCreate="Link" OnLinkRejected="Rejected" OnUnplan="t => Move(t, false)" Suggested="Chosen" />
+        </FlareCol>
 
-    <div class="alva-plan-side">
-        <section class="alva-panel">
-            <header class="alva-panel__header">
-                <FlareIconView Value="@MaterialDesign3Icons.Regular.Balance" Size="20px" Class="alva-panel__icon" />
-                <div><h2 class="alva-panel__title">@(AlvaStrings.Sprint_SubTeamBalance)</h2><p class="alva-panel__subtitle">@(AlvaStrings.Sprint_SubTeamBalanceSubtitle)</p></div>
-            </header>
-            <div class="alva-skills">
-                @foreach (var (team, plan, avail) in SubTeams)
-                {
-                    var pct = Pct(plan, avail);
-                    var tone = avail <= 0 && plan > 0 ? AlvaTone.Critical : pct > 100 ? AlvaTone.Critical : pct > 85 ? AlvaTone.Info : AlvaTone.Ok;
-                    <div class="alva-skill alva-skill--@tone.ToString().ToLowerInvariant()">
-                        <div class="alva-skill__head"><b>@team.Name</b><AlvaStatusChip Tone="tone">@(avail > 0 ? $"{pct}%" : AlvaStrings.Sprint_NoPeople) @(tone == AlvaTone.Critical ? AlvaStrings.Common_OverloadShort : tone == AlvaTone.Info ? AlvaStrings.Common_Optimal : AlvaStrings.Sprint_Buffer)</AlvaStatusChip></div>
-                        <FlareProgressLinear Value="@Math.Min(100, pct)" Size="TrackSize.Xs" Color="@ToneColor(tone)" aria-label="@string.Format(AlvaStrings.Sprint_SubTeamBalanceAria, team.Name)" />
-                        <div class="alva-skill__foot alva-num"><span>@(AlvaStrings.Sprint_Plan) @AlvaFormat.Hours(plan) @(AlvaStrings.Sprint_HoursShort)</span><span class="@(plan > avail ? "alva-kpi__alert" : "alva-kpi__aside--primary")">@(plan > avail ? string.Format(AlvaStrings.Common_DeficitH, AlvaFormat.Hours(plan - avail)) : string.Format(AlvaStrings.Sprint_ReserveH, AlvaFormat.Hours(avail - plan))) (@(AlvaStrings.Sprint_Avail) @AlvaFormat.Hours(avail) @(AlvaStrings.Sprint_HoursShort))</span></div>
-                    </div>
-                }
-                @if (!SubTeams.Any()) { <p class="alva-kpi__note">@(AlvaStrings.Sprint_GivePeopleSubTeamsToSeeTheBalance)</p> }
-            </div>
-        </section>
+        <FlareCol Span="12" Md="12" Lg="3">
+            <FlareStack Gap="FlareSpacing.Large">
+                <FlareCard Variant="CardVariant.Outlined">
+                    <FlareCardHeader Title="@(AlvaStrings.Sprint_SubTeamBalance)" Subtitle="@(AlvaStrings.Sprint_SubTeamBalanceSubtitle)">
+                        <AvatarContent><FlareIconView Value="@MaterialDesign3Icons.Regular.Balance" Size="20px" /></AvatarContent>
+                    </FlareCardHeader>
+                    <FlareCardContent>
+                        <FlareGrid MinColumnWidth="min(100%,12rem)" Gap="FlareSpacing.Small">
+                            @foreach (var (team, plan, avail) in SubTeams)
+                            {
+                                var pct = Pct(plan, avail);
+                                var tone = avail <= 0 && plan > 0 ? AlvaTone.Critical : pct > 100 ? AlvaTone.Critical : pct > 85 ? AlvaTone.Info : AlvaTone.Ok;
+                                <FlarePaper Outlined="true" Padding="FlareSpacing.Small">
+                                    <FlareStack Gap="FlareSpacing.XSmall">
+                                        <FlareStack Row Wrap Align="FlareAlignItems.Start" Justify="FlareJustifyContent.SpaceBetween" Gap="FlareSpacing.XSmall">
+                                            <FlareText Typo="TypographyScale.LabelMedium">@team.Name</FlareText>
+                                            <AlvaStatusChip Tone="tone">@(avail > 0 ? $"{pct}%" : AlvaStrings.Sprint_NoPeople) @(tone == AlvaTone.Critical ? AlvaStrings.Common_OverloadShort : tone == AlvaTone.Info ? AlvaStrings.Common_Optimal : AlvaStrings.Sprint_Buffer)</AlvaStatusChip>
+                                        </FlareStack>
+                                        <FlareProgressLinear Value="@Math.Min(100, pct)" Size="TrackSize.Xs" Color="@ToneColor(tone)" aria-label="@string.Format(AlvaStrings.Sprint_SubTeamBalanceAria, team.Name)" />
+                                        <FlareStack Row Wrap Justify="FlareJustifyContent.SpaceBetween" Gap="FlareSpacing.XSmall">
+                                            <FlareText Typo="TypographyScale.LabelSmall" Color="FlareColor.OnSurfaceVariant">@(AlvaStrings.Sprint_Plan) @AlvaFormat.Hours(plan) @(AlvaStrings.Sprint_HoursShort)</FlareText>
+                                            <FlareText Typo="TypographyScale.LabelSmall" Color="@(plan > avail ? FlareColor.Error : FlareColor.Primary)">@(plan > avail ? string.Format(AlvaStrings.Common_DeficitH, AlvaFormat.Hours(plan - avail)) : string.Format(AlvaStrings.Sprint_ReserveH, AlvaFormat.Hours(avail - plan))) (@(AlvaStrings.Sprint_Avail) @AlvaFormat.Hours(avail) @(AlvaStrings.Sprint_HoursShort))</FlareText>
+                                        </FlareStack>
+                                    </FlareStack>
+                                </FlarePaper>
+                            }
+                        </FlareGrid>
+                        @if (!SubTeams.Any()) { <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@(AlvaStrings.Sprint_GivePeopleSubTeamsToSeeTheBalance)</FlareText> }
+                    </FlareCardContent>
+                </FlareCard>
 
-        <SprintPeople Sprint="Sprint" Actors="_actors" Capacity="_capacity" Tasks="Tasks" Shift="Shift" @bind-Focus="_focus" OnAssign="AssignPerson" />
-    </div>
+                <SprintPeople Sprint="Sprint" Actors="_actors" Capacity="_capacity" Tasks="Tasks" Shift="Shift" @bind-Focus="_focus" OnAssign="AssignPerson" />
+            </FlareStack>
+        </FlareCol>
+    </FlareGrid>
 </FlareDragContext>
 
 @code {
@@ -404,7 +453,8 @@
     private void Pick(Guid id) => Navigation.NavigateTo($"sprints/{id}/plan");
 
     private bool FromSprint(object? payload) => payload is TaskDrag t && _gantt?.Tasks.FirstOrDefault(x => x.Id == t.TaskId)?.Planned == true;
-    private static bool IsPerson(object? payload) => payload is PersonDrag;
+    // A pool card takes a person (assign) and a task (return to the pool), so every card is a drop target during both drags.
+    private static bool AcceptsOnCard(object? payload) => payload is PersonDrag or TaskDrag;
 
     /// <summary>
     /// Drop on the board. Task: into the backlog - leaves the sprint; onto a Gantt day - joins the sprint of that day with that start
@@ -416,7 +466,7 @@
         switch (e.Payload)
         {
             case TaskDrag { TaskId: var id } when _gantt.Tasks.FirstOrDefault(t => t.Id == id) is { } task:
-                if (e.TargetId == "pool")
+                if (e.TargetId == "pool" || e.TargetId.StartsWith("task:", StringComparison.Ordinal))
                 {
                     await _gantt.Unplan(Session, task);
                 }

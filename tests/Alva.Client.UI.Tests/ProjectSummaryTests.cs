@@ -32,7 +32,7 @@ public sealed class ProjectSummaryTests : UiTestBase
         Assert.Contains("25%", progress.TextContent);
         Assert.Contains("1 из 2", progress.TextContent);
         Assert.Contains("«Команда A»: 0%", progress.TextContent);
-        Assert.Contains("В работе", cut.Find(".alva-proj-detail__head").TextContent);
+        Assert.Contains("В работе", cut.Find("[aria-label='Общий проект']").TextContent);
     }
 
     [Fact]

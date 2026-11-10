@@ -19,7 +19,7 @@ else
         </FlareStack>
         @if (_draft is { } draft)
         {
-            <FlareCard Variant="CardVariant.Outlined" Class="alva-integration-form">
+            <FlareCard Variant="CardVariant.Outlined">
                 <FlareCardContent>
                     <FlareStack Gap="FlareSpacing.Large">
                         <FlareText Element="h2" Typo="TypographyScale.TitleLarge">@(draft.Id is null ? AlvaStrings.Integrations_NewConnection : AlvaStrings.Integrations_Connection)</FlareText>
@@ -72,7 +72,7 @@ else
             @foreach (var connection in _connections)
             {
                 var id = connection.Id;
-                <FlareCard Variant="CardVariant.Outlined" Class="alva-integration">
+                <FlareCard Variant="CardVariant.Outlined">
                     <FlareCardContent>
                         <FlareStack Gap="FlareSpacing.Medium">
                             <FlareStack Row Wrap>
@@ -86,7 +86,7 @@ else
                             </FlareText>
                             @if (connection.LastRunAt is { } at)
                             {
-                                <FlareText Typo="TypographyScale.BodySmall" Class="@(connection.LastOk == false ? "alva-field-error" : null)">
+                                <FlareText Typo="TypographyScale.BodySmall" Color="@(connection.LastOk == false ? FlareColor.Error : FlareColor.OnSurfaceVariant)">
                                     @string.Format(connection.LastOk == true ? AlvaStrings.Integrations_LastSyncSucceeded : AlvaStrings.Integrations_LastSyncFailed, at.ToLocalTime().ToString("g"))
                                     @connection.LastMessage
                                 </FlareText>
@@ -105,17 +105,18 @@ else
                             </FlareStack>
                             @if (_runs.GetValueOrDefault(id) is { } runs)
                             {
-                                <div class="alva-integration__runs" role="list" aria-label="@(AlvaStrings.Integrations_SyncLog)">
+                                <FlareDivider />
+                                <FlareStack role="list" aria-label="@(AlvaStrings.Integrations_SyncLog)" Gap="FlareSpacing.XSmall">
                                     @if (runs.Length == 0) { <FlareText Typo="TypographyScale.BodySmall">@(AlvaStrings.Integrations_NoSyncsYet)</FlareText> }
                                     @foreach (var run in runs)
                                     {
-                                        <div role="listitem" class="alva-integration__run">
+                                        <FlareStack role="listitem" Gap="FlareSpacing.None">
                                             <FlareText Typo="TypographyScale.BodySmall">
                                                 <span class="alva-num">@run.StartedAt.ToLocalTime().ToString("g")</span> · @(run.Ok ? Summary(run) : AlvaStrings.Integrations_Failed) @(string.IsNullOrEmpty(run.Message) ? "" : "· " + run.Message)
                                             </FlareText>
-                                        </div>
+                                        </FlareStack>
                                     }
-                                </div>
+                                </FlareStack>
                             }
                         </FlareStack>
                     </FlareCardContent>
