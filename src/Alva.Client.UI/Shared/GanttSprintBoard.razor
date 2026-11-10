@@ -22,7 +22,7 @@
     }
     else
     {
-        <FlareGantt @ref="_chart" Range="Range" RangeChanged="RangeChanged" Endless="true" Scale="GanttScale.Day" UnitWidth="_unit" FillWidth="true" Virtualize="true" RowHeight="34"
+        <FlareGantt @ref="_chart" Range="Range" RangeChanged="RangeChanged" Endless="true" Scale="GanttScale.Day" UnitWidth="_unit" FillWidth="true" Virtualize="true" RowHeight="56"
                     SideWidth="@_side" DefaultSideWidth="14rem" ResizableSide="true" SideWidthChanged="SaveSide" NonWorking="GanttData.IsWeekend"
                     Markers="@GanttData.TodayMarkers" Regions="@Data.PlanRegions(Sprint)" @bind-SelectedKey="_selected"
                     AriaLabel="@(AlvaStrings.Gantt_SprintGantt)" Class="alva-gantt alva-plan-gantt__chart">
