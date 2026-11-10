@@ -120,45 +120,45 @@ else
     </div>
     }
 </FlareCardContent></FlareCard>
-@if(_editing is not null)
-{
-<FlareCard Variant="CardVariant.Outlined"><FlareCardContent><FlareStack Gap="FlareSpacing.Medium">
-    <FlareStack Row StretchFirst><FlareText Element="h2" Typo="TypographyScale.TitleLarge">@(_editing.Id == Guid.Empty ? AlvaStrings.Tasks_NewTask : AlvaStrings.Tasks_TaskCard)</FlareText><FlareButton OnClick="Close" Variant="ButtonVariant.Text" Size="ButtonSize.Sm">@(AlvaStrings.Common_Close)</FlareButton></FlareStack>
-    @if (_formErrors.Count > 0) { <div tabindex="-1" @ref="_errorSummary"><AlvaValidationSummary Messages="_formErrors" /></div> }
-    <FlareTextField Label="@(AlvaStrings.Common_Title)" @bind-Value="_editing.Title" ErrorText="@_titleError" Required MaxLength="500" Autofocus />
-    <FlareTextArea Label="@(AlvaStrings.Common_Description)" @bind-Value="_editing.Description" AutoGrow />
-    <FlareMultiSelect TValue="Guid" Label="@(AlvaStrings.Common_RequiredSkills)" Items="SkillActors.Select(a=>a.Id)"
-                      ItemLabel="SkillName" Chips="true" Searchable="true"
-                      Values="_editing.RequiredSkillIds" ValuesChanged="(IReadOnlyList<Guid> skills) => _editing.RequiredSkillIds = skills.ToArray()" />
-    <TaskFormPlan Task="_editing" Projects="_projects" Sprints="_sprints" Tasks="_tasks"
-                  SelfId="@(_editing.Id == Guid.Empty ? (Guid?)null : _editing.Id)"
-                  ParentError="@_parentError" EstimateError="@_estimateError" RemainingError="@_remainingError"
-                  LimitError="@_limitError" StartError="@_startError" EndError="@_endError" Changed="StateHasChanged" />
-    <FlareSelect TValue="Guid?" Label="@(AlvaStrings.Tasks_AssigneeSubTeamOrRole)" Items="AssignableActorIds" ItemLabel="id => ActorName(id)" NullOption="@(AlvaStrings.Common_UnassignedTask)" @bind-Value="_editing.AssignmentTargetId" Searchable />
-    <SkillMatch Required="_editing.RequiredSkillIds" Person="@(_actors.FirstOrDefault(a=>a.Id==(_editing.ResolvedPersonId ?? _editing.AssignmentTargetId)))" Skills="SkillActors" />
-    @if(_actors.FirstOrDefault(a=>a.Id==_editing.AssignmentTargetId)?.Kind is "Department") { <FlareSelect TValue="Guid?" Label="@(AlvaStrings.Common_SpecificAssignee)" Items="@(_actors.Where(a=>a.Kind=="Person").Select(a=>(Guid?)a.Id))" ItemLabel="ActorName" NullOption="@(AlvaStrings.Tasks_NotChosenYet)" @bind-Value="_editing.ResolvedPersonId" Searchable /> }
-    <FlareStack Row Wrap><FlareButton Loading="_busy" Disabled="@(string.IsNullOrWhiteSpace(_editing.Title) || !IsDirty)" OnClick="Save">@(AlvaStrings.Tasks_SaveTheTask)</FlareButton><EditorStatus Dirty="IsDirty" Saving="_busy" /></FlareStack>
-</FlareStack></FlareCardContent></FlareCard>
-}
-@if (Selected is { } selected)
-{
-    <FlareDrawer Anchor="DrawerAnchor.Right" Open="_selectedId.HasValue" OpenChanged="OnDrawerOpen" Width="34rem" ContentPadding="FlareSpacing.Large" AriaLabel="@(AlvaStrings.Common_Task)">
-        <TaskDetails Item="selected" Tasks="_tasks" Projects="_projects" Sprints="_sprints" Actors="_actors" Changed="Load" HeadingLevel="2" Compact="true" />
-    </FlareDrawer>
-}
-<FlareDrawer Anchor="DrawerAnchor.Bottom" Open="_quickOpen" OpenChanged="OnQuickOpen" Height="auto" ContentPadding="FlareSpacing.Large" AriaLabel="@(AlvaStrings.Tasks_NewTask)">
-    <FlareStack Gap="FlareSpacing.Medium">
-        <FlareText Element="h2" Typo="TypographyScale.TitleLarge">@(AlvaStrings.Tasks_NewTask)</FlareText>
-        <FlareTextField @ref="_quickTitleField" Label="@(AlvaStrings.Common_Title)" @bind-Value="_quickTitle" Required MaxLength="500" />
-        @if (QuickContext is { Length: > 0 } quickContext) { <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@quickContext</FlareText> }
-        @if (_quickError is not null) { <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.Error">@_quickError</FlareText> }
-        <FlareStack Row Wrap Gap="FlareSpacing.Small">
-            <FlareButton Loading="_quickBusy" Disabled="@(string.IsNullOrWhiteSpace(_quickTitle))" OnClick="() => CreateQuick(false)">@(AlvaStrings.Tasks_Create)</FlareButton>
-            <FlareButton Variant="ButtonVariant.Text" Disabled="_quickBusy" OnClick="() => CreateQuick(true)">@(AlvaStrings.Tasks_CreateAnother)</FlareButton>
-            <FlareButton Variant="ButtonVariant.Text" OnClick="OpenFullForm">@(AlvaStrings.Common_MoreFields)</FlareButton>
-            <FlareButton Variant="ButtonVariant.Text" OnClick="CloseQuick">@(AlvaStrings.Common_Cancel)</FlareButton>
+<FlareDrawer Anchor="DrawerAnchor.Right" Open="DrawerOpen" OpenChanged="OnDrawerOpen" Width="34rem" ContentPadding="FlareSpacing.Large" AriaLabel="@DrawerLabel">
+    @if (_quickOpen)
+    {
+        <FlareStack Gap="FlareSpacing.Medium">
+            <FlareStack Row StretchFirst><FlareText Element="h2" Typo="TypographyScale.TitleLarge">@(AlvaStrings.Tasks_NewTask)</FlareText><FlareButton OnClick="CloseQuick" Variant="ButtonVariant.Text" Size="ButtonSize.Sm">@(AlvaStrings.Common_Cancel)</FlareButton></FlareStack>
+            <FlareTextField @ref="_quickTitleField" Label="@(AlvaStrings.Common_Title)" @bind-Value="_quickTitle" Required MaxLength="500" />
+            @if (QuickContext is { Length: > 0 } quickContext) { <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@quickContext</FlareText> }
+            @if (_quickError is not null) { <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.Error">@_quickError</FlareText> }
+            <FlareStack Row Wrap Gap="FlareSpacing.Small">
+                <FlareButton Loading="_quickBusy" Disabled="@(string.IsNullOrWhiteSpace(_quickTitle))" OnClick="() => CreateQuick(false)">@(AlvaStrings.Tasks_Create)</FlareButton>
+                <FlareButton Variant="ButtonVariant.Text" Disabled="_quickBusy" OnClick="() => CreateQuick(true)">@(AlvaStrings.Tasks_CreateAnother)</FlareButton>
+                <FlareButton Variant="ButtonVariant.Text" OnClick="OpenFullForm">@(AlvaStrings.Common_MoreFields)</FlareButton>
+            </FlareStack>
         </FlareStack>
-    </FlareStack>
+    }
+    else if (_editing is not null)
+    {
+        <FlareStack Gap="FlareSpacing.Medium">
+            <FlareStack Row StretchFirst><FlareText Element="h2" Typo="TypographyScale.TitleLarge">@(_editing.Id == Guid.Empty ? AlvaStrings.Tasks_NewTask : AlvaStrings.Tasks_TaskCard)</FlareText><FlareButton OnClick="Close" Variant="ButtonVariant.Text" Size="ButtonSize.Sm">@(AlvaStrings.Common_Close)</FlareButton></FlareStack>
+            @if (_formErrors.Count > 0) { <div tabindex="-1" @ref="_errorSummary"><AlvaValidationSummary Messages="_formErrors" /></div> }
+            <FlareTextField Label="@(AlvaStrings.Common_Title)" @bind-Value="_editing.Title" ErrorText="@_titleError" Required MaxLength="500" Autofocus />
+            <FlareTextArea Label="@(AlvaStrings.Common_Description)" @bind-Value="_editing.Description" AutoGrow />
+            <FlareMultiSelect TValue="Guid" Label="@(AlvaStrings.Common_RequiredSkills)" Items="SkillActors.Select(a=>a.Id)"
+                              ItemLabel="SkillName" Chips="true" Searchable="true"
+                              Values="_editing.RequiredSkillIds" ValuesChanged="(IReadOnlyList<Guid> skills) => _editing.RequiredSkillIds = skills.ToArray()" />
+            <TaskFormPlan Task="_editing" Projects="_projects" Sprints="_sprints" Tasks="_tasks"
+                          SelfId="@(_editing.Id == Guid.Empty ? (Guid?)null : _editing.Id)"
+                          ParentError="@_parentError" EstimateError="@_estimateError" RemainingError="@_remainingError"
+                          LimitError="@_limitError" StartError="@_startError" EndError="@_endError" Changed="StateHasChanged" />
+            <FlareSelect TValue="Guid?" Label="@(AlvaStrings.Tasks_AssigneeSubTeamOrRole)" Items="AssignableActorIds" ItemLabel="id => ActorName(id)" NullOption="@(AlvaStrings.Common_UnassignedTask)" @bind-Value="_editing.AssignmentTargetId" Searchable />
+            <SkillMatch Required="_editing.RequiredSkillIds" Person="@(_actors.FirstOrDefault(a=>a.Id==(_editing.ResolvedPersonId ?? _editing.AssignmentTargetId)))" Skills="SkillActors" />
+            @if(_actors.FirstOrDefault(a=>a.Id==_editing.AssignmentTargetId)?.Kind is "Department") { <FlareSelect TValue="Guid?" Label="@(AlvaStrings.Common_SpecificAssignee)" Items="@(_actors.Where(a=>a.Kind=="Person").Select(a=>(Guid?)a.Id))" ItemLabel="ActorName" NullOption="@(AlvaStrings.Tasks_NotChosenYet)" @bind-Value="_editing.ResolvedPersonId" Searchable /> }
+            <FlareStack Row Wrap><FlareButton Loading="_busy" Disabled="@(string.IsNullOrWhiteSpace(_editing.Title) || !IsDirty)" OnClick="Save">@(AlvaStrings.Tasks_SaveTheTask)</FlareButton><EditorStatus Dirty="IsDirty" Saving="_busy" /></FlareStack>
+        </FlareStack>
+    }
+    else if (Selected is { } selected)
+    {
+        <TaskDetails Item="selected" Tasks="_tasks" Projects="_projects" Sprints="_sprints" Actors="_actors" Changed="Load" HeadingLevel="2" Compact="true" />
+    }
 </FlareDrawer>
 }
 }
@@ -474,7 +474,7 @@ else
         _opened = Current.Id;
         _focusCard = true;
     }
-    private async Task Open(TaskModel? task){ if(task is null) return; _selectedId=task.Id; await SaveListContext(); await SaveTreeState(); }
+    private async Task Open(TaskModel? task){ if(task is null) return; _quickOpen=false; _selectedId=task.Id; await SaveListContext(); await SaveTreeState(); }
     private async Task OnRowKey(KeyboardEventArgs e, TaskModel task)
     {
         switch (e.Key)
@@ -490,7 +490,7 @@ else
                 if (_expanded.Remove(task.Id)) await SaveTreeState();
                 break;
             case "Insert":
-                OpenQuickCreate(task.Id);
+                await OpenQuickCreate(task.Id);
                 break;
         }
     }
@@ -554,7 +554,24 @@ else
     }
     private Task MoveTask(TaskModel task, Guid? parentId, int order) =>
         Session.Send(HttpMethod.Put, Session.TeamPath($"tasks/{task.Id}/move"), new MoveTaskRequest(parentId, order, task.Version));
-    private async Task OnDrawerOpen(bool open) { if (open) return; _selectedId=null; await SaveTreeState(); }
+    // One drawer holds every task mode: view, quick create and the full form. Closing it closes whichever
+    // mode is showing, so the page never stacks two drawers over the same task.
+    private bool DrawerOpen => _quickOpen || _editing is not null || Selected is not null;
+    private string DrawerLabel => _quickOpen || (_editing is { } editing && editing.Id == Guid.Empty)
+        ? AlvaStrings.Tasks_NewTask
+        : _editing is not null ? AlvaStrings.Tasks_TaskCard : AlvaStrings.Common_Task;
+    private async Task OnDrawerOpen(bool open)
+    {
+        if (open) return;
+        if (_editing is not null)
+        {
+            await Close();
+            if (_editing is not null) StateHasChanged();
+            return;
+        }
+        if (_quickOpen) { CloseQuick(); return; }
+        if (_selectedId is not null) { _selectedId=null; await SaveTreeState(); }
+    }
     private TaskModel? Selected => _selectedId is { } id ? _tasks.FirstOrDefault(t => t.Id == id) : null;
     private string QuickContext
     {
@@ -568,10 +585,12 @@ else
             return string.Join(" - ", parts);
         }
     }
-    private void OpenQuickCreate(Guid? parentId)
+    private async Task OpenQuickCreate(Guid? parentId)
     {
         var selected = Selected;
         var parent = parentId is { } pid ? _tasks.FirstOrDefault(t => t.Id == pid) : null;
+        var hadSelection = _selectedId is not null;
+        _selectedId = null;
         _quickParentId = parentId;
         _quickProjectId = parent?.ProjectId ?? selected?.ProjectId ?? _projectFilter;
         _quickSprintId = FirstSprint(parent) ?? FirstSprint(selected);
@@ -580,18 +599,21 @@ else
         _quickError = null;
         _quickOpen = true;
         _focusQuick = true;
+        if (hadSelection) await SaveTreeState();
     }
     private static Guid? FirstSprint(TaskModel? task) => task?.SprintIds is { Length: > 0 } sprintIds ? sprintIds[0] : null;
-    private void OnQuickOpen(bool open) { _quickOpen = open; if (!open) { _quickError = null; _returnFocus = true; } }
-    private void CloseQuick() { _quickOpen = false; _returnFocus = true; }
+    private void CloseQuick() { _quickOpen = false; _quickError = null; _returnFocus = true; }
     private void OpenFullForm()
     {
         var project = _quickProjectId;
         var parent = _quickParentId;
         var status = _quickStatus;
+        var title = _quickTitle;
         _quickOpen = false;
+        _selectedId = null;
         NewTask();
-        _editing!.ProjectId = project;
+        _editing!.Title = title ?? "";
+        _editing.ProjectId = project;
         _editing.ParentId = parent;
         _editing.Status = status;
     }
@@ -614,7 +636,7 @@ else
             }
             _highlightId = saved.Id;
             Snackbar.Show(AlvaStrings.Tasks_Created, SnackbarSeverity.Success);
-            if (another) _quickTitle = "";
+            if (another) { _quickTitle = ""; _focusQuick = true; }
             else { _quickOpen = false; _returnFocus = true; }
             await SaveTreeState();
             StateHasChanged();

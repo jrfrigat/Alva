@@ -38,6 +38,42 @@ public sealed class TasksQuickCreateTests : UiTestBase
     }
 
     [Fact]
+    public void More_fields_keeps_one_drawer_and_carries_the_typed_title()
+    {
+        var cut = Page();
+
+        Button(cut, "Новая задача").Click();
+        Field(cut, "Название").Change("Черновик");
+        Button(cut, "Больше полей").Click();
+
+        var drawer = cut.FindComponent<FlareDrawer>();
+        Assert.True(drawer.Instance.Open);
+        Assert.Equal(DrawerAnchor.Right, drawer.Instance.Anchor);
+        Assert.NotEmpty(cut.FindComponents<TaskFormPlan>());
+        Assert.Equal("Черновик", Field(cut, "Название").GetAttribute("value"));
+    }
+
+    [Fact]
+    public void Adding_a_subtask_switches_the_same_right_drawer_instead_of_opening_another()
+    {
+        var cut = Page();
+        cut.FindAll(".alva-tree__row").First(n => n.TextContent.Contains("Планирование")).Click();
+        cut.WaitForAssertion(() => Assert.True(cut.FindComponent<FlareDrawer>().Instance.Open));
+        var viewDrawer = cut.FindComponent<FlareDrawer>();
+
+        cut.Find("[aria-label='Добавить подзадачу']").Click();
+
+        var drawer = cut.FindComponent<FlareDrawer>();
+        Assert.Same(viewDrawer.Instance, drawer.Instance);
+        Assert.Equal(DrawerAnchor.Right, drawer.Instance.Anchor);
+        Assert.True(drawer.Instance.Open);
+        Assert.DoesNotContain(cut.FindComponents<FlareDrawer>(), d => d.Instance.Anchor == DrawerAnchor.Bottom);
+        Assert.Contains("Планирование", drawer.Markup);
+        Assert.Empty(cut.FindComponents<TaskFormPlan>());
+        Assert.Contains("Создать", drawer.Find(".flare-drawer").TextContent);
+    }
+
+    [Fact]
     public void Assignment_failure_does_not_create_a_second_task()
     {
         var anna = new ActorModel { Id = Guid.NewGuid(), Name = "Анна", Kind = "Person" };

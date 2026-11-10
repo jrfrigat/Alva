@@ -82,7 +82,7 @@ public sealed class FocusTests : UiTestBase
         Assert.NotNull(Field(cut, "Название"));
 
         Button(cut, "Отмена").Click();
-        var drawer = cut.FindComponents<FlareDrawer>().Single(d => d.Instance.AriaLabel == "Новая задача");
+        var drawer = cut.FindComponent<FlareDrawer>();
         Assert.False(drawer.Instance.Open);
     }
 
