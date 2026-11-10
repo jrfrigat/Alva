@@ -66,6 +66,21 @@ public sealed class GanttTaskPanelTests : UiTestBase
     }
 
     [Fact]
+    public void A_task_with_missing_skills_is_marked_in_the_gantt()
+    {
+        var skill = new ActorModel { Id = Guid.NewGuid(), Name = "SQL", Kind = "Skill" };
+        var person = new ActorModel { Id = Guid.NewGuid(), Name = "Анна", Kind = "Person" };
+        _task.AssignmentTargetId = person.Id;
+        _task.RequiredSkillIds = [skill.Id];
+        Api.Answer("actors", _ => new[] { person, skill });
+
+        var cut = Chart();
+
+        Assert.Contains("alva-gantt-row--skill", cut.Markup);
+        Assert.Contains("SQL", cut.Markup);
+    }
+
+    [Fact]
     public void Enter_on_the_selected_bar_opens_the_same_panel()
     {
         var cut = Chart();

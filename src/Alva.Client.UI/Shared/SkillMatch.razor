@@ -1,9 +1,15 @@
-@if (Required.Length > 0 && Person is { Kind: "Person" })
-{
+@* A real skill gap only: a full match stays silent, so the line does not take space when all is well. *@
+@{
+    Guid[] missing = Required.Length > 0 && Person is { Kind: "Person" }
+        ? SkillMath.Missing(Required, Person.SkillIds).ToArray()
+        : [];
     var names = Skills.ToDictionary(skill => skill.Id, skill => skill.Name);
-    var missing = SkillMath.Missing(Required, Person.SkillIds).Select(id => names.GetValueOrDefault(id)).OfType<string>().ToArray();
-    <FlareText Typo="TypographyScale.BodySmall" Color="@(missing.Length > 0 ? FlareColor.Warning : FlareColor.OnSurfaceVariant)" role="status">
-        @(missing.Length > 0 ? AlvaStrings.Common_MissingSkills + " " + string.Join(", ", missing) : AlvaStrings.Common_AllRequiredSkillsArePresent)
+    var missingNames = missing.Select(id => names.GetValueOrDefault(id)).OfType<string>().ToArray();
+}
+@if (missingNames.Length > 0)
+{
+    <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.Warning" role="status">
+        @(AlvaStrings.Common_MissingSkills + " " + string.Join(", ", missingNames))
     </FlareText>
 }
 @code {

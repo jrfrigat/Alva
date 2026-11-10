@@ -1635,6 +1635,9 @@ public static class AlvaStrings
     /// <summary>Balance</summary>
     public static string Sprint_SubTeamBalance => Get("Sprint_SubTeamBalance");
 
+    /// <summary>Missing skills in the sprint</summary>
+    public static string Sprint_MissingSkills => Get("Sprint_MissingSkills");
+
     /// <summary>By sub-teams and tasks assigned to them</summary>
     public static string Sprint_SubTeamBalanceSubtitle => Get("Sprint_SubTeamBalanceSubtitle");
 

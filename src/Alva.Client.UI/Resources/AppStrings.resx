@@ -538,6 +538,7 @@
   <data name="People_OverlappingPeriods" xml:space="preserve"><value>Membership periods must not overlap.</value></data>
   <data name="People_PeriodEndBeforeStart" xml:space="preserve"><value>The end date is before the start date.</value></data>
   <data name="Sprint_SubTeamBalance" xml:space="preserve"><value>Balance</value></data>
+  <data name="Sprint_MissingSkills" xml:space="preserve"><value>Missing skills in the sprint</value></data>
   <data name="Sprint_SubTeamBalanceSubtitle" xml:space="preserve"><value>By sub-teams and tasks assigned to them</value></data>
   <data name="Sprint_GivePeopleSubTeamsToSeeTheBalance" xml:space="preserve"><value>Give people sub-teams to see the balance.</value></data>
   <data name="Sprint_SubTeamBalanceAria" xml:space="preserve"><value>Balance of {0}</value></data>

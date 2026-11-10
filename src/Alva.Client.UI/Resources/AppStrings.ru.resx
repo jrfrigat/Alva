@@ -538,6 +538,7 @@
   <data name="People_OverlappingPeriods" xml:space="preserve"><value>Периоды членства не должны пересекаться.</value></data>
   <data name="People_PeriodEndBeforeStart" xml:space="preserve"><value>Дата окончания раньше начала.</value></data>
   <data name="Sprint_SubTeamBalance" xml:space="preserve"><value>Баланс</value></data>
+  <data name="Sprint_MissingSkills" xml:space="preserve"><value>Не хватает навыков в спринте</value></data>
   <data name="Sprint_SubTeamBalanceSubtitle" xml:space="preserve"><value>По подкомандам и задачам, назначенным на них</value></data>
   <data name="Sprint_GivePeopleSubTeamsToSeeTheBalance" xml:space="preserve"><value>Назначьте людям подкоманды, чтобы увидеть баланс.</value></data>
   <data name="Sprint_SubTeamBalanceAria" xml:space="preserve"><value>Баланс подкоманды {0}</value></data>

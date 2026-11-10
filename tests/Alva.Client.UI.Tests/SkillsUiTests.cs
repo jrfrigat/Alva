@@ -60,7 +60,7 @@ public sealed class SkillsUiTests : UiTestBase
     }
 
     [Fact]
-    public void Existing_assignment_warning_recalculates_after_skill_changes()
+    public void Existing_assignment_warning_disappears_after_skill_changes()
     {
         var skill = new ActorModel { Id = Guid.NewGuid(), Name = "SQL", Kind = "Skill" };
         var person = new ActorModel { Id = Guid.NewGuid(), Name = "Person" };
@@ -70,7 +70,23 @@ public sealed class SkillsUiTests : UiTestBase
         Assert.Contains("SQL", cut.Markup);
         person.SkillIds = [skill.Id];
         cut.Render(p => p.Add(x => x.Task, task).Add(x => x.Actors, actors));
-        Assert.Contains("Все необходимые навыки есть", cut.Markup);
+        Assert.DoesNotContain("Все необходимые навыки есть", cut.Markup);
         Assert.DoesNotContain("Не хватает навыков:", cut.Markup);
+    }
+
+    [Fact]
+    public void The_sprint_issues_panel_lists_only_tasks_with_missing_skills()
+    {
+        var skill = new ActorModel { Id = Guid.NewGuid(), Name = "SQL", Kind = "Skill" };
+        var person = new ActorModel { Id = Guid.NewGuid(), Name = "Анна", Kind = "Person" };
+        var task = new TaskModel { Id = Guid.NewGuid(), Title = "База", AssignmentTargetId = person.Id, RequiredSkillIds = [skill.Id] };
+        var cut = Render<SkillIssues>(p => p.Add(x => x.Tasks, new[] { task }).Add(x => x.Actors, new[] { person, skill }));
+
+        Assert.Contains("База", cut.Markup);
+        Assert.Contains("SQL", cut.Markup);
+
+        person.SkillIds = [skill.Id];
+        cut.Render(p => p.Add(x => x.Tasks, new[] { task }).Add(x => x.Actors, new[] { person, skill }));
+        Assert.DoesNotContain("База", cut.Markup);
     }
 }
