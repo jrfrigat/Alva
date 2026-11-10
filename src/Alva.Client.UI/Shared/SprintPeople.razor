@@ -22,7 +22,13 @@
                         <ChildContent>
                             <FlareDraggable Payload="@(new PersonDrag(person.Id))">
                                 <FlareStack Gap="FlareSpacing.XXSmall">
-                                    <FlareText Typo="TypographyScale.LabelMedium">@person.Name</FlareText>
+                                    <FlareStack Row Wrap Align="FlareAlignItems.Center" Justify="FlareJustifyContent.SpaceBetween" Gap="FlareSpacing.Small">
+                                        <FlareText Typo="TypographyScale.LabelMedium">@person.Name</FlareText>
+                                        <FlareStack Row Align="FlareAlignItems.Center" Gap="FlareSpacing.XSmall">
+                                            <AlvaStatusChip Tone="@(row.Tone == "critical" ? AlvaTone.Critical : row.Tone == "info" ? AlvaTone.Info : AlvaTone.Ok)" Title="@(AlvaStrings.Common_WorkloadOverThePeriod)">@row.Percent%</AlvaStatusChip>
+                                            <FlareIconButton Icon="@MaterialDesign3Icons.Regular.PersonAdd" Size="ButtonSize.Sm" Tooltip="@(AlvaStrings.Common_AssignAnAssignee)" AriaLabel="@($"{AlvaStrings.Common_AssignAnAssignee}: {person.Name}")" OnClick="() => OpenAssign(person.Id)" />
+                                        </FlareStack>
+                                    </FlareStack>
                                     <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@row.Roles</FlareText>
                                     <FlareProgressLinear Value="@Math.Min(100, row.Percent)" Size="TrackSize.Xs" Color="@ToneColor(row.Tone)" aria-label="@string.Format(AlvaStrings.Common_HAssignedOutOfH, person.Name, AlvaFormat.Hours(row.Allocated), AlvaFormat.Hours(row.Available))" />
                                     <FlareStack Row Wrap Align="FlareAlignItems.Center" Gap="FlareSpacing.Small">
@@ -40,12 +46,6 @@
                                 </FlareStack>
                             </FlareDraggable>
                         </ChildContent>
-                        <Trailing>
-                            <FlareStack Row Align="FlareAlignItems.Center" Gap="FlareSpacing.XSmall">
-                                <AlvaStatusChip Tone="@(row.Tone == "critical" ? AlvaTone.Critical : row.Tone == "info" ? AlvaTone.Info : AlvaTone.Ok)" Title="@(AlvaStrings.Common_WorkloadOverThePeriod)">@row.Percent%</AlvaStatusChip>
-                                <FlareIconButton Icon="@MaterialDesign3Icons.Regular.PersonAdd" Size="ButtonSize.Sm" Tooltip="@(AlvaStrings.Common_AssignAnAssignee)" AriaLabel="@($"{AlvaStrings.Common_AssignAnAssignee}: {person.Name}")" OnClick="() => OpenAssign(person.Id)" />
-                            </FlareStack>
-                        </Trailing>
                     </FlareListItem>
                 }
             </FlareList>
