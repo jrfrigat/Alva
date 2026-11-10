@@ -82,6 +82,17 @@ public sealed class GanttSaveTests : UiTestBase
     }
 
     [Fact]
+    public void Gantt_annotations_have_no_captions_inside_the_chart()
+    {
+        var monday = new DateOnly(2026, 11, 9);
+        var sprint = new SprintModel { Id = Guid.NewGuid(), StartDate = monday, EndDate = monday.AddDays(4) };
+        var data = GanttData.Create([], [sprint], [], [], []);
+
+        Assert.All(data.SprintRegions(sprint), region => Assert.Null(region.Label));
+        Assert.All(GanttData.TodayMarkers, marker => Assert.Null(marker.Label));
+    }
+
+    [Fact]
     public async Task Reassignment_moves_the_task_to_the_new_person()
     {
         var monday = new DateOnly(2026, 11, 9);

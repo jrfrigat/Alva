@@ -5,7 +5,7 @@
                  RowClass="RowClass" Items="@Data.Tasks" ItemKey="t => GanttData.Key(t.Id)" ItemRow="t => GanttData.Key(t.Id)"
                  ItemSpan="Data.Span" ItemCover="Data.Cover" ItemKind="Data.Kind" ItemSegments="Data.Segments" ItemLabel="t => t.Title" ItemTitle="Data.Title"
                  Links="@Data.Links().ToArray()" LinkTypes="@Types" ShowCriticalPath="Critical" RollupParents="true"
-                 Markers="@PanelMarkers" Editable="Editable" AllowRowChange="false" OnChange="OnChange" OnLinkCreate="OnLinkCreate"
+                 Markers="@DeadlineMarkers" Editable="Editable" AllowRowChange="false" OnChange="OnChange" OnLinkCreate="OnLinkCreate"
                  OnLinkRejected="OnLinkRejected" OnItemClick="OnItemClick" Header="Header" DropGroup="@DropGroup" DropAccepts="DropAccepts"
                  ItemDropGroup="@ItemDropGroup" ItemDropAccepts="ItemDropAccepts" Suggested="Suggested" AriaLabel="@(AlvaStrings.Gantt_TasksOverTime)">
     <RowHeader Context="task">
@@ -109,9 +109,6 @@
         .Where(t => !GanttData.IsClosed(t) && (t.EffectiveDeadline ?? t.Deadline) is not null)
         .Select(t => new GanttMarker("deadline", (t.EffectiveDeadline ?? t.Deadline)!.Value.AddDays(1).ToDateTime(TimeOnly.MinValue),
             GanttData.Key(t.Id), null, GanttData.Key(t.Id)));
-
-    // The labeled today marker belongs to the first panel only; every panel still gets the unlabeled line.
-    private IEnumerable<GanttMarker> PanelMarkers => DeadlineMarkers.Concat(GanttData.TodayLabels);
 
     /// <summary>The share of direct works that are done; null when the task has no works.</summary>
     private (double Percent, int Done, int Total)? SubtaskProgress(TaskModel task)

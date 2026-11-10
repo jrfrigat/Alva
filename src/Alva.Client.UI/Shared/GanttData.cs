@@ -436,20 +436,18 @@ public sealed class GanttData
 
     public static bool IsWeekend(DateOnly day) => day.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday;
 
-    /// <summary>The today line without a caption: every projection gets the line.</summary>
-    public static GanttMarker[] TodayMarkers => [TodayMarker(null)];
-
-    /// <summary>The today line with one caption: only the first panel adds it, so the word appears once.</summary>
-    public static GanttMarker[] TodayLabels => [TodayMarker(AlvaStrings.Gantt_Today)];
-
-    private static GanttMarker TodayMarker(string? label) => new("today", DateTime.Today.AddHours(12), Label: label);
+    /// <summary>The today line without a caption: the caption belongs in the axis header (FLARE TASK-809), not in the chart.</summary>
+    public static GanttMarker[] TodayMarkers => [new GanttMarker("today", DateTime.Today.AddHours(12))];
 
     public SprintModel? Sprint(Guid? id) => id is { } value ? _sprints.GetValueOrDefault(value) : null;
 
     public string SprintName(Guid? id) => Sprint(id) is { } s ? $"{s.Name} ({s.StartDate:dd.MM}–{s.EndDate:dd.MM})" : AlvaStrings.Gantt_AllTasks;
 
-    /// <summary>The selected sprint's window, or without a selection, the windows of active sprints.</summary>
+    /// <summary>
+    /// The selected sprint's window, or without a selection, the windows of active sprints. The shading stays;
+    /// the caption belongs in the axis header (FLARE TASK-809), and the sprint is already named in the select.
+    /// </summary>
     public IEnumerable<GanttRegion> SprintRegions(SprintModel? sprint) => sprint is { } s
-        ? [new GanttRegion("sprint", GanttSpan.FromDays(s.StartDate, s.EndDate), Label: $"{s.Name}: {s.StartDate:dd.MM}–{s.EndDate:dd.MM}")]
-        : Sprints.Where(s => s.Status == "Active").Select(s => new GanttRegion("sprint", GanttSpan.FromDays(s.StartDate, s.EndDate), Label: s.Name));
+        ? [new GanttRegion("sprint", GanttSpan.FromDays(s.StartDate, s.EndDate))]
+        : Sprints.Where(s => s.Status == "Active").Select(s => new GanttRegion("sprint", GanttSpan.FromDays(s.StartDate, s.EndDate)));
 }
