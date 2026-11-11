@@ -93,6 +93,52 @@ public sealed class GanttSaveTests : UiTestBase
     }
 
     [Fact]
+    public async Task New_dates_are_applied_before_the_save_finishes()
+    {
+        var id = Guid.NewGuid();
+        var task = new TaskModel
+        {
+            Id = id, Title = "API", StartDate = new DateOnly(2026, 11, 10), EndDate = new DateOnly(2026, 11, 12), Version = 1
+        };
+        var data = GanttData.Create([task], [], [], [], []);
+        var session = Services.GetRequiredService<AlvaSession>();
+        var previewed = false;
+
+        var saving = data.Save(session,
+            [new GanttChange(GanttData.Key(id), GanttSpan.FromDays(new DateOnly(2026, 11, 13), new DateOnly(2026, 11, 15)))],
+            () => previewed = true);
+
+        // The gesture is over: the bar is already on its new days while the request is still in flight.
+        Assert.True(previewed);
+        Assert.Equal(new DateOnly(2026, 11, 13), task.StartDate);
+        Assert.Equal(new DateOnly(2026, 11, 15), task.EndDate);
+        await saving;
+    }
+
+    [Fact]
+    public async Task A_dropped_assignment_row_is_applied_before_the_save_finishes()
+    {
+        var monday = new DateOnly(2026, 11, 9);
+        var person = new ActorModel { Id = Guid.NewGuid(), Name = "Анна", Kind = "Person" };
+        var task = new TaskModel { Id = Guid.NewGuid(), Title = "API", StartDate = monday, EndDate = monday.AddDays(1) };
+        var data = GanttData.Create([task], [], [person], [], []);
+        var range = GanttSpan.FromDays(monday, monday.AddDays(1));
+        Api.Answer("capacity", _ => Array.Empty<CapacityDto>()).Answer("capacity/demand", _ => Array.Empty<CapacityDemandDto>());
+        var session = Services.GetRequiredService<AlvaSession>();
+        var people = await GanttPeopleData.Load(session, data, range);
+        var args = new GanttChangeEventArgs(GanttData.Key(task.Id), GanttEditAction.Move,
+            [new GanttChange(GanttData.Key(task.Id), GanttSpan.FromDays(monday, monday), GanttPeopleData.PersonKey(person.Id))]);
+        var previewed = false;
+
+        var saving = people.Apply(session, args, () => previewed = true);
+
+        Assert.True(previewed);
+        Assert.Equal(person.Id, task.AssignmentTargetId);
+        Assert.Equal(person.Id, task.ResolvedPersonId);
+        await saving;
+    }
+
+    [Fact]
     public async Task Reassignment_moves_the_task_to_the_new_person()
     {
         var monday = new DateOnly(2026, 11, 9);

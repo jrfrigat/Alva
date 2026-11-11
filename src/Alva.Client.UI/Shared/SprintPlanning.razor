@@ -510,9 +510,9 @@
         : targetId.StartsWith("task:", StringComparison.Ordinal) && Guid.TryParse(targetId[5..], out var id) ? _gantt!.Tasks.FirstOrDefault(t => t.Id == id)
         : null;
 
-    private Task TaskChange(GanttChangeEventArgs args) => Edit(args, () => _gantt!.Apply(Session, args));
+    private Task TaskChange(GanttChangeEventArgs args) => Edit(args, () => _gantt!.Apply(Session, args, StateHasChanged));
 
-    private Task PeopleChange(GanttChangeEventArgs args) => Edit(args, () => _people!.Apply(Session, args));
+    private Task PeopleChange(GanttChangeEventArgs args) => Edit(args, () => _people!.Apply(Session, args, StateHasChanged));
 
     private async Task Edit(GanttChangeEventArgs args, Func<Task<string>> save)
     {

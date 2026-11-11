@@ -216,15 +216,33 @@ public sealed class GanttPeopleData
     /// Saves an edit on the People Gantt: dates with the cascade, then the assignment if the bar changed rows.
     /// A group row is rejected before any request.
     /// </summary>
-    public async Task<string> Apply(AlvaSession session, GanttChangeEventArgs args)
+    public async Task<string> Apply(AlvaSession session, GanttChangeEventArgs args, Action? preview = null)
     {
         var primary = args.Changes.FirstOrDefault(c => c.ItemKey == args.ItemKey);
         if (primary?.RowKey is { } row && IsGroup(row)) throw new InvalidOperationException(GroupRefusal);
-        await Data.Save(session, args.Changes);
-        if (primary?.RowKey is not { } target || Data.Task(args.ItemKey) is not { } task)
+        var task = Data.Task(args.ItemKey);
+        // Dates and the assignment row are applied locally before the first request, together with the
+        // page's re-render: a bar dropped on a person must not fall back to its old row and days while saving.
+        Action? afterDates = primary?.RowKey is { } target && task is not null
+            ? () => { PreviewAssignment(task, target); preview?.Invoke(); }
+            : preview;
+        await Data.Save(session, args.Changes, afterDates);
+        if (primary?.RowKey is not { } rowKey || task is null)
             return args.Changes.Count > 1 ? string.Format(AlvaStrings.Gantt_DatesSavedSuccessorsMoved, args.Changes.Count - 1) : AlvaStrings.Gantt_DatesSaved;
-        await Reassign(session, task, target);
-        return target == Pool ? AlvaStrings.Gantt_AssignmentRemoved : AlvaStrings.Gantt_TaskReassigned;
+        await Reassign(session, task, rowKey);
+        return rowKey == Pool ? AlvaStrings.Gantt_AssignmentRemoved : AlvaStrings.Gantt_TaskReassigned;
+    }
+
+    // The same target Reassign will save; a person row keeps the assigned sub-team when the person belongs to it.
+    private void PreviewAssignment(TaskModel task, string rowKey)
+    {
+        if (rowKey == Pool) { task.AssignmentTargetId = null; task.ResolvedPersonId = null; return; }
+        if (IsGroup(rowKey) || !Guid.TryParseExact(rowKey[2..], "N", out var id) || Data.Actor(id) is not { } actor || actor.Kind == "Skill") return;
+        if (actor.Kind != "Person") { task.AssignmentTargetId = actor.Id; task.ResolvedPersonId = null; return; }
+        var keep = Data.Actor(task.AssignmentTargetId) is { Kind: not "Person" } current
+            && (actor.SkillIds.Contains(current.Id) || actor.DepartmentIds.Contains(current.Id));
+        task.AssignmentTargetId = keep ? task.AssignmentTargetId!.Value : actor.Id;
+        task.ResolvedPersonId = actor.Id;
     }
 
     public static readonly string GroupRefusal = AlvaStrings.Gantt_ATaskCannotBeAssignedToAGroupChooseAPersonOrARole;

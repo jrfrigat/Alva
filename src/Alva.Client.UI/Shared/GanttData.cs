@@ -259,7 +259,7 @@ public sealed class GanttData
     /// are left alone. A parent shifted without a length change carries its descendants with their own dates; they are saved
     /// before the parent - otherwise the server would extend the parent to cover their old places.
     /// </summary>
-    public async Task Save(AlvaSession session, IEnumerable<GanttChange> changes)
+    public async Task Save(AlvaSession session, IEnumerable<GanttChange> changes, Action? preview = null)
     {
         var spans = new Dictionary<Guid, GanttSpan>();
         foreach (var change in changes)
@@ -275,27 +275,42 @@ public sealed class GanttData
         }
         // A fixed task does not move - neither by itself, nor in a cascade, nor together with its parent. The move is
         // refused before the first send so that the PUT series is not half-saved.
+        var pending = new Dictionary<Guid, GanttSpan>();
         foreach (var (id, span) in spans)
         {
             var task = Tasks.First(t => t.Id == id);
             if (task.DatesFixed && Span(task) != span) throw FixedError(task);
+            if (Span(task) != span) pending[id] = span;
         }
         ValidateLinks(spans);
 
-        foreach (var (id, span) in spans.OrderByDescending(s => Depth(Tasks.First(t => t.Id == s.Key))))
+        // Apply the new windows locally before the first request: the gesture has already ended, and the bar
+        // must stay where it was dropped while the save is in flight instead of falling back to its old days.
+        // The server may widen a window around its children; Put takes that back when it answers.
+        foreach (var (id, span) in pending) ApplySpan(Tasks.First(t => t.Id == id), span);
+        preview?.Invoke();
+
+        foreach (var (id, span) in pending.OrderByDescending(s => Depth(Tasks.First(t => t.Id == s.Key))))
         {
-            var task = Tasks.First(t => t.Id == id);
-            if (Span(task) == span) continue;
             var start = DateOnly.FromDateTime(span.Start);
             var end = DateOnly.FromDateTime(span.End).AddDays(-1);
-            await Put(session, task, start, end < start ? start : end);
+            await Put(session, Tasks.First(t => t.Id == id), start, end < start ? start : end);
         }
     }
 
-    /// <summary>Saves an edit on the task Gantt and says what was done.</summary>
-    public async Task<string> Apply(AlvaSession session, GanttChangeEventArgs args)
+    private void ApplySpan(TaskModel task, GanttSpan span)
     {
-        await Save(session, args.Changes);
+        var start = DateOnly.FromDateTime(span.Start);
+        var end = DateOnly.FromDateTime(span.End).AddDays(-1);
+        task.StartDate = start;
+        task.EndDate = end < start ? start : end;
+        task.SprintIds = [.. SprintWindows.Of(task.StartDate, task.EndDate, Sprints, s => s.StartDate, s => s.EndDate).Select(s => s.Id)];
+    }
+
+    /// <summary>Saves an edit on the task Gantt and says what was done.</summary>
+    public async Task<string> Apply(AlvaSession session, GanttChangeEventArgs args, Action? preview = null)
+    {
+        await Save(session, args.Changes, preview);
         return args.Changes.Count > 1 ? string.Format(AlvaStrings.Gantt_DatesSavedSuccessorsMoved, args.Changes.Count - 1) : AlvaStrings.Gantt_DatesSaved;
     }
 

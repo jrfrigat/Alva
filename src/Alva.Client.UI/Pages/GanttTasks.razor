@@ -213,7 +213,7 @@ else if (_data is not null)
         {
             // The saved task already carries its new dates and version: re-render it instead of reloading the page,
             // so a successful drag has no loading bar and no flicker.
-            _notice = await _data!.Apply(Session, args);
+            _notice = await _data!.Apply(Session, args, StateHasChanged);
         }
         catch (Exception e) when (e is HttpRequestException or InvalidOperationException)
         {
