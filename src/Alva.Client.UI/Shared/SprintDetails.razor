@@ -4,7 +4,7 @@
 else
 {
 <div @ref="_heading" tabindex="-1">
-<FlarePageHeader Title="@Sprint.Name">
+<AlvaPageHeader Title="@Sprint.Name">
     <EyebrowContent>
         <FlareStack Gap="FlareSpacing.Small">
             <FlareBreadcrumb Items="Crumbs" Separator="/" AriaLabel="@(AlvaStrings.Sprint_PathToTheSprint)" />
@@ -35,7 +35,7 @@ else
             }
         </FlareStack>
     </DescriptionContent>
-    <ActionsContent>
+    <Actions>
         <FlareStack Row Wrap Gap="FlareSpacing.Small">
             <FlareButton Variant="ButtonVariant.Tonal" Size="ButtonSize.Sm" OnClick="Edit">
                 <LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.Tune" Size="18px" /></LeadingIcon>
@@ -49,8 +49,8 @@ else
                 </FlareButton>
             }
         </FlareStack>
-    </ActionsContent>
-</FlarePageHeader>
+    </Actions>
+</AlvaPageHeader>
 </div>
 
 <FlareCard Variant="CardVariant.Filled">

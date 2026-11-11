@@ -52,6 +52,19 @@ public sealed class TasksTreeGridTests : UiTestBase
     }
 
     [Fact]
+    public void The_page_header_is_compact_and_keeps_its_action_in_the_same_row()
+    {
+        var cut = Page();
+
+        Assert.Empty(cut.FindAll(".flare-page-header"));
+        var header = cut.Find(".alva-page-header");
+        var title = cut.FindComponents<FlareText>().Single(t => t.Instance.Element == "h1");
+        Assert.Equal(TypographyScale.HeadlineSmall, title.Instance.Typo);
+        Assert.Contains("flare-stack--row", cut.Find(".alva-page-header h1").ParentElement!.ClassName);
+        Assert.Contains("Новая задача", header.TextContent);
+    }
+
+    [Fact]
     public void Reordering_is_off_while_a_sorted_view_hides_the_manual_order()
     {
         var cut = Page();

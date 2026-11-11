@@ -74,6 +74,18 @@ public sealed class FlareMigrationTests : UiTestBase
     }
 
     [Fact]
+    public void Every_page_header_uses_the_compact_alva_header()
+    {
+        var root = Path.Combine(Root(), "src", "Alva.Client.UI");
+        var sources = Directory.GetFiles(root, "*.razor", SearchOption.AllDirectories)
+            .Where(f => !f.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}")
+                        && !f.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}")
+                        && !Path.GetFileName(f).Equals("AlvaPageHeader.razor", StringComparison.OrdinalIgnoreCase));
+
+        Assert.All(sources, f => Assert.DoesNotContain("<FlarePageHeader", File.ReadAllText(f)));
+    }
+
+    [Fact]
     public void Page_headers_do_not_carry_explanatory_descriptions()
     {
         var root = Path.Combine(Root(), "src", "Alva.Client.UI");

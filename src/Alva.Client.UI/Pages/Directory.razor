@@ -8,7 +8,7 @@
 @inject DraftGuard Drafts
 <PageTitle>@Title · Alva</PageTitle>
 <NavigationLock OnBeforeInternalNavigation="ConfirmLeave" ConfirmExternalNavigation="IsDirty" />
-<AlvaPageHeader Category="@Category" Title="@Title">
+<AlvaPageHeader Title="@Title">
     <Actions><FlareButton Size="ButtonSize.Sm" OnClick="New" Disabled="@(Session.TeamId is null)">@(AlvaStrings.People_Add)</FlareButton></Actions>
 </AlvaPageHeader>
 <PageFeedback Loading="_busy" Error="@_error" OnRetry="Load" />
@@ -108,7 +108,6 @@ else
     private string Route=>AppRoutes.Current(Navigation);
     private string Kind=>Route.EndsWith("departments")?"Department":Route.EndsWith("skills")||Route.EndsWith("roles")?"Skill":"Person";
     private string Title=>Kind=="Skill"?AlvaStrings.People_TeamSkills:Kind=="Department"?AlvaStrings.Common_SubTeams:AlvaStrings.People_TeamPeople;
-    private string Category=>Kind=="Skill"?AlvaStrings.People_RegistrySkills:Kind=="Department"?AlvaStrings.People_RegistrySubTeams:AlvaStrings.People_RegistryPeople;
 
     // The URL is the source of truth: the tab only translates an index into a route.
     private int TabIndex

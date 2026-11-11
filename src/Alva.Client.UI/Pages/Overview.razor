@@ -1,7 +1,7 @@
 @page "/"
 @inject AlvaSession Session
 <PageTitle>@(AlvaStrings.Overview_OverviewAlva)</PageTitle>
-<AlvaPageHeader Category="@(AlvaStrings.Overview_TeamOverview)" Title="@Session.TeamName">
+<AlvaPageHeader Title="@Session.TeamName">
     <Actions><FlareButton Href="tasks" Size="ButtonSize.Sm">@(AlvaStrings.Common_ToTasks)</FlareButton></Actions>
 </AlvaPageHeader>
 <PageFeedback Error="@_error" Loading="_busy" OnRetry="Load" />

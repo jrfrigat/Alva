@@ -29,7 +29,7 @@ else if (TaskId.HasValue)
 }
 else
 {
-<AlvaPageHeader Category="@(AlvaStrings.Tasks_PlanningTasks)" Title="@PageHeading">
+<AlvaPageHeader Title="@PageHeading">
     <Actions><FlareButton @ref="_newButton" OnClick="() => OpenQuickCreate(null)" Disabled="@(Session.TeamId is null)" Size="ButtonSize.Sm">@(AlvaStrings.Tasks_NewTask)</FlareButton></Actions>
 </AlvaPageHeader>
 <PageFeedback Error="@_error" Loading="_busy" OnRetry="Load" />

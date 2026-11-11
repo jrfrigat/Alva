@@ -7,7 +7,7 @@
 <NavigationLock OnBeforeInternalNavigation="ConfirmLeave" ConfirmExternalNavigation="Dirty" />
 <FlareStack Gap="FlareSpacing.Large" Class="@(Compact ? "alva-task--compact" : null)">
     <div @ref="_heading" tabindex="-1">
-    <FlarePageHeader Title="@_model.Title" HeadingLevel="@HeadingLevel">
+    <AlvaPageHeader Title="@_model.Title" HeadingLevel="@HeadingLevel">
         <EyebrowContent>
             @if (Compact) { <FlareLink Href="@($"tasks/{Item.Id}?tab={_tab}")">@(AlvaStrings.Task_OpenTaskPage)</FlareLink> }
             else { <FlareBreadcrumb Items="Crumbs" Separator=">" AriaLabel="@(AlvaStrings.Task_PathToTheTask)" /> }
@@ -63,7 +63,7 @@
                 <FlareIconButton Icon="@MaterialDesign3Icons.Regular.Edit" Size="ButtonSize.Sm" Tooltip="@(AlvaStrings.Task_EditTitle)" AriaLabel="@(AlvaStrings.Task_EditTitle)" OnClick="OpenTitleEdit" />
             </FlareStack>
         </DescriptionContent>
-    </FlarePageHeader>
+    </AlvaPageHeader>
     </div>
     <FlareCard Variant="CardVariant.Outlined" Style="position:sticky;top:0;z-index:6">
         <FlareCardContent>

@@ -10,7 +10,7 @@
 <NavigationLock OnBeforeInternalNavigation="ConfirmLeave" ConfirmExternalNavigation="IsDirty" />
 @if(SprintId is null && !Planning)
 {
-<AlvaPageHeader Category="@(AlvaStrings.Sprint_PlanningSprints)" Title="@(AlvaStrings.Sprint_TeamSprints)">
+<AlvaPageHeader Title="@(AlvaStrings.Sprint_TeamSprints)">
     <Actions><FlareButton @ref="_newButton" Size="ButtonSize.Sm" OnClick="New" Disabled="@(Session.TeamId is null)">@(AlvaStrings.Sprint_NewSprint)</FlareButton></Actions>
 </AlvaPageHeader>
 }

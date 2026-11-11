@@ -5,8 +5,7 @@
 @inject AlvaSession Session
 @inject DraftGuard Drafts
 <NavigationLock OnBeforeInternalNavigation="ConfirmLeave" ConfirmExternalNavigation="Dirty" />
-<FlarePageHeader Title="@(IsDepartment ? string.Format(AlvaStrings.Capacity_SubTeamScheduleTitle, Actor!.Name) : AlvaStrings.Capacity_WorkScheduleEditor)"
-                Description="@(IsDepartment ? AlvaStrings.Capacity_SharedNonWorkingDaysAndRecurringSubTeamMeetingsTheyAreDeductedFromTheCap_69ceb6 : $"{AlvaStrings.Capacity_WorkingHoursDaysOffVacationsAndRecurringNonWorkingPeriods} {(Person is null ? "" : $"{AlvaStrings.Capacity_For} {Person.Name}")} {AlvaStrings.Capacity_ProjectedOntoSprintCapacity}")">
+<AlvaPageHeader Title="@(IsDepartment ? string.Format(AlvaStrings.Capacity_SubTeamScheduleTitle, Actor!.Name) : AlvaStrings.Capacity_WorkScheduleEditor)">
     <EyebrowContent>
         @if (IsDepartment)
         {
@@ -17,15 +16,15 @@
             <FlareBreadcrumb Items="@(new BreadcrumbItem[] { new(AlvaStrings.Common_Capacity, "capacity"), new(AlvaStrings.Common_PeopleSchedules, "capacity/people"), new(Person?.Name ?? AlvaStrings.Capacity_Employee, $"capacity/{ActorId}"), new(AlvaStrings.Common_ScheduleEditor) })" Separator="›" AriaLabel="@(AlvaStrings.Capacity_PathToTheEditor)" />
         }
     </EyebrowContent>
-    <ActionsContent>
+    <Actions>
         @if (!IsDepartment)
         {
             <FlareButton Variant="ButtonVariant.Tonal" Size="ButtonSize.Sm" OnClick="Reset" Disabled="@(!Dirty)"><LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.Undo" Size="18px" /></LeadingIcon><ChildContent>@(AlvaStrings.Capacity_DiscardChanges)</ChildContent></FlareButton>
             <FlareButton Variant="ButtonVariant.Tonal" Size="ButtonSize.Sm" OnClick="() => _applyOpen = !_applyOpen"><LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.GroupAdd" Size="18px" /></LeadingIcon><ChildContent>@(AlvaStrings.Capacity_ApplyToTheSelectedEmployees)</ChildContent></FlareButton>
             <FlareButton Size="ButtonSize.Sm" Loading="_busy" OnClick="Save" Disabled="@(!Dirty)"><LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.Save" Size="18px" /></LeadingIcon><ChildContent>@(AlvaStrings.Capacity_SaveTheSchedule)</ChildContent></FlareButton><EditorStatus Dirty="Dirty" Saving="_busy" />
         }
-    </ActionsContent>
-</FlarePageHeader>
+    </Actions>
+</AlvaPageHeader>
 <PageFeedback Error="@_error" OnRetry="() => LoadCalendar()" />
 @if (_saved) { <FlareAlert Severity="AlertSeverity.Success" Title="@(AlvaStrings.Capacity_ScheduleSaved)">@(AlvaStrings.Capacity_CapacityRecalculatedFromTheNewSchedule)</FlareAlert> }
 

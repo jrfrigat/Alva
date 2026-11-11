@@ -2,7 +2,7 @@
 @inject AlvaSession Session
 @inject NavigationManager Navigation
 <PageTitle>@(AlvaStrings.Risks_AnalyticsAlva)</PageTitle>
-<AlvaPageHeader Category="@(AlvaStrings.Risks_AnalyticsRisks)" Title="@(AlvaStrings.Risks_RisksAndReasonsForSlippingDeadlines)" />
+<AlvaPageHeader Title="@(AlvaStrings.Risks_RisksAndReasonsForSlippingDeadlines)" />
 <PageFeedback Loading="_busy" Error="@_error" OnRetry="Load" />
 @if (Session.TeamId is null) { <TeamRequired /> }
 else if (_busy)

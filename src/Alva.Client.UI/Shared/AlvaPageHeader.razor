@@ -1,17 +1,50 @@
-<FlarePageHeader Title="@Title" Description="@Description" Eyebrow="@Category" EyebrowContent="@EyebrowContent" ActionsContent="@Actions" />
+@* The compact page title: a small h1, an optional breadcrumb or eyebrow above it, optional supporting
+   content and the page actions on the same row. It replaces FlarePageHeader's large title and generous
+   padding, matching the sprint planning page. *@
+<FlareStack Gap="FlareSpacing.XXSmall" MarginBlockEnd="FlareSpacing.Small" Class="alva-page-header">
+    @if (EyebrowContent is not null)
+    {
+        @EyebrowContent
+    }
+    else if (!string.IsNullOrEmpty(Eyebrow))
+    {
+        <FlareText Typo="TypographyScale.LabelMedium" Color="FlareColor.OnSurfaceVariant">@Eyebrow</FlareText>
+    }
+    <FlareStack Row Wrap Align="FlareAlignItems.Center" Gap="FlareSpacing.Small" StretchFirst="true">
+        <FlareText Element="@($"h{HeadingLevel}")" Typo="TypographyScale.HeadlineSmall">@Title</FlareText>
+        @if (Actions is not null)
+        {
+            <FlareStack Row Wrap Align="FlareAlignItems.Center" Gap="FlareSpacing.Small">@Actions</FlareStack>
+        }
+    </FlareStack>
+    @if (DescriptionContent is not null)
+    {
+        @DescriptionContent
+    }
+    else if (!string.IsNullOrEmpty(Description))
+    {
+        <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@Description</FlareText>
+    }
+</FlareStack>
 @code {
-    /// <summary>Main screen heading (h1).</summary>
+    /// <summary>Main screen heading (h1 by default).</summary>
     [Parameter, EditorRequired] public string Title { get; set; } = "";
 
-    /// <summary>Category above the heading, styled as a micro-label.</summary>
-    [Parameter] public string? Category { get; set; }
+    /// <summary>Heading level; a page keeps 1, a task card in a drawer uses 2.</summary>
+    [Parameter] public int HeadingLevel { get; set; } = 1;
 
-    /// <summary>Content above the heading instead of the category - for example, breadcrumbs.</summary>
+    /// <summary>Short line above the heading - a section name where a breadcrumb would be too much.</summary>
+    [Parameter] public string? Eyebrow { get; set; }
+
+    /// <summary>Content above the heading instead of an eyebrow - usually breadcrumbs or status chips.</summary>
     [Parameter] public RenderFragment? EyebrowContent { get; set; }
 
-    /// <summary>Explanation below the heading.</summary>
+    /// <summary>Supporting line below the heading.</summary>
     [Parameter] public string? Description { get; set; }
 
-    /// <summary>Screen actions (buttons and the like).</summary>
+    /// <summary>Rich supporting content below the heading - status chips, progress, metadata.</summary>
+    [Parameter] public RenderFragment? DescriptionContent { get; set; }
+
+    /// <summary>Screen actions (buttons and the like), placed to the right of the heading.</summary>
     [Parameter] public RenderFragment? Actions { get; set; }
 }

@@ -65,7 +65,7 @@ public sealed class TaskDetailsCardTests : UiTestBase
         var cut = Page();
 
         var edit = cut.Find("[aria-label='Изменить название']");
-        Assert.NotNull(edit.Closest(".flare-page-header"));
+        Assert.NotNull(edit.Closest(".alva-page-header"));
         var description = cut.FindAll("section").Single(s => s.QuerySelector("h2")?.TextContent.Trim() == "Описание");
         Assert.Null(description.QuerySelector("[aria-label='Изменить название']"));
     }
@@ -163,7 +163,7 @@ public sealed class TaskDetailsCardTests : UiTestBase
         var item = new TaskModel { Id = _task.Id, Title = _task.Title, Status = "Planned", Version = 1, EstimateHours = 8 };
         var cut = Page(item);
 
-        Assert.Contains("8 / -", cut.Find(".flare-page-header").TextContent);
+        Assert.Contains("8 / -", cut.Find(".alva-page-header").TextContent);
     }
 
     [Fact]
@@ -297,7 +297,7 @@ public sealed class TaskDetailsCardTests : UiTestBase
         };
         var cut = Page(item, [actor]);
 
-        var header = cut.Find(".flare-page-header");
+        var header = cut.Find(".alva-page-header");
         Assert.Contains("Анна", header.TextContent);
         Assert.Contains("8 / 4", header.TextContent);
 

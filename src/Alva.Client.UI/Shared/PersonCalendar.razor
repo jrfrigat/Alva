@@ -1,7 +1,7 @@
 @* Employee calendar: a week with available and booked hours by day, the employee's tasks,
    deductions and upcoming absences. *@
 @inject AlvaSession Session
-<FlarePageHeader Title="@(Person?.Name ?? AlvaStrings.Capacity_Employee)">
+<AlvaPageHeader Title="@(Person?.Name ?? AlvaStrings.Capacity_Employee)">
     <EyebrowContent>
         <FlareBreadcrumb Items="@(new BreadcrumbItem[] { new(AlvaStrings.Common_Capacity, "capacity"), new(AlvaStrings.Common_PeopleSchedules, "capacity/people"), new(Person?.Name ?? AlvaStrings.Capacity_Employee) })" Separator="›" AriaLabel="@(AlvaStrings.Capacity_PathToTheEmployeeCalendar)" />
     </EyebrowContent>
@@ -13,14 +13,14 @@
             @if (!string.IsNullOrWhiteSpace(Person?.Email)) { <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant"><FlareIconView Value="@MaterialDesign3Icons.Regular.Mail" Size="15px" /> @Person!.Email</FlareText> }
         </FlareStack>
     </DescriptionContent>
-    <ActionsContent>
+    <Actions>
         <FlareIconButton Icon="@MaterialDesign3Icons.Regular.ChevronLeft" Size="ButtonSize.Sm" AriaLabel="@(AlvaStrings.Capacity_PreviousWeek)" OnClick="() => Shift(-7)" />
         <FlareChip Variant="ChipVariant.Filled" Color="FlareColor.Primary" Size="ChipSize.Sm">@_monday.ToString("d") – @_monday.AddDays(6).ToString("d MMMM yyyy")@(SprintOfWeek is { } s ? $" · {s.Name}" : "")</FlareChip>
         <FlareIconButton Icon="@MaterialDesign3Icons.Regular.ChevronRight" Size="ButtonSize.Sm" AriaLabel="@(AlvaStrings.Capacity_NextWeek)" OnClick="() => Shift(7)" />
         <FlareButton Variant="ButtonVariant.Text" Size="ButtonSize.Sm" OnClick="ThisWeek">@(AlvaStrings.Gantt_Today)</FlareButton>
         <FlareButton Href="@($"capacity/{ActorId}/schedule")" Size="ButtonSize.Sm"><LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.EditCalendar" Size="18px" /></LeadingIcon><ChildContent>@(AlvaStrings.Common_ScheduleEditor)</ChildContent></FlareButton>
-    </ActionsContent>
-</FlarePageHeader>
+    </Actions>
+</AlvaPageHeader>
 <PageFeedback Error="@_error" Loading="_busy" OnRetry="LoadWeek" />
 
 <FlareGrid MinColumnWidth="min(100%,11rem)">

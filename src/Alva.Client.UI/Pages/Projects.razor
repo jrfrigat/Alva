@@ -7,7 +7,7 @@
 @using Flare.Components.Gantt
 <PageTitle>@(AlvaStrings.Projects_ProjectsAlva)</PageTitle>
 <NavigationLock OnBeforeInternalNavigation="ConfirmLeave" ConfirmExternalNavigation="IsDirty" />
-<AlvaPageHeader Category="@(AlvaStrings.Projects_ProjectsOfSeveralTeams)" Title="@(AlvaStrings.Common_Projects)">
+<AlvaPageHeader Title="@(AlvaStrings.Common_Projects)">
     <Actions><FlareButton Size="ButtonSize.Sm" OnClick="New" Disabled="@(Session.TeamId is null)"><LeadingIcon><FlareIconView Value="@MaterialDesign3Icons.Regular.AddCircle" Size="18px" /></LeadingIcon><ChildContent>@(AlvaStrings.Projects_NewProject)</ChildContent></FlareButton></Actions>
 </AlvaPageHeader>
 <PageFeedback Loading="_busy" Error="@_error" OnRetry="Load" />
