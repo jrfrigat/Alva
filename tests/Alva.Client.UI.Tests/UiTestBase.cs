@@ -27,6 +27,8 @@ public abstract class UiTestBase : BunitContext, IAsyncLifetime
         Services.AddScoped<DraftGuard>();
         Services.AddScoped<GanttPreferences>();
         Services.AddScoped<GanttEditGate>();
+        Services.AddScoped<ClientIdentity>();
+        Services.AddScoped<IRealtimeService, NullRealtimeService>();
         Services.AddSingleton(TimeProvider.System);
         Services.AddSingleton<IApiService>(Api);
         Services.AddScoped<AlvaSession>();

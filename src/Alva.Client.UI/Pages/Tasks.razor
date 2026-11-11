@@ -7,6 +7,7 @@
 @inject NavigationManager Navigation
 @inject DraftGuard Drafts
 @inject ISnackbarService Snackbar
+@inject IRealtimeService Realtime
 <PageTitle>@(Current is null ? AlvaStrings.Common_Tasks : Current.Title) - Alva</PageTitle>
 <NavigationLock OnBeforeInternalNavigation="ConfirmLeave" ConfirmExternalNavigation="IsDirty" />
 @if (Current is not null)
@@ -372,9 +373,14 @@ else
     private string ActorName(Guid? id) { var actor=_actors.FirstOrDefault(x=>x.Id==id);return actor is null?AlvaStrings.Common_UnassignedTask:$"{actor.Name} - {Labels.Kind(actor.Kind)}"; }
     private string SkillName(Guid id) => _actors.FirstOrDefault(x => x.Id == id)?.Name ?? "";
     private TaskModel? Current => TaskId.HasValue ? _tasks.FirstOrDefault(t=>t.Id==TaskId) : null;
+    private RealtimeRefresh? _refresh;
+
     protected override async Task OnInitializedAsync()
     {
         _draft = Drafts.Track(() => IsDirty);
+        _refresh = new RealtimeRefresh(() => !Drafts.HasDirty);
+        Realtime.TaskChanged += OnRealtimeTaskChanged;
+        Realtime.Resynced += OnRealtimeResynced;
         // The list is recreated by the route key (MainLayout), so search, filters, sort and expansion
         // are restored from TaskListState - after going to the card and Back, and after a page reload.
         var context = await Session.TaskList.Load();
@@ -479,7 +485,29 @@ else
     protected override async Task OnParametersSetAsync()
     {
         _editing=null; FocusOpened(); await Load();
+        await Realtime.EnsureStarted();
         if (NewFlag == 1 && TaskId is null && Session.TeamId is not null) { NewTask(); _editing!.ProjectId = _projects.Any(p => p.Id == NewProject) ? NewProject : null; }
+    }
+
+    private void OnRealtimeTaskChanged(TaskChangedEvent change)
+    {
+        if (change.TeamId != Session.TeamId) return;
+        _ = InvokeAsync(() => { _refresh?.Schedule(ReloadQuietly); return Task.CompletedTask; });
+    }
+
+    private void OnRealtimeResynced()
+    {
+        _ = InvokeAsync(() => { _refresh?.Schedule(ReloadQuietly); return Task.CompletedTask; });
+    }
+
+    // A task changed elsewhere: refresh the rows without the loading bar. Sort, filters, expansion and
+    // the open card stay as they are; a draft holds the refresh back and its save reports the conflict.
+    private async Task ReloadQuietly()
+    {
+        if (Session.TeamId is null) return;
+        _tasks = await Session.Get<TaskModel[]>(Session.TeamPath("tasks"));
+        _risks = (await Session.Get<RiskDto[]>(Session.TeamPath("risks"))).Where(r => r.HasRisk).ToArray();
+        StateHasChanged();
     }
 
     // Opening a task (clicking a row or pressing Enter on a link) marks the card as the focus target.
@@ -682,7 +710,13 @@ else
         Hide();
     }
 
-    public void Dispose() => _draft?.Dispose();
+    public void Dispose()
+    {
+        _draft?.Dispose();
+        Realtime.TaskChanged -= OnRealtimeTaskChanged;
+        Realtime.Resynced -= OnRealtimeResynced;
+        _refresh?.Cancel();
+    }
     private async Task Save()
     {
         if (!Validate())

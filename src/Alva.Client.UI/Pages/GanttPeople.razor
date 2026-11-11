@@ -1,8 +1,11 @@
 @page "/gantt/people"
 @page "/gantt/2d"
+@implements IDisposable
 @inject AlvaSession Session
 @inject GanttPreferences Preferences
 @inject GanttEditGate Edits
+@inject IRealtimeService Realtime
+@inject DraftGuard Drafts
 @inject NavigationManager Navigation
 @using Flare.Components.Gantt
 @* People Gantt (projection 2): lanes of people and skills with capacity hours and the assignee's tasks.
@@ -113,12 +116,48 @@ else if (_data is not null && _people is not null)
         await Preferences.SaveSide("people", width);
     }
 
+    private RealtimeRefresh? _refresh;
+
     protected override async Task OnInitializedAsync()
     {
+        _refresh = new RealtimeRefresh(() => !Drafts.HasDirty);
+        Realtime.TaskChanged += OnRealtimeTaskChanged;
+        Realtime.Resynced += OnRealtimeResynced;
         _twoD = Navigation.Uri.Contains("/gantt/2d", StringComparison.OrdinalIgnoreCase);
         await Session.Initialize();
         _side = (await Preferences.Get("people")).Side ?? _side;
         await Reload(initial: true);
+        await Realtime.EnsureStarted();
+    }
+
+    private void OnRealtimeTaskChanged(TaskChangedEvent change)
+    {
+        if (change.TeamId != Session.TeamId) return;
+        _ = InvokeAsync(() => { _refresh?.Schedule(ReloadQuietly); return Task.CompletedTask; });
+    }
+
+    private void OnRealtimeResynced()
+    {
+        _ = InvokeAsync(() => { _refresh?.Schedule(ReloadQuietly); return Task.CompletedTask; });
+    }
+
+    // Another client changed a task: reload tasks and capacity for the current axis without the loading
+    // bar, keeping the selected bar and the open card.
+    private async Task ReloadQuietly()
+    {
+        if (Session.TeamId is null) return;
+        _data = await GanttData.Load(Session);
+        _projects = await Session.Get<ProjectModel[]>(Session.TeamPath("projects"));
+        _people = await GanttPeopleData.Load(Session, _data, _range);
+        if (_open is not null) _open = _data.Tasks.FirstOrDefault(t => t.Id == _open.Id) ?? _open;
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        Realtime.TaskChanged -= OnRealtimeTaskChanged;
+        Realtime.Resynced -= OnRealtimeResynced;
+        _refresh?.Cancel();
     }
 
     private void SetTwoD(bool value)

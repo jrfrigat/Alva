@@ -4,6 +4,7 @@
 @using Flare.Components.Gantt
 @inject AlvaSession Session
 @inject GanttEditGate Edits
+@inject DraftGuard Drafts
 @inject NavigationManager Navigation
 <FlareGrid Columns="12" AlignItems="FlareAlignItems.Stretch" Gap="FlareSpacing.Large">
     <FlareCol Span="12" Md="8" Lg="8">
@@ -425,6 +426,15 @@
     }
 
     /// <summary>After an edit: page tasks, sprint capacity and Gantt data - everything the board shows. The auto-balance proposal becomes stale.</summary>
+    /// <summary>The page reloaded the tasks after another client's change: rebuild the board data without
+    /// asking the page to load again, which would show its loading bar.</summary>
+    public async Task RefreshRealtime()
+    {
+        if (Drafts.HasDirty) return;
+        await Refresh(tasks: false);
+        StateHasChanged();
+    }
+
     private async Task Refresh(bool tasks = true)
     {
         _proposal = null;

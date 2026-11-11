@@ -6,6 +6,7 @@
 @inject AlvaSession Session
 @inject NavigationManager Navigation
 @inject DraftGuard Drafts
+@inject IRealtimeService Realtime
 <PageTitle>@(Planning ? AlvaStrings.Common_Planning : Current?.Name ?? AlvaStrings.Sprint_Sprints) · Alva</PageTitle>
 <NavigationLock OnBeforeInternalNavigation="ConfirmLeave" ConfirmExternalNavigation="IsDirty" />
 @if(SprintId is null && !Planning)
@@ -60,14 +61,44 @@ else if(_loaded){<UnavailableState Title="@(AlvaStrings.Sprint_SprintNotFoundOrU
     private string? _nameError,_endError; private readonly List<string> _formErrors=[]; private ElementReference _errorSummary;
     [CascadingParameter] public FlareConfirmDialogProvider? Confirm { get; set; }
     internal bool IsDirty => _editing is not null && DraftSnapshot.Of(_editing, _start, _end) != _editingSnapshot;
-    protected override void OnInitialized() => _draft = Drafts.Track(() => IsDirty);
+    private RealtimeRefresh? _refresh;
+
+    protected override void OnInitialized()
+    {
+        _draft = Drafts.Track(() => IsDirty);
+        _refresh = new RealtimeRefresh(() => !Drafts.HasDirty);
+        Realtime.TaskChanged += OnRealtimeTaskChanged;
+        Realtime.Resynced += OnRealtimeResynced;
+    }
+
+    private void OnRealtimeTaskChanged(TaskChangedEvent change)
+    {
+        if (change.TeamId != Session.TeamId) return;
+        _ = InvokeAsync(() => { _refresh?.Schedule(ReloadQuietly); return Task.CompletedTask; });
+    }
+
+    private void OnRealtimeResynced()
+    {
+        _ = InvokeAsync(() => { _refresh?.Schedule(ReloadQuietly); return Task.CompletedTask; });
+    }
+
+    // A task changed elsewhere: refresh sprints and tasks without the loading bar, then let the planning
+    // board reload its Gantt and capacity. A draft holds the refresh back.
+    private async Task ReloadQuietly()
+    {
+        if (Session.TeamId is null) return;
+        _sprints = await Session.Get<SprintModel[]>(Session.TeamPath("sprints"));
+        _tasks = await Session.Get<TaskModel[]>(Session.TeamPath("tasks"));
+        if (_planning is not null) await _planning.RefreshRealtime();
+        StateHasChanged();
+    }
     private bool Planning => AppRoutes.Current(Navigation).EndsWith("/plan", StringComparison.Ordinal);
     private SprintModel? Current => SprintId.HasValue ? _sprints.FirstOrDefault(s=>s.Id==SprintId) : null;
     /// <summary>The board's sprint: the one named in the URL (not substituted if it is missing), otherwise the active one, otherwise the nearest planned one.</summary>
     private SprintModel? PlanSprint => SprintId.HasValue ? Current : _sprints.FirstOrDefault(s=>s.Status=="Active") ?? _sprints.Where(s=>s.Status=="Planned").OrderBy(s=>s.StartDate).FirstOrDefault();
     /// <summary>Planning page heading: the sprint name when a sprint is selected.</summary>
     private string PlanningTitle => PlanSprint is { } sprint ? $"{AlvaStrings.Sprint_PlanningASprint}: {sprint.Name}" : AlvaStrings.Sprint_PlanningASprint;
-    protected override async Task OnParametersSetAsync(){_editing=null;await Load();}
+    protected override async Task OnParametersSetAsync(){_editing=null;await Load();await Realtime.EnsureStarted();}
     private async Task Run(Func<Task> action){_busy=true;_error=null;try{await action();}catch(Exception e) when(e is HttpRequestException or InvalidOperationException){_error=PageFeedback.Describe(e);}finally{_busy=false;}}
     private Task Load()=>Run(async()=>{await Session.Initialize();if(Session.TeamId is null)return;_sprints=await Session.Get<SprintModel[]>(Session.TeamPath("sprints"));_tasks=await Session.Get<TaskModel[]>(Session.TeamPath("tasks"));_loaded=true;});
     private void New(){_editing=new SprintModel();_start=_editing.StartDate;_end=_editing.EndDate;_editingSnapshot=DraftSnapshot.Of(_editing,_start,_end);}
@@ -92,7 +123,13 @@ else if(_loaded){<UnavailableState Title="@(AlvaStrings.Sprint_SprintNotFoundOrU
         _editing=null; _editingSnapshot=null;
     }
 
-    public void Dispose() => _draft?.Dispose();
+    public void Dispose()
+    {
+        _draft?.Dispose();
+        Realtime.TaskChanged -= OnRealtimeTaskChanged;
+        Realtime.Resynced -= OnRealtimeResynced;
+        _refresh?.Cancel();
+    }
     private async Task Save()
     {
         _nameError=_endError=null;_formErrors.Clear();

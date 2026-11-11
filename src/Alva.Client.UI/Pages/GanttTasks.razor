@@ -1,8 +1,11 @@
 @page "/gantt/tasks"
 @page "/diagrams"
+@implements IDisposable
 @inject AlvaSession Session
 @inject GanttPreferences Preferences
 @inject GanttEditGate Edits
+@inject IRealtimeService Realtime
+@inject DraftGuard Drafts
 @using Flare.Components.Gantt
 @* Task Gantt (projection 1): work tree, task windows, deadlines, sprint and links.
    Alva builds the projection from Flare.Components.Gantt primitives; the library itself knows nothing about tasks. *@
@@ -114,12 +117,47 @@ else if (_data is not null)
         await Preferences.SaveSide("tasks", width);
     }
 
+    private RealtimeRefresh? _refresh;
+
     protected override async Task OnInitializedAsync()
     {
+        _refresh = new RealtimeRefresh(() => !Drafts.HasDirty);
+        Realtime.TaskChanged += OnRealtimeTaskChanged;
+        Realtime.Resynced += OnRealtimeResynced;
         await Session.Initialize();
         _side = (await Preferences.Get("tasks")).Side ?? _side;
         await Reload();
         _sprintId = _data?.Sprints.FirstOrDefault(s => s.Status == "Active")?.Id;
+        await Realtime.EnsureStarted();
+    }
+
+    private void OnRealtimeTaskChanged(TaskChangedEvent change)
+    {
+        if (change.TeamId != Session.TeamId) return;
+        _ = InvokeAsync(() => { _refresh?.Schedule(ReloadQuietly); return Task.CompletedTask; });
+    }
+
+    private void OnRealtimeResynced()
+    {
+        _ = InvokeAsync(() => { _refresh?.Schedule(ReloadQuietly); return Task.CompletedTask; });
+    }
+
+    // Another client changed a task: reload the data behind the board without the loading bar, and keep
+    // the axis, the selected bar and the open card.
+    private async Task ReloadQuietly()
+    {
+        if (Session.TeamId is null) return;
+        _data = await GanttData.Load(Session);
+        _projects = await Session.Get<ProjectModel[]>(Session.TeamPath("projects"));
+        if (_open is not null) _open = _data.Tasks.FirstOrDefault(t => t.Id == _open.Id) ?? _open;
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        Realtime.TaskChanged -= OnRealtimeTaskChanged;
+        Realtime.Resynced -= OnRealtimeResynced;
+        _refresh?.Cancel();
     }
 
     private async Task Reload()
