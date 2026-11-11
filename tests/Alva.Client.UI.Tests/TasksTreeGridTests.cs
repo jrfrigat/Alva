@@ -41,7 +41,13 @@ public sealed class TasksTreeGridTests : UiTestBase
         Assert.True(grid.Instance.Virtual);
         Assert.True(grid.Instance.FillHeight);
         Assert.Equal(DataGridPresentation.Auto, grid.Instance.Presentation);
-        Assert.NotEmpty(cut.FindAll("table[role='treegrid']"));
+        var table = cut.Find("table[role='treegrid']");
+        Assert.DoesNotContain("flare-datagrid__table--widths-exact", table.ClassName);
+        Assert.DoesNotContain("width:calc(", table.GetAttribute("style") ?? "");
+        Assert.Contains("width:32%", cut.FindAll("th[role='columnheader']").First().GetAttribute("style"));
+        Assert.Empty(cut.FindAll(".flare-datagrid__td--frozen"));
+        // The grid paints its own surface: a card around it would draw a second frame.
+        Assert.Empty(cut.FindComponents<FlareCard>());
         Assert.DoesNotContain("alva-tree", cut.Markup);
     }
 

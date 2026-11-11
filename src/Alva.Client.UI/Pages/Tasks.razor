@@ -61,13 +61,9 @@ else
 <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant"><span role="status" aria-live="polite">@string.Format(AlvaStrings.Tasks_FoundCount, Matched.Count())</span></FlareText>
 }
 <FlareStack Row Wrap Gap="FlareSpacing.Small"><FlareButton Href="tasks" aria-current="@(Route == "tasks" ? "page" : null)" Variant="@(Route == "tasks" ? ButtonVariant.Tonal : ButtonVariant.Text)" Size="ButtonSize.Sm">@(AlvaStrings.Gantt_AllTasks)</FlareButton><FlareButton Href="unassigned" aria-current="@(Route == "unassigned" ? "page" : null)" Variant="@(Route == "unassigned" ? ButtonVariant.Tonal : ButtonVariant.Text)" Size="ButtonSize.Sm">@(AlvaStrings.Common_Unassigned)</FlareButton><FlareButton Href="my-work" aria-current="@(Route == "my-work" ? "page" : null)" Variant="@(Route == "my-work" ? ButtonVariant.Tonal : ButtonVariant.Text)" Size="ButtonSize.Sm">@(AlvaStrings.Tasks_MyWork)</FlareButton><FlareButton OnClick="Load" Variant="ButtonVariant.Text" Size="ButtonSize.Sm">@(AlvaStrings.Tasks_Refresh)</FlareButton></FlareStack>
-<FlareStack Height="@(HasRows ? "calc(100vh - 24rem)" : null)" MinHeight="@(HasRows ? "22rem" : null)">
-<FlareCard Variant="CardVariant.Outlined" FillHeight="@HasRows"><FlareCardContent>
-    @if (!_loaded) { <LoadingSkeleton Height="24rem" /> }
-    else if (_error is not null) { <FlareAlert Severity="AlertSeverity.Error">@_error</FlareAlert><FlareButton Variant="ButtonVariant.Text" Size="ButtonSize.Sm" OnClick="Load">@(AlvaStrings.Common_TryAgain)</FlareButton> }
-    else if (_tasks.Length == 0) { <FlareEmptyState Compact Title="@(AlvaStrings.Common_NoTasksYet)" Description="@(AlvaStrings.Tasks_AddTheFirstTaskOrChangeTheFilters)" /> }
-    else if (!Matched.Any()) { <FlareEmptyState Compact Title="@(AlvaStrings.Tasks_NoTasksByFilters)" Description="@(AlvaStrings.Tasks_ClearFilters)" /><FlareButton Variant="ButtonVariant.Text" Size="ButtonSize.Sm" OnClick="ClearFilters">@(AlvaStrings.Tasks_ClearFilters)</FlareButton> }
-    else {
+@if (HasRows)
+{
+<FlareStack Height="calc(100vh - 24rem)" MinHeight="22rem">
     <FlareDataGrid @ref="_dataGrid" TItem="TaskModel" Items="@Roots" RowKey="@(t => t.Id)" Context="@_grid"
                    Tree="@_tree" ExpandedItems="@ExpandedItems" OnExpandedChanged="@OnExpanded"
                    OnSortChanged="@OnSortChanged" RowReorderable="@ReorderEnabled" OnRowReordered="@Reordered"
@@ -75,11 +71,11 @@ else
                    Presentation="DataGridPresentation.Auto" Virtual="true" FillHeight="true" Dense="true" Hoverable="true"
                    StickyHeader="true" ShowPager="false" role="group" aria-label="@(AlvaStrings.Tasks_TeamTasks)">
         <Columns>
-            <FlareColumn TItem="TaskModel" Title="@(AlvaStrings.Common_Task)" Sortable="true" SortKey="order" SortComparison="@OrderComparison" Frozen="true" Width="18rem">
+            <FlareColumn TItem="TaskModel" Title="@(AlvaStrings.Common_Task)" Sortable="true" SortKey="order" SortComparison="@OrderComparison" Width="32%">
                 <Template Context="task">
                     <FlareStack Row Gap="FlareSpacing.XXSmall" Align="FlareAlignItems.Center" Style="display:inline-flex;vertical-align:middle">
                         <span @onclick:stopPropagation="true" @onclick="() => Open(task)" @onclick:preventDefault="true"><FlareLink Href="@($"tasks/{task.Id}")">@task.Title</FlareLink></span>
-                        <span @onclick:stopPropagation="true"><FlareIconButton Icon="@MaterialDesign3Icons.Regular.Add" Size="ButtonSize.Sm" Tooltip="@AlvaStrings.Tasks_AddSubtask" AriaLabel="@AlvaStrings.Tasks_AddSubtask" OnClick="() => OpenQuickCreate(task.Id)" /></span>
+                        <span @onclick:stopPropagation="true"><FlareIconButton Icon="@MaterialDesign3Icons.Regular.Add" Size="ButtonSize.Sm" Tooltip="@AlvaStrings.Tasks_AddSubtask" AriaLabel="@AlvaStrings.Tasks_AddSubtask" OnClick="() => OpenFullCreate(task.Id)" /></span>
                         <span @onclick:stopPropagation="true">
                             <FlareMenu Anchor="MenuAnchor.BottomEnd" AriaLabel="@(AlvaStrings.Tasks_RowActions)">
                                 <Activator><FlareIconButton Icon="@MaterialDesign3Icons.Regular.MoreVert" Size="ButtonSize.Sm" Tooltip="@(AlvaStrings.Tasks_RowActions)" AriaLabel="@(AlvaStrings.Tasks_RowActions)" /></Activator>
@@ -126,9 +122,17 @@ else
             </FlareColumn>
         </Columns>
     </FlareDataGrid>
-    }
-</FlareCardContent></FlareCard>
 </FlareStack>
+}
+else
+{
+<FlareCard Variant="CardVariant.Outlined"><FlareCardContent>
+    @if (!_loaded) { <LoadingSkeleton Height="24rem" /> }
+    else if (_error is not null) { <FlareAlert Severity="AlertSeverity.Error">@_error</FlareAlert><FlareButton Variant="ButtonVariant.Text" Size="ButtonSize.Sm" OnClick="Load">@(AlvaStrings.Common_TryAgain)</FlareButton> }
+    else if (_tasks.Length == 0) { <FlareEmptyState Compact Title="@(AlvaStrings.Common_NoTasksYet)" Description="@(AlvaStrings.Tasks_AddTheFirstTaskOrChangeTheFilters)" /> }
+    else { <FlareEmptyState Compact Title="@(AlvaStrings.Tasks_NoTasksByFilters)" Description="@(AlvaStrings.Tasks_ClearFilters)" /><FlareButton Variant="ButtonVariant.Text" Size="ButtonSize.Sm" OnClick="ClearFilters">@(AlvaStrings.Tasks_ClearFilters)</FlareButton> }
+</FlareCardContent></FlareCard>
+}
 <FlareDrawer Anchor="DrawerAnchor.Right" Open="DrawerOpen" OpenChanged="OnDrawerOpen" Width="34rem" ContentPadding="FlareSpacing.Large" AriaLabel="@DrawerLabel">
     @if (_quickOpen)
     {
@@ -589,6 +593,21 @@ else
         _quickError = null;
         _quickOpen = true;
         _focusQuick = true;
+        if (hadSelection) await SaveTreeState();
+    }
+    // Adding a subtask opens the full form: the drawer is already the place where the work is described,
+    // and the short composer only delays the fields that a subtask needs.
+    private async Task OpenFullCreate(Guid parentId)
+    {
+        var selected = Selected;
+        var parent = _tasks.FirstOrDefault(t => t.Id == parentId);
+        var hadSelection = _selectedId is not null;
+        _quickOpen = false;
+        _selectedId = null;
+        NewTask();
+        _editing!.ParentId = parentId;
+        _editing.ProjectId = parent?.ProjectId ?? selected?.ProjectId ?? _projectFilter;
+        _editing.Status = "Backlog";
         if (hadSelection) await SaveTreeState();
     }
     private void CloseQuick() { _quickOpen = false; _quickError = null; _returnFocus = true; }

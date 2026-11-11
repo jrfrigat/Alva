@@ -70,8 +70,8 @@ public sealed class TasksQuickCreateTests : UiTestBase
         Assert.True(drawer.Instance.Open);
         Assert.DoesNotContain(cut.FindComponents<FlareDrawer>(), d => d.Instance.Anchor == DrawerAnchor.Bottom);
         Assert.Contains("Планирование", drawer.Markup);
-        Assert.Empty(cut.FindComponents<TaskFormPlan>());
-        Assert.Contains("Создать", drawer.Find(".flare-drawer").TextContent);
+        Assert.NotEmpty(cut.FindComponents<TaskFormPlan>());
+        Assert.Contains("Сохранить задачу", drawer.Find(".flare-drawer").TextContent);
     }
 
     [Fact]
@@ -130,17 +130,15 @@ public sealed class TasksQuickCreateTests : UiTestBase
     }
 
     [Fact]
-    public void Quick_create_from_a_row_prefills_the_parent()
+    public void Adding_a_subtask_opens_the_full_form_with_the_parent()
     {
         var cut = Page();
-        Api.SaveResult = new TaskModel { Id = _savedId, Title = "Дочерняя", Status = "Backlog", ParentId = _parent.Id, ProjectId = _project.Id };
 
         cut.Find("[aria-label='Добавить подзадачу']").Click();
-        Field(cut, "Название").Change("Дочерняя");
-        Button(cut, "Создать").Click();
 
-        cut.WaitForAssertion(() => Assert.Contains(Api.Sent, s => s.Method == HttpMethod.Post && s.Value is TaskRequest r && r.ParentId == _parent.Id));
-        cut.WaitForAssertion(() => Assert.Contains("Дочерняя", cut.Markup));
+        Assert.NotEmpty(cut.FindComponents<TaskFormPlan>());
+        var parent = cut.FindComponents<FlareSelect<Guid?>>().Single(s => s.Instance.Label == "Родительская задача");
+        Assert.Equal(_parent.Id, parent.Instance.Value);
     }
 
     [Fact]
