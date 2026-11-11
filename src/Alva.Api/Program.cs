@@ -39,6 +39,12 @@ if (builder.Configuration["DataProtection:KeysPath"] is { Length: > 0 } keysPath
 // Task integration modules: each is plugged in with a single line, and the core knows them only through the contract.
 builder.Services.AddYandexTrackerModule();
 builder.Services.AddScoped<IntegrationSync>();
+// Realtime: task changes are pushed to every member of the team through a hub; the database raises
+// them after a commit, so no write path can forget to notify.
+builder.Services.AddSignalR();
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddSingleton<RealtimeConnections>();
+builder.Services.AddScoped<ITaskChangeNotifier, SignalRTaskChangeNotifier>();
 if (builder.Configuration.GetValue("Integrations:AutoSync", true)) builder.Services.AddHostedService<IntegrationSyncWorker>();
 builder.Services.AddRateLimiter(o => { o.RejectionStatusCode = 429; o.AddPolicy("auth", ctx => RateLimitPartition.GetFixedWindowLimiter(ctx.Connection.RemoteIpAddress?.ToString() ?? "unknown", _ => new FixedWindowRateLimiterOptions { PermitLimit = 30, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 })); });
 var app = builder.Build();
@@ -74,6 +80,7 @@ app.MapCapacity();
 app.MapBalance();
 app.MapData();
 app.MapIntegrations();
+app.MapHub<TeamHub>("/api/hubs/team").RequireAuthorization();
 app.MapGet("/health/live", () => Results.Ok(new { status = "live" }));
 app.MapGet("/health/ready", async (AlvaDbContext db, CancellationToken ct) => await db.Database.CanConnectAsync(ct) ? Results.Ok(new { status = "ready" }) : Results.StatusCode(503));
 if (builder.Configuration.GetValue("Database:MigrateOnStartup", true))

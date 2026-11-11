@@ -3,6 +3,7 @@ using Alva.Infrastructure;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Json;
 using Microsoft.AspNetCore.TestHost;
@@ -18,10 +19,14 @@ using System.Text.Json.Serialization;
 namespace Alva.Data.Tests;
 
 /// <summary>API on in-memory SQLite with one user who is a member of one team: for checking rules over HTTP.</summary>
-public sealed class ApiServer(WebApplication app, SqliteConnection connection, Guid teamId) : IAsyncDisposable
+public sealed class ApiServer(WebApplication app, SqliteConnection connection, Guid teamId, Guid userId) : IAsyncDisposable
 {
     public Guid TeamId => teamId;
+    public Guid UserId => userId;
     public HttpClient Client { get; } = app.GetTestClient();
+    public IServiceProvider Services => app.Services;
+    /// <summary>The handler a SignalR client uses to reach this in-process server over long polling.</summary>
+    public HttpMessageHandler Handler => ((TestServer)app.Services.GetRequiredService<IServer>()).CreateHandler();
     public string Team(string resource) => $"/api/teams/{teamId}/{resource}";
 
     public async Task WithDb(Func<AlvaDbContext, Task> action)
@@ -48,7 +53,7 @@ public sealed class ApiServer(WebApplication app, SqliteConnection connection, G
         });
         app.UseAuthentication(); app.UseAuthorization(); map(app); await app.StartAsync();
         var workspaceId = Guid.NewGuid(); var teamId = Guid.NewGuid(); var userId = Guid.NewGuid();
-        var server = new ApiServer(app, connection, teamId);
+        var server = new ApiServer(app, connection, teamId, userId);
         server.Client.DefaultRequestHeaders.Add("X-Test-User", userId.ToString());
         await server.WithDb(async db =>
         {

@@ -4,8 +4,15 @@ using Microsoft.EntityFrameworkCore.Design;
 
 namespace Alva.Infrastructure;
 
-public class AlvaDbContext(DbContextOptions<AlvaDbContext> options) : DbContext(options)
+public class AlvaDbContext : DbContext
 {
+    private readonly ITaskChangeNotifier? _notifier;
+
+    public AlvaDbContext(DbContextOptions<AlvaDbContext> options, ITaskChangeNotifier? notifier = null) : base(options)
+    {
+        _notifier = notifier;
+    }
+
     public DbSet<Workspace> Workspaces => Set<Workspace>();
     public DbSet<Team> Teams => Set<Team>();
     public DbSet<Project> Projects => Set<Project>();
@@ -38,8 +45,16 @@ public class AlvaDbContext(DbContextOptions<AlvaDbContext> options) : DbContext(
     /// </summary>
     public override async Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
     {
+        // Task changes are collected before the save and broadcast only after it commits: a write that
+        // rolls back must not tell other clients to reload a change that never happened.
+        var changes = PendingTaskChanges();
         var (tasks, sprints) = TaskSprintCache.Touched(ChangeTracker);
-        if (tasks.Count == 0 && sprints.Count == 0) return await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+        if (tasks.Count == 0 && sprints.Count == 0)
+        {
+            var saved = await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+            await Notify(changes, cancellationToken);
+            return saved;
+        }
         var own = Database.CurrentTransaction is null ? await Database.BeginTransactionAsync(cancellationToken) : null;
         try
         {
@@ -48,11 +63,33 @@ public class AlvaDbContext(DbContextOptions<AlvaDbContext> options) : DbContext(
             await TaskSprintCache.Fill(this, tasks, sprints, cancellationToken);
             await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
             if (own is not null) await own.CommitAsync(cancellationToken);
+            await Notify(changes, cancellationToken);
             return saved;
         }
         finally
         {
             if (own is not null) await own.DisposeAsync();
+        }
+    }
+
+    private (TaskCard Task, TaskChangeKind Kind)[] PendingTaskChanges() =>
+        ChangeTracker.Entries<TaskCard>()
+            .Where(e => e.State is EntityState.Added or EntityState.Modified or EntityState.Deleted)
+            .Select(e => (e.Entity, e.State == EntityState.Deleted ? TaskChangeKind.Deleted : TaskChangeKind.Updated))
+            .ToArray();
+
+    private async Task Notify((TaskCard Task, TaskChangeKind Kind)[] changes, CancellationToken cancellationToken)
+    {
+        if (_notifier is null || changes.Length == 0) return;
+        try
+        {
+            await _notifier.Notify(
+                changes.Select(c => new TaskChange(c.Task.TeamId, c.Task.Id, c.Task.Version, c.Kind)).ToArray(),
+                cancellationToken);
+        }
+        catch (Exception)
+        {
+            // Realtime is an observer: a failed broadcast never turns a committed write into an error.
         }
     }
 
