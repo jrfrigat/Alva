@@ -15,8 +15,8 @@
    Audit rule: a block stays here only when it is Alva domain styling or a documented Flare
    hook/token. A Flare component is never restyled into a second copy, and markup that Flare
    already provides (tables, tabs, panels, lists, drawers, alerts, empty states, skeletons,
-   calendars, WBS, the capacity matrix) is not reimplemented. The one declared exception until
-   TASK-243 and Flare 802..804 is the task treegrid in section 4. */
+   calendars, WBS, the task tree, the capacity matrix) is not reimplemented. The declared domain
+   exceptions are the heat scale, the calendar day states and the Gantt row header. */
 
 /* 1. Foundation and utilities */
 :root{--alva-font:Inter,"Segoe UI",system-ui,sans-serif;--alva-primary:#0037b0;--alva-primary-container:#1d4ed8;--alva-primary-hover:#1e40af;--alva-secondary:#3755c3;--alva-tertiary:#5311bc;--alva-surface:#f8f9ff;--alva-surface-lowest:#ffffff;--alva-surface-container:#e5eeff;--alva-surface-high:#dce9ff;--alva-outline:#c4c5d7;--alva-outline-strong:#747686;--alva-on-surface:#0b1c30;--alva-on-surface-variant:#434655;--alva-critical:#ef4444;--alva-warning:#f59e0b;--alva-ok:#10b981;--alva-role:#8b5cf6;--alva-radius-sm:6px;--alva-radius-md:8px;--alva-row-height:34px;--flare-font-family:var(--alva-font)}
@@ -33,36 +33,9 @@ html,body{margin:0;min-height:100%;font-family:var(--alva-font);background:var(-
    FlareList. Only page composition stays in markup; no panel, toolbar or card surface is defined
    here. */
 
-/* 4. Task and assignee assignment */
-.alva-tree{display:flex;flex-direction:column;width:100%;min-width:0}
-.alva-tree__head,.alva-tree__row{display:grid;grid-template-columns:minmax(14rem,2fr) 6rem 5.5rem 9rem 6.5rem 7rem 5.5rem 7rem;gap:.5rem;align-items:center}
-.alva-tree__head{position:sticky;top:0;z-index:2;padding:.5rem .75rem;border-bottom:1px solid var(--alva-border);background:var(--flare-color-surface-container-lowest,#fff);font-size:12px;font-weight:600;color:var(--flare-color-on-surface-variant,var(--alva-on-surface-variant))}
-.alva-tree__row{min-height:44px;padding:.375rem .75rem;border-top:1px solid var(--alva-border);cursor:pointer}
-.alva-tree__row:hover{background:var(--flare-color-surface-container-low,#eff4ff)}
-.alva-tree__row:focus-visible{outline:2px solid var(--flare-color-primary,var(--alva-primary));outline-offset:-2px}
-.alva-tree__row--context{opacity:.72}
-.alva-tree__row--new{background:var(--flare-color-surface-container-low,#eff4ff);box-shadow:inset 3px 0 0 var(--flare-color-primary,var(--alva-primary))}
-.alva-tree__cell{min-width:0;display:flex;align-items:center;gap:.35rem;overflow:hidden}
-.alva-tree__cell--task{padding-left:calc(var(--alva-depth,0) * 18px)}
-.alva-tree__sort{all:unset;cursor:pointer;font:inherit;color:inherit;display:inline-flex;align-items:center;gap:.25rem;border-radius:4px}
-.alva-tree__sort:focus-visible{outline:2px solid var(--flare-color-primary,var(--alva-primary));outline-offset:2px}
-.alva-tree__head [aria-sort="ascending"] .alva-tree__sort::after{content:" ^"}
-.alva-tree__head [aria-sort="descending"] .alva-tree__sort::after{content:" v"}
-.alva-tree__toggle{width:28px;height:28px;flex:none;border:0;border-radius:4px;background:none;color:var(--flare-color-on-surface-variant,var(--alva-on-surface-variant));cursor:pointer;display:inline-flex;align-items:center;justify-content:center;font-size:12px}
-.alva-tree__toggle:hover{background:var(--flare-color-surface-container,#e6efff)}
-.alva-tree__toggle--empty{visibility:hidden}
-.alva-tree__add{width:28px;height:28px;flex:none;border:1px solid var(--alva-border);border-radius:4px;background:none;color:var(--flare-color-on-surface-variant,var(--alva-on-surface-variant));cursor:pointer;opacity:0;font-size:16px;line-height:1}
-.alva-tree__row:hover .alva-tree__add,.alva-tree__add:focus-visible{opacity:1}
-.alva-tree__meta{display:none}
-@media(max-width:1100px){
-  .alva-tree__head{display:none}
-  .alva-tree__row{grid-template-columns:minmax(0,1fr);gap:.25rem}
-  .alva-tree__cell--optional{display:none}
-  .alva-tree__cell--task{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:.25rem .35rem;align-items:center}
-  .alva-tree__meta{display:flex;grid-column:1/-1;flex-wrap:wrap;align-items:center;gap:.25rem .5rem;font-size:12px;line-height:16px;color:var(--flare-color-on-surface-variant,var(--alva-on-surface-variant))}
-  .alva-tree__add{opacity:1}
-}
-@media(pointer:coarse){.alva-tree__toggle,.alva-tree__add{min-width:44px;min-height:44px}}
+/* 4. Task list: the tree is a FlareDataGrid tree. Only the row state tints of the page remain. */
+.alva-task-row--context{opacity:.72}
+.alva-task-row--new{background:var(--flare-color-surface-container-low,#eff4ff)}
 
 /* 5. Sprint planning: FlareCard, FlareGrid, FlareStack, FlareDragContext, FlareDropZone and
    FlareDraggable compose the board. No page-specific board, pool or card surface is defined here. */

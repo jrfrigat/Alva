@@ -29,21 +29,21 @@ public sealed class TaskListContextTests : UiTestBase
     {
         Navigation.NavigateTo("/tasks");
         var cut = Render<Tasks>();
-        cut.WaitForAssertion(() => Assert.Equal(2, cut.FindAll(".alva-tree a[href^='tasks/']").Count));
+        cut.WaitForAssertion(() => Assert.Equal(2, cut.FindAll(".flare-datagrid a[href^='tasks/']").Count));
 
         // The search narrows the list to one task.
         Field(cut, "Поиск задач").Input("Релиз");
-        cut.WaitForAssertion(() => Assert.Single(cut.FindAll(".alva-tree a[href^='tasks/']")));
+        cut.WaitForAssertion(() => Assert.Single(cut.FindAll(".flare-datagrid a[href^='tasks/']")));
 
         // Opening a task keeps the tree and shows the inspector.
-        cut.FindAll(".alva-tree__row").First(n => n.TextContent.Contains("Релиз")).Click();
+        cut.FindAll(".flare-datagrid__row").First(n => n.TextContent.Contains("Релиз")).Click();
         cut.WaitForAssertion(() => Assert.True(cut.FindComponent<FlareDrawer>().Instance.Open));
 
         // The full card is still available by URL; returning to the list restores the search and the selection.
         Navigation.NavigateTo($"/tasks/{_release.Id}");
         Navigation.NavigateTo("/tasks");
         var back = Render<Tasks>();
-        back.WaitForAssertion(() => Assert.Single(back.FindAll(".alva-tree a[href^='tasks/']")));
+        back.WaitForAssertion(() => Assert.Single(back.FindAll(".flare-datagrid a[href^='tasks/']")));
         Assert.Equal("Релиз", Field(back, "Поиск задач").GetAttribute("value"));
         back.WaitForAssertion(() => Assert.True(back.FindComponent<FlareDrawer>().Instance.Open));
     }

@@ -74,7 +74,6 @@ public sealed class FocusTests : UiTestBase
         Navigation.NavigateTo("/tasks");
         var cut = Render<Tasks>();
         cut.WaitForAssertion(() => Button(cut, "Новая задача"));
-        var opener = RefOf(Button(cut, "Новая задача"));
 
         var focuses = Focused(cut, JSInterop).Length;
         Button(cut, "Новая задача").Click();

@@ -61,64 +61,74 @@ else
 <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant"><span role="status" aria-live="polite">@string.Format(AlvaStrings.Tasks_FoundCount, Matched.Count())</span></FlareText>
 }
 <FlareStack Row Wrap Gap="FlareSpacing.Small"><FlareButton Href="tasks" aria-current="@(Route == "tasks" ? "page" : null)" Variant="@(Route == "tasks" ? ButtonVariant.Tonal : ButtonVariant.Text)" Size="ButtonSize.Sm">@(AlvaStrings.Gantt_AllTasks)</FlareButton><FlareButton Href="unassigned" aria-current="@(Route == "unassigned" ? "page" : null)" Variant="@(Route == "unassigned" ? ButtonVariant.Tonal : ButtonVariant.Text)" Size="ButtonSize.Sm">@(AlvaStrings.Common_Unassigned)</FlareButton><FlareButton Href="my-work" aria-current="@(Route == "my-work" ? "page" : null)" Variant="@(Route == "my-work" ? ButtonVariant.Tonal : ButtonVariant.Text)" Size="ButtonSize.Sm">@(AlvaStrings.Tasks_MyWork)</FlareButton><FlareButton OnClick="Load" Variant="ButtonVariant.Text" Size="ButtonSize.Sm">@(AlvaStrings.Tasks_Refresh)</FlareButton></FlareStack>
-<FlareCard Variant="CardVariant.Outlined"><FlareCardContent>
+<FlareStack Height="@(HasRows ? "calc(100vh - 24rem)" : null)" MinHeight="@(HasRows ? "22rem" : null)">
+<FlareCard Variant="CardVariant.Outlined" FillHeight="HasRows"><FlareCardContent>
     @if (!_loaded) { <LoadingSkeleton Height="24rem" /> }
     else if (_error is not null) { <FlareAlert Severity="AlertSeverity.Error">@_error</FlareAlert><FlareButton Variant="ButtonVariant.Text" Size="ButtonSize.Sm" OnClick="Load">@(AlvaStrings.Common_TryAgain)</FlareButton> }
     else if (_tasks.Length == 0) { <FlareEmptyState Compact Title="@(AlvaStrings.Common_NoTasksYet)" Description="@(AlvaStrings.Tasks_AddTheFirstTaskOrChangeTheFilters)" /> }
     else if (!Matched.Any()) { <FlareEmptyState Compact Title="@(AlvaStrings.Tasks_NoTasksByFilters)" Description="@(AlvaStrings.Tasks_ClearFilters)" /><FlareButton Variant="ButtonVariant.Text" Size="ButtonSize.Sm" OnClick="ClearFilters">@(AlvaStrings.Tasks_ClearFilters)</FlareButton> }
     else {
-    <div class="alva-tree" role="treegrid" aria-label="@(AlvaStrings.Tasks_TeamTasks)" id="@TaskListState.TreeElementId">
-        <div class="alva-tree__head" role="row">
-            <div class="alva-tree__cell alva-tree__cell--task" role="columnheader" aria-sort="@SortOrder"><button type="button" class="alva-tree__sort" @onclick="ByOrder">@(AlvaStrings.Common_Task)</button></div>
-            <div class="alva-tree__cell" role="columnheader" aria-sort="@SortStatus"><button type="button" class="alva-tree__sort" @onclick="ByStatus">@(AlvaStrings.Common_Status)</button></div>
-            <div class="alva-tree__cell" role="columnheader" aria-sort="@SortPriority"><button type="button" class="alva-tree__sort" @onclick="ByPriority">@(AlvaStrings.Common_Priority)</button></div>
-            <div class="alva-tree__cell" role="columnheader" aria-sort="@SortAssignee"><button type="button" class="alva-tree__sort" @onclick="ByAssignee">@(AlvaStrings.Tasks_FilterAssignee)</button></div>
-            <div class="alva-tree__cell" role="columnheader" aria-sort="@SortDeadline"><button type="button" class="alva-tree__sort" @onclick="ByDeadline">@(AlvaStrings.Common_Deadline)</button></div>
-            <div class="alva-tree__cell" role="columnheader" aria-sort="@SortEstimate"><button type="button" class="alva-tree__sort" @onclick="ByEstimate">@(AlvaStrings.Common_Estimate)</button></div>
-            <div class="alva-tree__cell" role="columnheader">@(AlvaStrings.Tasks_FilterRisk)</div>
-            <div class="alva-tree__cell" role="columnheader" aria-sort="@SortProject"><button type="button" class="alva-tree__sort" @onclick="ByProject">@(AlvaStrings.Common_Project)</button></div>
-        </div>
-        @foreach (var row in Rows)
-        {
-            <div class="alva-tree__row @RowClass(row.Task)" role="row" tabindex="0" aria-level="@(row.Depth + 1)" aria-expanded="@(row.HasChildren ? (row.Expanded ? "true" : "false") : null)" @key="row.Task.Id" @onclick="() => Open(row.Task)" @onkeydown="e => OnRowKey(e, row.Task)">
-                <div class="alva-tree__cell alva-tree__cell--task" role="gridcell" style="--alva-depth:@row.Depth">
-                    @if (row.HasChildren) { <button type="button" class="alva-tree__toggle" aria-label="@(row.Expanded ? AlvaStrings.Tasks_Collapse : AlvaStrings.Tasks_Expand)" @onclick:stopPropagation="true" @onclick="() => Toggle(row.Task)">@(row.Expanded ? "v" : ">")</button> }
-                    else { <span class="alva-tree__toggle alva-tree__toggle--empty" aria-hidden="true"></span> }
-                    <span @onclick:stopPropagation="true" @onclick="() => Open(row.Task)" @onclick:preventDefault="true"><FlareLink Href="@($"tasks/{row.Task.Id}")" tabindex="-1">@row.Task.Title</FlareLink></span>
-                    <button type="button" class="alva-tree__add" aria-label="@AlvaStrings.Tasks_AddSubtask" title="@AlvaStrings.Tasks_AddSubtask" @onclick:stopPropagation="true" @onclick="() => OpenQuickCreate(row.Task.Id)">+</button>
-                    <span @onclick:stopPropagation="true">
-                        <FlareMenu Anchor="MenuAnchor.BottomEnd" AriaLabel="@(AlvaStrings.Tasks_RowActions)">
-                            <Activator><FlareIconButton Icon="@MaterialDesign3Icons.Regular.MoreVert" Size="ButtonSize.Sm" Tooltip="@(AlvaStrings.Tasks_RowActions)" AriaLabel="@(AlvaStrings.Tasks_RowActions)" /></Activator>
-                            <ChildContent>
-                                <FlareMenuItem OnClick="() => MoveUp(row.Task)">@(AlvaStrings.Tasks_MoveUp)</FlareMenuItem>
-                                <FlareMenuItem OnClick="() => MoveDown(row.Task)">@(AlvaStrings.Tasks_MoveDown)</FlareMenuItem>
-                                <FlareMenuItem OnClick="() => Outdent(row.Task)">@(AlvaStrings.Tasks_Outdent)</FlareMenuItem>
-                                <FlareMenuItem OnClick="() => MakeSubtask(row.Task)">@(AlvaStrings.Tasks_MakeSubtask)</FlareMenuItem>
-                            </ChildContent>
-                        </FlareMenu>
-                    </span>
-                    <div class="alva-tree__meta">
-                        <AlvaStatusChip Tone="TaskStatusTone(row.Task.Status)">@Labels.Status(row.Task.Status)</AlvaStatusChip>
-                        @if (row.Task.Priority is not "Normal") { <AlvaStatusChip Tone="AlvaTones.Priority(row.Task.Priority)">@Labels.Priority(row.Task.Priority)</AlvaStatusChip> }
-                        @if (ProjectOf(row.Task) is { } mobileProject) { <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant" title="@(AlvaStrings.Common_Project)">@mobileProject</FlareText> }
-                        <FlareText Typo="TypographyScale.BodySmall" Color="@(AssigneeActor(row.Task) is null ? FlareColor.Warning : FlareColor.OnSurfaceVariant)" title="@(AlvaStrings.Tasks_FilterAssignee)">@AssigneeLabel(row.Task)</FlareText>
-                        @if (DeadlineOf(row.Task) is { } mobileDeadline) { <FlareText Typo="TypographyScale.BodySmall" Color="@DeadlineTone(row.Task)" title="@DeadlineTitle(row.Task)">@mobileDeadline.ToString("d MMM")</FlareText> }
-                        <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant" title="@(AlvaStrings.Tasks_RemainingShort)">@EffortLabel(row.Task)</FlareText>
-                        @if (RiskOf(row.Task) is { } mobileRisk) { <AlvaStatusChip Tone="AlvaTones.Severity(mobileRisk.Severity)" Title="@RiskReason(mobileRisk)">@(mobileRisk.Severity == "High" ? AlvaStrings.Common_High : AlvaStrings.Risks_Medium)</AlvaStatusChip> }
-                    </div>
-                </div>
-                <div class="alva-tree__cell alva-tree__cell--optional" role="gridcell"><AlvaStatusChip Tone="TaskStatusTone(row.Task.Status)">@Labels.Status(row.Task.Status)</AlvaStatusChip></div>
-                <div class="alva-tree__cell alva-tree__cell--optional" role="gridcell">@if (row.Task.Priority is not "Normal") { <AlvaStatusChip Tone="AlvaTones.Priority(row.Task.Priority)">@Labels.Priority(row.Task.Priority)</AlvaStatusChip> } else { <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@Labels.Priority(row.Task.Priority)</FlareText> }</div>
-                <div class="alva-tree__cell alva-tree__cell--optional" role="gridcell"><FlareText Typo="TypographyScale.BodySmall" Color="@(AssigneeActor(row.Task) is null ? FlareColor.Warning : FlareColor.OnSurfaceVariant)">@AssigneeLabel(row.Task)</FlareText></div>
-                <div class="alva-tree__cell alva-tree__cell--optional" role="gridcell">@if (DeadlineOf(row.Task) is { } desktopDeadline) { <FlareText Typo="TypographyScale.BodySmall" Color="@DeadlineTone(row.Task)" title="@DeadlineTitle(row.Task)">@desktopDeadline.ToString("d MMM")</FlareText> } else { <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">-</FlareText> }</div>
-                <div class="alva-tree__cell alva-tree__cell--optional" role="gridcell"><FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@EffortLabel(row.Task)</FlareText></div>
-                <div class="alva-tree__cell alva-tree__cell--optional" role="gridcell">@if (RiskOf(row.Task) is { } desktopRisk) { <AlvaStatusChip Tone="AlvaTones.Severity(desktopRisk.Severity)" Title="@RiskReason(desktopRisk)">@(desktopRisk.Severity == "High" ? AlvaStrings.Common_High : AlvaStrings.Risks_Medium)</AlvaStatusChip> } else { <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">-</FlareText> }</div>
-                <div class="alva-tree__cell alva-tree__cell--optional" role="gridcell"><FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@(ProjectOf(row.Task) ?? "-")</FlareText></div>
-            </div>
-        }
-    </div>
+    <FlareDataGrid @ref="_dataGrid" TItem="TaskModel" Items="@Roots" RowKey="@(t => t.Id)" Context="@_grid"
+                   Tree="@_tree" ExpandedItems="@ExpandedItems" OnExpandedChanged="@OnExpanded"
+                   OnSortChanged="@OnSortChanged" RowReorderable="@ReorderEnabled" OnRowReordered="@Reordered"
+                   SelectionMode="SelectionMode.Single" SelectedItems="@GridSelection" RowClick="@Open" RowClassFunc="@RowClass"
+                   Presentation="DataGridPresentation.Auto" Virtual="true" FillHeight="true" Dense="true" Hoverable="true"
+                   StickyHeader="true" ShowPager="false" role="group" aria-label="@(AlvaStrings.Tasks_TeamTasks)">
+        <Columns>
+            <FlareColumn TItem="TaskModel" Title="@(AlvaStrings.Common_Task)" Sortable="true" SortKey="order" SortComparison="@OrderComparison" Frozen="true" Width="18rem">
+                <Template Context="task">
+                    <FlareStack Row Gap="FlareSpacing.XXSmall" Align="FlareAlignItems.Center" Style="display:inline-flex;vertical-align:middle">
+                        <span @onclick:stopPropagation="true" @onclick="() => Open(task)" @onclick:preventDefault="true"><FlareLink Href="@($"tasks/{task.Id}")">@task.Title</FlareLink></span>
+                        <span @onclick:stopPropagation="true"><FlareIconButton Icon="@MaterialDesign3Icons.Regular.Add" Size="ButtonSize.Sm" Tooltip="@AlvaStrings.Tasks_AddSubtask" AriaLabel="@AlvaStrings.Tasks_AddSubtask" OnClick="() => OpenQuickCreate(task.Id)" /></span>
+                        <span @onclick:stopPropagation="true">
+                            <FlareMenu Anchor="MenuAnchor.BottomEnd" AriaLabel="@(AlvaStrings.Tasks_RowActions)">
+                                <Activator><FlareIconButton Icon="@MaterialDesign3Icons.Regular.MoreVert" Size="ButtonSize.Sm" Tooltip="@(AlvaStrings.Tasks_RowActions)" AriaLabel="@(AlvaStrings.Tasks_RowActions)" /></Activator>
+                                <ChildContent>
+                                    <FlareMenuItem Disabled="@(!ReorderEnabled)" OnClick="() => MoveUp(task)">@(AlvaStrings.Tasks_MoveUp)</FlareMenuItem>
+                                    <FlareMenuItem Disabled="@(!ReorderEnabled)" OnClick="() => MoveDown(task)">@(AlvaStrings.Tasks_MoveDown)</FlareMenuItem>
+                                    <FlareMenuItem OnClick="() => Outdent(task)">@(AlvaStrings.Tasks_Outdent)</FlareMenuItem>
+                                    <FlareMenuItem OnClick="() => MakeSubtask(task)">@(AlvaStrings.Tasks_MakeSubtask)</FlareMenuItem>
+                                </ChildContent>
+                            </FlareMenu>
+                        </span>
+                    </FlareStack>
+                </Template>
+            </FlareColumn>
+            <FlareColumn TItem="TaskModel" Title="@(AlvaStrings.Common_Status)" Sortable="true" SortKey="status" SortComparison="@StatusComparison" Width="6rem">
+                <Template Context="task"><AlvaStatusChip Tone="TaskStatusTone(task.Status)">@Labels.Status(task.Status)</AlvaStatusChip></Template>
+            </FlareColumn>
+            <FlareColumn TItem="TaskModel" Title="@(AlvaStrings.Common_Priority)" Sortable="true" SortKey="priority" SortComparison="@PriorityComparison" Width="5.5rem">
+                <Template Context="task">
+                    @if (task.Priority is not "Normal") { <AlvaStatusChip Tone="AlvaTones.Priority(task.Priority)">@Labels.Priority(task.Priority)</AlvaStatusChip> }
+                    else { <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@Labels.Priority(task.Priority)</FlareText> }
+                </Template>
+            </FlareColumn>
+            <FlareColumn TItem="TaskModel" Title="@(AlvaStrings.Tasks_FilterAssignee)" Sortable="true" SortKey="assignee" SortComparison="@AssigneeComparison" Width="9rem">
+                <Template Context="task"><FlareText Typo="TypographyScale.BodySmall" Color="@(AssigneeActor(task) is null ? FlareColor.Warning : FlareColor.OnSurfaceVariant)">@AssigneeLabel(task)</FlareText></Template>
+            </FlareColumn>
+            <FlareColumn TItem="TaskModel" Title="@(AlvaStrings.Common_Deadline)" Sortable="true" SortKey="deadline" SortComparison="@DeadlineComparison" Width="6.5rem">
+                <Template Context="task">
+                    @if (DeadlineOf(task) is { } deadline) { <FlareText Typo="TypographyScale.BodySmall" Color="@DeadlineTone(task)" title="@DeadlineTitle(task)">@deadline.ToString("d MMM")</FlareText> }
+                    else { <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">-</FlareText> }
+                </Template>
+            </FlareColumn>
+            <FlareColumn TItem="TaskModel" Title="@(AlvaStrings.Common_Estimate)" Sortable="true" SortKey="estimate" SortComparison="@EstimateComparison" Width="7rem">
+                <Template Context="task"><FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@EffortLabel(task)</FlareText></Template>
+            </FlareColumn>
+            <FlareColumn TItem="TaskModel" Title="@(AlvaStrings.Tasks_FilterRisk)" Width="5.5rem">
+                <Template Context="task">
+                    @if (RiskOf(task) is { } risk) { <AlvaStatusChip Tone="AlvaTones.Severity(risk.Severity)" Title="@RiskReason(risk)">@(risk.Severity == "High" ? AlvaStrings.Common_High : AlvaStrings.Risks_Medium)</AlvaStatusChip> }
+                    else { <FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">-</FlareText> }
+                </Template>
+            </FlareColumn>
+            <FlareColumn TItem="TaskModel" Title="@(AlvaStrings.Common_Project)" Sortable="true" SortKey="project" SortComparison="@ProjectComparison" Width="7rem">
+                <Template Context="task"><FlareText Typo="TypographyScale.BodySmall" Color="FlareColor.OnSurfaceVariant">@(ProjectOf(task) ?? "-")</FlareText></Template>
+            </FlareColumn>
+        </Columns>
+    </FlareDataGrid>
     }
 </FlareCardContent></FlareCard>
+</FlareStack>
 <FlareDrawer Anchor="DrawerAnchor.Right" Open="DrawerOpen" OpenChanged="OnDrawerOpen" Width="34rem" ContentPadding="FlareSpacing.Large" AriaLabel="@DrawerLabel">
     @if (_quickOpen)
     {
@@ -169,9 +179,13 @@ else
     private TaskModel? _editing; private string? _editingSnapshot; private IDisposable? _draft;
     private string? _error,_search,_statusFilter; private Guid? _projectFilter; private bool _busy,_loaded;
     private Guid? _assigneeFilter; private string? _priorityFilter,_deadlineFilter,_riskFilter;
-    private string _sortKey="order"; private bool _sortDescending;
+    private string? _sortKey="order"; private bool _sortDescending;
     private readonly HashSet<Guid> _expanded=[];
     private Guid? _selectedId;
+    private readonly DataGridContext<TaskModel> _grid = new();
+    private DataGridTreeConfig<TaskModel>? _tree;
+    private FlareDataGrid<TaskModel>? _dataGrid;
+    private bool _sortRestored;
     private bool _quickOpen, _quickBusy;
     private string? _quickTitle, _quickError;
     private Guid? _quickParentId, _quickProjectId;
@@ -183,19 +197,10 @@ else
     private readonly List<string> _formErrors=[]; private ElementReference _errorSummary;
     [CascadingParameter] public FlareConfirmDialogProvider? Confirm { get; set; }
     internal bool IsDirty => _editing is not null && DraftSnapshot.Of(_editing) != _editingSnapshot;
-    private double _pendingScroll;
     private readonly string[] _statuses=["Backlog","Planned","InProgress","Done","Cancelled"];
     private static readonly string[] DeadlineFilters=["with","without"];
     private static readonly string[] RiskFilters=["with","without"];
     private IEnumerable<ActorModel> FilterAssignees => _actors.Where(a => a.Kind is "Person" or "Department");
-    private string SortOrder => SortAria("order");
-    private string SortStatus => SortAria("status");
-    private string SortPriority => SortAria("priority");
-    private string SortAssignee => SortAria("assignee");
-    private string SortDeadline => SortAria("deadline");
-    private string SortEstimate => SortAria("estimate");
-    private string SortProject => SortAria("project");
-    private string SortAria(string key) => _sortKey == key ? (_sortDescending ? "descending" : "ascending") : "none";
     private static AlvaTone TaskStatusTone(string? status) => status == "Planned" ? AlvaTone.Neutral : AlvaTones.Status(status);
     private static string DeadlineFilterLabel(string key) => key == "with" ? AlvaStrings.Tasks_WithDeadline : AlvaStrings.Tasks_WithoutDeadline;
     private static string RiskFilterLabel(string key) => key == "with" ? AlvaStrings.Tasks_WithRisk : AlvaStrings.Tasks_WithoutRisk;
@@ -254,72 +259,86 @@ else
         }
     }
     private IEnumerable<TaskModel> Filtered => _tasks.Where(t => IncludedIds.Contains(t.Id));
-    private IEnumerable<TaskModel> Roots => Sorted(Filtered.Where(t => t.ParentId is null || !IncludedIds.Contains(t.ParentId.Value)));
-    private IEnumerable<TaskRow> Rows => Flatten(Roots, 0, HasFilters ? IncludedIds : new HashSet<Guid>());
-    private IEnumerable<TaskRow> Flatten(IEnumerable<TaskModel> tasks, int depth, HashSet<Guid> autoExpand)
-    {
-        foreach (var task in tasks)
-        {
-            var children = ChildrenOf(task).ToList();
-            var expanded = _expanded.Contains(task.Id) || autoExpand.Contains(task.Id);
-            yield return new TaskRow(task, depth, children.Count > 0, expanded);
-            if (expanded)
-                foreach (var child in Flatten(children, depth + 1, autoExpand))
-                    yield return child;
-        }
-    }
-    private IEnumerable<TaskModel> ChildrenOf(TaskModel task) => Sorted((_childrenById.TryGetValue(task.Id, out var children) ? children : []).Where(t => IncludedIds.Contains(t.Id)));
-    private sealed record TaskRow(TaskModel Task, int Depth, bool HasChildren, bool Expanded);
+    private IEnumerable<TaskModel> Roots => Filtered.Where(t => t.ParentId is null || !IncludedIds.Contains(t.ParentId.Value))
+                                                   .OrderBy(t => t.Order).ThenBy(t => t.Title);
+    private IEnumerable<TaskModel> ChildrenOf(TaskModel task) => (_childrenById.TryGetValue(task.Id, out var children) ? children : [])
+        .Where(t => IncludedIds.Contains(t.Id)).OrderBy(t => t.Order).ThenBy(t => t.Title);
+    private HashSet<TaskModel> ExpandedItems => _tasks.Where(t => _expanded.Contains(t.Id) || (HasFilters && IncludedIds.Contains(t.Id))).ToHashSet();
+    private HashSet<TaskModel> GridSelection => _tasks.Where(t => t.Id == _selectedId).ToHashSet();
+    private bool HasRows => _loaded && _error is null && _tasks.Length > 0 && Matched.Any();
+    // A sorted view has no manual neighbour to drop before or after, so dragging is offered only in manual order.
+    private bool ReorderEnabled => (_sortKey is null or "order") && !_sortDescending;
     private string RowClass(TaskModel task) => string.Join(" ", new[]
     {
-        HasFilters && !Matches(task) ? "alva-tree__row--context" : null,
-        task.Id == _highlightId ? "alva-tree__row--new" : null
+        HasFilters && !Matches(task) ? "alva-task-row--context" : null,
+        task.Id == _highlightId ? "alva-task-row--new" : null
     }.Where(value => value is not null));
-    private IEnumerable<TaskModel> Sorted(IEnumerable<TaskModel> tasks)
+    private async Task OnExpanded(DataGridTreeExpandChanged<TaskModel> change)
     {
-        var result = tasks.ToList();
-        result.Sort(CompareTasks);
-        return result;
+        if (change.Expanded) _expanded.Add(change.Item.Id); else _expanded.Remove(change.Item.Id);
+        await SaveTreeState();
     }
-    private int CompareTasks(TaskModel a, TaskModel b)
+    private async Task OnSortChanged(IReadOnlyList<DataGridSort> sorts)
     {
-        var direction = _sortDescending ? -1 : 1;
-        var compared = _sortKey switch
-        {
-            "deadline" => CompareNullableDate(DeadlineOf(a), DeadlineOf(b), direction),
-            "priority" => direction * PriorityRank(a.Priority).CompareTo(PriorityRank(b.Priority)),
-            "project" => CompareText(ProjectOf(a), ProjectOf(b), direction),
-            "assignee" => CompareText(AssigneeSortName(a), AssigneeSortName(b), direction),
-            "status" => direction * StatusRank(a.Status).CompareTo(StatusRank(b.Status)),
-            "estimate" => CompareNullableDecimal(a.EstimateHours, b.EstimateHours, direction),
-            _ => direction * a.Order.CompareTo(b.Order)
-        };
-        if (compared == 0) compared = a.Order.CompareTo(b.Order);
-        if (compared == 0) compared = string.Compare(a.Title, b.Title, StringComparison.CurrentCultureIgnoreCase);
-        return compared;
+        var first = sorts.FirstOrDefault();
+        _sortKey = first?.Key;
+        _sortDescending = first?.Direction == SortDirection.Descending;
+        await SaveSort();
     }
-    private static int CompareNullableDate(DateOnly? a, DateOnly? b, int direction)
+    private Task Reordered(DataGridRowReorder<TaskModel> move)
+    {
+        // Inside makes the target the parent; before/after place the row among the target's siblings.
+        var parentId = move.Position == DataGridRowDropPosition.Inside ? move.Target.Id : move.Parent?.Id;
+        var siblings = _tasks.Where(t => t.ParentId == parentId && t.Id != move.Item.Id)
+                             .OrderBy(t => t.Order).ThenBy(t => t.Title).ToList();
+        var index = siblings.FindIndex(t => t.Id == move.Target.Id);
+        if (move.Position == DataGridRowDropPosition.Inside || index < 0) index = siblings.Count;
+        else if (move.Position == DataGridRowDropPosition.After) index++;
+        siblings.Insert(Math.Clamp(index, 0, siblings.Count), move.Item);
+        // A reparented row may already carry the order number of its new place; the move is still required.
+        return ApplyOrder(parentId, siblings, move.Item.Id);
+    }
+    private Comparison<TaskModel> OrderComparison => CompareByOrder;
+    private Comparison<TaskModel> StatusComparison => CompareByStatus;
+    private Comparison<TaskModel> PriorityComparison => CompareByPriority;
+    private Comparison<TaskModel> AssigneeComparison => CompareByAssignee;
+    private Comparison<TaskModel> DeadlineComparison => CompareByDeadline;
+    private Comparison<TaskModel> EstimateComparison => CompareByEstimate;
+    private Comparison<TaskModel> ProjectComparison => CompareByProject;
+    // Flare negates a column comparison for the descending direction, so each one states ascending only.
+    private static int CompareByOrder(TaskModel a, TaskModel b)
+    {
+        var compared = a.Order.CompareTo(b.Order);
+        return compared != 0 ? compared : string.Compare(a.Title, b.Title, StringComparison.CurrentCultureIgnoreCase);
+    }
+    private static int CompareByStatus(TaskModel a, TaskModel b) => StatusRank(a.Status).CompareTo(StatusRank(b.Status));
+    private static int CompareByPriority(TaskModel a, TaskModel b) => PriorityRank(a.Priority).CompareTo(PriorityRank(b.Priority));
+    private int CompareByAssignee(TaskModel a, TaskModel b) => CompareText(AssigneeSortName(a), AssigneeSortName(b));
+    private static int CompareByDeadline(TaskModel a, TaskModel b) => CompareNullableDate(DeadlineOf(a), DeadlineOf(b));
+    private static int CompareByEstimate(TaskModel a, TaskModel b) => CompareNullableDecimal(a.EstimateHours, b.EstimateHours);
+    private int CompareByProject(TaskModel a, TaskModel b) => CompareText(ProjectOf(a), ProjectOf(b));
+    private static int CompareNullableDate(DateOnly? a, DateOnly? b)
     {
         if (a is null && b is null) return 0;
         if (a is null) return 1;
         if (b is null) return -1;
-        return direction * a.Value.CompareTo(b.Value);
+        return a.Value.CompareTo(b.Value);
     }
-    private static int CompareNullableDecimal(decimal? a, decimal? b, int direction)
+    private static int CompareNullableDecimal(decimal? a, decimal? b)
     {
         if (a is null && b is null) return 0;
         if (a is null) return 1;
         if (b is null) return -1;
-        return direction * a.Value.CompareTo(b.Value);
+        return a.Value.CompareTo(b.Value);
     }
-    private static int CompareText(string? a, string? b, int direction)
+    private static int CompareText(string? a, string? b)
     {
         var aEmpty = string.IsNullOrWhiteSpace(a);
         var bEmpty = string.IsNullOrWhiteSpace(b);
         if (aEmpty && bEmpty) return 0;
         if (aEmpty) return 1;
         if (bEmpty) return -1;
-        return direction * string.Compare(a, b, StringComparison.CurrentCultureIgnoreCase);
+        return string.Compare(a, b, StringComparison.CurrentCultureIgnoreCase);
     }
     private static int PriorityRank(string? priority) => priority switch { "Critical" => 3, "High" => 2, "Low" => 0, _ => 1 };
     private static int StatusRank(string? status) => status switch { "Planned" => 1, "InProgress" => 2, "Done" => 3, "Cancelled" => 4, "Backlog" => 0, _ => 5 };
@@ -352,8 +371,8 @@ else
     protected override async Task OnInitializedAsync()
     {
         _draft = Drafts.Track(() => IsDirty);
-        // The list is recreated by the route key (MainLayout), so search, filters and position are restored
-        // from TaskListState - after going to the card and Back, and after a page reload.
+        // The list is recreated by the route key (MainLayout), so search, filters, sort and expansion
+        // are restored from TaskListState - after going to the card and Back, and after a page reload.
         var context = await Session.TaskList.Load();
         _search = context.Search;
         _projectFilter = context.Project;
@@ -366,7 +385,13 @@ else
         _riskFilter = context.Risk;
         _expanded.UnionWith(context.Expanded);
         _selectedId = context.Selected;
-        _pendingScroll = context.Scroll;
+        _tree = new DataGridTreeConfig<TaskModel>
+        {
+            ChildrenSelector = ChildrenOf,
+            KeySelector = t => t.Id,
+            IndentWidth = "24px",
+            ToggleColumnTitle = AlvaStrings.Common_Task
+        };
     }
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -392,10 +417,10 @@ else
                 catch (JSDisconnectedException) { }
             }
         }
-        if (!firstRender || _pendingScroll <= 0) return;
-        var scroll = _pendingScroll;
-        _pendingScroll = 0;
-        await Session.TaskList.RestoreScroll(scroll);
+        // The grid owns its sort stack; the saved key is applied once, as soon as the grid is on the page.
+        if (_sortRestored || _dataGrid is null) return;
+        _sortRestored = true;
+        await _grid.SetSortsAsync([new DataGridSort(_sortKey ?? "order", _sortDescending ? SortDirection.Descending : SortDirection.Ascending)]);
     }
     // Esc in an open card returns to the list; the card holds an unsaved draft, so Esc does not fire
     // with one - edits leave only after explicit consent.
@@ -440,19 +465,6 @@ else
         _assigneeFilter = null; _priorityFilter = null; _deadlineFilter = null; _riskFilter = null;
         await SaveListContext();
     }
-    private Task ByOrder() => SortBy("order");
-    private Task ByStatus() => SortBy("status");
-    private Task ByPriority() => SortBy("priority");
-    private Task ByAssignee() => SortBy("assignee");
-    private Task ByDeadline() => SortBy("deadline");
-    private Task ByEstimate() => SortBy("estimate");
-    private Task ByProject() => SortBy("project");
-    private async Task SortBy(string key)
-    {
-        if (_sortKey == key) _sortDescending = !_sortDescending;
-        else { _sortKey = key; _sortDescending = false; }
-        await SaveSort();
-    }
     // Creation from another screen (project): the form opens immediately with that context, and saving returns there.
     [SupplyParameterFromQuery(Name = "new")] public int? NewFlag { get; set; }
     [SupplyParameterFromQuery(Name = "project")] public Guid? NewProject { get; set; }
@@ -473,27 +485,7 @@ else
         _opened = Current.Id;
         _focusCard = true;
     }
-    private async Task Open(TaskModel? task){ if(task is null) return; _quickOpen=false; _selectedId=task.Id; await SaveListContext(); await SaveTreeState(); }
-    private async Task OnRowKey(KeyboardEventArgs e, TaskModel task)
-    {
-        switch (e.Key)
-        {
-            case "Enter":
-            case " ":
-                await Open(task);
-                break;
-            case "ArrowRight":
-                if (_expanded.Add(task.Id)) await SaveTreeState();
-                break;
-            case "ArrowLeft":
-                if (_expanded.Remove(task.Id)) await SaveTreeState();
-                break;
-            case "Insert":
-                await OpenQuickCreate(task.Id);
-                break;
-        }
-    }
-    private Task Toggle(TaskModel task) { if (!_expanded.Add(task.Id)) _expanded.Remove(task.Id); return SaveTreeState(); }
+    private async Task Open(TaskModel task){ _quickOpen=false; _selectedId=task.Id; await SaveListContext(); await SaveTreeState(); }
     private Task SaveTreeState() => Session.TaskList.SaveTreeState(_expanded, _selectedId);
     private IEnumerable<TaskModel> AllSiblings(TaskModel task) => _tasks.Where(t => t.ParentId == task.ParentId).OrderBy(t => t.Order).ThenBy(t => t.Title);
     private Task MoveUp(TaskModel task) => SwapWithNeighbor(task, -1);
@@ -507,12 +499,12 @@ else
         (siblings[index], siblings[target]) = (siblings[target], siblings[index]);
         await ApplyOrder(task.ParentId, siblings);
     }
-    private async Task ApplyOrder(Guid? parentId, IReadOnlyList<TaskModel> ordered)
+    private async Task ApplyOrder(Guid? parentId, IReadOnlyList<TaskModel> ordered, Guid? force = null)
     {
         try
         {
             for (var i = 0; i < ordered.Count; i++)
-                if (ordered[i].Order != i) await MoveTask(ordered[i], parentId, i);
+                if (ordered[i].Order != i || ordered[i].Id == force) await MoveTask(ordered[i], parentId, i);
             await Load();
             Snackbar.Show(AlvaStrings.Tasks_Moved, SnackbarSeverity.Success);
         }

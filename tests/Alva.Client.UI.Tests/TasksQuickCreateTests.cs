@@ -58,7 +58,7 @@ public sealed class TasksQuickCreateTests : UiTestBase
     public void Adding_a_subtask_switches_the_same_right_drawer_instead_of_opening_another()
     {
         var cut = Page();
-        cut.FindAll(".alva-tree__row").First(n => n.TextContent.Contains("Планирование")).Click();
+        cut.FindAll(".flare-datagrid__row").First(n => n.TextContent.Contains("Планирование")).Click();
         cut.WaitForAssertion(() => Assert.True(cut.FindComponent<FlareDrawer>().Instance.Open));
         var viewDrawer = cut.FindComponent<FlareDrawer>();
 
@@ -109,7 +109,7 @@ public sealed class TasksQuickCreateTests : UiTestBase
     private IRenderedComponent<Tasks> Page()
     {
         var cut = Render<Tasks>();
-        cut.WaitForAssertion(() => Assert.NotEmpty(cut.FindAll(".alva-tree__row")));
+        cut.WaitForAssertion(() => Assert.NotEmpty(cut.FindAll(".flare-datagrid__row")));
         return cut;
     }
 
@@ -124,7 +124,7 @@ public sealed class TasksQuickCreateTests : UiTestBase
         Button(cut, "Создать").Click();
 
         cut.WaitForAssertion(() => Assert.Contains(Api.Sent, s => s.Method == HttpMethod.Post && s.Value is TaskRequest r && r.Title == "Новая"));
-        cut.WaitForAssertion(() => Assert.Contains("alva-tree__row--new", cut.Markup));
+        cut.WaitForAssertion(() => Assert.Contains("alva-task-row--new", cut.Markup));
         Assert.Contains("Новая", cut.Markup);
         Assert.Equal(url, Services.GetRequiredService<Bunit.TestDoubles.BunitNavigationManager>().Uri);
     }

@@ -44,7 +44,7 @@ public sealed class TaskListKeysTests : UiTestBase
 
         Navigation.NavigateTo("/tasks");
         var back = Render<Tasks>();
-        back.WaitForAssertion(() => Assert.Single(back.FindAll(".alva-tree a[href^='tasks/']")));
+        back.WaitForAssertion(() => Assert.Single(back.FindAll(".flare-datagrid a[href^='tasks/']")));
         Assert.Equal("релиз", Field(back, "Поиск задач").GetAttribute("value"));
         back.WaitForAssertion(() => Assert.True(back.FindComponent<FlareDrawer>().Instance.Open));
     }

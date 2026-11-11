@@ -61,9 +61,9 @@ public sealed class FlareMigrationTests : UiTestBase
                  })
             Assert.DoesNotContain(removed, css);
 
-        // Only the declared domain exceptions remain: the task treegrid until TASK-243, heat cells,
-        // calendar day states and the Gantt row header. Chart colors and surfaces live in the theme.
-        Assert.Contains(".alva-tree", css);
+        // Only the declared domain exceptions remain: heat cells, calendar day states and the Gantt
+        // row header. Chart colors and surfaces live in the theme.
+        Assert.DoesNotContain(".alva-tree", css);
         Assert.Contains(".alva-heat-cell", css);
         Assert.Contains(".alva-calendar-day", css);
         Assert.Contains(".alva-gantt-row", css);
@@ -144,7 +144,7 @@ public sealed class FlareMigrationTests : UiTestBase
             "alva-appbar", "alva-brand", "alva-team-chip", "alva-user", "alva-panel", "alva-kpi", "alva-plan-",
             "alva-skill", "alva-filterbar", "alva-task__actions", "alva-task__status-activator", "alva-proj-",
             "alva-gantt__host", "alva-integration", "alva-task-card", "alva-loading", "alva-task__risk",
-            "alva-task__deps", "alva-forecast-chart"
+            "alva-task__deps", "alva-forecast-chart", "alva-tree"
         ];
         foreach (var file in sources)
         {

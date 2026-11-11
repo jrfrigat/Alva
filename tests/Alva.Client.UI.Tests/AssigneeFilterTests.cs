@@ -37,8 +37,8 @@ public sealed class AssigneeFilterTests : UiTestBase
     {
         Services.GetRequiredService<BunitNavigationManager>().NavigateTo(route);
         var cut = Render<Tasks>();
-        cut.WaitForAssertion(() => Assert.NotEmpty(cut.FindAll(".alva-tree a[href^='tasks/']")));
-        return cut.FindAll(".alva-tree a[href^='tasks/']").Select(a => a.TextContent.Trim()).Order().ToArray();
+        cut.WaitForAssertion(() => Assert.NotEmpty(cut.FindAll(".flare-datagrid a[href^='tasks/']")));
+        return cut.FindAll(".flare-datagrid a[href^='tasks/']").Select(a => a.TextContent.Trim()).Order().ToArray();
     }
 
     [Fact]

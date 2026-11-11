@@ -1,20 +1,16 @@
-using System.Globalization;
 using System.Text.Json;
 using Microsoft.JSInterop;
 
 namespace Alva.Client.Services;
 
 /// <summary>
-/// Task list context: filters, sort order and scroll position. This is a device setting,
+/// Task list context: filters, sort order, expansion and the selected task. This is a device setting,
 /// not team data, so it lives in localStorage; the list page is recreated by route key in
 /// MainLayout, so the context must survive navigating into a task card and back, as well as a reload.
 /// </summary>
 public sealed class TaskListState(IJSRuntime js)
 {
     private const string StorageKey = "alva-task-list";
-
-    /// <summary>The ID of the list container that the scroll position is captured from and restored to.</summary>
-    public const string TreeElementId = "alva-task-tree";
 
     private Context? _context;
     private bool _loaded;
@@ -61,28 +57,6 @@ public sealed class TaskListState(IJSRuntime js)
         await Save(next);
     }
 
-    /// <summary>The list scroll position in pixels (0 if the container is not on screen yet).</summary>
-    public async Task<double> Scroll()
-    {
-        try { return await js.InvokeAsync<double>("eval", $"document.getElementById('{TreeElementId}')?.scrollTop ?? 0"); }
-        catch (Exception e) when (e is JSException or InvalidOperationException) { return 0; }
-    }
-
-    /// <summary>Remembers the list scroll position.</summary>
-    public async Task SaveScroll(double scroll)
-    {
-        var next = (await Load()) with { Scroll = scroll };
-        await Save(next);
-    }
-
-    /// <summary>Restores the list to the saved scroll position.</summary>
-    public async Task RestoreScroll(double scroll)
-    {
-        if (scroll <= 0) return;
-        try { await js.InvokeVoidAsync("eval", $"var e=document.getElementById('{TreeElementId}'); if(e) e.scrollTop={scroll.ToString(CultureInfo.InvariantCulture)};"); }
-        catch (Exception e) when (e is JSException or InvalidOperationException) { }
-    }
-
     // The value is kept in memory (enough for Back within the SPA) and also written to localStorage
     // so it survives a reload; unavailable storage does not break the list.
     private async Task Save(Context context)
@@ -99,7 +73,6 @@ public sealed class TaskListState(IJSRuntime js)
         public string? Search { get; init; }
         public Guid? Project { get; init; }
         public string? Status { get; init; }
-        public double Scroll { get; init; }
         /// <summary>order, deadline, priority, project, assignee, status or estimate.</summary>
         public string? SortKey { get; init; }
         public bool SortDescending { get; init; }

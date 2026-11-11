@@ -27,7 +27,7 @@ public sealed class TasksFilterHierarchyTests : UiTestBase
     private IRenderedComponent<Tasks> Page()
     {
         var cut = Render<Tasks>();
-        cut.WaitForAssertion(() => Assert.Equal(2, cut.FindAll(".alva-tree__row").Count));
+        cut.WaitForAssertion(() => Assert.Equal(2, cut.FindAll(".flare-datagrid__row").Count));
         return cut;
     }
 
@@ -38,11 +38,11 @@ public sealed class TasksFilterHierarchyTests : UiTestBase
 
         Field(cut, "Поиск задач").Input("API");
 
-        cut.WaitForAssertion(() => Assert.Equal(2, cut.FindAll(".alva-tree__row").Count));
-        var rows = cut.FindAll(".alva-tree__row");
+        cut.WaitForAssertion(() => Assert.Equal(2, cut.FindAll(".flare-datagrid__row").Count));
+        var rows = cut.FindAll(".flare-datagrid__row");
         Assert.Contains("Планирование", rows[0].TextContent);
         Assert.Contains("API планирования", rows[1].TextContent);
-        Assert.Contains("alva-tree__row--context", rows[0].ClassName);
+        Assert.Contains("alva-task-row--context", rows[0].ClassName);
         Assert.Contains("Поиск: API", cut.Markup);
         Assert.Contains("Найдено: 1", cut.Markup);
     }
@@ -58,7 +58,7 @@ public sealed class TasksFilterHierarchyTests : UiTestBase
         Assert.Contains("Сбросить фильтры", cut.Markup);
 
         Button(cut, "Сбросить фильтры").Click();
-        cut.WaitForAssertion(() => Assert.Equal(2, cut.FindAll(".alva-tree__row").Count));
+        cut.WaitForAssertion(() => Assert.Equal(2, cut.FindAll(".flare-datagrid__row").Count));
         Assert.DoesNotContain("Поиск:", cut.Markup);
     }
 

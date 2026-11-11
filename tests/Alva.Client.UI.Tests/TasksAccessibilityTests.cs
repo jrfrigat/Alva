@@ -31,28 +31,34 @@ public sealed class TasksAccessibilityTests : UiTestBase
     {
         Navigation.NavigateTo("/tasks");
         var cut = Render<Tasks>();
-        cut.WaitForAssertion(() => Assert.NotEmpty(cut.FindAll(".alva-tree__row")));
+        cut.WaitForAssertion(() => Assert.NotEmpty(cut.FindAll(".flare-datagrid__row")));
 
-        Assert.Equal("Задачи команды", cut.Find("[role='treegrid']").GetAttribute("aria-label"));
-        Assert.Equal("ascending", cut.FindAll("[role='columnheader']").First(h => h.TextContent.Contains("Задача")).GetAttribute("aria-sort"));
-        Assert.Equal("0", cut.Find(".alva-tree__row").GetAttribute("tabindex"));
-        Assert.Equal("-1", cut.Find(".alva-tree a[href^='tasks/']").GetAttribute("tabindex"));
+        // FlareDataGrid has no parameter for the table's accessible name yet (FLARE TASK-810),
+        // so the grid root names the group around the treegrid.
+        var group = cut.Find("[role='group'][aria-label='Задачи команды']");
+        Assert.NotEmpty(group.QuerySelectorAll("[role='treegrid']"));
+        cut.WaitForAssertion(() => Assert.Equal("ascending", cut.FindAll("[role='columnheader']").First(h => h.TextContent.Contains("Задача")).GetAttribute("aria-sort")));
+        Assert.Equal("0", cut.Find("table[role='treegrid']").GetAttribute("tabindex"));
+        // Every title stays a real tab stop: the grid's arrow navigation has no visible focus of its own yet.
+        Assert.Null(cut.Find(".flare-datagrid a[href^='tasks/']").GetAttribute("tabindex"));
         Assert.Contains(cut.FindAll("[aria-current='page']"), e => e.TextContent.Trim() == "Все задачи");
     }
 
     [Fact]
-    public void Enter_opens_the_row_and_arrow_right_expands_it()
+    public void The_keyboard_opens_a_row_and_the_toggle_expands_it()
     {
         Navigation.NavigateTo("/tasks");
         var cut = Render<Tasks>();
-        cut.WaitForAssertion(() => Assert.NotEmpty(cut.FindAll(".alva-tree__row")));
-        var row = cut.FindAll(".alva-tree__row").First();
+        cut.WaitForAssertion(() => Assert.NotEmpty(cut.FindAll(".flare-datagrid__row")));
 
-        row.KeyDown(new KeyboardEventArgs { Key = "Enter" });
+        // The first key press moves focus into the grid; the next one acts on the focused row.
+        var table = cut.Find("table[role='treegrid']");
+        table.KeyDown(new KeyboardEventArgs { Key = "Enter" });
+        table.KeyDown(new KeyboardEventArgs { Key = "Enter" });
         cut.WaitForAssertion(() => Assert.True(cut.FindComponent<FlareDrawer>().Instance.Open));
 
-        cut.FindAll(".alva-tree__row").First().KeyDown(new KeyboardEventArgs { Key = "ArrowRight" });
-        cut.WaitForAssertion(() => Assert.Equal(2, cut.FindAll(".alva-tree__row").Count));
-        Assert.Equal("true", cut.FindAll(".alva-tree__row").First().GetAttribute("aria-expanded"));
+        cut.Find(".flare-datagrid__tree-toggle").KeyDown(new KeyboardEventArgs { Key = "Enter" });
+        cut.WaitForAssertion(() => Assert.Equal(2, cut.FindAll("table[role='treegrid'] tr.flare-datagrid__row").Count));
+        Assert.Equal("true", cut.FindAll("table[role='treegrid'] tr.flare-datagrid__row").First().GetAttribute("aria-expanded"));
     }
 }

@@ -25,7 +25,7 @@ public sealed class TasksMoveTests : UiTestBase
     private IRenderedComponent<Tasks> Page()
     {
         var cut = Render<Tasks>();
-        cut.WaitForAssertion(() => Assert.Equal(2, cut.FindAll(".alva-tree__row").Count));
+        cut.WaitForAssertion(() => Assert.Equal(2, cut.FindAll(".flare-datagrid__row").Count));
         return cut;
     }
 
@@ -47,10 +47,10 @@ public sealed class TasksMoveTests : UiTestBase
     public void A_child_can_be_outdented()
     {
         var cut = Page();
-        cut.Find(".alva-tree__toggle").Click();
-        cut.WaitForAssertion(() => Assert.Equal(3, cut.FindAll(".alva-tree__row").Count));
+        cut.Find(".flare-datagrid__tree-toggle").Click();
+        cut.WaitForAssertion(() => Assert.Equal(3, cut.FindAll(".flare-datagrid__row").Count));
 
-        var childRow = cut.FindAll(".alva-tree__row").Single(e => e.TextContent.Contains("Дочерняя"));
+        var childRow = cut.FindAll(".flare-datagrid__row").Single(e => e.TextContent.Contains("Дочерняя"));
         childRow.QuerySelector("[aria-label='Действия с задачей']")!.Click();
         cut.WaitForAssertion(() => Assert.NotEmpty(cut.FindAll("[role='menuitem']")));
         cut.FindAll("[role='menuitem']").Single(e => e.TextContent.Trim() == "Поднять на уровень").Click();
