@@ -62,7 +62,7 @@ else
 }
 <FlareStack Row Wrap Gap="FlareSpacing.Small"><FlareButton Href="tasks" aria-current="@(Route == "tasks" ? "page" : null)" Variant="@(Route == "tasks" ? ButtonVariant.Tonal : ButtonVariant.Text)" Size="ButtonSize.Sm">@(AlvaStrings.Gantt_AllTasks)</FlareButton><FlareButton Href="unassigned" aria-current="@(Route == "unassigned" ? "page" : null)" Variant="@(Route == "unassigned" ? ButtonVariant.Tonal : ButtonVariant.Text)" Size="ButtonSize.Sm">@(AlvaStrings.Common_Unassigned)</FlareButton><FlareButton Href="my-work" aria-current="@(Route == "my-work" ? "page" : null)" Variant="@(Route == "my-work" ? ButtonVariant.Tonal : ButtonVariant.Text)" Size="ButtonSize.Sm">@(AlvaStrings.Tasks_MyWork)</FlareButton><FlareButton OnClick="Load" Variant="ButtonVariant.Text" Size="ButtonSize.Sm">@(AlvaStrings.Tasks_Refresh)</FlareButton></FlareStack>
 <FlareStack Height="@(HasRows ? "calc(100vh - 24rem)" : null)" MinHeight="@(HasRows ? "22rem" : null)">
-<FlareCard Variant="CardVariant.Outlined" FillHeight="HasRows"><FlareCardContent>
+<FlareCard Variant="CardVariant.Outlined" FillHeight="@HasRows"><FlareCardContent>
     @if (!_loaded) { <LoadingSkeleton Height="24rem" /> }
     else if (_error is not null) { <FlareAlert Severity="AlertSeverity.Error">@_error</FlareAlert><FlareButton Variant="ButtonVariant.Text" Size="ButtonSize.Sm" OnClick="Load">@(AlvaStrings.Common_TryAgain)</FlareButton> }
     else if (_tasks.Length == 0) { <FlareEmptyState Compact Title="@(AlvaStrings.Common_NoTasksYet)" Description="@(AlvaStrings.Tasks_AddTheFirstTaskOrChangeTheFilters)" /> }
@@ -185,7 +185,7 @@ else
     private readonly DataGridContext<TaskModel> _grid = new();
     private DataGridTreeConfig<TaskModel>? _tree;
     private FlareDataGrid<TaskModel>? _dataGrid;
-    private bool _sortRestored;
+    private FlareDataGrid<TaskModel>? _sortedGrid;
     private bool _quickOpen, _quickBusy;
     private string? _quickTitle, _quickError;
     private Guid? _quickParentId, _quickProjectId;
@@ -417,9 +417,10 @@ else
                 catch (JSDisconnectedException) { }
             }
         }
-        // The grid owns its sort stack; the saved key is applied once, as soon as the grid is on the page.
-        if (_sortRestored || _dataGrid is null) return;
-        _sortRestored = true;
+        // The grid owns its sort stack; the saved key is applied once per grid instance, because a
+        // filter that hides every row removes the grid and a new one starts with an empty stack.
+        if (_dataGrid is null || ReferenceEquals(_sortedGrid, _dataGrid)) return;
+        _sortedGrid = _dataGrid;
         await _grid.SetSortsAsync([new DataGridSort(_sortKey ?? "order", _sortDescending ? SortDirection.Descending : SortDirection.Ascending)]);
     }
     // Esc in an open card returns to the list; the card holds an unsaved draft, so Esc does not fire

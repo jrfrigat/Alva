@@ -139,6 +139,21 @@ public sealed class TasksPlanColumnsTests : UiTestBase
         Assert.Contains("Бэклог", back.FindAll(".flare-datagrid__row").First().TextContent);
     }
 
+    [Fact]
+    public void The_saved_sort_returns_with_the_grid_after_an_empty_filter()
+    {
+        var cut = Page();
+        Header(cut, "Дедлайн").Click();
+        cut.WaitForAssertion(() => Assert.Equal("ascending", Header(cut, "Дедлайн").GetAttribute("aria-sort")));
+
+        Field(cut, "Поиск задач").Input("zzz");
+        cut.WaitForAssertion(() => Assert.Contains("Нет задач по условиям", cut.Markup));
+
+        Field(cut, "Поиск задач").Input("");
+        cut.WaitForAssertion(() => Assert.Equal(3, cut.FindAll(".flare-datagrid__row").Count));
+        Assert.Equal("ascending", Header(cut, "Дедлайн").GetAttribute("aria-sort"));
+    }
+
     private static AngleSharp.Dom.IElement Header<T>(IRenderedComponent<T> cut, string title) where T : IComponent =>
         cut.FindAll("th[role='columnheader']").Single(h => h.TextContent.Contains(title, StringComparison.Ordinal));
 
