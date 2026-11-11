@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 AlvaHost.Configure(builder);
 builder.Services.AddScoped<IApiService, ApiServiceLocalStorage>();
+builder.Services.AddScoped<IRealtimeService, NullRealtimeService>();
 builder.Services.AddLocalization();
 builder.Services.AddScoped<CultureService>();
 builder.Services.AddScoped<DraftGuard>();
